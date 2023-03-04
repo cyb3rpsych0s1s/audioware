@@ -34,7 +34,7 @@ link PROFILE='debug':
  cp '{{ join(".", fmod_in_dir, "fmodstudio.lib") }}'  '{{ join(".", "target", PROFILE, "deps", "fmodstudio.lib") }}'
 
 # 📦 build Rust RED4Ext plugin
-build PROFILE='debug': (link PROFILE)
+build PROFILE='debug':
   @'{{ if PROFILE == "release" { `cargo build --release` } else { `cargo build` } }}'
 
 # 📦 bundle mod files (for release in CI)
