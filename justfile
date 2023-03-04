@@ -28,10 +28,10 @@ vendor:
 
 # 📦 link FMOD lib for cargo build
 link PROFILE='debug':
- cp '{{ join(".", fmod_in_dir, "fmod.dll") }}' ".\target\{{PROFILE}}\deps\fmod.dll"
- cp '{{ join(".", fmod_in_dir, "fmod.lib") }}' ".\target\{{PROFILE}}\deps\fmod.lib"
- cp '{{ join(".", fmod_in_dir, "fmodstudio.dll") }}' ".\target\{{PROFILE}}\deps\fmodstudio.dll"
- cp '{{ join(".", fmod_in_dir, "fmodstudio.lib") }}' ".\target\{{PROFILE}}\deps\fmodstudio.lib"
+ cp '{{ join(".", fmod_in_dir, "fmod.dll") }}' '{{ join(".", "target", PROFILE, "deps", "fmod.dll") }}'
+ cp '{{ join(".", fmod_in_dir, "fmod.lib") }}' '{{ join(".", "target", PROFILE, "deps", "fmod.lib") }}'
+ cp '{{ join(".", fmod_in_dir, "fmodstudio.dll") }}'  '{{ join(".", "target", PROFILE, "deps", "fmodstudio.dll") }}'
+ cp '{{ join(".", fmod_in_dir, "fmodstudio.lib") }}'  '{{ join(".", "target", PROFILE, "deps", "fmodstudio.lib") }}'
 
 # 📦 build Rust RED4Ext plugin
 build PROFILE='debug': (link PROFILE)
@@ -43,7 +43,7 @@ bundle: (build "release")
   mkdir -p '{{ join(".", redscript_out_dir, "audioware") }}'
   cp -R '{{ join(".", redscript_in_dir) }}'/* '{{ join(".", redscript_out_dir, "audioware") }}'/
   cp '{{ join(".", red4ext_in_dir) }}'/*.dll '{{ join(".", red4ext_out_dir, "audioware") }}'/
-  cp '{{ join(".", fmod_in_dir, "fmod.dll") }}' '{{ join(".", red4ext_out_dir, "audioware") }}'/
-  cp '{{ join(".", fmod_in_dir, "fmod.lib") }}' '{{ join(".", red4ext_out_dir, "audioware") }}'/
-  cp '{{ join(".", fmod_in_dir, "fmodstudio.dll") }}' '{{ join(".", red4ext_out_dir, "audioware") }}'/
-  cp '{{ join(".", fmod_in_dir, "fmodstudio.lib") }}' '{{ join(".", red4ext_out_dir, "audioware") }}'/
+  cp '{{ join(".", fmod_in_dir, "fmod.dll") }}' '{{ join(".", red4ext_out_dir, "audioware", "fmod.dll") }}'
+  cp '{{ join(".", fmod_in_dir, "fmod.lib") }}' '{{ join(".", red4ext_out_dir, "audioware", "fmod.lib") }}'
+  cp '{{ join(".", fmod_in_dir, "fmodstudio.dll") }}' '{{ join(".", red4ext_out_dir, "audioware", "fmodstudio.dll") }}'
+  cp '{{ join(".", fmod_in_dir, "fmodstudio.lib") }}' '{{ join(".", red4ext_out_dir, "audioware", "fmodstudio.lib") }}'
