@@ -30,8 +30,8 @@ jobs:
         uses: extractions/setup-just@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Pack mod files
-        run: just pack
+      - name: Bundle mod files
+        run: just bundle
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
         with:
