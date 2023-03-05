@@ -10,7 +10,7 @@ public class Plugin {
         return plugin;
     }
     public static func Load(plugin: ref<Plugin>, bank: String) -> Void {
-        plugin.handle.Load(bank)
+        plugin.handle.Load(bank);
     }
 }
 
@@ -22,5 +22,5 @@ private class FMOD {
 
 public class Bank {
     let filenames: array<String>;
-    public func Get() -> ref<array<String>> = this.filenames;
+    public func Get() -> array<String> = this.filenames;
 }

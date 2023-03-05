@@ -11,4 +11,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 libfmod = "2.2.605"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", rev = "v0.1.11" }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", rev = "v0.1.17" }
+static_init = "1"
