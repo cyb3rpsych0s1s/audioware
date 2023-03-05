@@ -54,3 +54,9 @@ install: bundle
   cp -R '{{ join(".", redscript_out_dir) }}'/* '{{ join(game_dir, redscript_out_dir) }}'
   mkdir -p '{{ join(".", redscript_out_dir, "fakemod") }}'
   cp -R '{{ join(".", "fakemod") }}'/* '{{ join(game_dir, redscript_out_dir, "fakemod") }}'
+
+# 🗑️  clear out plugin files in game files
+uninstall:
+  rm -rf '{{ join(game_dir, red4ext_out_dir, "audioware") }}'
+  rm -rf '{{ join(game_dir, redscript_out_dir, "audioware") }}'
+  rm -rf '{{ join(game_dir, redscript_out_dir, "fakemod") }}'
