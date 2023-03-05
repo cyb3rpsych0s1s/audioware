@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::{Path, PathBuf}};
 
 use red4ext_rs::prelude::*;
 use libfmod::{
-    ffi::{FMOD_INIT_NORMAL, FMOD_STUDIO_INIT_NORMAL, FMOD_STUDIO_LOAD_BANK_NORMAL},
+    ffi::{FMOD_INIT_NORMAL, FMOD_STUDIO_INIT_NORMAL, FMOD_STUDIO_LOAD_BANK_NORMAL, FMOD_STUDIO_SYSTEM},
     Error, SpeakerMode, Studio,
 };
 use red4ext_rs::ffi::CName;
@@ -10,6 +10,9 @@ use static_init::dynamic;
 
 #[dynamic]
 static mut MODS: HashMap<CName, Vec<String>> = HashMap::new();
+
+#[dynamic]
+static mut HANDLE: Option<&'static mut FMOD_STUDIO_SYSTEM> = None;
 
 macro_rules! on_error {
     ($e:expr) => {
@@ -24,12 +27,19 @@ macro_rules! on_error {
     };
 }
 
+macro_rules! report {
+    ($m:literal) => {
+        call!("Audioware.Utils::E;String" ($m) -> ());
+    };
+}
+
 pub(crate) fn load(name: String) -> Option<Studio> {
     let studio = get_studio();
     if let Err(e) = studio {
         on_error!(e);
         return None;
     }
+    // SAFETY: error case tested above
     let studio = studio.unwrap();
     if let Some(folder) = get_mod_custom_sounds_path(name.as_str()) {
         studio.load_bank_file(
@@ -49,10 +59,23 @@ pub(crate) fn unload() {
 }
 
 pub(crate) fn get_studio() -> Result<Studio, Error> {
+    if let Some(handle) = &mut *HANDLE.write() {
+        let ptr: &mut FMOD_STUDIO_SYSTEM = handle;
+        let ptr = ptr as *mut FMOD_STUDIO_SYSTEM;
+        let studio = Studio::from(ptr);
+        report!("get_studio from HANDLE");
+        return Ok(studio);
+    }
     let studio = Studio::create()?;
     let system = studio.get_core_system()?;
     system.set_software_format(None, Some(SpeakerMode::Quad), None)?;
     studio.initialize(1024, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, None)?;
+    // SAFETY: it has just been created
+    unsafe {
+        *HANDLE.write() = Some(&mut *studio.as_mut_ptr());
+    }
+    std::mem::forget(studio);
+    report!("get_studio new HANDLE");
     Ok(studio)
 }
 
