@@ -28,13 +28,21 @@ macro_rules! on_error {
             libfmod::Error::StringNul(_) => "null string error".to_string(),
             libfmod::Error::NotDspFft => "not dsp fft error".to_string(),
         };
-        call!("Audioware.Utils::F;String" (message) -> ());
+        if cfg!(test) {
+            println!("Audioware.Utils::F;String ({}) -> ()", message);
+        } else {
+            call!("Audioware.Utils::F;String" (message) -> ());
+        }
     };
 }
 
 macro_rules! report {
     ($m:literal) => {
-        call!("Audioware.Utils::E;String" ($m) -> ());
+        if cfg!(test) {
+            println!("Audioware.Utils::E;String ({}) -> ()", $m);
+        } else {
+            call!("Audioware.Utils::E;String" ($m) -> ());
+        }
     };
 }
 

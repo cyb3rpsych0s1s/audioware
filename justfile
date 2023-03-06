@@ -60,3 +60,6 @@ uninstall:
   rm -rf '{{ join(game_dir, red4ext_out_dir, "audioware") }}'
   rm -rf '{{ join(game_dir, redscript_out_dir, "audioware") }}'
   rm -rf '{{ join(game_dir, redscript_out_dir, "fakemod") }}'
+
+test: (link "debug")
+  cargo test -- --nocapture
