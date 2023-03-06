@@ -73,4 +73,4 @@ uninstall:
   rm -rf '{{ join(game_dir, "mods", "fakemod") }}'
 
 test: (link "debug") simulate
-  cargo test -- --nocapture
+  cargo test -- --test-threads 1 --nocapture

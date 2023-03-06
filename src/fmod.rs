@@ -4,6 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use anyhow::anyhow;
 use libfmod::{
     ffi::{FMOD_INIT_NORMAL, FMOD_STUDIO_INIT_NORMAL, FMOD_STUDIO_SYSTEM},
     SpeakerMode, Studio,
@@ -45,12 +46,12 @@ macro_rules! report {
     };
 }
 
-pub(crate) fn load(name: String) -> Option<Studio> {
+pub(crate) fn load(name: String) -> anyhow::Result<Arc<Mutex<Option<&'static mut FMOD_STUDIO_SYSTEM>>>> {
     let studio = get_studio();
     println!("studio {studio:#?}");
     if let Err(e) = studio {
         on_error!(e);
-        return None;
+        return Err(anyhow!("error while getting handle"));
     }
     // SAFETY: error case tested above
     let studio = studio.unwrap();
@@ -59,7 +60,7 @@ pub(crate) fn load(name: String) -> Option<Studio> {
         let files = std::fs::read_dir(folder.join("customSounds"));
         if let Err(e) = files {
             println!("error {e:#?}");
-            return None;
+            return Err(anyhow!("error while reading dir"));
         }
         let files = files.unwrap();
         let mut wavs: Vec<PathBuf> = vec![];
@@ -102,36 +103,38 @@ pub(crate) fn load(name: String) -> Option<Studio> {
         //         FMOD_STUDIO_LOAD_BANK_NORMAL,
         //     )
         //     .expect("error loading bank strings");
-        return Some(studio);
+        return Ok(studio);
     }
-    None
+    Err(anyhow!("couldn't get folder path"))
 }
 
 pub(crate) fn unload() {}
 
-pub(crate) fn get_studio() -> Result<Studio, libfmod::Error> {
-    if let Some(handle) = &mut *(*HANDLE.write()).clone().lock().expect("acquire mutex") {
+pub(crate) fn get_studio() -> Result<Arc<Mutex<Option<&'static mut FMOD_STUDIO_SYSTEM>>>, libfmod::Error> {
+    let binding = (*HANDLE.write()).clone();
+    let inner = &mut *binding.lock().expect("acquire mutex");
+    if let Some(handle) = inner {
         let ptr: &mut FMOD_STUDIO_SYSTEM = handle;
         let ptr = ptr as *mut FMOD_STUDIO_SYSTEM;
         report!("before it turn the HANDLE into a Studio");
         let studio = Studio::from(ptr);
         report!("after it turned the HANDLE into a Studio");
         if studio.is_valid() {
-            report!("get_studio from valid HANDLE");
-            return Ok(studio);
+            report!(">> return valid HANDLE");
+            return Ok(binding.clone());
         }
     }
     let studio = Studio::create()?;
     let system = studio.get_core_system()?;
     system.set_software_format(None, Some(SpeakerMode::Quad), None)?;
     studio.initialize(1024, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, None)?;
-    // SAFETY: it has just been created
+    // SAFETY: it has just been created and it's behind a mutex guard
     unsafe {
-        *HANDLE.write() = Arc::new(Mutex::new(Some(&mut *studio.as_mut_ptr())));
+        *inner = Some(&mut *studio.as_mut_ptr());
     }
     std::mem::forget(studio);
-    report!("get_studio new HANDLE");
-    Ok(studio)
+    report!(">> return new HANDLE");
+    Ok(binding.clone())
 }
 
 #[cfg(not(test))]
@@ -155,25 +158,36 @@ fn get_mod_custom_sounds_path(folder: &str) -> Option<PathBuf> {
 
 #[cfg(test)]
 mod tests {
+    use libfmod::{ffi::FMOD_STUDIO_SYSTEM, Studio};
+    use serial_test::serial;
+
     use super::{get_studio, load};
 
     #[test]
-    #[ignore]
+    #[serial]
     fn singleton() {
         println!("before studio in singleton");
         let studio = get_studio().expect("get studio");
         println!("before another in singleton");
         let another = get_studio().expect("get studio");
-        assert_eq!(studio.as_mut_ptr(), another.as_mut_ptr());
+        let studio = *studio.clone().lock().unwrap().as_mut().unwrap() as *mut FMOD_STUDIO_SYSTEM;
+        let another = *another.clone().lock().unwrap().as_mut().unwrap() as *mut FMOD_STUDIO_SYSTEM;
+        assert_eq!(studio, another);
+        let studio = Studio::from(studio);
+        let another = Studio::from(another);
+        let _ = studio.release();
+        let _ = another.release();
     }
 
     #[test]
-    // #[ignore]
+    #[serial]
     fn initialize() {
         println!("before another in initialize");
         let studio = load("fakemod".to_string());
-        assert!(studio.is_some());
-        let studio = studio.unwrap();
-        assert_ne!(studio.as_mut_ptr(), std::ptr::null_mut());
+        assert!(studio.is_ok());
+        let studio = *studio.unwrap().clone().lock().unwrap().as_mut().unwrap() as *mut FMOD_STUDIO_SYSTEM;
+        assert_ne!(studio, std::ptr::null_mut());
+        let studio = Studio::from(studio);
+        let _ = studio.release();
     }
 }
