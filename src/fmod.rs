@@ -1,11 +1,16 @@
-use std::{collections::HashMap, path::{Path, PathBuf}};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
-use red4ext_rs::prelude::*;
 use libfmod::{
-    ffi::{FMOD_INIT_NORMAL, FMOD_STUDIO_INIT_NORMAL, FMOD_STUDIO_LOAD_BANK_NORMAL, FMOD_STUDIO_SYSTEM},
-    Error, SpeakerMode, Studio,
+    ffi::{
+        FMOD_INIT_NORMAL, FMOD_STUDIO_INIT_NORMAL, FMOD_STUDIO_LOAD_BANK_NORMAL, FMOD_STUDIO_SYSTEM,
+    },
+    SpeakerMode, Studio,
 };
 use red4ext_rs::ffi::CName;
+use red4ext_rs::prelude::*;
 use static_init::dynamic;
 
 #[dynamic]
@@ -42,23 +47,34 @@ pub(crate) fn load(name: String) -> Option<Studio> {
     // SAFETY: error case tested above
     let studio = studio.unwrap();
     if let Some(folder) = get_mod_custom_sounds_path(name.as_str()) {
-        studio.load_bank_file(
-            folder.join(name.as_str()).with_extension("bank").to_str().unwrap(),
-            FMOD_STUDIO_LOAD_BANK_NORMAL,
-        ).expect("error loading bank");
-        studio.load_bank_file(
-            folder.join(name.as_str()).with_extension("strings.bank").to_str().unwrap(),
-            FMOD_STUDIO_LOAD_BANK_NORMAL,
-        ).expect("error loading bank strings");
+        studio
+            .load_bank_file(
+                folder
+                    .join(name.as_str())
+                    .with_extension("bank")
+                    .to_str()
+                    .unwrap(),
+                FMOD_STUDIO_LOAD_BANK_NORMAL,
+            )
+            .expect("error loading bank");
+        studio
+            .load_bank_file(
+                folder
+                    .join(name.as_str())
+                    .with_extension("strings.bank")
+                    .to_str()
+                    .unwrap(),
+                FMOD_STUDIO_LOAD_BANK_NORMAL,
+            )
+            .expect("error loading bank strings");
         return Some(studio);
     }
     None
 }
 
-pub(crate) fn unload() {
-}
+pub(crate) fn unload() {}
 
-pub(crate) fn get_studio() -> Result<Studio, Error> {
+pub(crate) fn get_studio() -> Result<Studio, libfmod::Error> {
     if let Some(handle) = &mut *HANDLE.write() {
         let ptr: &mut FMOD_STUDIO_SYSTEM = handle;
         let ptr = ptr as *mut FMOD_STUDIO_SYSTEM;
@@ -90,4 +106,18 @@ fn get_mod_custom_sounds_path(folder: &str) -> Option<PathBuf> {
         .join(folder)
         .join("customSounds");
     Some(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::get_studio;
+
+    #[test]
+    fn singleton() {
+        let studio = get_studio().expect("get studio");
+        std::mem::forget(studio);
+        let another = get_studio().expect("get studio");
+        assert_eq!(studio, another);
+        std::mem::drop(studio);
+    }
 }
