@@ -19,6 +19,11 @@ fmod_in_dir := join("vendor", "fmod")
 red4ext_out_dir := join("red4ext", "plugins")
 redscript_out_dir := join("r6", "scripts")
 
+# 🧹 lint Rust code
+lint:
+  cargo fmt
+  cargo clippy --fix --allow-dirty
+
 # 📦 vendor FMOD lib
 vendor:
   cp '{{ join(fmod_core_dir, "fmod.dll") }}' '{{ join(".", fmod_in_dir, "fmod.dll") }}'
