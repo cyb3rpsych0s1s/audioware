@@ -56,15 +56,32 @@ pub(crate) fn load(name: String) -> Option<Studio> {
     let studio = studio.unwrap();
     if let Some(folder) = get_mod_custom_sounds_path(name.as_str()) {
         println!("folder {folder:#?}");
-        let files = std::fs::read_dir(folder);
+        let files = std::fs::read_dir(folder.join("customSounds"));
         if let Err(e) = files {
             println!("error {e:#?}");
             return None;
         }
         let files = files.unwrap();
-        for file in files {
-            println!("file {:#?}", file);
-        }
+        let mut wavs: Vec<PathBuf> = vec![];
+        let mut banks: Vec<PathBuf> = vec![];
+        files.into_iter().for_each(|x| {
+            if let Ok(ref file) = x {
+                if let Some(filename) = file.file_name().to_str() {
+                    if let Ok(ref metadata) = file.metadata() {
+                        if metadata.is_file() && !metadata.is_symlink() && filename.ends_with(".wav") {
+                            wavs.push(filename.try_into().expect("filename as path buf"));
+                            return;
+                        }
+                        if metadata.is_file() && !metadata.is_symlink() && filename.ends_with(".bank") {
+                            banks.push(filename.try_into().expect("filename as path buf"));
+                            return;
+                        }
+                    }
+                }
+            }
+        });
+        println!(".wav {wavs:#?}");
+        println!(".bank {banks:#?}");
         // studio
         //     .load_bank_file(
         //         folder
@@ -112,7 +129,7 @@ pub(crate) fn get_studio() -> Result<Studio, libfmod::Error> {
     unsafe {
         *HANDLE.write() = Arc::new(Mutex::new(Some(&mut *studio.as_mut_ptr())));
     }
-    // std::mem::forget(studio);
+    std::mem::forget(studio);
     report!("get_studio new HANDLE");
     Ok(studio)
 }
@@ -147,8 +164,6 @@ mod tests {
         let studio = get_studio().expect("get studio");
         println!("before another in singleton");
         let another = get_studio().expect("get studio");
-        std::mem::forget(studio);
-        std::mem::forget(another);
         assert_eq!(studio.as_mut_ptr(), another.as_mut_ptr());
     }
 
@@ -157,7 +172,6 @@ mod tests {
     fn initialize() {
         println!("before another in initialize");
         let studio = load("fakemod".to_string());
-        std::mem::forget(studio);
         assert!(studio.is_some());
         let studio = studio.unwrap();
         assert_ne!(studio.as_mut_ptr(), std::ptr::null_mut());
