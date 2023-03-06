@@ -1,12 +1,11 @@
 use std::{
     collections::HashMap,
-    path::{Path, PathBuf}, sync::{Arc, Mutex},
+    path::{Path, PathBuf},
+    sync::{Arc, Mutex},
 };
 
 use libfmod::{
-    ffi::{
-        FMOD_INIT_NORMAL, FMOD_STUDIO_INIT_NORMAL, FMOD_STUDIO_LOAD_BANK_NORMAL, FMOD_STUDIO_SYSTEM,
-    },
+    ffi::{FMOD_INIT_NORMAL, FMOD_STUDIO_INIT_NORMAL, FMOD_STUDIO_SYSTEM},
     SpeakerMode, Studio,
 };
 use red4ext_rs::ffi::CName;
@@ -94,7 +93,7 @@ pub(crate) fn load(name: String) -> Option<Studio> {
 pub(crate) fn unload() {}
 
 pub(crate) fn get_studio() -> Result<Studio, libfmod::Error> {
-    if let Some(handle) = &mut *(&mut *HANDLE.write()).clone().lock().expect("acquire mutex") {
+    if let Some(handle) = &mut *(*HANDLE.write()).clone().lock().expect("acquire mutex") {
         let ptr: &mut FMOD_STUDIO_SYSTEM = handle;
         let ptr = ptr as *mut FMOD_STUDIO_SYSTEM;
         report!("before it turn the HANDLE into a Studio");
@@ -118,10 +117,22 @@ pub(crate) fn get_studio() -> Result<Studio, libfmod::Error> {
     Ok(studio)
 }
 
+#[cfg(not(test))]
 fn get_mod_custom_sounds_path(folder: &str) -> Option<PathBuf> {
     let exe = std::env::current_exe().ok()?;
     let folder: &Path = folder.as_ref();
-    let path = exe.parent()?.join("mods").join(folder).join("customSounds");
+    let path = exe.parent()?.parent()?.parent()?.join("mods").join(folder);
+    Some(path)
+}
+
+#[cfg(test)]
+fn get_mod_custom_sounds_path(folder: &str) -> Option<PathBuf> {
+    let exe = PathBuf::from(
+        std::env::var("LOCAL_REPO")
+            .expect("please define a LOCAL_REPO env var which points to the root of this repo"),
+    );
+    let folder: &Path = folder.as_ref();
+    let path = exe.join("mock").join("mods").join(folder);
     Some(path)
 }
 
@@ -140,7 +151,7 @@ mod tests {
         std::mem::forget(another);
         assert_eq!(studio.as_mut_ptr(), another.as_mut_ptr());
     }
-    
+
     #[test]
     // #[ignore]
     fn initialize() {
