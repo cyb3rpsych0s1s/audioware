@@ -29,7 +29,7 @@ macro_rules! on_error {
             libfmod::Error::NotDspFft => "not dsp fft error".to_string(),
         };
         if cfg!(test) {
-            println!("Audioware.Utils::F;String ({}) -> ()", message);
+            println!("Audioware.Utils::F;String (\"{}\") -> ()", message);
         } else {
             call!("Audioware.Utils::F;String" (message) -> ());
         }
@@ -39,7 +39,7 @@ macro_rules! on_error {
 macro_rules! report {
     ($m:literal) => {
         if cfg!(test) {
-            println!("Audioware.Utils::E;String ({}) -> ()", $m);
+            println!("Audioware.Utils::E;String (\"{}\") -> ()", $m);
         } else {
             call!("Audioware.Utils::E;String" ($m) -> ());
         }
@@ -55,6 +55,7 @@ pub(crate) fn load(name: String) -> Option<Studio> {
     // SAFETY: error case tested above
     let studio = studio.unwrap();
     if let Some(folder) = get_mod_custom_sounds_path(name.as_str()) {
+        println!("folder {folder:#?}");
         studio
             .load_bank_file(
                 folder
