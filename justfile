@@ -33,6 +33,9 @@ link PROFILE='debug':
  cp '{{ join(".", fmod_in_dir, "fmodstudio.dll") }}'  '{{ join(".", "target", PROFILE, "deps", "fmodstudio.dll") }}'
  cp '{{ join(".", fmod_in_dir, "fmodstudio.lib") }}'  '{{ join(".", "target", PROFILE, "deps", "fmodstudio.lib") }}'
 
+simulate:
+  cp -R '{{ join(".", "mock", "mods") }}'/* '{{ join(".", "target", "debug", "deps", "mods") }}'
+
 # 📦 build Rust RED4Ext plugin
 build PROFILE='debug':
   @'{{ if PROFILE == "release" { `cargo build --release` } else { `cargo build` } }}'
@@ -52,14 +55,17 @@ bundle: (build "release")
 install: bundle
   cp -R '{{ join(".", red4ext_out_dir) }}'/* '{{ join(game_dir, red4ext_out_dir) }}'
   cp -R '{{ join(".", redscript_out_dir) }}'/* '{{ join(game_dir, redscript_out_dir) }}'
-  mkdir -p '{{ join(".", redscript_out_dir, "fakemod") }}'
-  cp -R '{{ join(".", "fakemod") }}'/* '{{ join(game_dir, redscript_out_dir, "fakemod") }}'
+  mkdir -p '{{ join(game_dir, redscript_out_dir, "fakemod") }}'
+  mkdir -p '{{ join(game_dir, "mods", "fakemod") }}'
+  cp -R '{{ join(".", "mock", redscript_out_dir, "fakemod") }}'/* '{{ join(game_dir, redscript_out_dir, "fakemod") }}'
+  cp -R '{{ join(".", "mock", "mods", "fakemod") }}'/* '{{ join(game_dir, "mods", "fakemod") }}'
 
 # 🗑️  clear out plugin files in game files
 uninstall:
   rm -rf '{{ join(game_dir, red4ext_out_dir, "audioware") }}'
   rm -rf '{{ join(game_dir, redscript_out_dir, "audioware") }}'
   rm -rf '{{ join(game_dir, redscript_out_dir, "fakemod") }}'
+  rm -rf '{{ join(game_dir, "mods", "fakemod") }}'
 
-test: (link "debug")
+test: (link "debug") simulate
   cargo test -- --nocapture

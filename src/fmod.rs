@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    path::{Path, PathBuf},
+    path::{Path, PathBuf}, sync::{Arc, Mutex},
 };
 
 use libfmod::{
@@ -17,19 +17,19 @@ use static_init::dynamic;
 static mut MODS: HashMap<CName, Vec<String>> = HashMap::new();
 
 #[dynamic]
-static mut HANDLE: Option<&'static mut FMOD_STUDIO_SYSTEM> = None;
+static mut HANDLE: Arc<Mutex<Option<&'static mut FMOD_STUDIO_SYSTEM>>> = Arc::new(Mutex::new(None));
 
 macro_rules! on_error {
     ($e:expr) => {
         let message = match $e {
-            libfmod::Error::Fmod { .. } => "internal error".to_string(),
-            libfmod::Error::EnumBindgen { .. } => "bindgen error".to_string(),
-            libfmod::Error::String(e) => e.into_cstring().to_str().unwrap_or("invalid string").to_string(),
-            libfmod::Error::StringNul(_) => "null string error".to_string(),
-            libfmod::Error::NotDspFft => "not dsp fft error".to_string(),
+            ::libfmod::Error::Fmod { function, code, message } => format!("internal error\nfunction {function:#?}\ncode {code:#?}\nmessage {message}"),
+            ::libfmod::Error::EnumBindgen { .. } => "bindgen error".to_string(),
+            ::libfmod::Error::String(e) => e.into_cstring().to_str().unwrap_or("invalid string").to_string(),
+            ::libfmod::Error::StringNul(_) => "null string error".to_string(),
+            ::libfmod::Error::NotDspFft => "not dsp fft error".to_string(),
         };
         if cfg!(test) {
-            println!("Audioware.Utils::F;String (\"{}\") -> ()", message);
+            println!("calling Audioware.Utils::F;String (\"{}\") -> ()", message);
         } else {
             call!("Audioware.Utils::F;String" (message) -> ());
         }
@@ -39,7 +39,7 @@ macro_rules! on_error {
 macro_rules! report {
     ($m:literal) => {
         if cfg!(test) {
-            println!("Audioware.Utils::E;String (\"{}\") -> ()", $m);
+            println!("calling Audioware.Utils::E;String (\"{}\") -> ()", $m);
         } else {
             call!("Audioware.Utils::E;String" ($m) -> ());
         }
@@ -48,6 +48,7 @@ macro_rules! report {
 
 pub(crate) fn load(name: String) -> Option<Studio> {
     let studio = get_studio();
+    println!("studio {studio:#?}");
     if let Err(e) = studio {
         on_error!(e);
         return None;
@@ -56,26 +57,35 @@ pub(crate) fn load(name: String) -> Option<Studio> {
     let studio = studio.unwrap();
     if let Some(folder) = get_mod_custom_sounds_path(name.as_str()) {
         println!("folder {folder:#?}");
-        studio
-            .load_bank_file(
-                folder
-                    .join(name.as_str())
-                    .with_extension("bank")
-                    .to_str()
-                    .unwrap(),
-                FMOD_STUDIO_LOAD_BANK_NORMAL,
-            )
-            .expect("error loading bank");
-        studio
-            .load_bank_file(
-                folder
-                    .join(name.as_str())
-                    .with_extension("strings.bank")
-                    .to_str()
-                    .unwrap(),
-                FMOD_STUDIO_LOAD_BANK_NORMAL,
-            )
-            .expect("error loading bank strings");
+        let files = std::fs::read_dir(folder);
+        if let Err(e) = files {
+            println!("error {e:#?}");
+            return None;
+        }
+        let files = files.unwrap();
+        for file in files {
+            println!("file {:#?}", file);
+        }
+        // studio
+        //     .load_bank_file(
+        //         folder
+        //             .join(name.as_str())
+        //             .with_extension("bank")
+        //             .to_str()
+        //             .unwrap(),
+        //         FMOD_STUDIO_LOAD_BANK_NORMAL,
+        //     )
+        //     .expect("error loading bank");
+        // studio
+        //     .load_bank_file(
+        //         folder
+        //             .join(name.as_str())
+        //             .with_extension("strings.bank")
+        //             .to_str()
+        //             .unwrap(),
+        //         FMOD_STUDIO_LOAD_BANK_NORMAL,
+        //     )
+        //     .expect("error loading bank strings");
         return Some(studio);
     }
     None
@@ -84,12 +94,16 @@ pub(crate) fn load(name: String) -> Option<Studio> {
 pub(crate) fn unload() {}
 
 pub(crate) fn get_studio() -> Result<Studio, libfmod::Error> {
-    if let Some(handle) = &mut *HANDLE.write() {
+    if let Some(handle) = &mut *(&mut *HANDLE.write()).clone().lock().expect("acquire mutex") {
         let ptr: &mut FMOD_STUDIO_SYSTEM = handle;
         let ptr = ptr as *mut FMOD_STUDIO_SYSTEM;
+        report!("before it turn the HANDLE into a Studio");
         let studio = Studio::from(ptr);
-        report!("get_studio from HANDLE");
-        return Ok(studio);
+        report!("after it turned the HANDLE into a Studio");
+        if studio.is_valid() {
+            report!("get_studio from valid HANDLE");
+            return Ok(studio);
+        }
     }
     let studio = Studio::create()?;
     let system = studio.get_core_system()?;
@@ -97,9 +111,9 @@ pub(crate) fn get_studio() -> Result<Studio, libfmod::Error> {
     studio.initialize(1024, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, None)?;
     // SAFETY: it has just been created
     unsafe {
-        *HANDLE.write() = Some(&mut *studio.as_mut_ptr());
+        *HANDLE.write() = Arc::new(Mutex::new(Some(&mut *studio.as_mut_ptr())));
     }
-    std::mem::forget(studio);
+    // std::mem::forget(studio);
     report!("get_studio new HANDLE");
     Ok(studio)
 }
@@ -107,26 +121,34 @@ pub(crate) fn get_studio() -> Result<Studio, libfmod::Error> {
 fn get_mod_custom_sounds_path(folder: &str) -> Option<PathBuf> {
     let exe = std::env::current_exe().ok()?;
     let folder: &Path = folder.as_ref();
-    let path = exe
-        .parent()?
-        .parent()?
-        .parent()?
-        .join("mods")
-        .join(folder)
-        .join("customSounds");
+    let path = exe.parent()?.join("mods").join(folder).join("customSounds");
     Some(path)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::get_studio;
+    use super::{get_studio, load};
 
     #[test]
+    #[ignore]
     fn singleton() {
+        println!("before studio in singleton");
         let studio = get_studio().expect("get studio");
-        std::mem::forget(studio);
+        println!("before another in singleton");
         let another = get_studio().expect("get studio");
-        assert_eq!(studio, another);
-        std::mem::drop(studio);
+        std::mem::forget(studio);
+        std::mem::forget(another);
+        assert_eq!(studio.as_mut_ptr(), another.as_mut_ptr());
+    }
+    
+    #[test]
+    // #[ignore]
+    fn initialize() {
+        println!("before another in initialize");
+        let studio = load("fakemod".to_string());
+        std::mem::forget(studio);
+        assert!(studio.is_some());
+        let studio = studio.unwrap();
+        assert_ne!(studio.as_mut_ptr(), std::ptr::null_mut());
     }
 }

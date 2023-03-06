@@ -24,6 +24,10 @@ impl Plugin for Audioware {
     }
 
     fn version() -> Version {
-        Version { major: 1, minor: 0, patch: 0 }
+        Version {
+            major: 1,
+            minor: 0,
+            patch: 0,
+        }
     }
 }

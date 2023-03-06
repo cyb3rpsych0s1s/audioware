@@ -1,0 +1,20 @@
+{
+ "name": "fakemod",
+ "version": "0.0.1",
+ "customSounds": [
+    {
+      "name": "test_custom_sound_female",
+      "type": "mod_sfx_2d",
+      "file": "femv_myway.wav",
+      "gain": 1.0,
+      "pitch": 0.1
+    },
+    {
+     "name": "test_custom_sound_male",
+     "type": "mod_sfx_2d",
+     "file": "malev_heregoesnothin.wav",
+     "gain": 1.0,
+     "pitch": 0.1
+   }
+ ]
+}
