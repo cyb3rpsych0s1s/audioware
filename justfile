@@ -72,5 +72,5 @@ uninstall:
   rm -rf '{{ join(game_dir, redscript_out_dir, "fakemod") }}'
   rm -rf '{{ join(game_dir, "mods", "fakemod") }}'
 
-test: (link "debug") simulate
-  cargo test -- --test-threads 1 --nocapture
+test NOCAPTURE="false": (link "debug") simulate
+  cargo test -- --test-threads 1 '{{ if NOCAPTURE == "true" { "--nocapture" } else { "" } }}'

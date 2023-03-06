@@ -175,8 +175,10 @@ mod tests {
         assert_eq!(studio, another);
         let studio = Studio::from(studio);
         let another = Studio::from(another);
-        let _ = studio.release();
-        let _ = another.release();
+        let success = studio.release();
+        let failure = another.release();
+        assert!(success.is_ok());
+        assert!(failure.is_err());
     }
 
     #[test]
