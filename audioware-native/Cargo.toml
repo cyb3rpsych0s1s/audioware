@@ -1,0 +1,15 @@
+[package]
+name = "audioware-native"
+version = "0.1.0"
+edition = "2021"
+description = "CP2077 modding tool: allows to play any .wav file, without replacement"
+
+[lib]
+crate-type = ["cdylib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1"
+quote = "1.0.32"
+kira = "0.8.4"
