@@ -110,7 +110,15 @@ pub fn third_test() -> Result<(), anyhow::Error> {
             .start_time(clock.time())
             .panning(0.0),
     )?;
-    manager.play(as_if_i_didnt_know_already)?;
+    let mut aiidka = manager.play(as_if_i_didnt_know_already)?;
+    aiidka.set_playback_rate(
+        3.0,
+        Tween {
+            duration: Duration::from_secs(3),
+            start_time: kira::StartTime::ClockTime(clock.time() + 5),
+            easing: kira::tween::Easing::InPowi(2),
+        },
+    )?;
     let come_on_biomon_cant_you_just_give_me_a_break = StaticSoundData::from_file(
         "fem_v_cobcygmab_02.wav",
         StaticSoundSettings::new()
