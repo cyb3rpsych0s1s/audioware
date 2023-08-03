@@ -13,3 +13,5 @@ crate-type = ["cdylib"]
 anyhow = "1"
 quote = "1.0.32"
 kira = "0.8.4"
+once_cell = "1.18.0"
+metadata = "0.1.8"
