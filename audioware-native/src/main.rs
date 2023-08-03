@@ -130,6 +130,12 @@ pub fn third_test() -> Result<(), anyhow::Error> {
             .expect("metadata")
             ._duration;
         println!("aiidka lasts for: {duration_aiidka:#?}");
+        println!(
+            "aiidka with another format: {:#?}",
+            MediaFileMetadata::new(&Path::new("fem_v_aiidka.wav"))
+                .expect("yoyoyo")
+                .duration
+        );
         let mut aiidka = manager.play(as_if_i_didnt_know_already).expect("play");
         aiidka
             .set_playback_rate(
