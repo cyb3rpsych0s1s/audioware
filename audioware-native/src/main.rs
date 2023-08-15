@@ -181,5 +181,7 @@ pub fn third_test() -> Result<(), anyhow::Error> {
 fn initialize() {}
 
 pub fn main() -> Result<(), anyhow::Error> {
+    // first_test()
+    // second_test()
     third_test()
 }
