@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use std::{
+    collections::HashMap,
     path::Path,
     sync::{Arc, Mutex},
     time::Duration,
@@ -9,10 +10,10 @@ use std::{
 use kira::{
     clock::ClockSpeed,
     manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
-    sound::static_sound::{StaticSoundData, StaticSoundSettings},
+    sound::static_sound::{StaticSoundData, StaticSoundHandle, StaticSoundSettings},
     track::{
         effect::{delay::DelayBuilder, filter::FilterBuilder, reverb::ReverbBuilder},
-        TrackBuilder, TrackRoutes,
+        TrackBuilder, TrackHandle, TrackRoutes,
     },
     tween::Tween,
     Volume,
@@ -25,6 +26,8 @@ pub struct Audioware(Option<AudioManager<DefaultBackend>>);
 
 lazy_static! {
     static ref MANAGER: Arc<Mutex<Audioware>> = Arc::new(Mutex::new(Audioware::default()));
+    static ref HANDLES: Arc<Mutex<HashMap<String, StaticSoundData>>> =
+        Arc::new(Mutex::new(HashMap::default()));
 }
 
 pub fn first_test() -> Result<(), anyhow::Error> {
@@ -184,10 +187,47 @@ pub fn third_test() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
+fn fourth_test() -> Result<(), anyhow::Error> {
+    let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+    let reverb = manager.add_sub_track({
+        let mut builder = TrackBuilder::new();
+        builder.add_effect(ReverbBuilder::new().mix(1.0));
+        builder
+    })?;
+    let as_if_i_didnt_know_already = StaticSoundData::from_file(
+        "fem_v_aiidka.wav",
+        StaticSoundSettings::new()
+            .output_destination(&reverb)
+            .panning(0.0),
+    )
+    .expect("first sound");
+    HANDLES
+        .clone()
+        .try_lock()
+        .unwrap()
+        .insert("aiidka".to_string(), as_if_i_didnt_know_already.clone());
+    let mut aiidka = manager.play(as_if_i_didnt_know_already).expect("play");
+    aiidka
+        .set_playback_rate(
+            3.0,
+            Tween {
+                duration: Duration::from_secs(3),
+                start_time: kira::StartTime::Immediate,
+                easing: kira::tween::Easing::InPowi(2),
+            },
+        )
+        .expect("set playback rate");
+    *MANAGER.clone().try_lock().unwrap() = Audioware(Some(manager));
+    println!("launched");
+    std::thread::sleep(Duration::from_secs(7));
+    Ok(())
+}
+
 fn initialize() {}
 
 pub fn main() -> Result<(), anyhow::Error> {
     // first_test()
     // second_test()
-    third_test()
+    // third_test()
+    fourth_test()
 }
