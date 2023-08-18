@@ -37,11 +37,9 @@ pub fn fourth_test() -> Result<(), anyhow::Error> {
             .panning(0.0),
     )
     .expect("first sound");
-    SOUNDS.clone().try_lock().unwrap().insert(
-        "as_if_i_didnt_know_already".to_string(),
-        as_if_i_didnt_know_already.clone(),
-    );
-    let mut aiidka = manager.play(as_if_i_didnt_know_already).expect("play");
+    let mut aiidka = manager
+        .play(as_if_i_didnt_know_already.clone())
+        .expect("play");
     aiidka
         .set_playback_rate(
             3.0,
@@ -53,6 +51,10 @@ pub fn fourth_test() -> Result<(), anyhow::Error> {
         )
         .expect("set playback rate");
     *MANAGER.clone().try_lock().unwrap() = Audioware(Some(manager));
+    SOUNDS.clone().try_lock().unwrap().insert(
+        "as_if_i_didnt_know_already".to_string(),
+        as_if_i_didnt_know_already,
+    );
     TRACKS
         .clone()
         .try_lock()
