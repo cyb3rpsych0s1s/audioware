@@ -15,8 +15,8 @@ use second::second_test;
 use third::third_test;
 
 pub fn main() -> Result<(), anyhow::Error> {
-    first_test()
+    // first_test()
     // second_test()
     // third_test()
-    // fourth_test()
+    fourth_test()
 }
