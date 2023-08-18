@@ -10,7 +10,7 @@ use std::{
 use kira::{
     clock::ClockSpeed,
     manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
-    sound::static_sound::{StaticSoundData, StaticSoundHandle, StaticSoundSettings},
+    sound::static_sound::{StaticSoundData, StaticSoundSettings},
     track::{
         effect::{delay::DelayBuilder, filter::FilterBuilder, reverb::ReverbBuilder},
         TrackBuilder, TrackHandle, TrackRoutes,
@@ -26,7 +26,9 @@ pub struct Audioware(Option<AudioManager<DefaultBackend>>);
 
 lazy_static! {
     static ref MANAGER: Arc<Mutex<Audioware>> = Arc::new(Mutex::new(Audioware::default()));
-    static ref HANDLES: Arc<Mutex<HashMap<String, StaticSoundData>>> =
+    static ref SOUNDS: Arc<Mutex<HashMap<String, StaticSoundData>>> =
+        Arc::new(Mutex::new(HashMap::default()));
+    static ref TRACKS: Arc<Mutex<HashMap<String, Box<TrackHandle>>>> =
         Arc::new(Mutex::new(HashMap::default()));
 }
 
@@ -189,23 +191,22 @@ pub fn third_test() -> Result<(), anyhow::Error> {
 
 fn fourth_test() -> Result<(), anyhow::Error> {
     let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-    let reverb = manager.add_sub_track({
+    let reverb = Box::new(manager.add_sub_track({
         let mut builder = TrackBuilder::new();
         builder.add_effect(ReverbBuilder::new().mix(1.0));
         builder
-    })?;
+    })?);
     let as_if_i_didnt_know_already = StaticSoundData::from_file(
         "fem_v_aiidka.wav",
         StaticSoundSettings::new()
-            .output_destination(&reverb)
+            .output_destination(&*reverb)
             .panning(0.0),
     )
     .expect("first sound");
-    HANDLES
-        .clone()
-        .try_lock()
-        .unwrap()
-        .insert("aiidka".to_string(), as_if_i_didnt_know_already.clone());
+    SOUNDS.clone().try_lock().unwrap().insert(
+        "as_if_i_didnt_know_already".to_string(),
+        as_if_i_didnt_know_already.clone(),
+    );
     let mut aiidka = manager.play(as_if_i_didnt_know_already).expect("play");
     aiidka
         .set_playback_rate(
@@ -218,6 +219,11 @@ fn fourth_test() -> Result<(), anyhow::Error> {
         )
         .expect("set playback rate");
     *MANAGER.clone().try_lock().unwrap() = Audioware(Some(manager));
+    TRACKS
+        .clone()
+        .try_lock()
+        .unwrap()
+        .insert("reverb".into(), reverb);
     println!("launched");
     std::thread::sleep(Duration::from_secs(7));
     Ok(())
