@@ -1,14 +1,14 @@
+use red4ext_rs::plugin::Plugin;
+use red4ext_rs::plugin::Version;
 use red4ext_rs::prelude::*;
 
-define_plugin! {
-    name: "audioware",
-    author: "Roms1383",
-    version: 1:0:0,
-    on_register: {
-        register_function!("SumInts", sum_ints);
+pub struct Audioware;
+impl Plugin for Audioware {
+    const VERSION: Version = Version::new(0, 0, 1);
+    fn register() {
+        info!("on attach audioware");
     }
-}
-
-fn sum_ints(ints: Vec<i32>) -> i32 {
-    ints.iter().sum()
+    fn unload() {
+        info!("on detach audioware");
+    }
 }
