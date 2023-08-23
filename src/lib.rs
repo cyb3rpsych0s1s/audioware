@@ -1,3 +1,7 @@
+mod banks;
+mod audio;
+mod locale;
+
 use red4ext_rs::plugin::Plugin;
 use red4ext_rs::plugin::Version;
 use red4ext_rs::prelude::*;
