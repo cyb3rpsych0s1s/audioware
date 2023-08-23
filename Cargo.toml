@@ -2,7 +2,7 @@
 name = "audioware"
 version = "0.1.0"
 edition = "2021"
-description = "CP2077 modding tool: allows to play any .wav file, without replacement"
+description = "CP2077 modding tool: allows to play any audio file, without replacement"
 
 [lib]
 crate-type = ["cdylib"]
@@ -10,5 +10,4 @@ crate-type = ["cdylib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libfmod = "2.2.605"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", rev = "v0.1.11" }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", tag = "v0.3.4", features = ["macros"] }
