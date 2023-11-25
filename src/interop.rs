@@ -4,6 +4,7 @@ use crate::FromMemory;
 
 #[derive(Debug, Clone, Copy, strum_macros::Display, strum_macros::FromRepr)]
 #[repr(u32)]
+#[allow(dead_code)]
 pub enum AudioEventActionType {
     Play = 0,
     PlayAnimation = 1,
@@ -22,6 +23,7 @@ pub enum AudioEventActionType {
 
 #[derive(Debug, Clone, Copy, strum_macros::Display, strum_macros::FromRepr)]
 #[repr(u32)]
+#[allow(dead_code)]
 pub enum AudioAudioEventFlags {
     NoEventFlags = 0,
     SloMoOnly = 1,

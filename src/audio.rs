@@ -20,7 +20,7 @@ pub struct Ono {}
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "lowercase")]
-enum AudioKind {
+pub enum AudioKind {
     Ono,
     Voice,
     Thought,

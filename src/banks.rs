@@ -3,11 +3,10 @@ use serde::Deserialize;
 use std::fmt::Debug;
 use std::{
     collections::HashMap,
-    ops::Deref,
     sync::{Arc, Mutex},
 };
 
-use crate::audio::{Audio, Ono};
+use crate::audio::Ono;
 
 lazy_static! {
     static ref BANKS: Arc<Mutex<Banks>> = Arc::new(Mutex::new(Banks::default()));
