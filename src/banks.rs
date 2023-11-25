@@ -1,7 +1,11 @@
-use std::{sync::{Arc, Mutex}, collections::HashMap, ops::Deref};
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use std::fmt::Debug;
+use std::{
+    collections::HashMap,
+    ops::Deref,
+    sync::{Arc, Mutex},
+};
 
 use crate::audio::{Audio, Ono};
 

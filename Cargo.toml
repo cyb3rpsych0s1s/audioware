@@ -10,7 +10,14 @@ crate-type = ["cdylib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1"
+kira = "0.8.5"
 lazy_static = "1.4.0"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", tag = "v0.3.4", features = ["macros"] }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", tag = "v0.5.3", features = ["macros"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
+retour = "0.3.1"
+strum = "0.25.0"
+strum_macros = "0.25.3"
+widestring = "1.0.2"
+winapi = { version = "0.3.9", features = ["libloaderapi"] }
