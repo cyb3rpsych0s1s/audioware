@@ -8,26 +8,60 @@ game_dir            := env_var_or_default("GAME_DIR", DEFAULT_GAME_DIR)
 plugin_name         := 'audioware'
 
 # codebase (here)
-red4ext_repo_dir    := join(justfile_directory(), "target")
+red4ext_bin_dir     := join(justfile_directory(), "target")
 redscript_repo_dir  := join(justfile_directory(), "reds")
 
 # game files
-red4ext_game_dir    := join(game_dir, "red4ext", "plugins", plugin_name)
-redscript_game_dir  := join(game_dir, "r6", "scripts", plugin_name)
+red4ext_deploy_dir    := join(game_dir, "red4ext", "plugins", plugin_name)
+redscript_deploy_dir  := join(game_dir, "r6", "scripts", capitalize(plugin_name))
 
-setup:
-  @if (!(Test-Path '{{red4ext_game_dir}}'))   { [void](New-Item '{{red4ext_game_dir}}'   -ItemType Directory); Write-Host "Created folder at {{red4ext_game_dir}}"; }
-  @if (!(Test-Path '{{redscript_game_dir}}')) { [void](New-Item '{{redscript_game_dir}}' -ItemType Directory); Write-Host "Created folder at {{redscript_game_dir}}"; }
+[private]
+setup path:
+  @if (!(Test-Path '{{path}}')) { [void](New-Item '{{path}}' -ItemType Directory); Write-Host "Created folder at {{path}}"; }
+
+[private]
+delete path:
+  @if (Test-Path '{{path}}') { [void](Remove-Item -Force -Recurse '{{path}}'); Write-Host "Deleted folder at {{path}}"; }
+
+[private]
+copy from to:
+  @Copy-Item -Force '{{from}}' '{{to}}'
+  @Write-Host "Copied {{from}} -> {{to}}"
+
+[private]
+copy-recurse from to:
+  @Copy-Item -Force -Recurse '{{from}}' '{{to}}'
+  @Write-Host "Copied {{from}} -> {{to}}"
+
+# log current time
+[private]
+now:
+  @Write-Host "$(Get-Date) $_"
 
 # 📦 build Rust RED4Ext plugin
-build PROFILE='debug': setup
+build PROFILE='debug': (setup red4ext_deploy_dir)
   @'{{ if PROFILE == "release" { `cargo build --release` } else { `cargo build` } }}'
-# Copy-Item -Force '{{red4ext_plugin_name}}' '{{ join(red4ext_plugin_game_dir, plugin_name + ".dll") }}'
-# Copy-Item -Force -Recurse '{{ join(red4ext_scripts_dir, "*") }}' '{{red4ext_script_game_dir}}'
-# Copy-Item -Force -Recurse '{{ join(repo_dir, "archive", "source", "raw", "addicted", "resources", "audioware.yml") }}' '{{ join(redmod_game_dir, "audioware.yml") }}'
+  @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(red4ext_deploy_dir, plugin_name + ".dll") }}'
+  @just now
+
+alias b := build
+
+reload: (setup redscript_deploy_dir)
+  @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{redscript_deploy_dir}}'
+  @just now
+
+alias r := reload
+
+install PROFILE='debug': (build PROFILE) reload
+
+alias i := install
+
+uninstall: (delete red4ext_deploy_dir) (delete redscript_deploy_dir)
 
 # 🎨 lint code
 lint:
-  cargo clippy --fix --allow-dirty --allow-staged
-  cargo fix --allow-dirty --allow-staged
-  cargo fmt
+  @cargo clippy --fix --allow-dirty --allow-staged
+  @cargo fix --allow-dirty --allow-staged
+  @cargo fmt
+
+alias l := lint
