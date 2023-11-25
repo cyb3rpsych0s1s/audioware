@@ -17,7 +17,7 @@ use crate::hook::HOOK_ON_ENT_AUDIO_EVENT;
 pub struct Audioware;
 impl Plugin for Audioware {
     const VERSION: Version = Version::new(0, 0, 1);
-    fn register() {
+    fn post_register() {
         info!("on attach audioware");
         let _ = hook_ent_audio_event();
     }
@@ -31,6 +31,12 @@ impl Plugin for Audioware {
             .take();
     }
 }
+
+define_trait_plugin! (
+    name: "audioware",
+    author: "Roms1383",
+    plugin: Audioware
+);
 
 /// # Safety
 /// this is only safe as long as it matches memory representation specified in [RED4ext.SDK](https://github.com/WopsS/RED4ext.SDK).
