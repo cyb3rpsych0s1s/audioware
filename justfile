@@ -30,3 +30,4 @@ build PROFILE='debug': setup
 lint:
   cargo clippy --fix --allow-dirty --allow-staged
   cargo fix --allow-dirty --allow-staged
+  cargo fmt
