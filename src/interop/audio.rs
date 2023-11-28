@@ -2,6 +2,7 @@ use red4ext_rs::types::CName;
 
 use crate::FromMemory;
 
+/// see [RED4ext::audio::EventActionType](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/audio/EventActionType.hpp).
 #[derive(Debug, Clone, Copy, strum_macros::Display, strum_macros::FromRepr, PartialEq)]
 #[repr(u32)]
 #[allow(dead_code)]
@@ -21,6 +22,7 @@ pub enum AudioEventActionType {
     RemoveContainerStreamingPrefetch = 12,
 }
 
+/// see [RED4ext::audio::AudioEventFlags](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/audio/AudioEventFlags.hpp).
 #[derive(Debug, Clone, Copy, strum_macros::Display, strum_macros::FromRepr)]
 #[repr(u32)]
 #[allow(dead_code)]
@@ -32,7 +34,7 @@ pub enum AudioAudioEventFlags {
     Metadata = 8,
 }
 
-/// see [AudioEvent](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/ent/AudioEvent.hpp).
+/// see [RED4ext::ent::AudioEvent](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/ent/AudioEvent.hpp).
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub struct AudioEvent {

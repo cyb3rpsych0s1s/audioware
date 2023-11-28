@@ -2,6 +2,7 @@ use red4ext_rs::types::CName;
 
 use crate::FromMemory;
 
+/// see [RED4ext::game::audio::events::VoiceEvent](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/game/audio/events/VoiceEvent.hpp).
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub struct VoiceEvent {
@@ -12,6 +13,7 @@ pub struct VoiceEvent {
     // pub(crate) unk51: [u8;0x58 - 0x51],
 }
 
+/// see [RED4ext::audio::VoGruntType](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/audio/VoGruntType.hpp).
 #[derive(Debug, Clone, Copy, strum_macros::Display, strum_macros::FromRepr)]
 #[repr(u32)]
 #[allow(dead_code)]
@@ -44,6 +46,7 @@ pub enum VoGruntType {
     None = 4294967295,
 }
 
+/// see [RED4ext::audio::VoGruntInterruptMode](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/audio/VoGruntInterruptMode.hpp).
 #[derive(Debug, Clone, Copy, strum_macros::Display, strum_macros::FromRepr)]
 #[repr(u32)]
 #[allow(dead_code)]

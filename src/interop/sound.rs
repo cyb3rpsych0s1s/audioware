@@ -2,7 +2,7 @@ use red4ext_rs::types::CName;
 
 use crate::FromMemory;
 
-// see [PlaySound](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/game/audio/events/PlaySound.hpp)
+// see [RED4ext::game::audio::events::PlaySound](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/game/audio/events/PlaySound.hpp)
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub struct PlaySound {
@@ -13,7 +13,7 @@ pub struct PlaySound {
     pub(crate) play_unique: bool,
 }
 
-/// see [SoundEvent](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/ent/SoundEvent.hpp).
+/// see [RED4ext::ent::SoundEvent](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/ent/SoundEvent.hpp).
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub struct SoundEvent {
