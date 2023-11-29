@@ -46,6 +46,8 @@ build PROFILE='debug': (setup red4ext_deploy_dir)
 
 alias b := build
 
+dev: (build 'debug') reload
+
 reload: (setup redscript_deploy_dir)
   @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{redscript_deploy_dir}}'
   @just now
