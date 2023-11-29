@@ -12,12 +12,12 @@ use red4ext_rs::plugin::Version;
 use red4ext_rs::prelude::*;
 
 use crate::hook::hook_ent_audio_event;
+use crate::hook::hook_on_audiosystem_play;
 use crate::hook::hook_on_music_event;
-use crate::hook::hook_scn_audio_event;
 use crate::hook::hook_on_voice_event;
+use crate::hook::HOOK_ON_AUDIOSYSTEM_PLAY;
 
 use crate::hook::HOOK_ON_ENT_AUDIO_EVENT;
-use crate::hook::HOOK_ON_SCN_AUDIO_EVENT;
 
 use crate::hook::HOOK_ON_MUSIC_EVENT;
 use crate::hook::HOOK_ON_VOICE_EVENT;
@@ -45,8 +45,10 @@ impl Plugin for Audioware {
                 error!("error {e}")
             }
         };
-        match hook_scn_audio_event() {
-            Ok(_) => {}
+        match hook_on_audiosystem_play() {
+            Ok(_) => {
+                info!("successfully hooked into AudioSystem::Play");
+            }
             Err(e) => {
                 error!("error {e}")
             }
@@ -72,7 +74,7 @@ impl Plugin for Audioware {
             .lock()
             .unwrap()
             .take();
-        let _ = HOOK_ON_SCN_AUDIO_EVENT
+        let _ = HOOK_ON_AUDIOSYSTEM_PLAY
             .clone()
             .borrow_mut()
             .lock()

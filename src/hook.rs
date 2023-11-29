@@ -3,19 +3,19 @@ use std::ops::Not;
 use std::sync::{Arc, Mutex};
 
 use lazy_static::lazy_static;
+use red4ext_rs::types::{CName, EntityId};
 use retour::RawDetour;
 use widestring::U16CString;
 use winapi::shared::minwindef::HMODULE;
 use winapi::um::libloaderapi::GetModuleHandleW;
 
-use crate::addresses::{ON_MUSIC_EVENT, ON_SCENE_AUDIO_EVENT, ON_VOICE_EVENT};
-use crate::interop::scene::SceneAudioEvent;
+use crate::addresses::{ON_AUDIOSYSTEM_PLAY, ON_MUSIC_EVENT, ON_VOICE_EVENT};
 use crate::interop::{MusicEvent, VoiceEvent};
 use crate::{addresses::ON_ENT_AUDIO_EVENT, interop::AudioEvent};
 use audioware_types::FromMemory;
 
 macro_rules! make_hook {
-    ($name:ident, $address:expr, $hook:expr, $storage:expr) => {
+    ($name:ident, $address:expr, $fn_ty:ty, $hook:expr, $storage:expr) => {
         pub(crate) fn $name() -> ::anyhow::Result<()> {
             let relative: usize = $address;
             unsafe {
@@ -33,7 +33,7 @@ macro_rules! make_hook {
                     "[{}] calculated address: 0x{address:X}",
                     ::std::stringify! {$name}
                 ); // e.g. 0x7FF6C65C9130
-                let target: ExternFnRedEventHandler = ::std::mem::transmute(address);
+                let target: $fn_ty = ::std::mem::transmute(address);
                 match ::retour::RawDetour::new(target as *const (), $hook as *const ()) {
                     Ok(detour) => match detour.enable() {
                         Ok(_) => {
@@ -58,6 +58,13 @@ macro_rules! make_hook {
 }
 
 pub(crate) type ExternFnRedEventHandler = unsafe extern "C" fn(usize, usize) -> ();
+pub(crate) type ExternFnRedPlayFunc = unsafe extern "C" fn(u64, u64, u64) -> ();
+pub(crate) type ExternFnRedRegisteredFunc = unsafe extern "C" fn(
+    ctx: *mut red4ext_rs::ffi::IScriptable,
+    frame: *mut red4ext_rs::ffi::CStackFrame,
+    out: *mut std::ffi::c_void,
+    a4: i64,
+) -> ();
 
 lazy_static! {
     pub(crate) static ref HOOK_ON_ENT_AUDIO_EVENT: Arc<Mutex<Option<RawDetour>>> =
@@ -67,6 +74,8 @@ lazy_static! {
     pub(crate) static ref HOOK_ON_VOICE_EVENT: Arc<Mutex<Option<RawDetour>>> =
         Arc::new(Mutex::new(None));
     pub(crate) static ref HOOK_ON_SCN_AUDIO_EVENT: Arc<Mutex<Option<RawDetour>>> =
+        Arc::new(Mutex::new(None));
+    pub(crate) static ref HOOK_ON_AUDIOSYSTEM_PLAY: Arc<Mutex<Option<RawDetour>>> =
         Arc::new(Mutex::new(None));
 }
 
@@ -85,28 +94,27 @@ pub fn on_ent_audio_event(o: usize, a: usize) {
                 event_flags,
                 unk64,
             } = AudioEvent::from_memory(a);
-            // if red4ext_rs::ffi::resolve_cname(&emitter_name) != "None"
-            //     && (event_type == AudioEventActionType::Play
-            //         || event_type == AudioEventActionType::PlayExternal
-            //         || event_type == AudioEventActionType::SetSwitch
-            //         || event_type == AudioEventActionType::SetParameter
-            //         || event_type == AudioEventActionType::StopSound)
-            // {
-            //     red4ext_rs::info!(
-            //         "[on_audio_event][AudioEvent] name {}, emitter {}, data {}, float {float_data}, type {event_type}, flags {event_flags}",
-            //         red4ext_rs::ffi::resolve_cname(&event_name),
-            //         red4ext_rs::ffi::resolve_cname(&emitter_name),
-            //         red4ext_rs::ffi::resolve_cname(&name_data)
-            //     );
-            // } else if emitter_name == CName::new("ono_v_effort_short") {
-            red4ext_rs::info!(
+            if red4ext_rs::ffi::resolve_cname(&emitter_name) != "None"
+                && (event_type == crate::interop::AudioEventActionType::Play
+                    || event_type == crate::interop::AudioEventActionType::PlayExternal
+                    || event_type == crate::interop::AudioEventActionType::SetSwitch
+                    || event_type == crate::interop::AudioEventActionType::SetParameter
+                    || event_type == crate::interop::AudioEventActionType::StopSound)
+            {
+                red4ext_rs::info!(
+                    "[on_audio_event][AudioEvent] name {}, emitter {}, data {}, float {float_data}, type {event_type}, flags {event_flags}",
+                    red4ext_rs::ffi::resolve_cname(&event_name),
+                    red4ext_rs::ffi::resolve_cname(&emitter_name),
+                    red4ext_rs::ffi::resolve_cname(&name_data)
+                );
+            } else if emitter_name == CName::new("ono_v_effort_short") {
+                red4ext_rs::info!(
                     "[on_audio_event][AudioEvent] name {}, emitter {}, data {}, float {float_data}, type {event_type}, flags {event_flags}, unk64 {unk64}",
                     red4ext_rs::ffi::resolve_cname(&event_name),
                     red4ext_rs::ffi::resolve_cname(&emitter_name),
                     red4ext_rs::ffi::resolve_cname(&name_data)
                 );
-
-            // }
+            }
 
             let original: ExternFnRedEventHandler =
                 unsafe { std::mem::transmute(detour.trampoline()) };
@@ -161,28 +169,53 @@ pub fn on_voice_event(o: usize, a: usize) {
     }
 }
 
-pub fn on_scn_audio_event(o: usize, a: usize) {
-    red4ext_rs::trace!("[on_scene_event] hooked");
-    if let Ok(ref guard) = HOOK_ON_VOICE_EVENT.clone().try_lock() {
-        red4ext_rs::trace!("[on_scene_event] hook handle retrieved");
+pub fn play(event_name: u64, entity_id: u64, emitter_name: u64) {
+    red4ext_rs::info!("[play] hooked");
+    if let Ok(ref guard) = HOOK_ON_AUDIOSYSTEM_PLAY.clone().try_lock() {
+        red4ext_rs::info!("[play] hook handle retrieved");
         if let Some(detour) = guard.as_ref() {
-            let SceneAudioEvent { emitter_name, .. } = SceneAudioEvent::from_memory(a);
+            let evt: CName = unsafe { std::mem::transmute::<u64, CName>(event_name) };
+            let ent: EntityId = unsafe { std::mem::transmute::<u64, EntityId>(entity_id) };
+            let emitter: CName = unsafe { std::mem::transmute::<u64, CName>(emitter_name) };
             red4ext_rs::info!(
-                "[on_scene_event][scn::AudioEvent for V] emitter_name: {}",
-                red4ext_rs::ffi::resolve_cname(&emitter_name)
+                "[play](event_name {}, entity_id {:#?}, emitter_name {})",
+                red4ext_rs::ffi::resolve_cname(&evt),
+                ent,
+                red4ext_rs::ffi::resolve_cname(&emitter)
             );
 
-            let original: ExternFnRedEventHandler =
-                unsafe { std::mem::transmute(detour.trampoline()) };
-            unsafe { original(o, a) };
-            red4ext_rs::trace!("[on_scene_event] original method called");
+            let original: ExternFnRedPlayFunc = unsafe { std::mem::transmute(detour.trampoline()) };
+            unsafe { original(event_name, entity_id, emitter_name) };
+            red4ext_rs::info!("[play] original method called");
         }
     }
+}
+
+pub fn on_audiosystem_play(
+    _ctx: *mut red4ext_rs::ffi::IScriptable,
+    frame: *mut red4ext_rs::ffi::CStackFrame,
+    _out: *mut std::ffi::c_void,
+    _a4: i64,
+) {
+    red4ext_rs::info!("[on_audiosystem_play] about to");
+    let mut event_name: CName = CName::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event_name)) };
+    let mut entity_id: EntityId = EntityId::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut entity_id)) };
+    let mut emitter_name: CName = CName::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut emitter_name)) };
+    red4ext_rs::info!(
+        "[on_audiosystem_play] event_name {}, entity_id {:#?}, emitter_name {}",
+        red4ext_rs::ffi::resolve_cname(&event_name),
+        entity_id,
+        red4ext_rs::ffi::resolve_cname(&emitter_name)
+    );
 }
 
 make_hook!(
     hook_ent_audio_event,
     ON_ENT_AUDIO_EVENT,
+    ExternFnRedEventHandler,
     on_ent_audio_event,
     HOOK_ON_ENT_AUDIO_EVENT
 );
@@ -190,6 +223,7 @@ make_hook!(
 make_hook!(
     hook_on_music_event,
     ON_MUSIC_EVENT,
+    ExternFnRedEventHandler,
     on_music_event,
     HOOK_ON_MUSIC_EVENT
 );
@@ -197,15 +231,17 @@ make_hook!(
 make_hook!(
     hook_on_voice_event,
     ON_VOICE_EVENT,
+    ExternFnRedEventHandler,
     on_voice_event,
     HOOK_ON_VOICE_EVENT
 );
 
 make_hook!(
-    hook_scn_audio_event,
-    ON_SCENE_AUDIO_EVENT,
-    on_scn_audio_event,
-    HOOK_ON_SCN_AUDIO_EVENT
+    hook_on_audiosystem_play,
+    ON_AUDIOSYSTEM_PLAY,
+    ExternFnRedRegisteredFunc,
+    on_audiosystem_play,
+    HOOK_ON_AUDIOSYSTEM_PLAY
 );
 
 unsafe fn get_module(module: &str) -> Option<HMODULE> {
