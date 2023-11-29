@@ -11,7 +11,8 @@ use winapi::um::libloaderapi::GetModuleHandleW;
 
 use crate::addresses::{ON_MUSIC_EVENT, ON_VOICE_EVENT};
 use crate::interop::{AudioEventActionType, MusicEvent, VoiceEvent};
-use crate::{addresses::ON_ENT_AUDIO_EVENT, interop::AudioEvent, FromMemory};
+use audioware_types::FromMemory;
+use crate::{addresses::ON_ENT_AUDIO_EVENT, interop::AudioEvent};
 
 macro_rules! make_hook {
     ($name:ident, $address:expr, $hook:expr, $storage:expr) => {
@@ -80,21 +81,30 @@ pub fn on_audio_event(o: usize, a: usize) {
                 float_data,
                 event_type,
                 event_flags,
+                unk64,
             } = AudioEvent::from_memory(a);
-            if emitter_name != CName::new("None")
-                && (event_type == AudioEventActionType::Play
-                    || event_type == AudioEventActionType::PlayExternal
-                    || event_type == AudioEventActionType::SetSwitch
-                    || event_type == AudioEventActionType::SetParameter
-                    || event_type == AudioEventActionType::StopSound)
-            {
-                red4ext_rs::info!(
-                    "[on_audio_event][AudioEvent] name {}, emitter {}, data {}, float {float_data}, type {event_type}, flags {event_flags}",
+            // if red4ext_rs::ffi::resolve_cname(&emitter_name) != "None"
+            //     && (event_type == AudioEventActionType::Play
+            //         || event_type == AudioEventActionType::PlayExternal
+            //         || event_type == AudioEventActionType::SetSwitch
+            //         || event_type == AudioEventActionType::SetParameter
+            //         || event_type == AudioEventActionType::StopSound)
+            // {
+            //     red4ext_rs::info!(
+            //         "[on_audio_event][AudioEvent] name {}, emitter {}, data {}, float {float_data}, type {event_type}, flags {event_flags}",
+            //         red4ext_rs::ffi::resolve_cname(&event_name),
+            //         red4ext_rs::ffi::resolve_cname(&emitter_name),
+            //         red4ext_rs::ffi::resolve_cname(&name_data)
+            //     );
+            // } else if emitter_name == CName::new("ono_v_effort_short") {
+            red4ext_rs::info!(
+                    "[on_audio_event][AudioEvent] name {}, emitter {}, data {}, float {float_data}, type {event_type}, flags {event_flags}, unk64 {unk64}",
                     red4ext_rs::ffi::resolve_cname(&event_name),
                     red4ext_rs::ffi::resolve_cname(&emitter_name),
                     red4ext_rs::ffi::resolve_cname(&name_data)
                 );
-            }
+
+            // }
 
             let original: ExternFnRedEventHandler =
                 unsafe { std::mem::transmute(detour.trampoline()) };

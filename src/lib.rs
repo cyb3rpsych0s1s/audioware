@@ -70,9 +70,3 @@ define_trait_plugin! (
     author: "Roms1383",
     plugin: Audioware
 );
-
-/// # Safety
-/// this is only safe as long as it matches memory representation specified in [RED4ext.SDK](https://github.com/WopsS/RED4ext.SDK).
-unsafe trait FromMemory {
-    fn from_memory(address: usize) -> Self;
-}

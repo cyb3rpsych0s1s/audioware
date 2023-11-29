@@ -1,6 +1,6 @@
 use red4ext_rs::types::CName;
 
-use crate::FromMemory;
+use audioware_types::FromMemory;
 
 /// see [RED4ext::audio::EventActionType](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/audio/EventActionType.hpp).
 #[derive(Debug, Clone, Copy, strum_macros::Display, strum_macros::FromRepr, PartialEq)]
@@ -35,6 +35,8 @@ pub enum AudioAudioEventFlags {
 }
 
 /// see [RED4ext::ent::AudioEvent](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/ent/AudioEvent.hpp).
+///
+/// see [AudioEvent on Cyberdoc](https://jac3km4.github.io/cyberdoc/#21100).
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub struct AudioEvent {
@@ -44,6 +46,7 @@ pub struct AudioEvent {
     pub(crate) float_data: f32,
     pub(crate) event_type: AudioEventActionType,
     pub(crate) event_flags: AudioAudioEventFlags,
+    pub(crate) unk64: i32,
 }
 
 unsafe impl FromMemory for AudioEvent {
@@ -80,6 +83,9 @@ unsafe impl FromMemory for AudioEvent {
             )
             .get_unchecked(0)
         };
+        let unk64: i32 = unsafe {
+            *core::slice::from_raw_parts::<i32>((address + 0x64) as *const i32, 1).get_unchecked(0)
+        };
         Self {
             event_name,
             emitter_name,
@@ -87,6 +93,7 @@ unsafe impl FromMemory for AudioEvent {
             float_data,
             event_type,
             event_flags,
+            unk64,
         }
     }
 }

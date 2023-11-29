@@ -1,6 +1,6 @@
 use red4ext_rs::types::CName;
 
-use crate::FromMemory;
+use audioware_types::FromMemory;
 
 /// see [RED4ext::game::audio::events::VoiceEvent](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/game/audio/events/VoiceEvent.hpp).
 #[derive(Debug, Clone)]
