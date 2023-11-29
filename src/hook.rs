@@ -8,7 +8,7 @@ use widestring::U16CString;
 use winapi::shared::minwindef::HMODULE;
 use winapi::um::libloaderapi::GetModuleHandleW;
 
-use crate::addresses::{ON_MUSIC_EVENT, ON_SCENE_EVENT, ON_VOICE_EVENT};
+use crate::addresses::{ON_MUSIC_EVENT, ON_SCENE_AUDIO_EVENT, ON_VOICE_EVENT};
 use crate::interop::scene::SceneAudioEvent;
 use crate::interop::{MusicEvent, VoiceEvent};
 use crate::{addresses::ON_ENT_AUDIO_EVENT, interop::AudioEvent};
@@ -66,12 +66,12 @@ lazy_static! {
         Arc::new(Mutex::new(None));
     pub(crate) static ref HOOK_ON_VOICE_EVENT: Arc<Mutex<Option<RawDetour>>> =
         Arc::new(Mutex::new(None));
-    pub(crate) static ref HOOK_ON_SCENE_EVENT: Arc<Mutex<Option<RawDetour>>> =
+    pub(crate) static ref HOOK_ON_SCN_AUDIO_EVENT: Arc<Mutex<Option<RawDetour>>> =
         Arc::new(Mutex::new(None));
 }
 
 #[allow(unused_variables)]
-pub fn on_audio_event(o: usize, a: usize) {
+pub fn on_ent_audio_event(o: usize, a: usize) {
     red4ext_rs::trace!("[on_audio_event] hooked");
     if let Ok(ref guard) = HOOK_ON_ENT_AUDIO_EVENT.clone().try_lock() {
         red4ext_rs::trace!("[on_audio_event] hook handle retrieved");
@@ -161,7 +161,7 @@ pub fn on_voice_event(o: usize, a: usize) {
     }
 }
 
-pub fn on_scene_event(o: usize, a: usize) {
+pub fn on_scn_audio_event(o: usize, a: usize) {
     red4ext_rs::trace!("[on_scene_event] hooked");
     if let Ok(ref guard) = HOOK_ON_VOICE_EVENT.clone().try_lock() {
         red4ext_rs::trace!("[on_scene_event] hook handle retrieved");
@@ -183,7 +183,7 @@ pub fn on_scene_event(o: usize, a: usize) {
 make_hook!(
     hook_ent_audio_event,
     ON_ENT_AUDIO_EVENT,
-    on_audio_event,
+    on_ent_audio_event,
     HOOK_ON_ENT_AUDIO_EVENT
 );
 
@@ -202,10 +202,10 @@ make_hook!(
 );
 
 make_hook!(
-    hook_on_scene_event,
-    ON_SCENE_EVENT,
-    on_scene_event,
-    HOOK_ON_SCENE_EVENT
+    hook_scn_audio_event,
+    ON_SCENE_AUDIO_EVENT,
+    on_scn_audio_event,
+    HOOK_ON_SCN_AUDIO_EVENT
 );
 
 unsafe fn get_module(module: &str) -> Option<HMODULE> {

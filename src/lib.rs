@@ -13,11 +13,13 @@ use red4ext_rs::prelude::*;
 
 use crate::hook::hook_ent_audio_event;
 use crate::hook::hook_on_music_event;
-use crate::hook::hook_on_scene_event;
+use crate::hook::hook_scn_audio_event;
 use crate::hook::hook_on_voice_event;
+
 use crate::hook::HOOK_ON_ENT_AUDIO_EVENT;
+use crate::hook::HOOK_ON_SCN_AUDIO_EVENT;
+
 use crate::hook::HOOK_ON_MUSIC_EVENT;
-use crate::hook::HOOK_ON_SCENE_EVENT;
 use crate::hook::HOOK_ON_VOICE_EVENT;
 
 pub struct Audioware;
@@ -43,7 +45,7 @@ impl Plugin for Audioware {
                 error!("error {e}")
             }
         };
-        match hook_on_scene_event() {
+        match hook_scn_audio_event() {
             Ok(_) => {}
             Err(e) => {
                 error!("error {e}")
@@ -70,7 +72,7 @@ impl Plugin for Audioware {
             .lock()
             .unwrap()
             .take();
-        let _ = HOOK_ON_SCENE_EVENT
+        let _ = HOOK_ON_SCN_AUDIO_EVENT
             .clone()
             .borrow_mut()
             .lock()
