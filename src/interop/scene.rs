@@ -4,6 +4,7 @@ use audioware_macros::FromMemory;
 
 #[derive(Debug, Clone, FromMemory)]
 #[repr(C)]
+#[allow(non_snake_case)]
 pub struct SceneAudioEvent {
     serializable: [u8; 48],
     pub id: SceneEventId,
@@ -37,6 +38,7 @@ pub struct PerformerId(u32);
 
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
+#[allow(dead_code)]
 pub enum AudioFastForwardSupport {
     MuteDuringFastForward = 1,
     DontMuteDuringFastForward = 2,
