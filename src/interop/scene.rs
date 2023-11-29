@@ -12,7 +12,7 @@ pub struct SceneAudioEvent {
     pub start_time: u32,
     pub duration: u32,
     pub execution_tag_flags: u8,
-    unk45: [u8; 0x48 - 0x45], // 3 bits
+    unk45: [u8; 0x48 - 0x45],     // 3 bits
     pub scaling_data: [u8; 0x10], // 16 bits
     pub performer: PerformerId,
     unk5C: [u8; 0x60 - 0x5C], // 4 bits

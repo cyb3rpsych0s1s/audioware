@@ -8,11 +8,11 @@ use widestring::U16CString;
 use winapi::shared::minwindef::HMODULE;
 use winapi::um::libloaderapi::GetModuleHandleW;
 
-use crate::addresses::{ON_MUSIC_EVENT, ON_VOICE_EVENT, ON_SCENE_EVENT};
+use crate::addresses::{ON_MUSIC_EVENT, ON_SCENE_EVENT, ON_VOICE_EVENT};
 use crate::interop::scene::SceneAudioEvent;
 use crate::interop::{MusicEvent, VoiceEvent};
-use audioware_types::FromMemory;
 use crate::{addresses::ON_ENT_AUDIO_EVENT, interop::AudioEvent};
+use audioware_types::FromMemory;
 
 macro_rules! make_hook {
     ($name:ident, $address:expr, $hook:expr, $storage:expr) => {
@@ -166,10 +166,7 @@ pub fn on_scene_event(o: usize, a: usize) {
     if let Ok(ref guard) = HOOK_ON_VOICE_EVENT.clone().try_lock() {
         red4ext_rs::trace!("[on_scene_event] hook handle retrieved");
         if let Some(detour) = guard.as_ref() {
-            let SceneAudioEvent {
-                emitter_name,
-                ..
-            } = SceneAudioEvent::from_memory(a);
+            let SceneAudioEvent { emitter_name, .. } = SceneAudioEvent::from_memory(a);
             red4ext_rs::info!(
                 "[on_scene_event][scn::AudioEvent for V] emitter_name: {}",
                 red4ext_rs::ffi::resolve_cname(&emitter_name)

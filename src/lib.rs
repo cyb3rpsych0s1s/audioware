@@ -11,13 +11,13 @@ use red4ext_rs::plugin::Plugin;
 use red4ext_rs::plugin::Version;
 use red4ext_rs::prelude::*;
 
-use crate::hook::HOOK_ON_SCENE_EVENT;
 use crate::hook::hook_ent_audio_event;
 use crate::hook::hook_on_music_event;
 use crate::hook::hook_on_scene_event;
 use crate::hook::hook_on_voice_event;
 use crate::hook::HOOK_ON_ENT_AUDIO_EVENT;
 use crate::hook::HOOK_ON_MUSIC_EVENT;
+use crate::hook::HOOK_ON_SCENE_EVENT;
 use crate::hook::HOOK_ON_VOICE_EVENT;
 
 pub struct Audioware;
