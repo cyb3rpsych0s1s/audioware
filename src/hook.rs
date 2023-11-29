@@ -3,14 +3,14 @@ use std::ops::Not;
 use std::sync::{Arc, Mutex};
 
 use lazy_static::lazy_static;
-use red4ext_rs::types::CName;
 use retour::RawDetour;
 use widestring::U16CString;
 use winapi::shared::minwindef::HMODULE;
 use winapi::um::libloaderapi::GetModuleHandleW;
 
-use crate::addresses::{ON_MUSIC_EVENT, ON_VOICE_EVENT};
-use crate::interop::{AudioEventActionType, MusicEvent, VoiceEvent};
+use crate::addresses::{ON_MUSIC_EVENT, ON_VOICE_EVENT, ON_SCENE_EVENT};
+use crate::interop::scene::SceneAudioEvent;
+use crate::interop::{MusicEvent, VoiceEvent};
 use audioware_types::FromMemory;
 use crate::{addresses::ON_ENT_AUDIO_EVENT, interop::AudioEvent};
 
@@ -65,6 +65,8 @@ lazy_static! {
     pub(crate) static ref HOOK_ON_MUSIC_EVENT: Arc<Mutex<Option<RawDetour>>> =
         Arc::new(Mutex::new(None));
     pub(crate) static ref HOOK_ON_VOICE_EVENT: Arc<Mutex<Option<RawDetour>>> =
+        Arc::new(Mutex::new(None));
+    pub(crate) static ref HOOK_ON_SCENE_EVENT: Arc<Mutex<Option<RawDetour>>> =
         Arc::new(Mutex::new(None));
 }
 
@@ -159,6 +161,28 @@ pub fn on_voice_event(o: usize, a: usize) {
     }
 }
 
+pub fn on_scene_event(o: usize, a: usize) {
+    red4ext_rs::trace!("[on_scene_event] hooked");
+    if let Ok(ref guard) = HOOK_ON_VOICE_EVENT.clone().try_lock() {
+        red4ext_rs::trace!("[on_scene_event] hook handle retrieved");
+        if let Some(detour) = guard.as_ref() {
+            let SceneAudioEvent {
+                emitter_name,
+                ..
+            } = SceneAudioEvent::from_memory(a);
+            red4ext_rs::info!(
+                "[on_scene_event][scn::AudioEvent for V] emitter_name: {}",
+                red4ext_rs::ffi::resolve_cname(&emitter_name)
+            );
+
+            let original: ExternFnRedEventHandler =
+                unsafe { std::mem::transmute(detour.trampoline()) };
+            unsafe { original(o, a) };
+            red4ext_rs::trace!("[on_scene_event] original method called");
+        }
+    }
+}
+
 make_hook!(
     hook_ent_audio_event,
     ON_ENT_AUDIO_EVENT,
@@ -178,6 +202,13 @@ make_hook!(
     ON_VOICE_EVENT,
     on_voice_event,
     HOOK_ON_VOICE_EVENT
+);
+
+make_hook!(
+    hook_on_scene_event,
+    ON_SCENE_EVENT,
+    on_scene_event,
+    HOOK_ON_SCENE_EVENT
 );
 
 unsafe fn get_module(module: &str) -> Option<HMODULE> {
