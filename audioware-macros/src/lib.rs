@@ -5,7 +5,12 @@ use syn::{parse_macro_input, Type};
 
 #[proc_macro_derive(FromMemory)]
 pub fn derive_from_memory(item: TokenStream) -> TokenStream {
-    let syn::ItemStruct { ident, generics, fields, .. } = parse_macro_input!(item as syn::ItemStruct);
+    let syn::ItemStruct {
+        ident,
+        generics,
+        fields,
+        ..
+    } = parse_macro_input!(item as syn::ItemStruct);
     // check that struct has no generics / lifetimes
     assert_eq!(generics.params.len(), 0);
     // check that struct is no tuple

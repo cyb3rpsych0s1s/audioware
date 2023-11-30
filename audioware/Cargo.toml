@@ -13,6 +13,7 @@ crate-type = ["cdylib"]
 audioware-types.workspace = true
 audioware-macros.workspace = true
 anyhow = "1"
+cxx = "1"
 kira = "0.8.5"
 lazy_static = "1.4.0"
 red4ext-rs.workspace = true

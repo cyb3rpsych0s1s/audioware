@@ -58,7 +58,6 @@ macro_rules! make_hook {
 }
 
 pub(crate) type ExternFnRedEventHandler = unsafe extern "C" fn(usize, usize) -> ();
-pub(crate) type ExternFnRedPlayFunc = unsafe extern "C" fn(u64, u64, u64) -> ();
 pub(crate) type ExternFnRedRegisteredFunc = unsafe extern "C" fn(
     ctx: *mut red4ext_rs::ffi::IScriptable,
     frame: *mut red4ext_rs::ffi::CStackFrame,
@@ -169,42 +168,65 @@ pub fn on_voice_event(o: usize, a: usize) {
     }
 }
 
-pub fn play(event_name: u64, entity_id: u64, emitter_name: u64) {
-    red4ext_rs::info!("[play] hooked");
-    if let Ok(ref guard) = HOOK_ON_AUDIOSYSTEM_PLAY.clone().try_lock() {
-        red4ext_rs::info!("[play] hook handle retrieved");
-        if let Some(detour) = guard.as_ref() {
-            let evt: CName = unsafe { std::mem::transmute::<u64, CName>(event_name) };
-            let ent: EntityId = unsafe { std::mem::transmute::<u64, EntityId>(entity_id) };
-            let emitter: CName = unsafe { std::mem::transmute::<u64, CName>(emitter_name) };
-            red4ext_rs::info!(
-                "[play](event_name {}, entity_id {:#?}, emitter_name {})",
-                red4ext_rs::ffi::resolve_cname(&evt),
-                ent,
-                red4ext_rs::ffi::resolve_cname(&emitter)
-            );
-
-            let original: ExternFnRedPlayFunc = unsafe { std::mem::transmute(detour.trampoline()) };
-            unsafe { original(event_name, entity_id, emitter_name) };
-            red4ext_rs::info!("[play] original method called");
-        }
-    }
-}
-
 pub fn on_audiosystem_play(
-    _ctx: *mut red4ext_rs::ffi::IScriptable,
+    ctx: *mut red4ext_rs::ffi::IScriptable,
     frame: *mut red4ext_rs::ffi::CStackFrame,
-    _out: *mut std::ffi::c_void,
-    _a4: i64,
+    out: *mut std::ffi::c_void,
+    a4: i64,
 ) {
+    let rewind = unsafe {
+        std::mem::transmute::<*mut red4ext_rs::ffi::CStackFrame, &mut crate::frame::StackFrame>(
+            frame,
+        )
+        .code
+    };
+    // read stack frame
     let mut event_name: CName = CName::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event_name)) };
     let mut entity_id: EntityId = EntityId::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut entity_id)) };
     let mut emitter_name: CName = CName::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut emitter_name)) };
+    // compare event name
+    if is_vanilla(event_name.clone()) {
+        if let Ok(ref guard) = HOOK_ON_AUDIOSYSTEM_PLAY.clone().try_lock() {
+            if let Some(detour) = guard.as_ref() {
+                // rewind the stack and call vanilla
+                unsafe {
+                    std::mem::transmute::<
+                        *mut red4ext_rs::ffi::CStackFrame,
+                        &mut crate::frame::StackFrame,
+                    >(frame)
+                    .code = rewind;
+                    std::mem::transmute::<
+                        *mut red4ext_rs::ffi::CStackFrame,
+                        &mut crate::frame::StackFrame,
+                    >(frame)
+                    .currentParam = 0;
+                }
+                let original: ExternFnRedRegisteredFunc =
+                    unsafe { std::mem::transmute(detour.trampoline()) };
+                unsafe { original(ctx, frame, out, a4) };
+            }
+        }
+    // if event name is not vanilla
+    } else {
+        // jump to custom func
+        custom_engine_play(event_name, entity_id, emitter_name);
+    }
+}
+
+pub fn is_vanilla(event_name: CName) -> bool {
+    match event_name {
+        // TODO: match from loaded infos
+        v if v == CName::new("ono_v_effort_short") => false,
+        _ => true,
+    }
+}
+
+pub fn custom_engine_play(event_name: CName, entity_id: EntityId, emitter_name: CName) {
     red4ext_rs::info!(
-        "[on_audiosystem_play] event_name {}, entity_id {:#?}, emitter_name {}",
+        "would have call custom engine with: event_name {}, entity_id {:#?}, emitter_name {}",
         red4ext_rs::ffi::resolve_cname(&event_name),
         entity_id,
         red4ext_rs::ffi::resolve_cname(&emitter_name)

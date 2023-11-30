@@ -1,6 +1,7 @@
 mod addresses;
 mod audio;
 mod banks;
+mod frame;
 mod hook;
 mod interop;
 mod locale;
