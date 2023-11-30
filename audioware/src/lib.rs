@@ -6,97 +6,37 @@ mod hook;
 mod interop;
 mod locale;
 
-use std::borrow::BorrowMut;
+// use std::borrow::BorrowMut;
 
+use hook::Hook;
 use red4ext_rs::plugin::Plugin;
 use red4ext_rs::plugin::Version;
 use red4ext_rs::prelude::*;
 
-use crate::hook::hook_ent_audio_event;
-use crate::hook::hook_on_audiosystem_play;
-use crate::hook::hook_on_audiosystem_stop;
-use crate::hook::hook_on_music_event;
-use crate::hook::hook_on_voice_event;
-use crate::hook::HOOK_ON_AUDIOSYSTEM_PLAY;
-use crate::hook::HOOK_ON_AUDIOSYSTEM_STOP;
-
-use crate::hook::HOOK_ON_ENT_AUDIO_EVENT;
-
-use crate::hook::HOOK_ON_MUSIC_EVENT;
-use crate::hook::HOOK_ON_VOICE_EVENT;
+use crate::hook::HookEntAudioEvent;
+use crate::hook::HookAudioSystemPlay;
+use crate::hook::HookAudioSystemStop;
+use crate::hook::HookMusicEvent;
+use crate::hook::HookVoiceEvent;
 
 pub struct Audioware;
 impl Plugin for Audioware {
     const VERSION: Version = Version::new(0, 0, 1);
     fn post_register() {
         info!("on attach audioware");
-        match hook_ent_audio_event() {
-            Ok(_) => {}
-            Err(e) => {
-                error!("error {e}")
-            }
-        };
-        match hook_on_music_event() {
-            Ok(_) => {}
-            Err(e) => {
-                error!("error {e}")
-            }
-        };
-        match hook_on_voice_event() {
-            Ok(_) => {}
-            Err(e) => {
-                error!("error {e}")
-            }
-        };
-        match hook_on_audiosystem_play() {
-            Ok(_) => {
-                info!("successfully hooked into AudioSystem::Play");
-            }
-            Err(e) => {
-                error!("error {e}")
-            }
-        };
-        match hook_on_audiosystem_stop() {
-            Ok(_) => {
-                info!("successfully hooked into AudioSystem::Stop");
-            }
-            Err(e) => {
-                error!("error {e}")
-            }
-        };
+        HookEntAudioEvent::load();
+        HookMusicEvent::load();
+        HookVoiceEvent::load();
+        HookAudioSystemPlay::load();
+        HookAudioSystemStop::load();
     }
     fn unload() {
         info!("on detach audioware");
-        let _ = HOOK_ON_ENT_AUDIO_EVENT
-            .clone()
-            .borrow_mut()
-            .lock()
-            .unwrap()
-            .take();
-        let _ = HOOK_ON_MUSIC_EVENT
-            .clone()
-            .borrow_mut()
-            .lock()
-            .unwrap()
-            .take();
-        let _ = HOOK_ON_VOICE_EVENT
-            .clone()
-            .borrow_mut()
-            .lock()
-            .unwrap()
-            .take();
-        let _ = HOOK_ON_AUDIOSYSTEM_PLAY
-            .clone()
-            .borrow_mut()
-            .lock()
-            .unwrap()
-            .take();
-        let _ = HOOK_ON_AUDIOSYSTEM_STOP
-            .clone()
-            .borrow_mut()
-            .lock()
-            .unwrap()
-            .take();
+        HookEntAudioEvent::unload();
+        HookMusicEvent::unload();
+        HookVoiceEvent::unload();
+        HookAudioSystemPlay::unload();
+        HookAudioSystemStop::unload();
     }
 }
 

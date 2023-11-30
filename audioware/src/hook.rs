@@ -9,49 +9,64 @@ use winapi::um::libloaderapi::GetModuleHandleW;
 use crate::interop::{AudioEvent, MusicEvent, VoiceEvent};
 use audioware_types::FromMemory;
 
+pub(crate) trait Hook {
+    fn load() where Self: Sized;
+    fn unload() where Self: Sized;
+}
+
 macro_rules! make_hook {
     ($name:ident, $address:ident, $fn_ty:ty, $hook:expr, $storage:ident) => {
         ::lazy_static::lazy_static! {
-            pub(crate) static ref $storage: ::std::sync::Arc<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> =
+            static ref $storage: ::std::sync::Arc<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> =
                 ::std::sync::Arc::new(::std::sync::Mutex::new(None));
         }
-        pub(crate) fn $name() -> ::anyhow::Result<()> {
-            let relative: usize = $crate::addresses::$address;
-            unsafe {
-                let base: usize = self::get_module("Cyberpunk2077.exe").unwrap() as usize;
-                let address = base + relative;
-                ::red4ext_rs::debug!(
-                    "[{}] base address:       0x{base:X}",
-                    ::std::stringify! {$name}
-                ); // e.g. 0x7FF6C51B0000
-                ::red4ext_rs::debug!(
-                    "[{}] relative address:   0x{relative:X}",
-                    ::std::stringify! {$name}
-                ); // e.g. 0x1419130
-                ::red4ext_rs::debug!(
-                    "[{}] calculated address: 0x{address:X}",
-                    ::std::stringify! {$name}
-                ); // e.g. 0x7FF6C65C9130
-                let target: $fn_ty = ::std::mem::transmute(address);
-                match ::retour::RawDetour::new(target as *const (), $hook as *const ()) {
-                    Ok(detour) => match detour.enable() {
-                        Ok(_) => {
-                            if let Ok(mut guard) = $storage.clone().borrow_mut().try_lock() {
-                                *guard = Some(detour);
-                            } else {
-                                ::red4ext_rs::error!("could not store detour");
+        pub struct $name {}
+        impl Hook for $name {
+            fn load() {
+                let relative: usize = $crate::addresses::$address;
+                unsafe {
+                    let base: usize = self::get_module("Cyberpunk2077.exe").unwrap() as usize;
+                    let address = base + relative;
+                    ::red4ext_rs::debug!(
+                        "[{}] base address:       0x{base:X}",
+                        ::std::stringify! {$name}
+                    ); // e.g. 0x7FF6C51B0000
+                    ::red4ext_rs::debug!(
+                        "[{}] relative address:   0x{relative:X}",
+                        ::std::stringify! {$name}
+                    ); // e.g. 0x1419130
+                    ::red4ext_rs::debug!(
+                        "[{}] calculated address: 0x{address:X}",
+                        ::std::stringify! {$name}
+                    ); // e.g. 0x7FF6C65C9130
+                    let target: $fn_ty = ::std::mem::transmute(address);
+                    match ::retour::RawDetour::new(target as *const (), $hook as *const ()) {
+                        Ok(detour) => match detour.enable() {
+                            Ok(_) => {
+                                if let Ok(mut guard) = $storage.clone().borrow_mut().try_lock() {
+                                    *guard = Some(detour);
+                                } else {
+                                    ::red4ext_rs::error!("could not store detour");
+                                }
                             }
-                        }
+                            Err(e) => {
+                                ::red4ext_rs::error!("could not enable detour ({e})");
+                            }
+                        },
                         Err(e) => {
-                            ::red4ext_rs::error!("could not enable detour ({e})");
+                            ::red4ext_rs::error!("could not initialize detour ({e})");
                         }
-                    },
-                    Err(e) => {
-                        ::red4ext_rs::error!("could not initialize detour ({e})");
                     }
                 }
             }
-            Ok(())
+            fn unload() {
+                let _ = $storage
+                .clone()
+                .borrow_mut()
+                .lock()
+                .unwrap()
+                .take();
+            }
         }
     };
 }
@@ -251,7 +266,7 @@ pub fn custom_engine_stop(event_name: CName, entity_id: EntityId, emitter_name: 
 }
 
 make_hook!(
-    hook_ent_audio_event,
+    HookEntAudioEvent,
     ON_ENT_AUDIO_EVENT,
     ExternFnRedEventHandler,
     on_ent_audio_event,
@@ -259,7 +274,7 @@ make_hook!(
 );
 
 make_hook!(
-    hook_on_music_event,
+    HookMusicEvent,
     ON_MUSIC_EVENT,
     ExternFnRedEventHandler,
     on_music_event,
@@ -267,7 +282,7 @@ make_hook!(
 );
 
 make_hook!(
-    hook_on_voice_event,
+    HookVoiceEvent,
     ON_VOICE_EVENT,
     ExternFnRedEventHandler,
     on_voice_event,
@@ -275,7 +290,7 @@ make_hook!(
 );
 
 make_hook!(
-    hook_on_audiosystem_play,
+    HookAudioSystemPlay,
     ON_AUDIOSYSTEM_PLAY,
     ExternFnRedRegisteredFunc,
     on_audiosystem_play,
@@ -283,7 +298,7 @@ make_hook!(
 );
 
 make_hook!(
-    hook_on_audiosystem_stop,
+    HookAudioSystemStop,
     ON_AUDIOSYSTEM_STOP,
     ExternFnRedRegisteredFunc,
     on_audiosystem_stop,
