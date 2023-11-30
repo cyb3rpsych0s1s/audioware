@@ -1,23 +1,22 @@
 use std::borrow::BorrowMut;
 use std::ops::Not;
-use std::sync::{Arc, Mutex};
 
-use lazy_static::lazy_static;
 use red4ext_rs::types::{CName, EntityId};
-use retour::RawDetour;
 use widestring::U16CString;
 use winapi::shared::minwindef::HMODULE;
 use winapi::um::libloaderapi::GetModuleHandleW;
 
-use crate::addresses::{ON_AUDIOSYSTEM_PLAY, ON_MUSIC_EVENT, ON_VOICE_EVENT, ON_AUDIOSYSTEM_STOP};
-use crate::interop::{MusicEvent, VoiceEvent};
-use crate::{addresses::ON_ENT_AUDIO_EVENT, interop::AudioEvent};
+use crate::interop::{AudioEvent, MusicEvent, VoiceEvent};
 use audioware_types::FromMemory;
 
 macro_rules! make_hook {
-    ($name:ident, $address:expr, $fn_ty:ty, $hook:expr, $storage:expr) => {
+    ($name:ident, $address:ident, $fn_ty:ty, $hook:expr, $storage:ident) => {
+        ::lazy_static::lazy_static! {
+            pub(crate) static ref $storage: ::std::sync::Arc<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> =
+                ::std::sync::Arc::new(::std::sync::Mutex::new(None));
+        }
         pub(crate) fn $name() -> ::anyhow::Result<()> {
-            let relative: usize = $address;
+            let relative: usize = $crate::addresses::$address;
             unsafe {
                 let base: usize = self::get_module("Cyberpunk2077.exe").unwrap() as usize;
                 let address = base + relative;
@@ -64,21 +63,6 @@ pub(crate) type ExternFnRedRegisteredFunc = unsafe extern "C" fn(
     out: *mut std::ffi::c_void,
     a4: i64,
 ) -> ();
-
-lazy_static! {
-    pub(crate) static ref HOOK_ON_ENT_AUDIO_EVENT: Arc<Mutex<Option<RawDetour>>> =
-        Arc::new(Mutex::new(None));
-    pub(crate) static ref HOOK_ON_MUSIC_EVENT: Arc<Mutex<Option<RawDetour>>> =
-        Arc::new(Mutex::new(None));
-    pub(crate) static ref HOOK_ON_VOICE_EVENT: Arc<Mutex<Option<RawDetour>>> =
-        Arc::new(Mutex::new(None));
-    pub(crate) static ref HOOK_ON_SCN_AUDIO_EVENT: Arc<Mutex<Option<RawDetour>>> =
-        Arc::new(Mutex::new(None));
-    pub(crate) static ref HOOK_ON_AUDIOSYSTEM_PLAY: Arc<Mutex<Option<RawDetour>>> =
-        Arc::new(Mutex::new(None));
-    pub(crate) static ref HOOK_ON_AUDIOSYSTEM_STOP: Arc<Mutex<Option<RawDetour>>> =
-        Arc::new(Mutex::new(None));
-}
 
 #[allow(unused_variables)]
 pub fn on_ent_audio_event(o: usize, a: usize) {
