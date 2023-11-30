@@ -197,7 +197,6 @@ pub fn on_audiosystem_play(
     _out: *mut std::ffi::c_void,
     _a4: i64,
 ) {
-    red4ext_rs::info!("[on_audiosystem_play] about to");
     let mut event_name: CName = CName::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event_name)) };
     let mut entity_id: EntityId = EntityId::default();
