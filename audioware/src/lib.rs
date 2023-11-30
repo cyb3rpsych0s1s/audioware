@@ -12,8 +12,10 @@ use red4ext_rs::plugin::Plugin;
 use red4ext_rs::plugin::Version;
 use red4ext_rs::prelude::*;
 
+use crate::hook::HOOK_ON_AUDIOSYSTEM_STOP;
 use crate::hook::hook_ent_audio_event;
 use crate::hook::hook_on_audiosystem_play;
+use crate::hook::hook_on_audiosystem_stop;
 use crate::hook::hook_on_music_event;
 use crate::hook::hook_on_voice_event;
 use crate::hook::HOOK_ON_AUDIOSYSTEM_PLAY;
@@ -54,6 +56,14 @@ impl Plugin for Audioware {
                 error!("error {e}")
             }
         };
+        match hook_on_audiosystem_stop() {
+            Ok(_) => {
+                info!("successfully hooked into AudioSystem::Stop");
+            }
+            Err(e) => {
+                error!("error {e}")
+            }
+        };
     }
     fn unload() {
         info!("on detach audioware");
@@ -76,6 +86,12 @@ impl Plugin for Audioware {
             .unwrap()
             .take();
         let _ = HOOK_ON_AUDIOSYSTEM_PLAY
+            .clone()
+            .borrow_mut()
+            .lock()
+            .unwrap()
+            .take();
+        let _ = HOOK_ON_AUDIOSYSTEM_STOP
             .clone()
             .borrow_mut()
             .lock()

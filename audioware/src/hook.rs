@@ -9,7 +9,7 @@ use widestring::U16CString;
 use winapi::shared::minwindef::HMODULE;
 use winapi::um::libloaderapi::GetModuleHandleW;
 
-use crate::addresses::{ON_AUDIOSYSTEM_PLAY, ON_MUSIC_EVENT, ON_VOICE_EVENT};
+use crate::addresses::{ON_AUDIOSYSTEM_PLAY, ON_MUSIC_EVENT, ON_VOICE_EVENT, ON_AUDIOSYSTEM_STOP};
 use crate::interop::{MusicEvent, VoiceEvent};
 use crate::{addresses::ON_ENT_AUDIO_EVENT, interop::AudioEvent};
 use audioware_types::FromMemory;
@@ -75,6 +75,8 @@ lazy_static! {
     pub(crate) static ref HOOK_ON_SCN_AUDIO_EVENT: Arc<Mutex<Option<RawDetour>>> =
         Arc::new(Mutex::new(None));
     pub(crate) static ref HOOK_ON_AUDIOSYSTEM_PLAY: Arc<Mutex<Option<RawDetour>>> =
+        Arc::new(Mutex::new(None));
+    pub(crate) static ref HOOK_ON_AUDIOSYSTEM_STOP: Arc<Mutex<Option<RawDetour>>> =
         Arc::new(Mutex::new(None));
 }
 
@@ -216,6 +218,54 @@ pub fn on_audiosystem_play(
     }
 }
 
+pub fn on_audiosystem_stop(
+    ctx: *mut red4ext_rs::ffi::IScriptable,
+    frame: *mut red4ext_rs::ffi::CStackFrame,
+    out: *mut std::ffi::c_void,
+    a4: i64,
+) {
+    let rewind = unsafe {
+        std::mem::transmute::<*mut red4ext_rs::ffi::CStackFrame, &mut crate::frame::StackFrame>(
+            frame,
+        )
+        .code
+    };
+    // read stack frame
+    let mut event_name: CName = CName::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event_name)) };
+    let mut entity_id: EntityId = EntityId::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut entity_id)) };
+    let mut emitter_name: CName = CName::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut emitter_name)) };
+    // compare event name
+    if is_vanilla(event_name.clone()) {
+        if let Ok(ref guard) = HOOK_ON_AUDIOSYSTEM_STOP.clone().try_lock() {
+            if let Some(detour) = guard.as_ref() {
+                // rewind the stack and call vanilla
+                unsafe {
+                    std::mem::transmute::<
+                        *mut red4ext_rs::ffi::CStackFrame,
+                        &mut crate::frame::StackFrame,
+                    >(frame)
+                    .code = rewind;
+                    std::mem::transmute::<
+                        *mut red4ext_rs::ffi::CStackFrame,
+                        &mut crate::frame::StackFrame,
+                    >(frame)
+                    .currentParam = 0;
+                }
+                let original: ExternFnRedRegisteredFunc =
+                    unsafe { std::mem::transmute(detour.trampoline()) };
+                unsafe { original(ctx, frame, out, a4) };
+            }
+        }
+    // if event name is not vanilla
+    } else {
+        // jump to custom func
+        custom_engine_stop(event_name, entity_id, emitter_name);
+    }
+}
+
 pub fn is_vanilla(event_name: CName) -> bool {
     match event_name {
         // TODO: match from loaded infos
@@ -226,7 +276,16 @@ pub fn is_vanilla(event_name: CName) -> bool {
 
 pub fn custom_engine_play(event_name: CName, entity_id: EntityId, emitter_name: CName) {
     red4ext_rs::info!(
-        "would have call custom engine with: event_name {}, entity_id {:#?}, emitter_name {}",
+        "would have call custom engine Play method with: event_name {}, entity_id {:#?}, emitter_name {}",
+        red4ext_rs::ffi::resolve_cname(&event_name),
+        entity_id,
+        red4ext_rs::ffi::resolve_cname(&emitter_name)
+    );
+}
+
+pub fn custom_engine_stop(event_name: CName, entity_id: EntityId, emitter_name: CName) {
+    red4ext_rs::info!(
+        "would have call custom engine Stop method with: event_name {}, entity_id {:#?}, emitter_name {}",
         red4ext_rs::ffi::resolve_cname(&event_name),
         entity_id,
         red4ext_rs::ffi::resolve_cname(&emitter_name)
@@ -263,6 +322,14 @@ make_hook!(
     ExternFnRedRegisteredFunc,
     on_audiosystem_play,
     HOOK_ON_AUDIOSYSTEM_PLAY
+);
+
+make_hook!(
+    hook_on_audiosystem_stop,
+    ON_AUDIOSYSTEM_STOP,
+    ExternFnRedRegisteredFunc,
+    on_audiosystem_stop,
+    HOOK_ON_AUDIOSYSTEM_STOP
 );
 
 unsafe fn get_module(module: &str) -> Option<HMODULE> {

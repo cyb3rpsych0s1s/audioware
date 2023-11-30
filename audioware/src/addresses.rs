@@ -4,3 +4,4 @@ pub(crate) const ON_MUSIC_EVENT: usize = 0x2476F68;
 pub(crate) const ON_VOICE_EVENT: usize = 0x08205FC;
 /// memory address for [AudioSystem::Play](https://codeberg.org/adamsmasher/cyberpunk/src/branch/master/core/systems/audioSystem.swift#L10)
 pub(crate) const ON_AUDIOSYSTEM_PLAY: usize = 0x02AF3F8;
+pub(crate) const ON_AUDIOSYSTEM_STOP: usize = 0x2410F8C;
