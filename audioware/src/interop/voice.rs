@@ -49,7 +49,7 @@ pub enum VoGruntType {
 /// see [RED4ext::audio::VoGruntInterruptMode](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/audio/VoGruntInterruptMode.hpp).
 #[derive(Debug, Clone, Copy, strum_macros::Display, strum_macros::FromRepr)]
 #[repr(u32)]
-#[allow(dead_code)]
+#[allow(dead_code, clippy::enum_variant_names)]
 pub enum VoGruntInterruptMode {
     DontInterrupt = 0,
     PlayOnlyOnInterrupt = 1,

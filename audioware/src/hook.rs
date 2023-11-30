@@ -160,12 +160,7 @@ pub fn on_audiosystem_play(
     out: *mut std::ffi::c_void,
     a4: i64,
 ) {
-    let rewind = unsafe {
-        std::mem::transmute::<*mut red4ext_rs::ffi::CStackFrame, &mut crate::frame::StackFrame>(
-            frame,
-        )
-        .code
-    };
+    let rewind = unsafe { (*frame.cast::<crate::frame::StackFrame>()).code };
     // read stack frame
     let mut event_name: CName = CName::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event_name)) };
@@ -179,16 +174,8 @@ pub fn on_audiosystem_play(
             if let Some(detour) = guard.as_ref() {
                 // rewind the stack and call vanilla
                 unsafe {
-                    std::mem::transmute::<
-                        *mut red4ext_rs::ffi::CStackFrame,
-                        &mut crate::frame::StackFrame,
-                    >(frame)
-                    .code = rewind;
-                    std::mem::transmute::<
-                        *mut red4ext_rs::ffi::CStackFrame,
-                        &mut crate::frame::StackFrame,
-                    >(frame)
-                    .currentParam = 0;
+                    (*frame.cast::<crate::frame::StackFrame>()).code = rewind;
+                    (*frame.cast::<crate::frame::StackFrame>()).currentParam = 0;
                 }
                 let original: ExternFnRedRegisteredFunc =
                     unsafe { std::mem::transmute(detour.trampoline()) };
@@ -208,12 +195,7 @@ pub fn on_audiosystem_stop(
     out: *mut std::ffi::c_void,
     a4: i64,
 ) {
-    let rewind = unsafe {
-        std::mem::transmute::<*mut red4ext_rs::ffi::CStackFrame, &mut crate::frame::StackFrame>(
-            frame,
-        )
-        .code
-    };
+    let rewind = unsafe { (*frame.cast::<crate::frame::StackFrame>()).code };
     // read stack frame
     let mut event_name: CName = CName::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event_name)) };
@@ -227,16 +209,8 @@ pub fn on_audiosystem_stop(
             if let Some(detour) = guard.as_ref() {
                 // rewind the stack and call vanilla
                 unsafe {
-                    std::mem::transmute::<
-                        *mut red4ext_rs::ffi::CStackFrame,
-                        &mut crate::frame::StackFrame,
-                    >(frame)
-                    .code = rewind;
-                    std::mem::transmute::<
-                        *mut red4ext_rs::ffi::CStackFrame,
-                        &mut crate::frame::StackFrame,
-                    >(frame)
-                    .currentParam = 0;
+                    (*frame.cast::<crate::frame::StackFrame>()).code = rewind;
+                    (*frame.cast::<crate::frame::StackFrame>()).currentParam = 0;
                 }
                 let original: ExternFnRedRegisteredFunc =
                     unsafe { std::mem::transmute(detour.trampoline()) };

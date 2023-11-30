@@ -12,13 +12,13 @@ use red4ext_rs::plugin::Plugin;
 use red4ext_rs::plugin::Version;
 use red4ext_rs::prelude::*;
 
-use crate::hook::HOOK_ON_AUDIOSYSTEM_STOP;
 use crate::hook::hook_ent_audio_event;
 use crate::hook::hook_on_audiosystem_play;
 use crate::hook::hook_on_audiosystem_stop;
 use crate::hook::hook_on_music_event;
 use crate::hook::hook_on_voice_event;
 use crate::hook::HOOK_ON_AUDIOSYSTEM_PLAY;
+use crate::hook::HOOK_ON_AUDIOSYSTEM_STOP;
 
 use crate::hook::HOOK_ON_ENT_AUDIO_EVENT;
 
