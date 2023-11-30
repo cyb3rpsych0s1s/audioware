@@ -13,9 +13,9 @@ use red4ext_rs::plugin::Plugin;
 use red4ext_rs::plugin::Version;
 use red4ext_rs::prelude::*;
 
-use crate::hook::HookEntAudioEvent;
 use crate::hook::HookAudioSystemPlay;
 use crate::hook::HookAudioSystemStop;
+use crate::hook::HookEntAudioEvent;
 use crate::hook::HookMusicEvent;
 use crate::hook::HookVoiceEvent;
 

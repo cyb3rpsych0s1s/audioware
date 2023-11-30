@@ -10,8 +10,12 @@ use crate::interop::{AudioEvent, MusicEvent, VoiceEvent};
 use audioware_types::FromMemory;
 
 pub(crate) trait Hook {
-    fn load() where Self: Sized;
-    fn unload() where Self: Sized;
+    fn load()
+    where
+        Self: Sized;
+    fn unload()
+    where
+        Self: Sized;
 }
 
 macro_rules! make_hook {
