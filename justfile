@@ -14,6 +14,7 @@ redscript_repo_dir  := join(justfile_directory(), "audioware", "reds")
 # game files
 red4ext_deploy_dir    := join(game_dir, "red4ext", "plugins", plugin_name)
 redscript_deploy_dir  := join(game_dir, "r6", "scripts", capitalize(plugin_name))
+red_cache_dir         := join(game_dir, "r6", "cache")
 
 # cli
 zoltan_exe            := env_var("ZOLTAN_EXE")
@@ -50,6 +51,15 @@ build PROFILE='debug': (setup red4ext_deploy_dir)
 alias b := build
 
 dev: (build 'debug') reload
+
+clear:
+    @if(Test-Path "{{ join(red_cache_dir, 'final.redscripts.bk') }}" ) { \
+        Write-Host "replacing {{ join(red_cache_dir, 'final.redscripts.bk') }} with {{ join(red_cache_dir, 'final.redscripts.bk') }}"; \
+        cp -Force '{{ join(red_cache_dir, "final.redscripts.bk") }}' '{{ join(red_cache_dir, "final.redscripts") }}'; \
+        Remove-Item -Force -Path '{{ join(red_cache_dir, "final.redscripts.bk") }}'; \
+    } else { \
+        Write-Host "missing {{ join(red_cache_dir, 'final.redscripts.bk') }}"; \
+    }
 
 reload: (setup redscript_deploy_dir)
   @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{redscript_deploy_dir}}'
