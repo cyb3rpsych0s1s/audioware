@@ -1,12 +1,13 @@
 use std::borrow::BorrowMut;
 use std::ops::Not;
 
-use red4ext_rs::types::{CName, EntityId};
+use red4ext_rs::types::{CName, EntityId, MaybeUninitRef};
 use widestring::U16CString;
 use winapi::shared::minwindef::HMODULE;
 use winapi::um::libloaderapi::GetModuleHandleW;
 
 use crate::interop::{AudioEvent, MusicEvent, VoiceEvent};
+use audioware_types::event::Event;
 use audioware_types::FromMemory;
 
 pub(crate) trait Hook {
@@ -243,6 +244,32 @@ pub fn on_audiosystem_stop(
     }
 }
 
+pub fn on_entity_queue_event(
+    ctx: *mut red4ext_rs::ffi::IScriptable,
+    frame: *mut red4ext_rs::ffi::CStackFrame,
+    out: *mut std::ffi::c_void,
+    a4: i64,
+) {
+    let rewind = unsafe { (*frame.cast::<crate::frame::StackFrame>()).code };
+    // read stack frame
+    let mut event: MaybeUninitRef<Event> = MaybeUninitRef::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event)) };
+    let event = event.into_ref().unwrap();
+    red4ext_rs::info!("event class name: {}", red4ext_rs::ffi::resolve_cname(&event.get_class_name()));
+    if let Ok(ref guard) = HOOK_ON_ENTITY_QUEUE_EVENT.clone().try_lock() {
+        if let Some(detour) = guard.as_ref() {
+            // rewind the stack and call vanilla
+            unsafe {
+                (*frame.cast::<crate::frame::StackFrame>()).code = rewind;
+                (*frame.cast::<crate::frame::StackFrame>()).currentParam = 0;
+            }
+            let original: ExternFnRedRegisteredFunc =
+                unsafe { std::mem::transmute(detour.trampoline()) };
+            unsafe { original(ctx, frame, out, a4) };
+        }
+    }
+}
+
 pub fn is_vanilla(event_name: CName) -> bool {
     match event_name {
         // TODO: match from loaded infos
@@ -307,6 +334,14 @@ make_hook!(
     ExternFnRedRegisteredFunc,
     on_audiosystem_stop,
     HOOK_ON_AUDIOSYSTEM_STOP
+);
+
+make_hook!(
+    HookEntityQueueEvent,
+    ON_ENTITY_QUEUE_EVENT,
+    ExternFnRedRegisteredFunc,
+    on_entity_queue_event,
+    HOOK_ON_ENTITY_QUEUE_EVENT
 );
 
 unsafe fn get_module(module: &str) -> Option<HMODULE> {

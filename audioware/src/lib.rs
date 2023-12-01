@@ -1,3 +1,5 @@
+#![feature(arbitrary_self_types)]
+
 mod addresses;
 mod audio;
 mod banks;
@@ -18,6 +20,7 @@ use crate::banks::SoundBanks;
 use crate::hook::HookAudioSystemPlay;
 use crate::hook::HookAudioSystemStop;
 use crate::hook::HookEntAudioEvent;
+use crate::hook::HookEntityQueueEvent;
 use crate::hook::HookMusicEvent;
 use crate::hook::HookVoiceEvent;
 
@@ -31,6 +34,7 @@ impl Plugin for Audioware {
         HookVoiceEvent::load();
         HookAudioSystemPlay::load();
         HookAudioSystemStop::load();
+        HookEntityQueueEvent::load();
 
         let _ = SoundBanks::initialize();
     }
@@ -41,6 +45,7 @@ impl Plugin for Audioware {
         HookVoiceEvent::unload();
         HookAudioSystemPlay::unload();
         HookAudioSystemStop::unload();
+        HookEntityQueueEvent::unload();
     }
 }
 

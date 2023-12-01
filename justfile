@@ -43,7 +43,7 @@ now:
 
 # 📦 build Rust RED4Ext plugin
 build PROFILE='debug': (setup red4ext_deploy_dir)
-  @'{{ if PROFILE == "release" { `cargo build --release` } else { `cargo build` } }}'
+  @'{{ if PROFILE == "release" { `cargo +nightly build --release` } else { `cargo +nightly build` } }}'
   @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just now
 
@@ -65,9 +65,9 @@ uninstall: (delete red4ext_deploy_dir) (delete redscript_deploy_dir)
 
 # 🎨 lint code
 lint:
-  @cargo clippy --fix --allow-dirty --allow-staged
-  @cargo fix --allow-dirty --allow-staged
-  @cargo fmt
+  @cargo +nightly clippy --fix --allow-dirty --allow-staged
+  @cargo +nightly fix --allow-dirty --allow-staged
+  @cargo +nightly fmt
 
 alias l := lint
 

@@ -6,3 +6,5 @@ pub(crate) const ON_VOICE_EVENT: usize = 0x08205FC;
 pub(crate) const ON_AUDIOSYSTEM_PLAY: usize = 0x02AF3F8;
 /// memory address for [AudioSystem::Stop](https://codeberg.org/adamsmasher/cyberpunk/src/branch/master/core/systems/audioSystem.swift#L12)
 pub(crate) const ON_AUDIOSYSTEM_STOP: usize = 0x2410F8C;
+/// memory address for [Entity::QueueEvent](https://codeberg.org/adamsmasher/cyberpunk/src/branch/master/core/entity/entity.swift#L6)
+pub(crate) const ON_ENTITY_QUEUE_EVENT: usize = 0x064A52C;
