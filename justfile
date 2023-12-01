@@ -15,6 +15,9 @@ redscript_repo_dir  := join(justfile_directory(), "audioware", "reds")
 red4ext_deploy_dir    := join(game_dir, "red4ext", "plugins", plugin_name)
 redscript_deploy_dir  := join(game_dir, "r6", "scripts", capitalize(plugin_name))
 
+# cli
+zoltan_exe            := env_var("ZOLTAN_EXE")
+
 [private]
 setup path:
   @if (!(Test-Path '{{path}}')) { [void](New-Item '{{path}}' -ItemType Directory); Write-Host "Created folder at {{path}}"; }
@@ -67,3 +70,7 @@ lint:
   @cargo fmt
 
 alias l := lint
+
+# TODO: finish updating all patterns
+offsets:
+  {{zoltan_exe}} '.\addresses.hpp' '{{ join(game_dir, "bin", "x64", "Cyberpunk2077.exe") }}' -f 'std=c++23' --rust-output '.\addresses.rs'
