@@ -13,6 +13,8 @@ use red4ext_rs::plugin::Plugin;
 use red4ext_rs::plugin::Version;
 use red4ext_rs::prelude::*;
 
+use crate::banks::SoundBanks;
+
 use crate::hook::HookAudioSystemPlay;
 use crate::hook::HookAudioSystemStop;
 use crate::hook::HookEntAudioEvent;
@@ -29,6 +31,8 @@ impl Plugin for Audioware {
         HookVoiceEvent::load();
         HookAudioSystemPlay::load();
         HookAudioSystemStop::load();
+
+        let _ = SoundBanks::initialize();
     }
     fn unload() {
         info!("on detach audioware");

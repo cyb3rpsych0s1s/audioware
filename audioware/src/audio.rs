@@ -7,7 +7,7 @@ use crate::locale::Locale;
 
 pub trait Audio {
     fn filepath(&self) -> Path;
-    fn kind(&self) -> AudioKind;
+    fn kind(&self) -> Kind;
     fn duration(&self) -> Duration;
 }
 
@@ -16,11 +16,11 @@ pub trait SubtitledAudio: Audio {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct Ono {}
+pub struct Sound;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum AudioKind {
+pub enum Kind {
     Ono,
     Voice,
     Thought,

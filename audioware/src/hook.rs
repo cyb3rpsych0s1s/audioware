@@ -24,7 +24,7 @@ macro_rules! make_hook {
             static ref $storage: ::std::sync::Arc<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> =
                 ::std::sync::Arc::new(::std::sync::Mutex::new(None));
         }
-        pub struct $name {}
+        pub struct $name;
         impl Hook for $name {
             fn load() {
                 let relative: usize = $crate::addresses::$address;
