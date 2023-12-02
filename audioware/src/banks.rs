@@ -1,6 +1,7 @@
 use anyhow::Context;
 use lazy_static::lazy_static;
 use serde::Deserialize;
+use std::borrow::BorrowMut;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use std::{
@@ -52,7 +53,18 @@ struct Mod(std::path::PathBuf);
 impl Mod {
     /// retrieve sound bank from a mod folder, if it exists
     fn bank(self) -> Option<Bank> {
-        todo!()
+        let mut bank = Bank::default();
+        let mut sub_bank: Bank;
+        for entry in std::fs::read_dir(&self.0)
+            .unwrap()
+            .filter_map(std::result::Result::ok)
+        {
+            if entry.path().is_dir() {}
+        }
+        if bank.is_empty() {
+            return None;
+        }
+        Some(bank)
     }
 }
 
@@ -69,6 +81,42 @@ fn is_manifest(file: &std::path::Path) -> bool {
         }
     }
     false
+}
+
+fn visit_dirs(dir: &std::path::Path) -> Option<Bank> {
+    let mut bank = visit_dir(dir);
+    for entry in std::fs::read_dir(dir)
+        .unwrap()
+        .filter_map(std::result::Result::ok)
+        .filter(|x| x.path().is_dir())
+    {
+        if let Some(sub_bank) = visit_dirs(&entry.path()) {
+            match bank.borrow_mut() {
+                Some(current) => {
+                    current.merge(sub_bank);
+                }
+                None => {
+                    bank = Some(sub_bank);
+                }
+            }
+        }
+    }
+    bank
+}
+fn visit_dir(dir: &std::path::Path) -> Option<Bank> {
+    // safety: dir already checked
+    for entry in std::fs::read_dir(dir)
+        .unwrap()
+        .filter_map(std::result::Result::ok)
+    {
+        if is_manifest(&entry.path()) {
+            return std::fs::read(&entry.path())
+                .ok()
+                .map(|x| serde_yaml::from_slice::<Bank>(x.as_slice()).ok())
+                .flatten();
+        }
+    }
+    None
 }
 
 pub struct SoundBanks;
@@ -120,6 +168,20 @@ impl DerefMut for Banks {
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct Bank(HashMap<String, Sound>);
+impl Bank {
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+    pub fn merge(&mut self, rhs: Bank) {
+        for key in rhs.0.keys() {
+            if !self.0.contains_key(key) {
+                self.0.insert(key.clone(), rhs.0.get(key).unwrap().clone());
+            } else {
+                red4ext_rs::warn!("{key} already exists in bank");
+            }
+        }
+    }
+}
 // impl Bank {
 //     fn get(&self, sfx: impl AsRef<str>) -> Option<&dyn Audio> {
 //         self.0.get(sfx.as_ref()).map(|a| a.deref())
