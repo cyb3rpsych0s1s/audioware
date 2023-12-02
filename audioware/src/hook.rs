@@ -255,7 +255,10 @@ pub fn on_entity_queue_event(
     let mut event: MaybeUninitRef<Event> = MaybeUninitRef::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event)) };
     let event = event.into_ref().unwrap();
-    red4ext_rs::info!("event class name: {}", red4ext_rs::ffi::resolve_cname(&event.get_class_name()));
+    red4ext_rs::info!(
+        "event class name: {}",
+        red4ext_rs::ffi::resolve_cname(&event.get_class_name())
+    );
     if let Ok(ref guard) = HOOK_ON_ENTITY_QUEUE_EVENT.clone().try_lock() {
         if let Some(detour) = guard.as_ref() {
             // rewind the stack and call vanilla

@@ -35,9 +35,8 @@ impl REDmod {
     }
     /// retrieve all mod folders under "mods"
     fn mods(self) -> Vec<Mod> {
-        std::fs::read_dir(&self.0)
+        std::fs::read_dir(self.0)
             .unwrap() // safety: dir already checked
-            .into_iter()
             .filter_map(std::result::Result::ok)
             .filter_map(|x| {
                 let path = x.path();
@@ -53,9 +52,9 @@ struct Mod(std::path::PathBuf);
 impl Mod {
     /// retrieve sound bank from a mod folder, if it exists
     fn bank(self) -> Option<Bank> {
-        let mut bank = Bank::default();
-        let mut sub_bank: Bank;
-        for entry in std::fs::read_dir(&self.0)
+        let bank = Bank::default();
+        let mut _sub_bank: Bank;
+        for entry in std::fs::read_dir(self.0)
             .unwrap()
             .filter_map(std::result::Result::ok)
         {
@@ -110,10 +109,9 @@ fn visit_dir(dir: &std::path::Path) -> Option<Bank> {
         .filter_map(std::result::Result::ok)
     {
         if is_manifest(&entry.path()) {
-            return std::fs::read(&entry.path())
+            return std::fs::read(entry.path())
                 .ok()
-                .map(|x| serde_yaml::from_slice::<Bank>(x.as_slice()).ok())
-                .flatten();
+                .and_then(|x| serde_yaml::from_slice::<Bank>(x.as_slice()).ok());
         }
     }
     None
@@ -130,7 +128,6 @@ impl SoundBanks {
         let _dirs = std::fs::read_dir(folder.0);
     }
     pub fn create_bank(name: String) {
-        use std::borrow::BorrowMut;
         if let Ok(mut guard) = BANKS.clone().borrow_mut().try_lock() {
             guard.create(name);
         } else {
@@ -144,8 +141,8 @@ pub struct Banks(HashMap<String, Bank>);
 
 impl Banks {
     pub fn create(&mut self, name: String) {
-        if !self.0.contains_key(&name) {
-            self.0.insert(name, Bank::default());
+        if let std::collections::hash_map::Entry::Vacant(e) = self.0.entry(name.clone()) {
+            e.insert(Bank::default());
         } else {
             red4ext_rs::warn!("banks already contains {name}");
         }
