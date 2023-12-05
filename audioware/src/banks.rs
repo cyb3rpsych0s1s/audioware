@@ -1,7 +1,8 @@
 use anyhow::Context;
 use lazy_static::lazy_static;
+use semver::VersionReq;
 use serde::Deserialize;
-use std::borrow::BorrowMut;
+
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use std::{
@@ -9,7 +10,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::audio::Sound;
+use crate::audio::Kind;
 
 lazy_static! {
     pub static ref BANKS: Arc<Mutex<Banks>> = Arc::new(Mutex::new(Banks::default()));
@@ -51,23 +52,24 @@ impl REDmod {
 struct Mod(std::path::PathBuf);
 impl Mod {
     /// retrieve sound bank from a mod folder, if it exists
-    fn bank(self) -> Option<Bank> {
-        let bank = Bank::default();
-        let mut _sub_bank: Bank;
-        for entry in std::fs::read_dir(self.0)
+    fn bank(&self) -> Option<Bank> {
+        std::fs::read_dir(&self.0)
+            // safety: dir already checked
             .unwrap()
             .filter_map(std::result::Result::ok)
-        {
-            if entry.path().is_dir() {}
-        }
-        if bank.is_empty() {
-            return None;
-        }
-        Some(bank)
+            .filter(|x| x.path().is_file())
+            .find(|x| is_manifest(&x.path()))
+            .and_then(|x| {
+                std::fs::read(x.path())
+                    .ok()
+                    .and_then(|x| serde_yaml::from_slice::<Bank>(x.as_slice()).ok())
+            })
+    }
+    fn name(&self) -> &str {
+        self.0.file_stem().unwrap().to_str().unwrap()
     }
 }
 
-struct Manifest(std::path::PathBuf);
 /// check if path is valid file named "audioware" with YAML extension
 fn is_manifest(file: &std::path::Path) -> bool {
     if let Some(stem) = file.file_stem() {
@@ -82,70 +84,30 @@ fn is_manifest(file: &std::path::Path) -> bool {
     false
 }
 
-fn visit_dirs(dir: &std::path::Path) -> Option<Bank> {
-    let mut bank = visit_dir(dir);
-    for entry in std::fs::read_dir(dir)
-        .unwrap()
-        .filter_map(std::result::Result::ok)
-        .filter(|x| x.path().is_dir())
-    {
-        if let Some(sub_bank) = visit_dirs(&entry.path()) {
-            match bank.borrow_mut() {
-                Some(current) => {
-                    current.merge(sub_bank);
-                }
-                None => {
-                    bank = Some(sub_bank);
-                }
-            }
-        }
-    }
-    bank
-}
-fn visit_dir(dir: &std::path::Path) -> Option<Bank> {
-    // safety: dir already checked
-    for entry in std::fs::read_dir(dir)
-        .unwrap()
-        .filter_map(std::result::Result::ok)
-    {
-        if is_manifest(&entry.path()) {
-            return std::fs::read(entry.path())
-                .ok()
-                .and_then(|x| serde_yaml::from_slice::<Bank>(x.as_slice()).ok());
-        }
-    }
-    None
-}
-
 pub struct SoundBanks;
 impl SoundBanks {
     pub fn initialize() -> anyhow::Result<()> {
         let redmod_folder = REDmod::try_new()?;
-        let _mods = redmod_folder.mods();
-        Ok(())
-    }
-    fn create_banks(folder: REDmod) {
-        let _dirs = std::fs::read_dir(folder.0);
-    }
-    pub fn create_bank(name: String) {
-        if let Ok(mut guard) = BANKS.clone().borrow_mut().try_lock() {
-            guard.create(name);
-        } else {
-            red4ext_rs::error!("could not get a handle to banks");
+        let mods = redmod_folder.mods();
+        if let Ok(mut guard) = BANKS.clone().try_lock() {
+            *guard = Banks::from(mods.as_slice());
         }
+        Ok(())
     }
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct Banks(HashMap<String, Bank>);
 
-impl Banks {
-    pub fn create(&mut self, name: String) {
-        if let std::collections::hash_map::Entry::Vacant(e) = self.0.entry(name.clone()) {
-            e.insert(Bank::default());
-        } else {
-            red4ext_rs::warn!("banks already contains {name}");
+impl From<&[Mod]> for Banks {
+    fn from(value: &[Mod]) -> Self {
+        let mut banks = Self::default();
+        for module in value.iter() {
+            if let Some(bank) = module.bank() {
+                banks.insert(module.name().to_string(), bank);
+            }
         }
+        banks
     }
 }
 
@@ -163,20 +125,58 @@ impl DerefMut for Banks {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Default)]
-pub struct Bank(HashMap<String, Sound>);
+#[derive(Debug, Clone, Deserialize)]
+pub struct LocalizedSound {
+    #[serde(rename = "en-us")]
+    en_us: Localization,
+    #[serde(rename = "fr-fr")]
+    fr_fr: Option<Localization>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SubtitledSound {
+    file: std::path::PathBuf,
+    subtitle: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum Localization {
+    Simple(std::path::PathBuf),
+    Subtitled(SubtitledSound),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct VoiceSound {
+    male: LocalizedSound,
+    #[serde(rename = "fem")]
+    female: LocalizedSound,
+    kind: Option<Kind>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum Sound {
+    Simple(std::path::PathBuf),
+    Genderized(VoiceSound),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub enum Subtitle {}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct SoundId(String);
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Bank {
+    name: String,
+    version: VersionReq,
+    sounds: HashMap<SoundId, Sound>,
+}
 impl Bank {
     pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-    pub fn merge(&mut self, rhs: Bank) {
-        for key in rhs.0.keys() {
-            if !self.0.contains_key(key) {
-                self.0.insert(key.clone(), rhs.0.get(key).unwrap().clone());
-            } else {
-                red4ext_rs::warn!("{key} already exists in bank");
-            }
-        }
+        self.sounds.is_empty()
     }
 }
 // impl Bank {
@@ -184,3 +184,15 @@ impl Bank {
 //         self.0.get(sfx.as_ref()).map(|a| a.deref())
 //     }
 // }
+
+#[cfg(test)]
+mod tests {
+    use super::Bank;
+    #[test]
+    pub fn deserialize() {
+        let filepath = std::path::PathBuf::from("./tests/audioware.yml");
+        let yaml = std::fs::read(filepath).unwrap();
+        let bank = serde_yaml::from_slice::<Bank>(yaml.as_slice());
+        assert!(bank.is_ok());
+    }
+}

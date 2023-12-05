@@ -16,9 +16,6 @@ pub trait SubtitledAudio: Audio {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct Sound;
-
-#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Kind {
     Ono,
@@ -26,4 +23,5 @@ pub enum Kind {
     Thought,
     Ambient,
     Music,
+    Spoken,
 }

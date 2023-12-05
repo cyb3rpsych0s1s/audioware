@@ -20,6 +20,7 @@ red4ext-rs.workspace = true
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 retour = "0.3.1"
+semver ={ version = "1", features = ["serde"] }
 strum = "0.25.0"
 strum_macros = "0.25.3"
 widestring = "1.0.2"
