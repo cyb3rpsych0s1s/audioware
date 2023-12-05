@@ -3,14 +3,15 @@
 mod addresses;
 mod audio;
 mod banks;
+mod engine;
 mod frame;
 mod hook;
 mod interop;
 mod locale;
 
-// use std::borrow::BorrowMut;
-
 use hook::Hook;
+use kira::manager::backend::DefaultBackend;
+use kira::manager::AudioManager;
 use red4ext_rs::plugin::Plugin;
 use red4ext_rs::plugin::Version;
 use red4ext_rs::prelude::*;
@@ -24,7 +25,8 @@ use crate::hook::HookEntityQueueEvent;
 use crate::hook::HookMusicEvent;
 use crate::hook::HookVoiceEvent;
 
-pub struct Audioware;
+#[derive(Default)]
+pub struct Audioware(Option<AudioManager<DefaultBackend>>);
 impl Plugin for Audioware {
     const VERSION: Version = Version::new(0, 0, 1);
     fn post_register() {
@@ -37,6 +39,7 @@ impl Plugin for Audioware {
         HookEntityQueueEvent::load();
 
         let _ = SoundBanks::initialize();
+        let _ = Self::create();
     }
     fn unload() {
         info!("on detach audioware");
@@ -46,6 +49,8 @@ impl Plugin for Audioware {
         HookAudioSystemPlay::unload();
         HookAudioSystemStop::unload();
         HookEntityQueueEvent::unload();
+
+        let _ = Self::destroy();
     }
 }
 

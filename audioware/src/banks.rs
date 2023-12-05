@@ -10,7 +10,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::audio::{Kind, SoundId, Sound};
+use crate::audio::{Sound, SoundId};
 
 lazy_static! {
     pub static ref BANKS: Arc<Mutex<Banks>> = Arc::new(Mutex::new(Banks::default()));
