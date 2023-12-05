@@ -16,6 +16,9 @@ impl IScriptable {
     /// public native func GetClassName() -> CName
     #[redscript(native)]
     pub fn get_class_name(self: &Ref<Self>) -> CName;
+    /// public native func IsExactlyA(className: CName) -> Bool
+    #[redscript(native)]
+    pub fn is_exactly_a(self: &Ref<Self>, class_name: CName) -> bool;
 }
 
 #[derive(Debug)]
@@ -29,5 +32,8 @@ impl ClassType for Event {
 impl Event {
     pub fn get_class_name(self: &Ref<Self>) -> CName {
         red4ext_rs::prelude::Ref::<Event>::upcast(self.clone()).get_class_name()
+    }
+    pub fn is_exactly_a(self: &Ref<Self>, class_name: CName) -> bool {
+        red4ext_rs::prelude::Ref::<Event>::upcast(self.clone()).is_exactly_a(class_name)
     }
 }

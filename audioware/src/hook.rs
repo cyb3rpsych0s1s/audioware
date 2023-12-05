@@ -1,5 +1,5 @@
 use std::borrow::BorrowMut;
-use std::ops::Not;
+use std::ops::{Deref, Not};
 
 use red4ext_rs::types::{CName, EntityId, MaybeUninitRef};
 use widestring::U16CString;
@@ -259,6 +259,18 @@ pub fn on_entity_queue_event(
         "event class name: {}",
         red4ext_rs::ffi::resolve_cname(&event.get_class_name())
     );
+    if event.is_exactly_a(CName::new("entAudioEvent")) {
+        let ent_audio_event: red4ext_rs::types::Ref<AudioEvent> =
+            unsafe { std::mem::transmute(event) };
+        red4ext_rs::info!(
+            "                  -> entAudioEvent: event_name '{}', emitter_name '{}', name_data: '{}', event_type: '{}', event_flags '{}'",
+            red4ext_rs::ffi::resolve_cname(&ent_audio_event.deref().event_name),
+            red4ext_rs::ffi::resolve_cname(&ent_audio_event.deref().emitter_name),
+            red4ext_rs::ffi::resolve_cname(&ent_audio_event.deref().name_data),
+            ent_audio_event.deref().event_type,
+            ent_audio_event.deref().event_flags
+        );
+    }
     if let Ok(ref guard) = HOOK_ON_ENTITY_QUEUE_EVENT.clone().try_lock() {
         if let Some(detour) = guard.as_ref() {
             // rewind the stack and call vanilla
