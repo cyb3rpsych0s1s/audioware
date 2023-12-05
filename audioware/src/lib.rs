@@ -22,6 +22,7 @@ use crate::hook::HookAudioSystemPlay;
 use crate::hook::HookAudioSystemStop;
 use crate::hook::HookEntAudioEvent;
 use crate::hook::HookEntityQueueEvent;
+use crate::hook::HookIComponentQueueEntityEvent;
 use crate::hook::HookMusicEvent;
 use crate::hook::HookVoiceEvent;
 
@@ -37,6 +38,7 @@ impl Plugin for Audioware {
         HookAudioSystemPlay::load();
         HookAudioSystemStop::load();
         HookEntityQueueEvent::load();
+        HookIComponentQueueEntityEvent::load();
 
         let _ = SoundBanks::initialize();
         let _ = Self::create();
@@ -49,6 +51,7 @@ impl Plugin for Audioware {
         HookAudioSystemPlay::unload();
         HookAudioSystemStop::unload();
         HookEntityQueueEvent::unload();
+        HookIComponentQueueEntityEvent::unload();
 
         let _ = Self::destroy();
     }

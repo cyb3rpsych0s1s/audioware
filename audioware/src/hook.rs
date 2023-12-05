@@ -7,6 +7,7 @@ use widestring::U16CString;
 use winapi::shared::minwindef::HMODULE;
 use winapi::um::libloaderapi::GetModuleHandleW;
 
+use crate::banks::SoundBanks;
 use crate::interop::{AudioEvent, MusicEvent, VoiceEvent};
 use audioware_types::event::{Event, SoundPlayEvent};
 use audioware_types::FromMemory;
@@ -294,6 +295,32 @@ pub fn on_entity_queue_event(
     }
 }
 
+pub fn on_icomponent_queue_entity_event(
+    ctx: *mut red4ext_rs::ffi::IScriptable,
+    frame: *mut red4ext_rs::ffi::CStackFrame,
+    out: *mut std::ffi::c_void,
+    a4: i64,
+) {
+    let rewind = unsafe { (*frame.cast::<crate::frame::StackFrame>()).code };
+    // read stack frame
+    let mut event: MaybeUninitRef<Event> = MaybeUninitRef::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event)) };
+    let event = event.into_ref().unwrap();
+    if SoundBanks::contains_sound_for_event(&event) {
+    } else if let Ok(ref guard) = HOOK_ON_ICOMPONENT_QUEUE_ENTITY_EVENT.clone().try_lock() {
+        if let Some(detour) = guard.as_ref() {
+            // rewind the stack and call vanilla
+            unsafe {
+                (*frame.cast::<crate::frame::StackFrame>()).code = rewind;
+                (*frame.cast::<crate::frame::StackFrame>()).currentParam = 0;
+            }
+            let original: ExternFnRedRegisteredFunc =
+                unsafe { std::mem::transmute(detour.trampoline()) };
+            unsafe { original(ctx, frame, out, a4) };
+        }
+    }
+}
+
 pub fn is_vanilla(event_name: CName) -> bool {
     match event_name {
         // TODO: match from loaded infos
@@ -366,6 +393,14 @@ make_hook!(
     ExternFnRedRegisteredFunc,
     on_entity_queue_event,
     HOOK_ON_ENTITY_QUEUE_EVENT
+);
+
+make_hook!(
+    HookIComponentQueueEntityEvent,
+    ON_ICOMPONENT_QUEUE_ENTITY_EVENT,
+    ExternFnRedRegisteredFunc,
+    on_icomponent_queue_entity_event,
+    HOOK_ON_ICOMPONENT_QUEUE_ENTITY_EVENT
 );
 
 unsafe fn get_module(module: &str) -> Option<HMODULE> {

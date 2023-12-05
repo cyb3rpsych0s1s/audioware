@@ -1,5 +1,8 @@
 use anyhow::Context;
+use audioware_types::event::{Event, SoundPlayEvent};
 use lazy_static::lazy_static;
+use red4ext_rs::types::CName;
+use red4ext_rs::types::Ref;
 use semver::VersionReq;
 use serde::Deserialize;
 
@@ -11,6 +14,7 @@ use std::{
 };
 
 use crate::audio::{Sound, SoundId};
+use crate::interop::AudioEvent;
 
 lazy_static! {
     pub static ref BANKS: Arc<Mutex<Banks>> = Arc::new(Mutex::new(Banks::default()));
@@ -94,6 +98,30 @@ impl SoundBanks {
         }
         Ok(())
     }
+    pub fn contains_sound(id: impl Into<SoundId>) -> bool {
+        if let Ok(guard) = BANKS.clone().try_lock() {
+            return guard.contains_sound(id.into());
+        }
+        false
+    }
+    pub fn contains_sound_for_event(event: &Ref<Event>) -> bool {
+        use red4ext_rs::conv::ClassType;
+        let name: Option<CName> = match event {
+            v if v.is_exactly_a(CName::new("entAudioEvent")) => {
+                let ent_audio_event: &Ref<AudioEvent> = unsafe { std::mem::transmute(v) };
+                Some(ent_audio_event.deref().event_name.clone())
+            }
+            v if v.is_exactly_a(CName::new(SoundPlayEvent::NATIVE_NAME)) => {
+                let sound_play_event: &Ref<SoundPlayEvent> = unsafe { std::mem::transmute(v) };
+                Some(sound_play_event.deref().sound_name.clone())
+            }
+            _ => None,
+        };
+        if let Some(name) = name {
+            return Self::contains_sound(name);
+        }
+        false
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -108,6 +136,18 @@ impl From<&[Mod]> for Banks {
             }
         }
         banks
+    }
+}
+
+impl Banks {
+    fn contains_sound(&self, key: impl Into<SoundId>) -> bool {
+        let key = key.into();
+        for bank in self.0.values() {
+            if bank.sounds.contains_key(&key) {
+                return true;
+            }
+        }
+        false
     }
 }
 

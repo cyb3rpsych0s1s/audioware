@@ -8,3 +8,5 @@ pub(crate) const ON_AUDIOSYSTEM_PLAY: usize = 0x02AF3F8;
 pub(crate) const ON_AUDIOSYSTEM_STOP: usize = 0x2410F8C;
 /// memory address for [Entity::QueueEvent](https://codeberg.org/adamsmasher/cyberpunk/src/branch/master/core/entity/entity.swift#L6)
 pub(crate) const ON_ENTITY_QUEUE_EVENT: usize = 0x064A52C;
+/// memory address for [IComponent::QueueEntityEvent](https://codeberg.org/adamsmasher/cyberpunk/src/branch/master/orphans.swift#L16174)
+pub(crate) const ON_ICOMPONENT_QUEUE_ENTITY_EVENT: usize = 0x0C8C890;

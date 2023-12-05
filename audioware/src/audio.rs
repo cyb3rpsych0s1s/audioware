@@ -1,5 +1,6 @@
 use std::{path::Path, time::Duration};
 
+use red4ext_rs::types::CName;
 use serde::Deserialize;
 use std::fmt::Debug;
 
@@ -68,3 +69,9 @@ pub enum Subtitle {}
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct SoundId(String);
+
+impl From<CName> for SoundId {
+    fn from(value: CName) -> Self {
+        Self(red4ext_rs::ffi::resolve_cname(&value).to_string())
+    }
+}
