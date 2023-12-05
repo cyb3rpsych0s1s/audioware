@@ -10,7 +10,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::audio::Kind;
+use crate::audio::{Kind, SoundId, Sound};
 
 lazy_static! {
     pub static ref BANKS: Arc<Mutex<Banks>> = Arc::new(Mutex::new(Banks::default()));
@@ -124,49 +124,6 @@ impl DerefMut for Banks {
         &mut self.0
     }
 }
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct LocalizedSound {
-    #[serde(rename = "en-us")]
-    en_us: Localization,
-    #[serde(rename = "fr-fr")]
-    fr_fr: Option<Localization>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct SubtitledSound {
-    file: std::path::PathBuf,
-    subtitle: String,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(untagged)]
-pub enum Localization {
-    Simple(std::path::PathBuf),
-    Subtitled(SubtitledSound),
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct VoiceSound {
-    male: LocalizedSound,
-    #[serde(rename = "fem")]
-    female: LocalizedSound,
-    kind: Option<Kind>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(untagged)]
-pub enum Sound {
-    Simple(std::path::PathBuf),
-    Genderized(VoiceSound),
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub enum Subtitle {}
-
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
-#[repr(transparent)]
-pub struct SoundId(String);
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Bank {
