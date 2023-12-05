@@ -1,13 +1,14 @@
 use std::borrow::BorrowMut;
 use std::ops::{Deref, Not};
 
+use red4ext_rs::conv::ClassType;
 use red4ext_rs::types::{CName, EntityId, MaybeUninitRef};
 use widestring::U16CString;
 use winapi::shared::minwindef::HMODULE;
 use winapi::um::libloaderapi::GetModuleHandleW;
 
 use crate::interop::{AudioEvent, MusicEvent, VoiceEvent};
-use audioware_types::event::Event;
+use audioware_types::event::{Event, SoundPlayEvent};
 use audioware_types::FromMemory;
 
 pub(crate) trait Hook {
@@ -261,7 +262,7 @@ pub fn on_entity_queue_event(
     );
     if event.is_exactly_a(CName::new("entAudioEvent")) {
         let ent_audio_event: red4ext_rs::types::Ref<AudioEvent> =
-            unsafe { std::mem::transmute(event) };
+            unsafe { std::mem::transmute(event.clone()) };
         red4ext_rs::info!(
             "                  -> entAudioEvent: event_name '{}', emitter_name '{}', name_data: '{}', event_type: '{}', event_flags '{}'",
             red4ext_rs::ffi::resolve_cname(&ent_audio_event.deref().event_name),
@@ -269,6 +270,14 @@ pub fn on_entity_queue_event(
             red4ext_rs::ffi::resolve_cname(&ent_audio_event.deref().name_data),
             ent_audio_event.deref().event_type,
             ent_audio_event.deref().event_flags
+        );
+    } else if event.is_exactly_a(CName::new(SoundPlayEvent::NATIVE_NAME)) {
+        let sound_play_event: red4ext_rs::types::Ref<SoundPlayEvent> =
+            unsafe { std::mem::transmute(event) };
+        red4ext_rs::info!(
+            "                  -> gameaudioeventsPlaySound: sound_name '{}', emitter_name '{}'",
+            red4ext_rs::ffi::resolve_cname(&sound_play_event.deref().sound_name),
+            red4ext_rs::ffi::resolve_cname(&sound_play_event.deref().emitter_name)
         );
     }
     if let Ok(ref guard) = HOOK_ON_ENTITY_QUEUE_EVENT.clone().try_lock() {

@@ -23,14 +23,22 @@ public static exec func TestStopSoundEvent(game: GameInstance, name: String) -> 
     GameObject.StopSoundEvent(player, sound);
 }
 
+// Game.TestEntityQueueEvent("ono_v_effort_long");
+public static exec func TestEntityQueueEvent(game: GameInstance, name: String) -> Void {
+    let player = GetPlayer(game);
+    let evt: ref<SoundPlayEvent> = new SoundPlayEvent();
+    evt.soundName = StringToName(name);
+    player.QueueEvent(evt);
+}
+
 // Game.TestAudioSystemPlay("ono_v_effort_short");
 public static exec func TestAudioSystemPlay(game: GameInstance, name: String) -> Void {
     let player = GetPlayer(game);
     let sound: CName = StringToName(name);
-    // LogChannel(n"DEBUG", s"player.GetEntityID() string: \(EntityID.ToDebugString(player.GetEntityID()))");
-    // LogChannel(n"DEBUG", s"player.GetEntityID() string dec: \(EntityID.ToDebugStringDecimal(player.GetEntityID()))");
-    // LogChannel(n"DEBUG", s"player.GetEntityID() hash: \(ToString(EntityID.GetHash(player.GetEntityID())))");
-    // always `1` for player
+    // // LogChannel(n"DEBUG", s"player.GetEntityID() string: \(EntityID.ToDebugString(player.GetEntityID()))");
+    // // LogChannel(n"DEBUG", s"player.GetEntityID() string dec: \(EntityID.ToDebugStringDecimal(player.GetEntityID()))");
+    // // LogChannel(n"DEBUG", s"player.GetEntityID() hash: \(ToString(EntityID.GetHash(player.GetEntityID())))");
+    // // always `1` for player
     GameInstance.GetAudioSystem(game).Play(sound, player.GetEntityID(), n"V");
 }
 
