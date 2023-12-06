@@ -1,10 +1,10 @@
 use serde::Deserialize;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
 #[allow(dead_code)]
 pub enum Gender {
-    Any,
-    Male,
+    #[serde(rename = "fem")]
     Female,
-    Shemale,
+    #[serde(rename = "male")]
+    Male,
 }

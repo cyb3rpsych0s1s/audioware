@@ -4,7 +4,7 @@ use red4ext_rs::types::CName;
 use serde::Deserialize;
 use std::fmt::Debug;
 
-use crate::locale::Locale;
+use crate::{locale::Locale, gender::Gender};
 
 pub trait Audio {
     fn filepath(&self) -> Path;
@@ -28,9 +28,6 @@ pub enum Kind {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct LocalizedSound(HashMap<Locale, Localization>);
-
-#[derive(Debug, Clone, Deserialize)]
 pub struct SubtitledSound {
     file: std::path::PathBuf,
     subtitle: String,
@@ -45,9 +42,8 @@ pub enum Localization {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct VoiceSound {
-    male: LocalizedSound,
-    #[serde(rename = "fem")]
-    female: LocalizedSound,
+    #[serde(flatten)]
+    gender: HashMap<Gender, HashMap<Locale, Localization>>,
     kind: Option<Kind>,
 }
 
