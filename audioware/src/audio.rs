@@ -1,4 +1,4 @@
-use std::{path::Path, time::Duration};
+use std::{path::Path, time::Duration, collections::HashMap};
 
 use red4ext_rs::types::CName;
 use serde::Deserialize;
@@ -28,12 +28,7 @@ pub enum Kind {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct LocalizedSound {
-    #[serde(rename = "en-us")]
-    en_us: Localization,
-    #[serde(rename = "fr-fr")]
-    fr_fr: Option<Localization>,
-}
+pub struct LocalizedSound(HashMap<Locale, Localization>);
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct SubtitledSound {
