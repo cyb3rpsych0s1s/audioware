@@ -38,9 +38,9 @@ pub struct StaticAudio {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
-pub enum Localization {
+pub enum Translation {
     Simple(StaticAudio),
-    Subtitled{
+    Subtitle{
         file: StaticAudio,
         subtitle: String,
     },
@@ -50,9 +50,9 @@ pub enum Localization {
 #[serde(untagged)]
 pub enum Sound {
     Simple(StaticAudio),
-    Genderized{
+    Gender{
         #[serde(flatten)]
-        gender: HashMap<Gender, HashMap<Locale, Localization>>,
+        gender: HashMap<Gender, HashMap<Locale, Translation>>,
         kind: Option<Kind>,
     },
 }
