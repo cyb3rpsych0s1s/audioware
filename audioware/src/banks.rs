@@ -149,6 +149,15 @@ impl Banks {
         }
         false
     }
+    fn get_sound(&self, key: impl Into<SoundId>) -> Option<Sound> {
+        let key = key.into();
+        for bank in self.0.values() {
+            if let Some(sound) = bank.sounds.get(&key) {
+                return Some(sound.clone());
+            }
+        }
+        None
+    }
 }
 
 impl Deref for Banks {
