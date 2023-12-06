@@ -5,6 +5,7 @@ mod audio;
 mod banks;
 mod engine;
 mod frame;
+mod game;
 mod hook;
 mod interop;
 mod locale;
