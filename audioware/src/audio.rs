@@ -1,5 +1,6 @@
 use std::{path::Path, time::Duration, collections::HashMap};
 
+use kira::sound::static_sound::StaticSoundData;
 use red4ext_rs::types::CName;
 use serde::Deserialize;
 use std::fmt::Debug;
@@ -28,34 +29,33 @@ pub enum Kind {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct SubtitledSound {
+#[serde(transparent)]
+pub struct StaticAudio {
     file: std::path::PathBuf,
-    subtitle: String,
+    #[serde(skip)]
+    data: Option<StaticSoundData>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum Localization {
-    Simple(std::path::PathBuf),
-    Subtitled(SubtitledSound),
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct VoiceSound {
-    #[serde(flatten)]
-    gender: HashMap<Gender, HashMap<Locale, Localization>>,
-    kind: Option<Kind>,
+    Simple(StaticAudio),
+    Subtitled{
+        file: StaticAudio,
+        subtitle: String,
+    },
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum Sound {
-    Simple(std::path::PathBuf),
-    Genderized(VoiceSound),
+    Simple(StaticAudio),
+    Genderized{
+        #[serde(flatten)]
+        gender: HashMap<Gender, HashMap<Locale, Localization>>,
+        kind: Option<Kind>,
+    },
 }
-
-#[derive(Debug, Clone, Deserialize)]
-pub enum Subtitle {}
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
 #[repr(transparent)]
