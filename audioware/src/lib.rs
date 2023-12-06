@@ -6,6 +6,7 @@ mod banks;
 mod engine;
 mod frame;
 mod game;
+mod gender;
 mod hook;
 mod interop;
 mod locale;
