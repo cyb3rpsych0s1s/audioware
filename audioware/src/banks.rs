@@ -13,6 +13,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use crate::audio::Load;
 use crate::audio::{Sound, SoundId};
 use crate::interop::AudioEvent;
 
@@ -67,6 +68,7 @@ impl Mod {
                 std::fs::read(x.path())
                     .ok()
                     .and_then(|x| serde_yaml::from_slice::<Bank>(x.as_slice()).ok())
+                    .and_then(|x| x.load_or_discard())
             })
     }
     fn name(&self) -> &str {
@@ -190,6 +192,26 @@ impl Bank {
 //         self.0.get(sfx.as_ref()).map(|a| a.deref())
 //     }
 // }
+
+impl Bank {
+    fn load_or_discard(mut self) -> Option<Self> {
+        let mut removals = vec![];
+        for (id, sound) in self.sounds.iter_mut() {
+            if sound.load().is_err() {
+                red4ext_rs::error!("{}: error loading {}", self.name, id);
+                removals.push(id.clone());
+            }
+        }
+        for removal in removals {
+            self.sounds.remove(&removal);
+        }
+        if self.sounds.is_empty() {
+            red4ext_rs::error!("{}: empty bank", self.name);
+            return None;
+        }
+        Some(self)
+    }
+}
 
 #[cfg(test)]
 mod tests {

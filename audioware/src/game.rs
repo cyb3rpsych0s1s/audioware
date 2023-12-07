@@ -1,7 +1,11 @@
 use audioware_types::event::IScriptable;
-use red4ext_rs::{conv::{NativeRepr, ClassType}, macros::redscript_import, types::{CName, MaybeUninitRef}};
-use std::ffi::c_void;
 use red4ext_rs::types::Ref;
+use red4ext_rs::{
+    conv::{ClassType, NativeRepr},
+    macros::redscript_import,
+    types::{CName, MaybeUninitRef},
+};
+use std::ffi::c_void;
 
 #[derive(Clone)]
 #[repr(C)]
