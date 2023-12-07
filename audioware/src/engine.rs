@@ -7,32 +7,22 @@ use std::{
 use kira::{
     manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
     spatial::scene::{SpatialSceneHandle, SpatialSceneSettings},
-    track::{effect::reverb::ReverbBuilder, TrackBuilder, TrackHandle, TrackId, TrackRoutes},
+    track::{effect::reverb::ReverbBuilder, TrackBuilder, TrackHandle, TrackRoutes},
 };
 use lazy_static::lazy_static;
+use red4ext_rs::types::EntityId;
 
-use crate::Audioware;
+use crate::{
+    audio::{SoundId, StaticAudio},
+    banks::BANKS,
+    Audioware,
+};
 
 lazy_static! {
     static ref AUDIO: Arc<Mutex<Audioware>> = Arc::new(Mutex::new(Audioware::default()));
-    static ref TRACKS: Arc<Mutex<HashMap<NamedTrackId, TrackHandle>>> =
+    static ref TRACKS: Arc<Mutex<HashMap<String, TrackHandle>>> =
         Arc::new(Mutex::new(HashMap::default()));
     static ref SCENE: Arc<Mutex<Option<SpatialSceneHandle>>> = Arc::new(Mutex::new(None));
-}
-
-#[derive(Debug)]
-pub struct NamedTrackId(&'static str, TrackId);
-
-impl PartialEq for NamedTrackId {
-    fn eq(&self, other: &Self) -> bool {
-        self.1 == other.1
-    }
-}
-impl Eq for NamedTrackId {}
-impl std::hash::Hash for NamedTrackId {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.1.hash(state);
-    }
 }
 
 impl Audioware {
@@ -61,11 +51,11 @@ impl Audioware {
         let environment = manager.add_spatial_scene(SpatialSceneSettings::default())?;
 
         if let Ok(mut guard) = TRACKS.clone().borrow_mut().try_lock() {
-            guard.insert(NamedTrackId("ambience", ambience.id()), ambience);
-            guard.insert(NamedTrackId("player", player.id()), player);
-            guard.insert(NamedTrackId("player:vocal", vocal.id()), vocal);
-            guard.insert(NamedTrackId("player:emissive", emissive.id()), emissive);
-            guard.insert(NamedTrackId("player:mental", mental.id()), mental);
+            guard.insert("ambience".to_string(), ambience);
+            guard.insert("player".to_string(), player);
+            guard.insert("player:vocal".to_string(), vocal);
+            guard.insert("player:emissive".to_string(), emissive);
+            guard.insert("player:mental".to_string(), mental);
         }
         if let Ok(mut guard) = SCENE.clone().borrow_mut().try_lock() {
             *guard = Some(environment);
@@ -92,5 +82,37 @@ impl Audioware {
             }
             Err(_) => anyhow::bail!("unable to destroy audioware"),
         }
+    }
+    fn get_audio(key: impl Into<SoundId>) -> Option<StaticAudio> {
+        BANKS
+            .clone()
+            .try_lock()
+            .ok()
+            .and_then(|x| x.get_sound(key))
+            .map(|x| x.audio())
+    }
+    pub(crate) fn play(&mut self, sound: impl Into<SoundId>) {
+        if let Some(audio) = Self::get_audio(sound) {
+            if let Ok(mut guard) = AUDIO.clone().borrow_mut().try_lock() {
+                if let Some(manager) = guard.0.as_mut() {
+                    let data = audio.data.unwrap();
+                    if let Ok(track) = TRACKS.clone().try_lock() {
+                        let track = track.get("player").unwrap();
+                        data.settings.output_destination(track);
+                        let _ = manager.play(data);
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub trait IsPlayer {
+    fn is_player(&self) -> bool;
+}
+
+impl IsPlayer for EntityId {
+    fn is_player(&self) -> bool {
+        self == &EntityId::from(1)
     }
 }

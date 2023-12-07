@@ -37,7 +37,7 @@ pub trait Load {
 pub struct StaticAudio {
     file: std::path::PathBuf,
     #[serde(skip)]
-    data: Option<StaticSoundData>,
+    pub(crate) data: Option<StaticSoundData>,
     #[serde(skip)]
     duration: Duration,
     #[serde(skip)]
@@ -101,6 +101,15 @@ impl Load for Sound {
                 }
                 Ok(())
             }
+        }
+    }
+}
+
+impl Sound {
+    pub fn audio(&self) -> StaticAudio {
+        match self {
+            Sound::Simple(audio) => audio.clone(),
+            Sound::Gender { gender: _, kind: _ } => todo!(),
         }
     }
 }

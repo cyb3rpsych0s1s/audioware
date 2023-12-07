@@ -1,5 +1,6 @@
 use anyhow::Context;
 use audioware_types::event::{Event, SoundPlayEvent};
+
 use lazy_static::lazy_static;
 use red4ext_rs::types::CName;
 use red4ext_rs::types::Ref;
@@ -152,7 +153,7 @@ impl Banks {
         }
         false
     }
-    fn get_sound(&self, key: impl Into<SoundId>) -> Option<Sound> {
+    pub fn get_sound(&self, key: impl Into<SoundId>) -> Option<Sound> {
         let key = key.into();
         for bank in self.0.values() {
             if let Some(sound) = bank.sounds.get(&key) {
