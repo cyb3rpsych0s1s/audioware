@@ -10,4 +10,4 @@ rust-version = "1.74"
 [workspace.dependencies]
 audioware-macros = { path = "audioware-macros" }
 audioware-types = { path = "audioware-types" }
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", rev = "21c354c", features = ["macros"] }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", rev = "87ddfb4", features = ["macros"] }
