@@ -134,6 +134,7 @@ impl From<&[Mod]> for Banks {
         let mut banks = Self::default();
         for module in value.iter() {
             if let Some(bank) = module.bank() {
+                red4ext_rs::info!("loaded {}", bank);
                 banks.insert(module.name().to_string(), bank);
             }
         }
@@ -192,6 +193,22 @@ impl Bank {
 //         self.0.get(sfx.as_ref()).map(|a| a.deref())
 //     }
 // }
+
+impl std::fmt::Display for Bank {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} (version {}): {}",
+            self.name,
+            self.version,
+            self.sounds
+                .keys()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    }
+}
 
 impl Bank {
     fn load_or_discard(mut self) -> Option<Self> {
