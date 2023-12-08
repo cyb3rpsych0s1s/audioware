@@ -14,8 +14,11 @@ audioware-types.workspace = true
 audioware-macros.workspace = true
 anyhow = "1"
 cxx = "1"
+either = "1.9.0"
+fixed-map = "0.9.3"
 kira = "0.8.5"
 lazy_static = "1.4.0"
+music-timer = "0.1.6"
 red4ext-rs.workspace = true
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
