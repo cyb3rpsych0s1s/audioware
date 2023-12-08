@@ -30,6 +30,11 @@ use crate::hook::HookVoiceEvent;
 
 #[derive(Default)]
 pub struct Audioware(Option<AudioManager<DefaultBackend>>);
+impl Audioware {
+    pub(crate) fn unload(&mut self) {
+        let _ = self.0.take();
+    }
+}
 impl Plugin for Audioware {
     const VERSION: Version = Version::new(0, 0, 1);
     fn post_register() {
@@ -43,7 +48,9 @@ impl Plugin for Audioware {
         HookIComponentQueueEntityEvent::load();
 
         let _ = SoundBanks::initialize();
-        let _ = Self::create();
+        if let Err(e) = Self::setup() {
+            red4ext_rs::error!("{e}");
+        }
     }
     fn unload() {
         info!("on detach audioware");
@@ -55,7 +62,9 @@ impl Plugin for Audioware {
         HookEntityQueueEvent::unload();
         HookIComponentQueueEntityEvent::unload();
 
-        let _ = Self::destroy();
+        if let Err(e) = Self::teardown() {
+            red4ext_rs::error!("{e}");
+        }
     }
 }
 

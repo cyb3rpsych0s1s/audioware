@@ -24,17 +24,20 @@ lazy_static! {
 
 struct REDmod(std::path::PathBuf);
 impl REDmod {
-    /// retrieve "mods" folder
-    fn try_new() -> anyhow::Result<Self> {
+    fn folder() -> anyhow::Result<std::path::PathBuf> {
         let current_folder = std::env::current_exe()?;
-        let redmod_folder = current_folder
+        Ok(current_folder
             .parent()
             .context("plugins folder")?
             .parent()
             .context("red4ext folder")?
             .parent()
             .context("Cyberpunk 2077 folder")?
-            .join("mods");
+            .join("mods"))
+    }
+    /// retrieve "mods" folder
+    fn try_new() -> anyhow::Result<Self> {
+        let redmod_folder = Self::folder()?;
         if redmod_folder.is_dir() {
             return Ok(Self(redmod_folder));
         }
@@ -214,8 +217,12 @@ impl std::fmt::Display for Bank {
 impl Bank {
     fn load_or_discard(mut self) -> Option<Self> {
         let mut removals = vec![];
+        let redmod_folder = REDmod::folder().unwrap();
         for (id, sound) in self.sounds.iter_mut() {
-            if sound.load().is_err() {
+            if sound
+                .load(redmod_folder.join(&self.name).as_path())
+                .is_err()
+            {
                 red4ext_rs::error!("{}: error loading {}", self.name, id);
                 removals.push(id.clone());
             }

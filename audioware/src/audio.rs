@@ -29,7 +29,7 @@ pub enum Kind {
 }
 
 pub trait Load {
-    fn load(&mut self) -> anyhow::Result<()>;
+    fn load(&mut self, folder: &std::path::Path) -> anyhow::Result<()>;
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -45,17 +45,17 @@ pub struct StaticAudio {
 }
 
 impl Load for StaticAudio {
-    fn load(&mut self) -> anyhow::Result<()> {
-        self.size = self
-            .file
+    fn load(&mut self, folder: &std::path::Path) -> anyhow::Result<()> {
+        let filepath = folder.join(&self.file);
+        self.size = filepath
             .metadata()
             .as_ref()
             .map(std::fs::Metadata::len)
             .unwrap_or(0);
         if self.size == 0 {
-            anyhow::bail!("{} size is zero byte.", self.file.display());
+            anyhow::bail!("{} size is zero byte.", filepath.display());
         }
-        let data = StaticSoundData::from_file(&self.file, StaticSoundSettings::default())?;
+        let data = StaticSoundData::from_file(&filepath, StaticSoundSettings::default())?;
         self.duration = data.duration();
         self.data = Some(data);
         Ok(())
@@ -70,10 +70,10 @@ pub enum Translation {
 }
 
 impl Load for Translation {
-    fn load(&mut self) -> anyhow::Result<()> {
+    fn load(&mut self, folder: &std::path::Path) -> anyhow::Result<()> {
         match self {
-            Translation::Simple(audio) => audio.load(),
-            Translation::Subtitle { file, .. } => file.load(),
+            Translation::Simple(audio) => audio.load(folder),
+            Translation::Subtitle { file, .. } => file.load(folder),
         }
     }
 }
@@ -90,13 +90,13 @@ pub enum Sound {
 }
 
 impl Load for Sound {
-    fn load(&mut self) -> anyhow::Result<()> {
+    fn load(&mut self, folder: &std::path::Path) -> anyhow::Result<()> {
         match self {
-            Sound::Simple(audio) => audio.load(),
+            Sound::Simple(audio) => audio.load(folder),
             Sound::Gender { gender, .. } => {
                 for translations in gender.values_mut() {
                     for translation in translations.values_mut() {
-                        translation.load()?;
+                        translation.load(folder)?;
                     }
                 }
                 Ok(())

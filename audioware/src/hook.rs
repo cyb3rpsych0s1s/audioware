@@ -9,6 +9,7 @@ use winapi::um::libloaderapi::GetModuleHandleW;
 
 use crate::banks::SoundBanks;
 use crate::interop::{AudioEvent, MusicEvent, VoiceEvent};
+use crate::Audioware;
 use audioware_types::event::{Event, SoundPlayEvent};
 use audioware_types::FromMemory;
 
@@ -322,11 +323,7 @@ pub fn on_icomponent_queue_entity_event(
 }
 
 pub fn is_vanilla(event_name: CName) -> bool {
-    match event_name {
-        // TODO: match from loaded infos
-        v if v == CName::new("ono_v_effort_short") => false,
-        _ => true,
-    }
+    !SoundBanks::contains_sound(event_name)
 }
 
 pub fn custom_engine_play(event_name: CName, entity_id: EntityId, emitter_name: CName) {
@@ -336,6 +333,7 @@ pub fn custom_engine_play(event_name: CName, entity_id: EntityId, emitter_name: 
         entity_id,
         red4ext_rs::ffi::resolve_cname(&emitter_name)
     );
+    Audioware::play(event_name);
 }
 
 pub fn custom_engine_stop(event_name: CName, entity_id: EntityId, emitter_name: CName) {
