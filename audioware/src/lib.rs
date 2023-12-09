@@ -11,9 +11,9 @@ mod hook;
 mod interop;
 mod locale;
 
+use engine::Audioware;
 use hook::Hook;
-use kira::manager::backend::DefaultBackend;
-use kira::manager::AudioManager;
+
 use red4ext_rs::plugin::Plugin;
 use red4ext_rs::plugin::Version;
 use red4ext_rs::prelude::*;
@@ -28,13 +28,6 @@ use crate::hook::HookIComponentQueueEntityEvent;
 use crate::hook::HookMusicEvent;
 use crate::hook::HookVoiceEvent;
 
-#[derive(Default)]
-pub struct Audioware(Option<AudioManager<DefaultBackend>>);
-impl Audioware {
-    pub(crate) fn unload(&mut self) {
-        let _ = self.0.take();
-    }
-}
 impl Plugin for Audioware {
     const VERSION: Version = Version::new(0, 0, 1);
     fn post_register() {
@@ -54,6 +47,7 @@ impl Plugin for Audioware {
     }
     fn unload() {
         info!("on detach audioware");
+
         HookEntAudioEvent::unload();
         HookMusicEvent::unload();
         HookVoiceEvent::unload();
@@ -61,10 +55,6 @@ impl Plugin for Audioware {
         HookAudioSystemStop::unload();
         HookEntityQueueEvent::unload();
         HookIComponentQueueEntityEvent::unload();
-
-        if let Err(e) = Self::teardown() {
-            red4ext_rs::error!("{e}");
-        }
     }
 }
 

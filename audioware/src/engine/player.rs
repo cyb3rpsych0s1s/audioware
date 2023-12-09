@@ -34,7 +34,7 @@ impl std::fmt::Debug for PlayerTracks {
 }
 
 impl PlayerTracks {
-    pub(crate) fn setup(manager: &mut AudioManager, reverb: &TrackHandle) -> anyhow::Result<()> {
+    pub(crate) fn setup(manager: &mut AudioManager, reverb: &TrackHandle) -> anyhow::Result<Self> {
         let player = manager.add_sub_track(
             TrackBuilder::new().routes(TrackRoutes::new().with_route(reverb, 0.25)),
         )?;
@@ -47,7 +47,7 @@ impl PlayerTracks {
         let emissive = manager.add_sub_track(
             TrackBuilder::new().routes(TrackRoutes::new().with_route(&player, 1.)),
         )?;
-        let _ = PLAYER.set(PlayerTracks {
+        Ok(PlayerTracks {
             vocal: Arc::new(Mutex::new(BoundedTrack {
                 track: vocal,
                 current: None,
@@ -62,7 +62,6 @@ impl PlayerTracks {
                 current: Vec::with_capacity(64),
             })),
             parent: player,
-        });
-        Ok(())
+        })
     }
 }
