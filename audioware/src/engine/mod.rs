@@ -4,7 +4,6 @@ use std::{
 };
 
 use anyhow::Context;
-use either::Either;
 
 use kira::{
     manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
@@ -28,12 +27,7 @@ mod wrapper;
 
 use player::PLAYER;
 
-use self::{
-    collector::Collector,
-    player::PlayerTracks,
-    state::State,
-    track::{AnySound, StatefulSound},
-};
+use self::{collector::Collector, player::PlayerTracks, state::State, track::StatefulSound};
 
 lazy_static! {
     static ref AUDIO: OnceLock<Mutex<Audioware>> = OnceLock::default();
@@ -98,19 +92,10 @@ impl Audioware {
                                     let data = audio.data.unwrap();
                                     data.settings.output_destination(&vocal_guard.track);
                                     if let Ok(sound) = manager.play(data) {
-                                        vocal_guard.current = Some(AnySound(Either::Left(sound)));
+                                        vocal_guard.current = Some(sound.into());
                                     }
                                 }
                             }
-                            // if let Ok(mut audio_guard) = AUDIO.clone().borrow_mut().try_lock() {
-                            //     if let Some(manager) = audio_guard.0.as_mut() {
-                            //         let data = audio.data.unwrap();
-                            //         data.settings.output_destination(&vocal_guard.track);
-                            //         if let Ok(sound) = manager.play(data) {
-                            //             vocal_guard.current = Some(AnySound(Either::Left(sound)));
-                            //         }
-                            //     }
-                            // }
                         }
                     };
                 }

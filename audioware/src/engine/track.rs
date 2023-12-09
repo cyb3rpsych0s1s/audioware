@@ -39,7 +39,19 @@ impl std::fmt::Debug for UnboundedTrack {
 }
 
 #[repr(transparent)]
-pub(super) struct AnySound(pub Either<StaticSoundHandle, StreamingSoundHandle<anyhow::Error>>);
+pub(super) struct AnySound(Either<StaticSoundHandle, StreamingSoundHandle<anyhow::Error>>);
+
+impl From<StaticSoundHandle> for AnySound {
+    fn from(value: StaticSoundHandle) -> Self {
+        Self(Either::Left(value))
+    }
+}
+
+impl From<StreamingSoundHandle<anyhow::Error>> for AnySound {
+    fn from(value: StreamingSoundHandle<anyhow::Error>) -> Self {
+        Self(Either::Right(value))
+    }
+}
 
 impl std::fmt::Debug for AnySound {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
