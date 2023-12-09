@@ -1,6 +1,9 @@
-use std::{sync::{Arc, Mutex, OnceLock, MutexGuard}, borrow::BorrowMut};
+use std::sync::MutexGuard;
 
-use kira::{manager::{backend::DefaultBackend, AudioManager}, sound::{SoundData, Sound}};
+use kira::{
+    manager::{backend::DefaultBackend, AudioManager},
+    sound::SoundData,
+};
 use lazy_static::lazy_static;
 
 use super::wrapper::OnceWrapper;

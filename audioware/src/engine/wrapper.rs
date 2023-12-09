@@ -1,4 +1,7 @@
-use std::{sync::{OnceLock, Arc, Mutex, MutexGuard}, borrow::BorrowMut};
+use std::{
+    borrow::BorrowMut,
+    sync::{Arc, Mutex, MutexGuard, OnceLock},
+};
 
 pub struct OnceWrapper<T>(OnceLock<Arc<Mutex<T>>>);
 impl<T> OnceWrapper<T> {
@@ -8,8 +11,15 @@ impl<T> OnceWrapper<T> {
         }
         anyhow::bail!("set was called more than once");
     }
-    pub fn try_call<O>(&self, method: impl FnOnce(MutexGuard<'_, T>) -> anyhow::Result<O>) -> anyhow::Result<O> {
-        if let Ok(guard) = unsafe{self.0.get().unwrap_unchecked()}.clone().borrow_mut().try_lock() {
+    pub fn try_call<O>(
+        &self,
+        method: impl FnOnce(MutexGuard<'_, T>) -> anyhow::Result<O>,
+    ) -> anyhow::Result<O> {
+        if let Ok(guard) = unsafe { self.0.get().unwrap_unchecked() }
+            .clone()
+            .borrow_mut()
+            .try_lock()
+        {
             return method(guard);
         }
         anyhow::bail!("unable to reach inner value");
