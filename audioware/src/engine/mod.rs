@@ -1,12 +1,6 @@
 use std::{
     borrow::BorrowMut,
-    collections::VecDeque,
-    sync::{
-        atomic::{AtomicU8, Ordering},
-        Arc, Mutex, OnceLock,
-    },
-    thread::JoinHandle,
-    time::Duration,
+    sync::{atomic::AtomicU8, Arc, Mutex, OnceLock},
 };
 
 use anyhow::Context;
@@ -14,7 +8,7 @@ use either::Either;
 
 use kira::{
     manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
-    sound::{static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, PlaybackState},
+    sound::PlaybackState,
     track::{effect::reverb::ReverbBuilder, TrackBuilder, TrackHandle},
 };
 use lazy_static::lazy_static;
@@ -25,24 +19,24 @@ use crate::{
     banks::BANKS,
 };
 
+mod collector;
 mod manager;
 mod player;
+mod state;
+mod track;
 mod wrapper;
 
 use player::PLAYER;
 
-use self::player::PlayerTracks;
+use self::{
+    collector::Collector,
+    player::PlayerTracks,
+    state::State,
+    track::{AnySound, StatefulSound},
+};
 
 lazy_static! {
     static ref AUDIO: OnceLock<Mutex<Audioware>> = OnceLock::default();
-}
-
-#[repr(u8)]
-enum State {
-    Load = 0,
-    Menu = 1,
-    InGame = 2,
-    Unload = 3,
 }
 
 pub(super) struct Audioware {
@@ -51,103 +45,6 @@ pub(super) struct Audioware {
     reverb: Arc<TrackHandle>,
     player: PlayerTracks,
     collector: Collector,
-}
-
-struct Collector(JoinHandle<()>);
-
-impl Collector {
-    fn new(flag: Arc<AtomicU8>, callback: Arc<fn() -> ()>) -> Self {
-        Self(std::thread::spawn(move || 'thread: loop {
-            match flag.load(Ordering::Relaxed) {
-                a if a == State::Load as u8 || a == State::Menu as u8 => {
-                    std::thread::park();
-                }
-                a if a == State::InGame as u8 => {
-                    (callback.clone())();
-                    std::thread::sleep(Duration::from_millis(250));
-                }
-                _ => {
-                    break 'thread;
-                }
-            }
-        }))
-    }
-}
-
-struct BoundedTrack {
-    track: TrackHandle,
-    current: Option<AnySound>,
-    queue: VecDeque<StaticAudio>,
-}
-
-impl std::fmt::Debug for BoundedTrack {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("BoundedTrack")
-            .field("track", &self.track.id())
-            .field("current", &self.current)
-            .field("queue", &self.queue)
-            .finish()
-    }
-}
-
-struct UnboundedTrack {
-    track: TrackHandle,
-    current: Vec<AnySound>,
-}
-
-impl std::fmt::Debug for UnboundedTrack {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("UnboundedTrack")
-            .field("track", &self.track.id())
-            .field("current", &self.current)
-            .finish()
-    }
-}
-
-#[repr(transparent)]
-pub struct AnySound(Either<StaticSoundHandle, StreamingSoundHandle<anyhow::Error>>);
-
-impl std::fmt::Debug for AnySound {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.0 {
-            Either::Left(_) => f.debug_tuple("AnySound:StaticSoundHandle").finish(),
-            Either::Right(_) => f.debug_tuple("AnySound:StreamingSoundHandle").finish(),
-        }
-    }
-}
-
-pub trait StatefulSound {
-    fn state(&self) -> PlaybackState;
-    fn playing(&self) -> bool {
-        self.state() != PlaybackState::Stopped
-    }
-}
-
-impl StatefulSound for StaticSoundHandle {
-    fn state(&self) -> PlaybackState {
-        self.state()
-    }
-}
-
-impl<E> StatefulSound for StreamingSoundHandle<E> {
-    fn state(&self) -> PlaybackState {
-        self.state()
-    }
-}
-
-impl AnySound {
-    pub fn get(&self) -> &dyn StatefulSound {
-        match &self.0 {
-            Either::Left(left) => left,
-            Either::Right(right) => right,
-        }
-    }
-}
-
-impl StatefulSound for AnySound {
-    fn state(&self) -> PlaybackState {
-        self.get().state()
-    }
 }
 
 fn collect() {}

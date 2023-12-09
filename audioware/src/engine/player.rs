@@ -9,17 +9,17 @@ use kira::{
 };
 use lazy_static::lazy_static;
 
-use super::{BoundedTrack, UnboundedTrack};
+use super::track::{BoundedTrack, UnboundedTrack};
 
 lazy_static! {
-    pub(crate) static ref PLAYER: OnceLock<PlayerTracks> = OnceLock::default();
+    pub(super) static ref PLAYER: OnceLock<PlayerTracks> = OnceLock::default();
 }
 
-pub(crate) struct PlayerTracks {
-    pub(crate) vocal: Arc<Mutex<BoundedTrack>>,
-    pub(crate) mental: Arc<Mutex<UnboundedTrack>>,
-    pub(crate) emissive: Arc<Mutex<UnboundedTrack>>,
-    pub(crate) parent: TrackHandle,
+pub(super) struct PlayerTracks {
+    pub(super) vocal: Arc<Mutex<BoundedTrack>>,
+    pub(super) mental: Arc<Mutex<UnboundedTrack>>,
+    pub(super) emissive: Arc<Mutex<UnboundedTrack>>,
+    pub(super) parent: TrackHandle,
 }
 
 impl std::fmt::Debug for PlayerTracks {
