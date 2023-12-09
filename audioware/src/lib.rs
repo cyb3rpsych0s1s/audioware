@@ -30,6 +30,12 @@ use crate::hook::HookVoiceEvent;
 
 impl Plugin for Audioware {
     const VERSION: Version = Version::new(0, 0, 1);
+    fn register() {
+        register_function!(
+            "Audioware.UpdateEngineState",
+            Audioware::update_engine_state
+        );
+    }
     fn post_register() {
         info!("on attach audioware");
         HookEntAudioEvent::load();
