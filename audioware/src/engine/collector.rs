@@ -33,4 +33,7 @@ impl Collector {
             }
         }))
     }
+    pub(crate) fn unpark(&self) {
+        self.0.thread().unpark();
+    }
 }

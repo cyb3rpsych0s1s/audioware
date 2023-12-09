@@ -49,7 +49,10 @@ fn collect() {}
 
 impl Audioware {
     pub(crate) fn update_engine_state(state: State) {
-        STATE.store(state as u8, std::sync::atomic::Ordering::SeqCst);
+        if let Some(audioware) = AUDIO.get().and_then(|x| x.try_lock().ok()) {
+            audioware.collector.unpark();
+            STATE.store(state as u8, std::sync::atomic::Ordering::SeqCst);
+        }
     }
     pub(crate) fn setup() -> anyhow::Result<()> {
         let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())
