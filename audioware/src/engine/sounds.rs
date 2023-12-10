@@ -1,5 +1,4 @@
 use std::{
-    borrow::BorrowMut,
     collections::HashMap,
     sync::{Mutex, OnceLock},
     time::Duration,
@@ -23,6 +22,12 @@ const TERMINATE: Tween = Tween {
     duration: Duration::from_secs(1),
     easing: kira::tween::Easing::Linear,
 };
+
+pub(super) fn setup() {
+    if let Err(_) = SOUNDS_POOL.set(Mutex::new(HashMap::default())) {
+        red4ext_rs::error!("error initializing sounds pool");
+    }
+}
 
 pub(super) fn cleanup() {
     if let Some(mut pool) = SOUNDS_POOL.get().and_then(|x| x.try_lock().ok()) {

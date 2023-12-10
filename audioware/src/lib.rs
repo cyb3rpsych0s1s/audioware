@@ -7,6 +7,14 @@ struct Audioware;
 
 impl Plugin for Audioware {
     const VERSION: Version = Version::new(0, 0, 1);
+
+    fn register() {
+        engine::setup();
+    }
+
+    fn post_register() {}
+
+    fn unload() {}
 }
 
 define_trait_plugin! (

@@ -1,18 +1,15 @@
-use std::{
-    thread::JoinHandle,
-    time::Duration, sync::OnceLock,
-};
+use std::{sync::OnceLock, thread::JoinHandle, time::Duration};
 
 use lazy_static::lazy_static;
 
-use super::{state::STATE, State, sounds};
+use super::{sounds, state::STATE, State};
 
 lazy_static! {
     pub(super) static ref COLLECTOR: OnceLock<JoinHandle<()>> = OnceLock::default();
 }
 
 pub(super) fn setup() {
-    let _ = COLLECTOR.set(std::thread::spawn(move || 'thread: loop {
+    if let Err(_) = COLLECTOR.set(std::thread::spawn(move || 'thread: loop {
         match STATE.load(std::sync::atomic::Ordering::Relaxed) {
             a if a == State::Load as u8 || a == State::Menu as u8 => {
                 std::thread::park();
@@ -33,7 +30,9 @@ pub(super) fn setup() {
                 break 'thread;
             }
         }
-    }));
+    })) {
+        red4ext_rs::error!("error on collector setup");
+    }
 }
 
 pub(super) fn unpark() {
