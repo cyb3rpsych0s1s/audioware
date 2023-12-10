@@ -10,7 +10,7 @@ use kira::{
 };
 use lazy_static::lazy_static;
 
-use crate::engine::id::SoundId;
+use super::id::SoundId;
 
 lazy_static! {
     static ref SOUNDS_POOL: OnceLock<Mutex<HashMap<SoundId, StaticSoundHandle>>> =

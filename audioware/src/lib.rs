@@ -12,7 +12,10 @@ impl Plugin for Audioware {
 
     fn register() {
         engine::setup();
-        register_function!("Audioware.UpdateEngineState", crate::natives::update_state);
+        register_function!(
+            "Audioware.UpdateEngineState",
+            crate::natives::update_engine_state
+        );
     }
 
     fn post_register() {}

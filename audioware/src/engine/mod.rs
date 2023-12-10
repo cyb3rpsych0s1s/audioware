@@ -13,9 +13,9 @@ pub(super) fn setup() {
 #[inline]
 pub(super) fn update_state(state: State) {
     if state == State::End || state == State::InGame {
-        crate::engine::collector::unpark();
+        collector::unpark();
     }
-    let previous = crate::engine::state::update(state);
+    let previous = state::update(state);
     match (previous, state) {
         (State::InGame, State::InMenu) | (State::InGame, State::InPause) => {
             sounds::pause();
