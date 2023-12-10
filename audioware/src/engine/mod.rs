@@ -10,9 +10,10 @@ pub(super) fn setup() {
     sounds::setup();
 }
 
+#[inline]
 pub(super) fn update_state(state: State) {
     if state == State::End || state == State::InGame {
-        collector::unpark();
+        crate::engine::collector::unpark();
     }
-    state::update(state);
+    crate::engine::state::update(state);
 }

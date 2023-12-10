@@ -31,7 +31,7 @@ pub(super) fn setup() {
             }
         }
     })) {
-        red4ext_rs::error!("error on collector setup");
+        red4ext_rs::error!("error on initializing collector");
     }
 }
 

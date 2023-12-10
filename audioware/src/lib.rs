@@ -1,7 +1,9 @@
 use red4ext_rs::plugin::Version;
+use red4ext_rs::register_function;
 use red4ext_rs::{define_trait_plugin, plugin::Plugin};
 
 mod engine;
+pub mod natives;
 
 struct Audioware;
 
@@ -10,6 +12,7 @@ impl Plugin for Audioware {
 
     fn register() {
         engine::setup();
+        register_function!("Audioware.UpdateState", crate::natives::update_state);
     }
 
     fn post_register() {}
