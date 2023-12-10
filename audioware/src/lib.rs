@@ -1,67 +1,12 @@
-#![feature(arbitrary_self_types)]
-
-mod addresses;
-mod audio;
-mod banks;
-mod engine;
-mod frame;
-mod game;
-mod gender;
-mod hook;
-mod interop;
-mod locale;
-
-use engine::Audioware;
-use hook::Hook;
-
-use red4ext_rs::plugin::Plugin;
 use red4ext_rs::plugin::Version;
-use red4ext_rs::prelude::*;
+use red4ext_rs::{define_trait_plugin, plugin::Plugin};
 
-use crate::banks::SoundBanks;
+mod engine;
 
-use crate::hook::HookAudioSystemPlay;
-use crate::hook::HookAudioSystemStop;
-use crate::hook::HookEntAudioEvent;
-use crate::hook::HookEntityQueueEvent;
-use crate::hook::HookIComponentQueueEntityEvent;
-use crate::hook::HookMusicEvent;
-use crate::hook::HookVoiceEvent;
+struct Audioware;
 
 impl Plugin for Audioware {
     const VERSION: Version = Version::new(0, 0, 1);
-    fn register() {
-        register_function!(
-            "Audioware.UpdateEngineState",
-            Audioware::update_engine_state
-        );
-    }
-    fn post_register() {
-        info!("on attach audioware");
-        HookEntAudioEvent::load();
-        HookMusicEvent::load();
-        HookVoiceEvent::load();
-        HookAudioSystemPlay::load();
-        HookAudioSystemStop::load();
-        HookEntityQueueEvent::load();
-        HookIComponentQueueEntityEvent::load();
-
-        let _ = SoundBanks::initialize();
-        if let Err(e) = Self::setup() {
-            red4ext_rs::error!("{e}");
-        }
-    }
-    fn unload() {
-        info!("on detach audioware");
-
-        HookEntAudioEvent::unload();
-        HookMusicEvent::unload();
-        HookVoiceEvent::unload();
-        HookAudioSystemPlay::unload();
-        HookAudioSystemStop::unload();
-        HookEntityQueueEvent::unload();
-        HookIComponentQueueEntityEvent::unload();
-    }
 }
 
 define_trait_plugin! (

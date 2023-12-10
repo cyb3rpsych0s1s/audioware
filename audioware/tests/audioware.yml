@@ -25,4 +25,6 @@ sounds:
         file: fr-fr/happy/v_m_78988.Wav
         subtitle: J'suis trop beau, tu trouves pas ?!
     kind: spoken
-  bzzz: device/cash_machine_123456.Wav
+  bzzz:
+    file: device/cash_machine_123456.Wav
+    kind: ono
