@@ -2,18 +2,17 @@ module Audioware
 
 import Codeware.Localization.*
 
-private native func UpdateEngineLocale(voice: CName, subtitle: CName, interface: CName) -> Void;
+private native func UpdateEngineLocale(voice: CName, subtitle: CName) -> Void;
 private native func UpdateEngineGender(gender: PlayerGender) -> Void;
 private native func DefineEngineSubtitles(self: ref<LocalizationPackage>) -> Void;
-private native func SupportedEngineLanguages() -> array<CName>;
+public native func SupportedEngineLanguages() -> array<CName>;
 
 public class LocalizationProvider extends ModLocalizationProvider {
     public func OnLocaleChange() -> Void {
         let system = LocalizationSystem.GetInstance(this.GetGameInstance());
         let voice = system.GetVoiceLanguage();
         let subtitle = system.GetSubtitleLanguage();
-        let interface = system.GetInterfaceLanguage();
-        UpdateEngineLocale(voice, subtitle, interface);
+        UpdateEngineLocale(voice, subtitle);
     }
     public func OnGenderChange() -> Void {
         let system = LocalizationSystem.GetInstance(this.GetGameInstance());

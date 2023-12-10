@@ -1,14 +1,18 @@
 use red4ext_rs::types::CName;
 use red4ext_rs::types::Ref;
 
-use crate::{engine::State, interop::{gender::PlayerGender, localization::LocalizationPackage}};
+use crate::interop::locale::Locale;
+use crate::{
+    engine::State,
+    interop::{gender::PlayerGender, localization::LocalizationPackage},
+};
 
 pub fn update_engine_state(state: State) {
     crate::engine::update_state(state);
 }
 
 #[allow(unused_variables)]
-pub fn update_engine_locale(voice: CName, subtitle: CName, interface: CName) {}
+pub fn update_engine_locale(voice: CName, subtitle: CName) {}
 
 #[allow(unused_variables)]
 pub fn update_engine_gender(gender: PlayerGender) {}
