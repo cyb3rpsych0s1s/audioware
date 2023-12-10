@@ -29,6 +29,22 @@ pub(super) fn setup() {
     }
 }
 
+pub(super) fn pause() {
+    if let Some(mut pool) = SOUNDS_POOL.get().and_then(|x| x.try_lock().ok()) {
+        pool.values_mut().for_each(|v| {
+            let _ = v.pause(Tween::default());
+        });
+    }
+}
+
+pub(super) fn resume() {
+    if let Some(mut pool) = SOUNDS_POOL.get().and_then(|x| x.try_lock().ok()) {
+        pool.values_mut().for_each(|v| {
+            let _ = v.resume(Tween::default());
+        });
+    }
+}
+
 pub(super) fn cleanup() {
     if let Some(mut pool) = SOUNDS_POOL.get().and_then(|x| x.try_lock().ok()) {
         pool.retain(|_, v| v.state() != PlaybackState::Stopped);
