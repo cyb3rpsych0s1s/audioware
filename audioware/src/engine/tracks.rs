@@ -1,0 +1,49 @@
+use std::sync::OnceLock;
+
+use kira::{
+    manager::AudioManager,
+    track::{effect::reverb::ReverbBuilder, TrackBuilder, TrackHandle, TrackRoutes},
+};
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref TRACKS: OnceLock<Tracks> = OnceLock::default();
+}
+
+struct Tracks {
+    reverb: TrackHandle,
+    v: V,
+}
+
+struct V {
+    main: TrackHandle,
+    vocal: TrackHandle,
+    mental: TrackHandle,
+    emissive: TrackHandle,
+}
+
+pub(super) fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
+    let reverb = manager.add_sub_track({
+        let mut builder = TrackBuilder::new();
+        builder.add_effect(ReverbBuilder::new().mix(1.0));
+        builder
+    })?;
+    let main = manager
+        .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.25)))?;
+    let vocal = manager
+        .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&main, 1.)))?;
+    let mental = manager
+        .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&main, 1.)))?;
+    let emissive = manager
+        .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&main, 1.)))?;
+    if let Err(_) = TRACKS.set(Tracks {
+        reverb,
+        v: V {
+            main,
+            vocal,
+            mental,
+            emissive,
+        },
+    }) {}
+    Ok(())
+}

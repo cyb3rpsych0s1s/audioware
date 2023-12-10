@@ -2,12 +2,15 @@ pub use self::state::State;
 
 mod collector;
 mod id;
+mod manager;
 mod sounds;
 mod state;
+mod tracks;
 
 pub(super) fn setup() {
     collector::setup();
     sounds::setup();
+    manager::setup();
 }
 
 #[inline]
