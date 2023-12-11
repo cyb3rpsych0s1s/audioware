@@ -3,15 +3,15 @@ voices:
   ono_hhuh:
     fem:
       en-us:
-        file: vanilla/en-us/v_f_123456.Wav
-        subtitle: Hello there
+        file: vanilla/en-us/v_sq017_f_19795c050029f000.Wav
+        subtitle: Again?
       fr-fr:
-        file: vanilla/fr-fr/v_f_654321.Wav
-        subtitle: Salut toi
+        file: vanilla/fr-fr/v_sq017_f_19795c050029f000.Wav
+        subtitle: Encore ?
     male:
       en-us:
-        file: vanilla/en-us/v_m_123456.Wav
-        subtitle: Hello there
+        file: vanilla/en-us/v_sq017_m_19795c050029f000.Wav
+        subtitle: Again?
       fr-fr:
-        file: vanilla/fr-fr/v_m_654321.Wav
-        subtitle: Salut toi
+        file: vanilla/fr-fr/v_sq017_m_19795c050029f000.Wav
+        subtitle: Encore ?

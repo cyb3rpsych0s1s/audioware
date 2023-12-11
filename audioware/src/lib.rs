@@ -3,8 +3,8 @@ use red4ext_rs::register_function;
 use red4ext_rs::{define_trait_plugin, plugin::Plugin};
 
 mod engine;
-mod types;
 pub mod natives;
+mod types;
 
 struct Audioware;
 

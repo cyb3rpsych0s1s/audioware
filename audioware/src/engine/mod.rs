@@ -1,11 +1,11 @@
 pub use self::state::State;
 
 mod collector;
+pub mod id;
 mod manager;
 mod sounds;
 mod state;
 mod tracks;
-pub mod id;
 
 pub(super) fn setup() {
     collector::setup();
