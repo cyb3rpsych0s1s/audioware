@@ -24,7 +24,9 @@ impl Bank {
     pub fn cleanup(&mut self) {
         use validator::ValidateArgs;
         let folder = self.folder();
-        self.voices.voices.retain(|_, voice| voice.validate_args(&folder).is_ok());
+        self.voices
+            .voices
+            .retain(|_, voice| voice.validate_args(&folder).is_ok());
     }
 }
 

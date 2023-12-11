@@ -4,8 +4,8 @@ use fixed_map::Map;
 use kira::sound::static_sound::{StaticSoundData, StaticSoundSettings};
 use semver::Version;
 use serde::Deserialize;
-use validator::{ValidateArgs, ValidationErrors};
 use validator::{Validate, ValidationError};
+use validator::{ValidateArgs, ValidationErrors};
 
 use crate::engine::id::SoundId;
 use audioware_types::interop::locale::Locale;
@@ -38,7 +38,9 @@ impl<'v_a> ValidateArgs<'v_a> for Voice {
                 errors.add("male", e);
             }
         }
-        if !errors.is_empty() { return Err(errors); }
+        if !errors.is_empty() {
+            return Err(errors);
+        }
         Ok(())
     }
 }
