@@ -2,11 +2,13 @@ pub use self::state::State;
 
 mod banks;
 mod collector;
-pub mod id;
+mod id;
 mod manager;
 mod sounds;
 mod state;
 mod tracks;
+
+pub use id::SoundId;
 
 pub(super) fn setup() -> anyhow::Result<()> {
     banks::setup()?;

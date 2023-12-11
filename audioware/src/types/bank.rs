@@ -1,9 +1,29 @@
+use std::{
+    borrow::BorrowMut,
+    collections::HashSet,
+    sync::{Arc, Mutex},
+};
+
+use lazy_static::lazy_static;
 use serde::Deserialize;
+
+use crate::engine::SoundId;
 
 use super::{
     redmod::{Mod, ModName, REDmod},
     voice::Voices,
 };
+
+lazy_static! {
+    static ref IDS: Arc<Mutex<HashSet<SoundId>>> = Arc::new(Mutex::new(HashSet::new()));
+}
+
+pub(super) fn insert(id: SoundId) -> anyhow::Result<bool> {
+    if let Ok(mut guard) = IDS.clone().borrow_mut().try_lock() {
+        return Ok(guard.insert(id));
+    }
+    anyhow::bail!("unable to reach ids");
+}
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Bank {
@@ -22,9 +42,19 @@ impl Bank {
     pub fn cleanup(&mut self) {
         use validator::ValidateArgs;
         let folder = self.folder();
-        self.voices
-            .voices
-            .retain(|_, voice| voice.validate_args(&folder).is_ok());
+        self.voices.voices.retain(|id, voice| {
+            if voice.validate_args(&folder).is_ok() {
+                if let Ok(inserted) = insert(id.clone()) {
+                    if !inserted {
+                        red4ext_rs::error!("duplicate bank id {id}");
+                    }
+                    return inserted;
+                } else {
+                    red4ext_rs::error!("unable to insert bank id {id}");
+                }
+            }
+            false
+        });
     }
 }
 

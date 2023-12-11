@@ -7,7 +7,7 @@ use serde::Deserialize;
 use validator::{Validate, ValidationError};
 use validator::{ValidateArgs, ValidationErrors};
 
-use crate::engine::id::SoundId;
+use crate::engine::SoundId;
 use audioware_types::interop::locale::Locale;
 
 #[derive(Debug, Clone, Deserialize)]
