@@ -4,26 +4,18 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use audioware_types::interop::{gender::PlayerGender, locale::Locale};
+use kira::sound::static_sound::StaticSoundData;
 use lazy_static::lazy_static;
+use red4ext_rs::types::CName;
 use serde::Deserialize;
 
-use crate::engine::SoundId;
+use crate::engine::{self, SoundId};
 
 use super::{
     redmod::{Mod, ModName, REDmod},
-    voice::Voices,
+    voice::{AudioSubtitle, Voices},
 };
-
-lazy_static! {
-    static ref IDS: Arc<Mutex<HashSet<SoundId>>> = Arc::new(Mutex::new(HashSet::new()));
-}
-
-pub(super) fn insert(id: SoundId) -> anyhow::Result<bool> {
-    if let Ok(mut guard) = IDS.clone().borrow_mut().try_lock() {
-        return Ok(guard.insert(id));
-    }
-    anyhow::bail!("unable to reach ids");
-}
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Bank {
@@ -39,22 +31,40 @@ impl Bank {
     pub fn folder(&self) -> std::path::PathBuf {
         REDmod::try_new().unwrap().as_path().join(&self.r#mod)
     }
-    pub fn cleanup(&mut self) {
+    pub fn retain_valid_audio(&mut self) {
         use validator::ValidateArgs;
         let folder = self.folder();
-        self.voices.voices.retain(|id, voice| {
-            if voice.validate_args(&folder).is_ok() {
-                if let Ok(inserted) = insert(id.clone()) {
-                    if !inserted {
-                        red4ext_rs::error!("duplicate bank id {id}");
-                    }
-                    return inserted;
-                } else {
-                    red4ext_rs::error!("unable to insert bank id {id}");
+        self.voices
+            .voices
+            .retain(|_, voice| voice.validate_args(&folder).is_ok());
+    }
+    pub fn retain_unique_ids(&mut self, ids: &Arc<Mutex<HashSet<SoundId>>>) {
+        self.voices.voices.retain(|id, _| {
+            if let Ok(mut guard) = ids.clone().borrow_mut().try_lock() {
+                let inserted = guard.insert(id.clone());
+                if !inserted {
+                    red4ext_rs::error!("duplicate sound id ({id})");
                 }
+                return inserted;
+            } else {
+                red4ext_rs::error!("unable to reach sound ids");
             }
             false
         });
+    }
+    pub fn data(
+        &self,
+        gender: PlayerGender,
+        language: Locale,
+        id: SoundId,
+    ) -> Option<StaticSoundData> {
+        if let Some(voice) = self.voices.voices.get(&id.into()) {
+            let audios = voice.audios(gender);
+            if let Some(audio) = audios.get(language) {
+                return StaticSoundData::from_file(&audio.file, Default::default()).ok();
+            }
+        }
+        None
     }
 }
 

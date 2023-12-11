@@ -26,9 +26,12 @@ pub(crate) fn setup() {
 
 pub(crate) fn play(sound: SoundId) {
     if let Some(mut manager) = AUDIO_MANAGER.get().and_then(|x| x.try_lock().ok()) {
-        let data: StaticSoundData = todo!();
-        if let Err(_) = manager.play(data) {
-            red4ext_rs::error!("error playing sound {sound}");
+        if let Ok(data) = engine::banks::data(sound.clone()) {
+            if let Err(_) = manager.play(data) {
+                red4ext_rs::error!("error playing sound {sound}");
+            }
+        } else {
+            red4ext_rs::warn!("unknown sound ({sound})");
         }
     }
 }

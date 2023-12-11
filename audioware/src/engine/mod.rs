@@ -3,6 +3,7 @@ pub use self::state::State;
 mod banks;
 mod collector;
 mod id;
+pub(crate) mod localization;
 mod manager;
 mod sounds;
 mod state;

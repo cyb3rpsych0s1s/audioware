@@ -1,6 +1,6 @@
 use red4ext_rs::conv::NativeRepr;
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 #[repr(i64)]
 pub enum PlayerGender {
     #[default]

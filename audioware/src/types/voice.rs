@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use audioware_types::interop::gender::PlayerGender;
 use fixed_map::Map;
 use kira::sound::static_sound::{StaticSoundData, StaticSoundSettings};
 use semver::Version;
@@ -21,6 +22,15 @@ pub struct Voice {
     #[serde(rename = "fem")]
     pub female: Map<Locale, AudioSubtitle>,
     pub male: Map<Locale, AudioSubtitle>,
+}
+
+impl Voice {
+    pub fn audios(&self, gender: PlayerGender) -> &Map<Locale, AudioSubtitle> {
+        match gender {
+            PlayerGender::Female => &self.female,
+            PlayerGender::Male => &self.male,
+        }
+    }
 }
 
 impl<'v_a> ValidateArgs<'v_a> for Voice {

@@ -28,3 +28,9 @@ impl PartialEq<SoundId> for CName {
         self.eq(&other.cname())
     }
 }
+
+impl From<CName> for SoundId {
+    fn from(value: CName) -> Self {
+        Self(red4ext_rs::ffi::resolve_cname(&value).to_string())
+    }
+}
