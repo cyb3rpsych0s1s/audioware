@@ -19,9 +19,6 @@ impl REDmod {
     pub fn as_path(&self) -> &std::path::Path {
         &self.0.as_path()
     }
-    pub fn contains(&self, subfolder: &std::path::Path) -> bool {
-        subfolder.starts_with(&self.0)
-    }
     pub fn mods(&self) -> Vec<Mod> {
         std::fs::read_dir(self.as_path())
             .unwrap()

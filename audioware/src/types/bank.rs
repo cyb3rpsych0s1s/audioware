@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
 use serde::Deserialize;
 
 use super::{
-    redmod::{self, Mod, ModName, REDmod},
+    redmod::{Mod, ModName, REDmod},
     voice::Voices,
 };
 
@@ -42,7 +40,7 @@ impl TryFrom<&Mod> for Bank {
                 .find(|x| is_manifest(&x.path()))
             {
                 let content = std::fs::read(manifest.path())?;
-                let mut voices = serde_yaml::from_slice::<Voices>(content.as_slice())?;
+                let voices = serde_yaml::from_slice::<Voices>(content.as_slice())?;
 
                 return Ok(Self {
                     r#mod: value.name(),

@@ -56,12 +56,16 @@ fn validate_static_sound_data(
     value: &std::path::PathBuf,
     arg: &std::path::Path,
 ) -> Result<(), ValidationError> {
+    let arg = std::fs::canonicalize(&arg).unwrap();
     let path = arg.join(value);
+    if !path.starts_with(arg) {
+        return Err(ValidationError::new("file located outside of mod folder"));
+    }
     StaticSoundData::from_file(path, StaticSoundSettings::default())
         .map(|_| ())
         .map_err(|e| {
             println!("{:#?}", e);
-            ValidationError::new("invalid file")
+            ValidationError::new("invalid audio file")
         })
 }
 
@@ -81,12 +85,19 @@ mod tests {
 
     #[test]
     pub fn validate() {
-        let folder = std::path::PathBuf::from("./tests/en-us");
+        let folder = std::path::PathBuf::from("./tests");
         let audio = AudioSubtitle {
-            file: "v_sq017_f_19795c050029f000.Wav".into(),
+            file: "en-us/v_sq017_f_19795c050029f000.Wav".into(),
             subtitle: "Again?".to_string(),
         };
         let validation = audio.validate_args(folder.as_path());
         assert!(validation.is_ok());
+
+        let audio = AudioSubtitle {
+            file: "en-us/../../v_sq017_f_19795c050029f000.Wav".into(),
+            subtitle: "Again?".to_string(),
+        };
+        let validation = audio.validate_args(folder.as_path());
+        assert!(validation.is_err());
     }
 }
