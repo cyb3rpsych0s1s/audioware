@@ -1,7 +1,8 @@
+use fixed_map::Key;
 use red4ext_rs::types::CName;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, Hash, Key)]
 pub enum Locale {
     #[serde(rename = "pl-pl")]
     Polish,

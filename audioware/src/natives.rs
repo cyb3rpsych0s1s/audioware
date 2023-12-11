@@ -1,11 +1,10 @@
 use red4ext_rs::types::CName;
 use red4ext_rs::types::Ref;
 
-use crate::interop::locale::Locale;
-use crate::{
-    engine::State,
-    interop::{gender::PlayerGender, localization::LocalizationPackage},
-};
+use audioware_types::interop::gender::PlayerGender;
+use audioware_types::interop::localization::LocalizationPackage;
+
+use crate::engine::State;
 
 pub fn update_engine_state(state: State) {
     crate::engine::update_state(state);

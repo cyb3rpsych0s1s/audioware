@@ -12,15 +12,15 @@ crate-type = ["cdylib"]
 [dependencies]
 audioware-types.workspace = true
 audioware-macros.workspace = true
-anyhow = "1"
+anyhow.workspace = true
 cxx = "1"
 either = "1.9.0"
-fixed-map = "0.9.3"
+fixed-map.workspace = true
 kira = "0.8.5"
 lazy_static = "1.4.0"
 music-timer = "0.1.6"
 red4ext-rs.workspace = true
-serde = { version = "1.0", features = ["derive"] }
+serde.workspace = true
 serde_yaml = "0.9"
 retour = "0.3.1"
 semver ={ version = "1", features = ["serde"] }

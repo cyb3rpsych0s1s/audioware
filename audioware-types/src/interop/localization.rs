@@ -1,10 +1,9 @@
-use audioware_types::event::IScriptable;
+use crate::event::IScriptable;
 use red4ext_rs::{
-    conv::{ClassType, NativeRepr},
+    conv::ClassType,
     macros::redscript_import,
-    types::{CName, RedString, Ref},
+    types::{RedString, Ref},
 };
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub struct LocalizationPackage;

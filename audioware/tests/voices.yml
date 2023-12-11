@@ -1,0 +1,17 @@
+version: 1.0.0
+voices:
+  ono_hhuh:
+    fem:
+      en-us:
+        file: vanilla/en-us/v_f_123456.Wav
+        subtitle: Hello there
+      fr-fr:
+        file: vanilla/fr-fr/v_f_654321.Wav
+        subtitle: Salut toi
+    male:
+      en-us:
+        file: vanilla/en-us/v_m_123456.Wav
+        subtitle: Hello there
+      fr-fr:
+        file: vanilla/fr-fr/v_m_654321.Wav
+        subtitle: Salut toi
