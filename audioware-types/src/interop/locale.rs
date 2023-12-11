@@ -42,27 +42,27 @@ pub enum Locale {
     Thai,
 }
 
-impl Into<CName> for Locale {
-    fn into(self) -> CName {
-        CName::new(match self {
-            Self::Polish => "pl-pl",
-            Self::English => "en-us",
-            Self::Spanish => "es-es",
-            Self::French => "fr-fr",
-            Self::Italian => "it-it",
-            Self::German => "de-de",
-            Self::LatinAmericanSpanish => "es-mx",
-            Self::Korean => "kr-kr",
-            Self::SimplifiedChinese => "zh-cn",
-            Self::Russian => "ru-ru",
-            Self::BrazilianPortuguese => "pt-br",
-            Self::Japanese => "jp-jp",
-            Self::TraditionalChinese => "zh-tw",
-            Self::Arabic => "ar-ar",
-            Self::Czech => "cz-cz",
-            Self::Hungarian => "hu-hu",
-            Self::Turkish => "tr-tr",
-            Self::Thai => "th-th",
+impl From<Locale> for CName {
+    fn from(val: Locale) -> Self {
+        CName::new(match val {
+            Locale::Polish => "pl-pl",
+            Locale::English => "en-us",
+            Locale::Spanish => "es-es",
+            Locale::French => "fr-fr",
+            Locale::Italian => "it-it",
+            Locale::German => "de-de",
+            Locale::LatinAmericanSpanish => "es-mx",
+            Locale::Korean => "kr-kr",
+            Locale::SimplifiedChinese => "zh-cn",
+            Locale::Russian => "ru-ru",
+            Locale::BrazilianPortuguese => "pt-br",
+            Locale::Japanese => "jp-jp",
+            Locale::TraditionalChinese => "zh-tw",
+            Locale::Arabic => "ar-ar",
+            Locale::Czech => "cz-cz",
+            Locale::Hungarian => "hu-hu",
+            Locale::Turkish => "tr-tr",
+            Locale::Thai => "th-th",
         })
     }
 }

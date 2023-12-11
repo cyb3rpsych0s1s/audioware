@@ -12,7 +12,7 @@ impl Plugin for Audioware {
     const VERSION: Version = Version::new(0, 0, 1);
 
     fn register() {
-        engine::setup();
+        let _ = engine::setup();
         register_function!(
             "Audioware.UpdateEngineState",
             crate::natives::update_engine_state

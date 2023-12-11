@@ -4,6 +4,7 @@ use fixed_map::Map;
 use kira::sound::static_sound::{StaticSoundData, StaticSoundSettings};
 use semver::Version;
 use serde::Deserialize;
+use validator::{ValidateArgs, ValidationErrors};
 use validator::{Validate, ValidationError};
 
 use crate::engine::id::SoundId;
@@ -12,25 +13,48 @@ use audioware_types::interop::locale::Locale;
 #[derive(Debug, Clone, Deserialize)]
 pub struct Voices {
     version: Version,
-    voices: HashMap<SoundId, Voice>,
+    pub(super) voices: HashMap<SoundId, Voice>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Voice {
     #[serde(rename = "fem")]
-    female: Map<Locale, AudioSubtitle>,
-    male: Map<Locale, AudioSubtitle>,
+    pub female: Map<Locale, AudioSubtitle>,
+    pub male: Map<Locale, AudioSubtitle>,
+}
+
+impl<'v_a> ValidateArgs<'v_a> for Voice {
+    type Args = &'v_a std::path::Path;
+
+    fn validate_args(&self, args: Self::Args) -> Result<(), validator::ValidationErrors> {
+        let mut errors = ValidationErrors::new();
+        for audio in self.female.values() {
+            if let Err(e) = validate_static_sound_data(&audio.file, args) {
+                errors.add("female", e);
+            }
+        }
+        for audio in self.male.values() {
+            if let Err(e) = validate_static_sound_data(&audio.file, args) {
+                errors.add("male", e);
+            }
+        }
+        if !errors.is_empty() { return Err(errors); }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Validate)]
 pub struct AudioSubtitle {
     #[validate(custom(function = "validate_static_sound_data", arg = "&'v_a std::path::Path"))]
-    file: std::path::PathBuf,
-    subtitle: String,
+    pub file: std::path::PathBuf,
+    pub subtitle: String,
 }
 
-fn validate_static_sound_data(file: &std::path::PathBuf, folder: &std::path::Path) -> Result<(), ValidationError> {
-    let path = folder.join(file);
+fn validate_static_sound_data(
+    value: &std::path::PathBuf,
+    arg: &std::path::Path,
+) -> Result<(), ValidationError> {
+    let path = arg.join(value);
     StaticSoundData::from_file(path, StaticSoundSettings::default())
         .map(|_| ())
         .map_err(|e| {
@@ -43,7 +67,7 @@ fn validate_static_sound_data(file: &std::path::PathBuf, folder: &std::path::Pat
 mod tests {
     use validator::ValidateArgs;
 
-    use crate::types::voice::{Voices, AudioSubtitle};
+    use crate::types::voice::{AudioSubtitle, Voices};
 
     #[test]
     pub fn deserialize() {
@@ -58,7 +82,7 @@ mod tests {
         let folder = std::path::PathBuf::from("./tests/en-us");
         let audio = AudioSubtitle {
             file: "v_sq017_f_19795c050029f000.Wav".into(),
-            subtitle: "Again?".to_string()
+            subtitle: "Again?".to_string(),
         };
         let validation = audio.validate_args(folder.as_path());
         assert!(validation.is_ok());

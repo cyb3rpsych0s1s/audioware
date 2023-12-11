@@ -1,5 +1,6 @@
 pub use self::state::State;
 
+mod banks;
 mod collector;
 pub mod id;
 mod manager;
@@ -7,10 +8,12 @@ mod sounds;
 mod state;
 mod tracks;
 
-pub(super) fn setup() {
+pub(super) fn setup() -> anyhow::Result<()> {
+    banks::setup()?;
     collector::setup();
     sounds::setup();
     manager::setup();
+    Ok(())
 }
 
 #[inline]
