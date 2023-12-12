@@ -1,14 +1,9 @@
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Mutex, MutexGuard, OnceLock};
 
-use kira::{
-    manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
-    sound::static_sound::StaticSoundData,
-};
+use kira::manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings};
 use lazy_static::lazy_static;
 
 use crate::engine;
-
-use super::id::SoundId;
 
 lazy_static! {
     static ref AUDIO_MANAGER: OnceLock<Mutex<AudioManager<DefaultBackend>>> = OnceLock::default();
@@ -24,14 +19,6 @@ pub(crate) fn setup() {
     }
 }
 
-pub(crate) fn play(sound: SoundId) {
-    if let Some(mut manager) = AUDIO_MANAGER.get().and_then(|x| x.try_lock().ok()) {
-        if let Ok(data) = engine::banks::data(sound.clone()) {
-            if let Err(_) = manager.play(data) {
-                red4ext_rs::error!("error playing sound {sound}");
-            }
-        } else {
-            red4ext_rs::warn!("unknown sound ({sound})");
-        }
-    }
+pub(crate) fn try_get_mut<'a>() -> Option<MutexGuard<'a, AudioManager>> {
+    AUDIO_MANAGER.get().and_then(|x| x.try_lock().ok())
 }

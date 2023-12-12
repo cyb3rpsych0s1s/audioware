@@ -17,7 +17,7 @@ impl REDmod {
         ))
     }
     pub fn as_path(&self) -> &std::path::Path {
-        &self.0.as_path()
+        self.0.as_path()
     }
     pub fn mods(&self) -> Vec<Mod> {
         std::fs::read_dir(self.as_path())
@@ -33,7 +33,7 @@ pub struct Mod(std::path::PathBuf);
 
 impl Mod {
     pub fn as_path(&self) -> &std::path::Path {
-        &self.0.as_path()
+        self.0.as_path()
     }
     pub fn name(&self) -> ModName {
         ModName(self.0.file_stem().unwrap().to_str().unwrap().to_string())
@@ -45,6 +45,6 @@ pub struct ModName(String);
 
 impl AsRef<std::path::Path> for ModName {
     fn as_ref(&self) -> &std::path::Path {
-        &std::path::Path::new(&self.0)
+        std::path::Path::new(&self.0)
     }
 }

@@ -36,14 +36,23 @@ pub(super) fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
         .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&main, 1.)))?;
     let emissive = manager
         .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&main, 1.)))?;
-    if let Err(_) = TRACKS.set(Tracks {
-        reverb,
-        v: V {
-            main,
-            vocal,
-            mental,
-            emissive,
-        },
-    }) {}
+    if TRACKS
+        .set(Tracks {
+            reverb,
+            v: V {
+                main,
+                vocal,
+                mental,
+                emissive,
+            },
+        })
+        .is_err()
+    {
+        red4ext_rs::error!("error initializing tracks for audio engine");
+    }
     Ok(())
+}
+
+pub(super) fn vocal<'a>() -> Option<&'a TrackHandle> {
+    TRACKS.get().map(|x| &x.v.vocal)
 }

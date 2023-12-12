@@ -66,7 +66,7 @@ fn validate_static_sound_data(
     value: &std::path::PathBuf,
     arg: &std::path::Path,
 ) -> Result<(), ValidationError> {
-    let arg = std::fs::canonicalize(&arg).unwrap();
+    let arg = std::fs::canonicalize(arg).unwrap();
     let path = arg.join(value);
     if !path.starts_with(arg) {
         return Err(ValidationError::new("file located outside of mod folder"));

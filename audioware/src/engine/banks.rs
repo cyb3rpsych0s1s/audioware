@@ -27,7 +27,7 @@ pub(super) fn setup() -> anyhow::Result<()> {
     let mods = redmod.mods();
     let mut banks = HashMap::with_capacity(mods.len());
     for ref m in mods {
-        if let Some(mut bank) = Bank::try_from(m).ok() {
+        if let Ok(mut bank) = Bank::try_from(m) {
             bank.retain_valid_audio();
             bank.retain_unique_ids(&IDS);
             banks.insert(bank.name().clone(), bank);

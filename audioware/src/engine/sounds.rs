@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{Mutex, OnceLock},
+    sync::{Mutex, MutexGuard, OnceLock},
     time::Duration,
 };
 
@@ -24,9 +24,19 @@ const TERMINATE: Tween = Tween {
 };
 
 pub(super) fn setup() {
-    if let Err(_) = SOUNDS_POOL.set(Mutex::new(HashMap::default())) {
+    if SOUNDS_POOL.set(Mutex::new(HashMap::default())).is_err() {
         red4ext_rs::error!("error initializing sounds pool");
     }
+}
+
+pub(super) fn store(id: SoundId, handle: StaticSoundHandle) {
+    if let Some(mut pool) = SOUNDS_POOL.get().and_then(|x| x.try_lock().ok()) {
+        pool.insert(id, handle);
+    }
+}
+
+pub(super) fn try_get_mut<'a>() -> Option<MutexGuard<'a, HashMap<SoundId, StaticSoundHandle>>> {
+    SOUNDS_POOL.get().and_then(|x| x.try_lock().ok())
 }
 
 pub(super) fn pause() {

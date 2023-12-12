@@ -6,15 +6,14 @@ use std::{
 
 use audioware_types::interop::{gender::PlayerGender, locale::Locale};
 use kira::sound::static_sound::StaticSoundData;
-use lazy_static::lazy_static;
-use red4ext_rs::types::CName;
+
 use serde::Deserialize;
 
-use crate::engine::{self, SoundId};
+use crate::engine::SoundId;
 
 use super::{
     redmod::{Mod, ModName, REDmod},
-    voice::{AudioSubtitle, Voices},
+    voice::Voices,
 };
 
 #[derive(Debug, Clone, Deserialize)]
@@ -58,7 +57,7 @@ impl Bank {
         language: Locale,
         id: SoundId,
     ) -> Option<StaticSoundData> {
-        if let Some(voice) = self.voices.voices.get(&id.into()) {
+        if let Some(voice) = self.voices.voices.get(&id) {
             let audios = voice.audios(gender);
             if let Some(audio) = audios.get(language) {
                 return StaticSoundData::from_file(&audio.file, Default::default()).ok();
