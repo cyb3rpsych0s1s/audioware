@@ -1,6 +1,6 @@
 pub use self::state::State;
 
-mod banks;
+pub(crate) mod banks;
 mod collector;
 mod id;
 pub(crate) mod localization;

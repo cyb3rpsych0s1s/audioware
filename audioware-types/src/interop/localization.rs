@@ -1,4 +1,4 @@
-use crate::event::IScriptable;
+use crate::interop::iscriptable::IScriptable;
 use red4ext_rs::{
     conv::ClassType,
     macros::redscript_import,

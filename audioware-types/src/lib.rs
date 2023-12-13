@@ -1,6 +1,5 @@
 #![feature(arbitrary_self_types)]
 
-pub mod event;
 pub mod interop;
 
 /// # Safety

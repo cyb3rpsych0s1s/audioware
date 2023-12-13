@@ -1,8 +1,14 @@
+#![feature(arbitrary_self_types)]
+
 use red4ext_rs::plugin::Version;
 use red4ext_rs::register_function;
 use red4ext_rs::{define_trait_plugin, plugin::Plugin};
 
-mod engine;
+mod addresses;
+pub(crate) mod engine;
+mod frame;
+mod hook;
+mod interop;
 pub mod natives;
 mod types;
 

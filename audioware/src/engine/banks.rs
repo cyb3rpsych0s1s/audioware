@@ -5,10 +5,11 @@ use std::{
 
 use kira::sound::static_sound::StaticSoundData;
 use lazy_static::lazy_static;
-use red4ext_rs::types::CName;
+use red4ext_rs::types::{CName, Ref};
 
 use crate::{
     engine,
+    interop::event::Event,
     types::{
         bank::Bank,
         redmod::{ModName, REDmod},
@@ -40,9 +41,16 @@ pub(super) fn setup() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub(super) fn exists(id: CName) -> anyhow::Result<bool> {
+pub(crate) fn exists(id: CName) -> anyhow::Result<bool> {
     if let Ok(guard) = IDS.clone().try_lock() {
         return Ok(guard.contains(&id.into()));
+    }
+    anyhow::bail!("unable to reach sound ids");
+}
+
+pub(crate) fn exists_event(event: &Ref<Event>) -> anyhow::Result<bool> {
+    if let Ok(guard) = IDS.clone().try_lock() {
+        return Ok(guard.contains(&event.sound_name().into()));
     }
     anyhow::bail!("unable to reach sound ids");
 }
