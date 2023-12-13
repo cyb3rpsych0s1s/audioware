@@ -59,7 +59,7 @@ pub(crate) fn play(sound: CName) {
     }
 }
 
-pub(crate) fn stop(sound: CName) -> anyhow::Result<()> {
+pub(crate) fn stop(sound: CName) {
     let sound: SoundId = sound.into();
     if let Some(mut map) = sounds::try_get_mut() {
         if let Some(handle) = map.get_mut(&sound) {
@@ -72,7 +72,6 @@ pub(crate) fn stop(sound: CName) -> anyhow::Result<()> {
     } else {
         red4ext_rs::error!("unable to reach sound handle ({sound})");
     }
-    Ok(())
 }
 
 pub(crate) fn pause(sound: CName) -> anyhow::Result<()> {

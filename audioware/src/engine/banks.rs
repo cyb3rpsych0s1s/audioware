@@ -14,6 +14,7 @@ use crate::{
         bank::Bank,
         redmod::{ModName, REDmod},
     },
+    IsValid,
 };
 
 use super::SoundId;
@@ -42,6 +43,9 @@ pub(super) fn setup() -> anyhow::Result<()> {
 }
 
 pub(crate) fn exists(id: CName) -> anyhow::Result<bool> {
+    if !id.is_valid() {
+        return Ok(false);
+    }
     if let Ok(guard) = IDS.clone().try_lock() {
         return Ok(guard.contains(&id.into()));
     }

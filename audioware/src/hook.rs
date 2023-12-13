@@ -9,7 +9,8 @@ use winapi::shared::minwindef::HMODULE;
 use winapi::um::libloaderapi::GetModuleHandleW;
 
 use crate::interop::audio::{AudioEvent, AudioEventActionType};
-use crate::interop::event::{Event, SoundPlayEvent};
+use crate::interop::event::Event;
+use crate::interop::sound_play_event::SoundPlayEvent;
 
 pub(crate) trait Hook {
     fn load()
@@ -260,7 +261,8 @@ pub fn on_icomponent_queue_entity_event(
     let mut event: MaybeUninitRef<Event> = MaybeUninitRef::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event)) };
     let event = event.into_ref().unwrap();
-    if crate::engine::banks::exists_event(&event).unwrap_or(false) {
+    let event_name = event.sound_name();
+    if !is_vanilla(event_name) {
     } else if let Ok(ref guard) = HOOK_ON_ICOMPONENT_QUEUE_ENTITY_EVENT.clone().try_lock() {
         if let Some(detour) = guard.as_ref() {
             // rewind the stack and call vanilla
@@ -281,21 +283,22 @@ pub fn is_vanilla(event_name: CName) -> bool {
 
 pub fn custom_engine_play(event_name: CName, entity_id: EntityId, emitter_name: CName) {
     red4ext_rs::info!(
-        "would have call custom engine Play method with: event_name {}, entity_id {:#?}, emitter_name {}",
+        "call custom engine Play method with: event_name {}, entity_id {:#?}, emitter_name {}",
         red4ext_rs::ffi::resolve_cname(&event_name),
         entity_id,
         red4ext_rs::ffi::resolve_cname(&emitter_name)
     );
-    // Audioware::play(event_name);
+    crate::engine::play(event_name);
 }
 
 pub fn custom_engine_stop(event_name: CName, entity_id: EntityId, emitter_name: CName) {
     red4ext_rs::info!(
-        "would have call custom engine Stop method with: event_name {}, entity_id {:#?}, emitter_name {}",
+        "call custom engine Stop method with: event_name {}, entity_id {:#?}, emitter_name {}",
         red4ext_rs::ffi::resolve_cname(&event_name),
         entity_id,
         red4ext_rs::ffi::resolve_cname(&emitter_name)
     );
+    crate::engine::stop(event_name);
 }
 
 make_hook!(
