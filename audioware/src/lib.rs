@@ -23,8 +23,8 @@ pub trait IsValid {
 
 impl IsValid for CName {
     fn is_valid(&self) -> bool {
-        !red4ext_rs::ffi::resolve_cname(self).is_empty()
-            && red4ext_rs::ffi::resolve_cname(self) != "None"
+        let str = red4ext_rs::ffi::resolve_cname(self);
+        !str.is_empty() && str != "None"
     }
 }
 
@@ -34,6 +34,7 @@ impl Plugin for Audioware {
     const VERSION: Version = Version::new(0, 0, 1);
 
     fn register() {
+        red4ext_rs::info!("on register audioware");
         let _ = engine::setup();
         register_function!(
             "Audioware.UpdateEngineState",
@@ -58,6 +59,7 @@ impl Plugin for Audioware {
     }
 
     fn post_register() {
+        red4ext_rs::info!("on post register audioware");
         HookAudioSystemPlay::load();
         HookAudioSystemStop::load();
         HookEntAudioEvent::load();
@@ -66,6 +68,7 @@ impl Plugin for Audioware {
     }
 
     fn unload() {
+        red4ext_rs::info!("on unload audioware");
         HookAudioSystemPlay::unload();
         HookAudioSystemStop::unload();
         HookEntAudioEvent::unload();

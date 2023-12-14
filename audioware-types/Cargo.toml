@@ -10,3 +10,4 @@ anyhow.workspace = true
 fixed-map.workspace = true
 red4ext-rs.workspace = true
 serde.workspace = true
+strum_macros.workspace = true

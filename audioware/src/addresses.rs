@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 /// memory address for internal event handler related to [RED4ext::ent::AudioEvent](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/ent/AudioEvent.hpp#L18)
 pub(crate) const ON_ENT_AUDIO_EVENT: usize = 0x453D34;
 pub(crate) const ON_MUSIC_EVENT: usize = 0x24A6AC0;

@@ -1,5 +1,6 @@
 use anyhow::Context;
 
+#[derive(Debug)]
 pub struct REDmod(std::path::PathBuf);
 
 impl REDmod {
@@ -29,6 +30,7 @@ impl REDmod {
     }
 }
 
+#[derive(Debug)]
 pub struct Mod(std::path::PathBuf);
 
 impl Mod {
@@ -46,5 +48,11 @@ pub struct ModName(String);
 impl AsRef<std::path::Path> for ModName {
     fn as_ref(&self) -> &std::path::Path {
         std::path::Path::new(&self.0)
+    }
+}
+
+impl std::fmt::Display for ModName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }

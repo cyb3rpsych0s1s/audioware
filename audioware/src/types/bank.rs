@@ -60,7 +60,11 @@ impl Bank {
         if let Some(voice) = self.voices.voices.get(&id) {
             let audios = voice.audios(gender);
             if let Some(audio) = audios.get(language) {
-                return StaticSoundData::from_file(&audio.file, Default::default()).ok();
+                return StaticSoundData::from_file(
+                    self.folder().join(&audio.file),
+                    Default::default(),
+                )
+                .ok();
             }
         }
         None
@@ -93,10 +97,13 @@ impl TryFrom<&Mod> for Bank {
 
 /// check if path is valid file named "voices" with YAML extension
 fn is_manifest(file: &std::path::Path) -> bool {
-    if let Some(name) = file.file_stem().and_then(|x| x.to_str()) {
-        if name == "voices.yml" || name == "voices.yaml" {
-            return true;
-        }
-    }
-    false
+    file.file_stem()
+        .and_then(std::ffi::OsStr::to_str)
+        .map(|x| x == "voices")
+        .unwrap_or(false)
+        && file
+            .extension()
+            .and_then(std::ffi::OsStr::to_str)
+            .map(|x| x == "yml" || x == "yaml")
+            .unwrap_or(false)
 }

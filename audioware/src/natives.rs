@@ -11,10 +11,14 @@ pub fn update_engine_state(state: State) {
 }
 
 #[allow(unused_variables)]
-pub fn update_engine_locale(voice: CName, subtitle: CName) {}
+pub fn update_engine_locale(voice: CName, subtitle: CName) {
+    crate::engine::localization::update_locales(voice, subtitle);
+}
 
 #[allow(unused_variables)]
-pub fn update_engine_gender(gender: PlayerGender) {}
+pub fn update_engine_gender(gender: PlayerGender) {
+    crate::engine::localization::update_gender(gender);
+}
 
 #[allow(unused_variables)]
 pub fn define_engine_subtitles(package: Ref<LocalizationPackage>) {

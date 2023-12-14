@@ -14,3 +14,4 @@ audioware-types = { path = "audioware-types" }
 fixed-map = { version = "0.9.3", features = ["serde"] }
 red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", rev = "87ddfb4", features = ["macros"] }
 serde = { version = "1.0", features = ["derive"] }
+strum_macros = "0.25.3"
