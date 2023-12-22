@@ -1,7 +1,6 @@
 pub use self::state::State;
 
 pub(crate) mod banks;
-mod collector;
 mod id;
 pub(crate) mod localization;
 mod manager;
@@ -14,7 +13,6 @@ use red4ext_rs::types::CName;
 
 pub(super) fn setup() -> anyhow::Result<()> {
     banks::setup()?;
-    collector::setup();
     sounds::setup();
     manager::setup();
     Ok(())
@@ -22,9 +20,6 @@ pub(super) fn setup() -> anyhow::Result<()> {
 
 #[inline]
 pub(super) fn update_state(state: State) {
-    if state == State::End || state == State::InGame {
-        collector::unpark();
-    }
     let previous = state::update(state);
     match (previous, state) {
         (State::InGame, State::InMenu) | (State::InGame, State::InPause) => {
