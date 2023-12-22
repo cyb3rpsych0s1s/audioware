@@ -1,0 +1,14 @@
+version: 1.0.0
+name: My Radio
+icon: my_radio # UIIcon.X
+songs:
+  - my-radio/some_cool_song.mp3
+  - my-radio/another_cool_song.mp3
+jingles:
+  - my-radio/jingles/maximum_max_interlude_01.wav
+  - file: my-radio/jingles/maximum_max_interlude_02.wav
+    day: thursday
+    time: daytime # nighttime / midnight / noon / morning / evening / night / 10 AM / 11 PM
+  - my-radio/jingles/maximum_max_interlude_03.wav
+
+# lists have to be ordered and beware of persisted station int.

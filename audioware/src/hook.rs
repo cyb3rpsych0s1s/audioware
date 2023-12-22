@@ -201,6 +201,78 @@ pub fn on_audiosystem_stop(
     }
 }
 
+pub fn on_audiosystem_switch(
+    ctx: *mut red4ext_rs::ffi::IScriptable,
+    frame: *mut red4ext_rs::ffi::CStackFrame,
+    out: *mut std::ffi::c_void,
+    a4: i64,
+) {
+    // switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName
+    let rewind = unsafe { (*frame.cast::<crate::frame::StackFrame>()).code };
+    // read stack frame
+    let mut switch_name: CName = CName::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut switch_name)) };
+    let mut switch_value: CName = CName::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut switch_value)) };
+    let mut entity_id: EntityId = EntityId::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut entity_id)) };
+    let mut emitter_name: CName = CName::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut emitter_name)) };
+    red4ext_rs::info!(
+        "AudioSystem.switch: switch_name {}, switch_value {}, entity_id {:#?}, emitter_name {}",
+        red4ext_rs::ffi::resolve_cname(&switch_name),
+        red4ext_rs::ffi::resolve_cname(&switch_value),
+        entity_id,
+        red4ext_rs::ffi::resolve_cname(&emitter_name)
+    );
+    if let Ok(ref guard) = HOOK_ON_AUDIOSYSTEM_SWITCH.clone().try_lock() {
+        if let Some(detour) = guard.as_ref() {
+            // rewind the stack and call vanilla
+            unsafe {
+                (*frame.cast::<crate::frame::StackFrame>()).code = rewind;
+                (*frame.cast::<crate::frame::StackFrame>()).currentParam = 0;
+            }
+            let original: ExternFnRedRegisteredFunc =
+                unsafe { std::mem::transmute(detour.trampoline()) };
+            unsafe { original(ctx, frame, out, a4) };
+        }
+    }
+}
+
+pub fn on_audiosystem_request_song_on_radio_station(
+    ctx: *mut red4ext_rs::ffi::IScriptable,
+    frame: *mut red4ext_rs::ffi::CStackFrame,
+    out: *mut std::ffi::c_void,
+    a4: i64,
+) {
+    let rewind = unsafe { (*frame.cast::<crate::frame::StackFrame>()).code };
+    // read stack frame
+    let mut station_name: CName = CName::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut station_name)) };
+    let mut song_name: CName = CName::default();
+    unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut song_name)) };
+    red4ext_rs::info!(
+        "requesting song {} on radio station {}",
+        red4ext_rs::ffi::resolve_cname(&station_name),
+        red4ext_rs::ffi::resolve_cname(&song_name)
+    );
+    if let Ok(ref guard) = HOOK_ON_AUDIOSYSTEM_REQUEST_SONG_ON_RADIO_STATION
+        .clone()
+        .try_lock()
+    {
+        if let Some(detour) = guard.as_ref() {
+            // rewind the stack and call vanilla
+            unsafe {
+                (*frame.cast::<crate::frame::StackFrame>()).code = rewind;
+                (*frame.cast::<crate::frame::StackFrame>()).currentParam = 0;
+            }
+            let original: ExternFnRedRegisteredFunc =
+                unsafe { std::mem::transmute(detour.trampoline()) };
+            unsafe { original(ctx, frame, out, a4) };
+        }
+    }
+}
+
 pub fn on_entity_queue_event(
     ctx: *mut red4ext_rs::ffi::IScriptable,
     frame: *mut red4ext_rs::ffi::CStackFrame,
@@ -212,29 +284,29 @@ pub fn on_entity_queue_event(
     let mut event: MaybeUninitRef<Event> = MaybeUninitRef::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event)) };
     let event = event.into_ref().unwrap();
-    red4ext_rs::info!(
-        "event class name: {}",
-        red4ext_rs::ffi::resolve_cname(&event.get_class_name())
-    );
+    // red4ext_rs::info!(
+    //     "event class name: {}",
+    //     red4ext_rs::ffi::resolve_cname(&event.get_class_name())
+    // );
     if event.is_exactly_a(CName::new("entAudioEvent")) {
         let ent_audio_event: red4ext_rs::types::Ref<AudioEvent> =
             unsafe { std::mem::transmute(event.clone()) };
-        red4ext_rs::info!(
-            "                  -> entAudioEvent: event_name '{}', emitter_name '{}', name_data: '{}', event_type: '{}', event_flags '{}'",
-            red4ext_rs::ffi::resolve_cname(&ent_audio_event.deref().event_name),
-            red4ext_rs::ffi::resolve_cname(&ent_audio_event.deref().emitter_name),
-            red4ext_rs::ffi::resolve_cname(&ent_audio_event.deref().name_data),
-            ent_audio_event.deref().event_type,
-            ent_audio_event.deref().event_flags
-        );
+        // red4ext_rs::info!(
+        //     "                  -> entAudioEvent: event_name '{}', emitter_name '{}', name_data: '{}', event_type: '{}', event_flags '{}'",
+        //     red4ext_rs::ffi::resolve_cname(&ent_audio_event.deref().event_name),
+        //     red4ext_rs::ffi::resolve_cname(&ent_audio_event.deref().emitter_name),
+        //     red4ext_rs::ffi::resolve_cname(&ent_audio_event.deref().name_data),
+        //     ent_audio_event.deref().event_type,
+        //     ent_audio_event.deref().event_flags
+        // );
     } else if event.is_exactly_a(CName::new(SoundPlayEvent::NATIVE_NAME)) {
         let sound_play_event: red4ext_rs::types::Ref<SoundPlayEvent> =
             unsafe { std::mem::transmute(event) };
-        red4ext_rs::info!(
-            "                  -> gameaudioeventsPlaySound: sound_name '{}', emitter_name '{}'",
-            red4ext_rs::ffi::resolve_cname(&sound_play_event.deref().sound_name),
-            red4ext_rs::ffi::resolve_cname(&sound_play_event.deref().emitter_name)
-        );
+        // red4ext_rs::info!(
+        //     "                  -> gameaudioeventsPlaySound: sound_name '{}', emitter_name '{}'",
+        //     red4ext_rs::ffi::resolve_cname(&sound_play_event.deref().sound_name),
+        //     red4ext_rs::ffi::resolve_cname(&sound_play_event.deref().emitter_name)
+        // );
     }
     if let Ok(ref guard) = HOOK_ON_ENTITY_QUEUE_EVENT.clone().try_lock() {
         if let Some(detour) = guard.as_ref() {
@@ -323,6 +395,22 @@ make_hook!(
     ExternFnRedRegisteredFunc,
     on_audiosystem_stop,
     HOOK_ON_AUDIOSYSTEM_STOP
+);
+
+make_hook!(
+    HookAudioSystemSwitch,
+    ON_AUDIOSYSTEM_SWITCH,
+    ExternFnRedRegisteredFunc,
+    on_audiosystem_switch,
+    HOOK_ON_AUDIOSYSTEM_SWITCH
+);
+
+make_hook!(
+    HookAudioSystemRequestSongOnRadioStation,
+    ON_AUDIOSYSTEM_REQUEST_SONG_ON_RADIO_STATION,
+    ExternFnRedRegisteredFunc,
+    on_audiosystem_request_song_on_radio_station,
+    HOOK_ON_AUDIOSYSTEM_REQUEST_SONG_ON_RADIO_STATION
 );
 
 make_hook!(

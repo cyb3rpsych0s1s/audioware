@@ -32,6 +32,7 @@ public static exec func TestEntityQueueEvent(game: GameInstance, name: String) -
 }
 
 // Game.TestAudioSystemPlay("ono_v_effort_short");
+// Game.TestAudioSystemPlay("nah_everything_is_all_good");
 public static exec func TestAudioSystemPlay(game: GameInstance, name: String) -> Void {
     let player = GetPlayer(game);
     let sound: CName = StringToName(name);

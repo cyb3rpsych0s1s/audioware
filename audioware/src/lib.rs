@@ -9,6 +9,8 @@ use red4ext_rs::register_function;
 use red4ext_rs::types::CName;
 use red4ext_rs::{define_trait_plugin, plugin::Plugin};
 
+use crate::hook::{HookAudioSystemRequestSongOnRadioStation, HookAudioSystemSwitch};
+
 mod addresses;
 pub(crate) mod engine;
 mod frame;
@@ -62,18 +64,22 @@ impl Plugin for Audioware {
         red4ext_rs::info!("on post register audioware");
         HookAudioSystemPlay::load();
         HookAudioSystemStop::load();
+        HookAudioSystemSwitch::load();
         HookEntAudioEvent::load();
         HookEntityQueueEvent::load();
         HookIComponentQueueEntityEvent::load();
+        HookAudioSystemRequestSongOnRadioStation::load();
     }
 
     fn unload() {
         red4ext_rs::info!("on unload audioware");
         HookAudioSystemPlay::unload();
         HookAudioSystemStop::unload();
+        HookAudioSystemSwitch::unload();
         HookEntAudioEvent::unload();
         HookEntityQueueEvent::unload();
         HookIComponentQueueEntityEvent::unload();
+        HookAudioSystemRequestSongOnRadioStation::unload();
     }
 }
 
