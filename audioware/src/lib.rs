@@ -7,7 +7,7 @@ use red4ext_rs::types::CName;
 use red4ext_rs::{define_trait_plugin, plugin::Plugin};
 
 mod addresses;
-pub(crate) mod engine;
+pub mod engine;
 mod frame;
 mod hook;
 mod interop;

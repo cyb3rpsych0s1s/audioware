@@ -22,7 +22,7 @@ struct V {
     emissive: TrackHandle,
 }
 
-pub(super) fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
+pub fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
     let reverb = manager.add_sub_track({
         let mut builder = TrackBuilder::new();
         builder.add_effect(ReverbBuilder::new().mix(1.0));
@@ -53,6 +53,6 @@ pub(super) fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub(super) fn vocal<'a>() -> Option<&'a TrackHandle> {
+pub fn vocal<'a>() -> Option<&'a TrackHandle> {
     TRACKS.get().map(|x| &x.v.vocal)
 }

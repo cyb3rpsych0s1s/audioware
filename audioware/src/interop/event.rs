@@ -2,8 +2,6 @@ use audioware_types::interop::iscriptable::IScriptable;
 use red4ext_rs::types::Ref;
 use red4ext_rs::{conv::ClassType, types::CName};
 
-use super::sound_play_event::SoundPlayEvent;
-
 #[derive(Debug)]
 pub struct Event;
 
@@ -23,11 +21,6 @@ impl Event {
 
 impl Event {
     pub fn sound_name(self: &Ref<Self>) -> CName {
-        if self.is_exactly_a(CName::new(SoundPlayEvent::NATIVE_NAME)) {
-            return unsafe { std::mem::transmute::<&Ref<Event>, &Ref<SoundPlayEvent>>(self) }
-                .sound_name
-                .clone();
-        }
         CName::new("None")
     }
 }

@@ -8,14 +8,14 @@ lazy_static! {
     static ref STATE: AtomicU8 = AtomicU8::new(State::default() as u8);
 }
 
-pub(super) fn update(state: State) -> State {
+pub fn update(state: State) -> State {
     STATE
         .swap(state as u8, std::sync::atomic::Ordering::SeqCst)
         .try_into()
         .unwrap()
 }
 
-pub(super) fn load() -> State {
+pub fn load() -> State {
     STATE
         .load(std::sync::atomic::Ordering::Relaxed)
         .try_into()

@@ -9,7 +9,7 @@ lazy_static! {
     static ref AUDIO_MANAGER: OnceLock<Mutex<AudioManager<DefaultBackend>>> = OnceLock::default();
 }
 
-pub(crate) fn setup() {
+pub fn setup() {
     let mut manager = AudioManager::new(AudioManagerSettings::default()).unwrap();
     if engine::tracks::setup(&mut manager).is_err() {
         red4ext_rs::error!("error initializing tracks on Audio Manager");
@@ -19,6 +19,6 @@ pub(crate) fn setup() {
     }
 }
 
-pub(crate) fn try_get_mut<'a>() -> Option<MutexGuard<'a, AudioManager>> {
+pub fn try_get_mut<'a>() -> Option<MutexGuard<'a, AudioManager>> {
     AUDIO_MANAGER.get().and_then(|x| x.try_lock().ok())
 }

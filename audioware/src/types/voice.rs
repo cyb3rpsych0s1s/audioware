@@ -13,8 +13,8 @@ use audioware_types::interop::locale::Locale;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Voices {
-    version: Version,
-    pub(super) voices: HashMap<SoundId, Voice>,
+    pub version: Version,
+    pub voices: HashMap<SoundId, Voice>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -24,7 +24,7 @@ lazy_static! {
     static ref IDS: Arc<Mutex<HashSet<SoundId>>> = Arc::new(Mutex::new(HashSet::new()));
 }
 
-pub(super) fn setup() -> anyhow::Result<()> {
+pub fn setup() -> anyhow::Result<()> {
     let redmod = REDmod::try_new()?;
     let mods = redmod.mods();
     let mut banks = HashMap::with_capacity(mods.len());
@@ -42,7 +42,7 @@ pub(super) fn setup() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub(crate) fn exists(id: CName) -> anyhow::Result<bool> {
+pub fn exists(id: CName) -> anyhow::Result<bool> {
     if !id.is_valid() {
         return Ok(false);
     }
@@ -52,7 +52,7 @@ pub(crate) fn exists(id: CName) -> anyhow::Result<bool> {
     anyhow::bail!("unable to reach sound ids");
 }
 
-pub(crate) fn exists_event(event: &Ref<Event>) -> anyhow::Result<bool> {
+pub fn exists_event(event: &Ref<Event>) -> anyhow::Result<bool> {
     if let Ok(guard) = IDS.clone().try_lock() {
         return Ok(guard.contains(&event.sound_name().into()));
     }
