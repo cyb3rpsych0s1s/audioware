@@ -1,5 +1,5 @@
+use std::borrow::BorrowMut;
 use std::ops::Not;
-use std::{borrow::BorrowMut, ops::Deref};
 
 use audioware_types::FromMemory;
 use red4ext_rs::conv::ClassType;
@@ -289,7 +289,7 @@ pub fn on_entity_queue_event(
     //     red4ext_rs::ffi::resolve_cname(&event.get_class_name())
     // );
     if event.is_exactly_a(CName::new("entAudioEvent")) {
-        let ent_audio_event: red4ext_rs::types::Ref<AudioEvent> =
+        let _ent_audio_event: red4ext_rs::types::Ref<AudioEvent> =
             unsafe { std::mem::transmute(event.clone()) };
         // red4ext_rs::info!(
         //     "                  -> entAudioEvent: event_name '{}', emitter_name '{}', name_data: '{}', event_type: '{}', event_flags '{}'",
@@ -300,7 +300,7 @@ pub fn on_entity_queue_event(
         //     ent_audio_event.deref().event_flags
         // );
     } else if event.is_exactly_a(CName::new(SoundPlayEvent::NATIVE_NAME)) {
-        let sound_play_event: red4ext_rs::types::Ref<SoundPlayEvent> =
+        let _sound_play_event: red4ext_rs::types::Ref<SoundPlayEvent> =
             unsafe { std::mem::transmute(event) };
         // red4ext_rs::info!(
         //     "                  -> gameaudioeventsPlaySound: sound_name '{}', emitter_name '{}'",

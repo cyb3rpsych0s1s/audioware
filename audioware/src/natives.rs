@@ -10,18 +10,15 @@ pub fn update_engine_state(state: State) {
     crate::engine::update_state(state);
 }
 
-#[allow(unused_variables)]
 pub fn update_engine_locale(voice: CName, subtitle: CName) {
     crate::engine::localization::update_locales(voice, subtitle);
 }
 
-#[allow(unused_variables)]
 pub fn update_engine_gender(gender: PlayerGender) {
     crate::engine::localization::update_gender(gender);
 }
 
-#[allow(unused_variables)]
-pub fn define_engine_subtitles(package: Ref<LocalizationPackage>) {
+pub fn define_engine_subtitles(_package: Ref<LocalizationPackage>) {
     // package.subtitle(key, value_f, value_m) ...
 }
 

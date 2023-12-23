@@ -36,7 +36,7 @@ pub(super) fn setup() -> anyhow::Result<()> {
         }
     }
     banks.shrink_to_fit();
-    if let Err(_) = BANKS.set(banks) {
+    if BANKS.set(banks).is_err() {
         red4ext_rs::error!("unable to store banks");
     }
     Ok(())

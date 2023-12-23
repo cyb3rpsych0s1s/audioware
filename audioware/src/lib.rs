@@ -1,15 +1,10 @@
 #![feature(arbitrary_self_types)]
 
-use hook::{
-    Hook, HookAudioSystemPlay, HookAudioSystemStop, HookEntAudioEvent, HookEntityQueueEvent,
-    HookIComponentQueueEntityEvent,
-};
+use hook::{Hook, HookAudioSystemPlay, HookAudioSystemStop, HookAudioSystemSwitch};
 use red4ext_rs::plugin::Version;
 use red4ext_rs::register_function;
 use red4ext_rs::types::CName;
 use red4ext_rs::{define_trait_plugin, plugin::Plugin};
-
-use crate::hook::{HookAudioSystemRequestSongOnRadioStation, HookAudioSystemSwitch};
 
 mod addresses;
 pub(crate) mod engine;
@@ -65,10 +60,6 @@ impl Plugin for Audioware {
         HookAudioSystemPlay::load();
         HookAudioSystemStop::load();
         HookAudioSystemSwitch::load();
-        HookEntAudioEvent::load();
-        HookEntityQueueEvent::load();
-        HookIComponentQueueEntityEvent::load();
-        HookAudioSystemRequestSongOnRadioStation::load();
     }
 
     fn unload() {
@@ -76,10 +67,6 @@ impl Plugin for Audioware {
         HookAudioSystemPlay::unload();
         HookAudioSystemStop::unload();
         HookAudioSystemSwitch::unload();
-        HookEntAudioEvent::unload();
-        HookEntityQueueEvent::unload();
-        HookIComponentQueueEntityEvent::unload();
-        HookAudioSystemRequestSongOnRadioStation::unload();
     }
 }
 

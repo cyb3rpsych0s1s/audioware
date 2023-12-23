@@ -11,10 +11,10 @@ lazy_static! {
 
 pub(crate) fn setup() {
     let mut manager = AudioManager::new(AudioManagerSettings::default()).unwrap();
-    if let Err(_) = engine::tracks::setup(&mut manager) {
+    if engine::tracks::setup(&mut manager).is_err() {
         red4ext_rs::error!("error initializing tracks on Audio Manager");
     }
-    if let Err(_) = AUDIO_MANAGER.set(Mutex::new(manager)) {
+    if AUDIO_MANAGER.set(Mutex::new(manager)).is_err() {
         red4ext_rs::error!("error initializing Audio Manager");
     }
 }
