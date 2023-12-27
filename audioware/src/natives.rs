@@ -23,5 +23,10 @@ pub fn define_engine_subtitles(_package: Ref<LocalizationPackage>) {
 }
 
 pub fn supported_engine_languages() -> Vec<CName> {
-    vec![]
+    let set = crate::engine::banks::languages();
+    let mut supported: Vec<CName> = Vec::with_capacity(set.len());
+    for locale in set {
+        supported.push(locale.into());
+    }
+    supported
 }

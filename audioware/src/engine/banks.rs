@@ -3,6 +3,8 @@ use std::{
     sync::{Arc, Mutex, OnceLock},
 };
 
+use audioware_types::interop::locale::Locale;
+use fixed_map::Set;
 use kira::sound::static_sound::StaticSoundData;
 use lazy_static::lazy_static;
 use red4ext_rs::types::{CName, Ref};
@@ -10,6 +12,7 @@ use red4ext_rs::types::{CName, Ref};
 use crate::{
     engine,
     interop::event::Event,
+    language::Supports,
     types::{
         bank::Bank,
         redmod::{ModName, REDmod},
@@ -70,4 +73,18 @@ pub fn data(id: SoundId) -> anyhow::Result<StaticSoundData> {
         }
     }
     anyhow::bail!("unable to retrieve static sound data from sound id");
+}
+
+pub fn languages() -> Set<Locale> {
+    let mut set: Set<Locale> = Set::new();
+    if let Some(banks) = BANKS.get() {
+        for bank in banks.values() {
+            for locale in bank.supported() {
+                if !set.contains(locale) {
+                    set.insert(locale);
+                }
+            }
+        }
+    }
+    set
 }

@@ -11,6 +11,7 @@ pub mod engine;
 mod frame;
 mod hook;
 mod interop;
+mod language;
 pub mod natives;
 mod types;
 

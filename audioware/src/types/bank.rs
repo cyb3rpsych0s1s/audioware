@@ -58,7 +58,7 @@ impl Bank {
         id: SoundId,
     ) -> Option<StaticSoundData> {
         if let Some(voice) = self.voices.voices.get(&id) {
-            let audios = voice.audios(gender);
+            let audios = voice.audios(&gender);
             if let Some(audio) = audios.get(language) {
                 return StaticSoundData::from_file(
                     self.folder().join(&audio.file),
@@ -68,6 +68,9 @@ impl Bank {
             }
         }
         None
+    }
+    pub fn voices(&self) -> &Voices {
+        &self.voices
     }
 }
 

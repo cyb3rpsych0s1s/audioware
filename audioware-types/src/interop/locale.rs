@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
     Hash,
     Key,
     strum_macros::Display,
+    strum_macros::EnumIter,
 )]
 pub enum Locale {
     #[serde(rename = "pl-pl")]

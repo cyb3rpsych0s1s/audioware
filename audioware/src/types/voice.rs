@@ -25,7 +25,7 @@ pub struct Voice {
 }
 
 impl Voice {
-    pub fn audios(&self, gender: PlayerGender) -> &Map<Locale, AudioSubtitle> {
+    pub fn audios(&self, gender: &PlayerGender) -> &Map<Locale, AudioSubtitle> {
         match gender {
             PlayerGender::Female => &self.female,
             PlayerGender::Male => &self.male,
