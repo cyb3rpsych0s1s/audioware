@@ -35,21 +35,21 @@ pub fn update_state(state: State) {
 }
 
 pub fn play(sound_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>) {
-    let sound: SoundId = sound_name.clone().into();
+    // let sound: &SoundId = sound_name.as_ref();
     if let Some(mut manager) = manager::try_get_mut() {
-        if let Ok(data) = banks::data(sound.clone()) {
+        if let Ok(data) = banks::data(&sound_name) {
             if let Some(vocal) = tracks::vocal() {
                 data.settings.output_destination(vocal);
                 if let Ok(handle) = manager.play(data) {
-                    sounds::store(sound, handle, sound_name, entity_id, emitter_name);
+                    sounds::store(handle, sound_name, entity_id, emitter_name);
                 } else {
-                    red4ext_rs::error!("error playing sound {sound}");
+                    red4ext_rs::error!("error playing sound {sound_name}");
                 }
             } else {
                 red4ext_rs::error!("unable to get track handle (vocal)");
             }
         } else {
-            red4ext_rs::warn!("unknown sound ({sound})");
+            red4ext_rs::warn!("unknown sound ({sound_name})");
         }
     } else {
         red4ext_rs::error!("unable to reach audio manager");

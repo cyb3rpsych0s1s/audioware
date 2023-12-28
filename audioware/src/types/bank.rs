@@ -7,6 +7,7 @@ use std::{
 use audioware_types::interop::{gender::PlayerGender, locale::Locale};
 use kira::sound::static_sound::StaticSoundData;
 
+use red4ext_rs::types::CName;
 use serde::Deserialize;
 
 use crate::engine::SoundId;
@@ -55,9 +56,9 @@ impl Bank {
         &self,
         gender: PlayerGender,
         language: Locale,
-        id: SoundId,
+        id: &CName,
     ) -> Option<StaticSoundData> {
-        if let Some(voice) = self.voices.voices.get(&id) {
+        if let Some(voice) = self.voices.voices.get(&id.clone().into()) {
             let audios = voice.audios(&gender);
             if let Some(audio) = audios.get(language) {
                 return StaticSoundData::from_file(

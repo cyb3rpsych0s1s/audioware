@@ -8,8 +8,6 @@ use lazy_static::lazy_static;
 use red4ext_rs::types::{CName, EntityId};
 use ulid::Ulid;
 
-use super::id::SoundId;
-
 pub struct SoundInfos {
     pub sound_name: CName,
     pub entity_id: Option<EntityId>,
@@ -28,7 +26,6 @@ pub fn setup() {
 }
 
 pub fn store(
-    _id: SoundId,
     handle: StaticSoundHandle,
     sound_name: CName,
     entity_id: Option<EntityId>,

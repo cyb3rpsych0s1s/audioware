@@ -62,12 +62,12 @@ pub fn exists_event(event: &Ref<Event>) -> anyhow::Result<bool> {
     anyhow::bail!("unable to reach sound ids");
 }
 
-pub fn data(id: SoundId) -> anyhow::Result<StaticSoundData> {
+pub fn data(id: &CName) -> anyhow::Result<StaticSoundData> {
     let gender = engine::localization::gender()?;
     let language = engine::localization::voice()?;
     if let Some(banks) = BANKS.get() {
         for bank in banks.values() {
-            if let Some(data) = bank.data(gender, language, id.clone()) {
+            if let Some(data) = bank.data(gender, language, id) {
                 return Ok(data);
             }
         }
