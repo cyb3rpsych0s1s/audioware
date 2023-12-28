@@ -22,12 +22,24 @@ public class LocalizationProvider extends ModLocalizationProvider {
     public func GetPackage(language: CName) -> ref<ModLocalizationPackage> {
         let languages = SupportedEngineLanguages();
         let supported = ArrayContains(languages, language);
-        return supported ? new LocalizationPackage() : null;
+        if supported {
+            let package = new LocalizationPackage();
+            package.system = LocalizationSystem.GetInstance(this.GetGameInstance());
+            return package;
+        }
+        return null;
     }
     public func GetFallback() -> CName { return n""; }
 }
 
 public class LocalizationPackage extends ModLocalizationPackage {
+    private let system: ref<LocalizationSystem>;
+    public func VoiceLanguage() -> CName {
+        return this.system.GetVoiceLanguage();
+    }
+    public func SubtitleLanguage() -> CName {
+        return this.system.GetSubtitleLanguage();
+    }
     protected func DefineSubtitles() -> Void {
         DefineEngineSubtitles(this);
     }

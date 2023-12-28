@@ -16,7 +16,7 @@ use crate::{
     language::Supports,
     types::{
         bank::Bank,
-        redmod::{ModName, REDmod},
+        redmod::{ModName, REDmod}, voice::Subtitle,
     },
 };
 
@@ -85,4 +85,16 @@ pub fn languages() -> Set<Locale> {
         }
     }
     set
+}
+
+pub fn subtitles<'a>(locale: Locale) -> Vec<Subtitle<'a>> {
+    let mut subtitles: Vec<Subtitle<'_>> = vec![];
+    if let Some(banks) = BANKS.get() {
+        for bank in banks.values() {
+            for subtitle in bank.voices().subtitles(locale) {
+                subtitles.push(subtitle);
+            }
+        }
+    }
+    subtitles
 }

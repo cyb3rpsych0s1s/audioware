@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use audioware_types::interop::gender::PlayerGender;
 use fixed_map::Map;
 use kira::sound::static_sound::{StaticSoundData, StaticSoundSettings};
+use red4ext_rs::types::CName;
 use semver::Version;
 use serde::Deserialize;
 use validator::{Validate, ValidationError};
@@ -17,11 +18,33 @@ pub struct Voices {
     pub voices: HashMap<SoundId, Voice>,
 }
 
+impl Voices {
+    pub fn subtitles(&self, locale: Locale) -> Vec<Subtitle<'_>> {
+        self.voices
+            .iter()
+            .map(|(id, voice)| {
+                let (female, male) = voice.subtitle(locale);
+                Subtitle {
+                    key: id.as_ref(),
+                    female,
+                    male,
+                }
+            })
+            .collect::<Vec<_>>()
+    }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct Voice {
     #[serde(rename = "fem")]
     pub female: Map<Locale, AudioSubtitle>,
     pub male: Map<Locale, AudioSubtitle>,
+}
+
+pub struct Subtitle<'a> {
+    pub key: &'a CName,
+    pub female: &'a str,
+    pub male: &'a str,
 }
 
 impl Voice {
@@ -30,6 +53,18 @@ impl Voice {
             PlayerGender::Female => &self.female,
             PlayerGender::Male => &self.male,
         }
+    }
+    pub fn subtitle(&self, locale: Locale) -> (&str, &str) {
+        (
+            self.female
+                .get(locale)
+                .map(|x| x.subtitle.as_str())
+                .unwrap_or(""),
+            self.male
+                .get(locale)
+                .map(|x| x.subtitle.as_str())
+                .unwrap_or(""),
+        )
     }
 }
 

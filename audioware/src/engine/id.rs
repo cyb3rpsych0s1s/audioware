@@ -11,6 +11,12 @@ impl std::hash::Hash for SoundId {
     }
 }
 
+impl AsRef<CName> for SoundId {
+    fn as_ref(&self) -> &CName {
+        &self.0
+    }
+}
+
 struct SoundIdVisitor;
 
 impl<'de> Visitor<'de> for SoundIdVisitor {
