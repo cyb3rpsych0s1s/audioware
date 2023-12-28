@@ -8,6 +8,7 @@ use fixed_map::Set;
 use kira::sound::static_sound::StaticSoundData;
 use lazy_static::lazy_static;
 use red4ext_rs::types::{CName, Ref};
+use strum::IntoEnumIterator;
 
 use crate::{
     engine,
@@ -17,7 +18,6 @@ use crate::{
         bank::Bank,
         redmod::{ModName, REDmod},
     },
-    IsValid,
 };
 
 use super::SoundId;
@@ -78,11 +78,9 @@ pub fn data(id: SoundId) -> anyhow::Result<StaticSoundData> {
 pub fn languages() -> Set<Locale> {
     let mut set: Set<Locale> = Set::new();
     if let Some(banks) = BANKS.get() {
-        for bank in banks.values() {
-            for locale in bank.supported() {
-                if !set.contains(locale) {
-                    set.insert(locale);
-                }
+        for locale in Locale::iter() {
+            if banks.values().any(|x| x.supports(locale)) {
+                set.insert(locale);
             }
         }
     }

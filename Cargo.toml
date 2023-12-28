@@ -12,7 +12,7 @@ anyhow = "1"
 audioware-macros = { path = "audioware-macros" }
 audioware-types = { path = "audioware-types" }
 fixed-map = { version = "0.9.3", features = ["serde"] }
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", rev = "52ee3f3", features = ["macros"] }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", rev = "d2d7713", features = ["macros"] }
 serde = { version = "1.0", features = ["derive"] }
 strum = "0.25"
 strum_macros = "0.25"
