@@ -2,6 +2,7 @@ module Audioware
 
 public class Audioware extends ScriptableSystem {
     private let m_callbackSystem: wref<CallbackSystem>;
+    public let m_subtitleDelayID: DelayID;
 
     private func OnAttach() {
         this.m_callbackSystem = GameInstance.GetCallbackSystem();
@@ -28,4 +29,21 @@ public class Audioware extends ScriptableSystem {
         UpdateEngineState(EngineState.End);
     }
 
+    public static final func GetInstance(game: GameInstance) -> ref<Audioware> {
+        let container = GameInstance.GetScriptableSystemsContainer(game);
+        return container.Get(n"Audioware.Audioware") as Audioware;
+    } 
+}
+
+public class HideSubtitleCallback extends DelayCallback {
+  private let line: scnDialogLineData;
+  public func Call() -> Void {
+    if !IsDefined(this.line.speaker) { return; }
+    let game = this.line.speaker.GetGame();
+    GameInstance
+    .GetDelaySystem(game)
+    .CancelCallback(Audioware.GetInstance(game).m_subtitleDelayID);
+    let board: ref<IBlackboard> = GameInstance.GetBlackboardSystem(game).Get(GetAllBlackboardDefs().UIGameData);
+    board.SetVariant(GetAllBlackboardDefs().UIGameData.HideDialogLine, [this.line.id], true);
+  }
 }

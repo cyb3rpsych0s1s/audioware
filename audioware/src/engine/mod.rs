@@ -1,3 +1,5 @@
+use crate::natives::propagate_subtitle;
+
 use self::sounds::SoundInfos;
 pub use self::state::State;
 
@@ -41,7 +43,15 @@ pub fn play(sound_name: CName, entity_id: Option<EntityId>, emitter_name: Option
             if let Some(vocal) = tracks::vocal() {
                 data.settings.output_destination(vocal);
                 if let Ok(handle) = manager.play(data) {
-                    sounds::store(handle, sound_name, entity_id, emitter_name);
+                    sounds::store(
+                        handle,
+                        sound_name.clone(),
+                        entity_id.clone(),
+                        emitter_name.clone(),
+                    );
+                    if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
+                        propagate_subtitle(sound_name, entity_id, emitter_name);
+                    }
                 } else {
                     red4ext_rs::error!("error playing sound {sound_name}");
                 }

@@ -1,5 +1,7 @@
 use audioware_types::interop::locale::Locale;
+use red4ext_rs::macros::redscript_global;
 use red4ext_rs::types::CName;
+use red4ext_rs::types::EntityId;
 use red4ext_rs::types::Ref;
 
 use audioware_types::interop::gender::PlayerGender;
@@ -41,4 +43,14 @@ pub fn supported_engine_languages() -> Vec<CName> {
         supported.push(locale.into());
     }
     supported
+}
+
+#[redscript_global(name = "Audioware.PropagateSubtitle")]
+pub fn propagate_subtitle(reaction: CName, entity_id: EntityId, emitter_name: CName) -> ();
+
+/// get reaction duration (in seconds) from sound, or return default
+pub fn get_reaction_duration(sound: CName) -> f32 {
+    let gender = crate::engine::localization::gender().unwrap_or_default();
+    let locale = crate::engine::localization::voice().unwrap_or_default();
+    crate::engine::banks::reaction_duration(sound, gender, locale).unwrap_or(3.0)
 }

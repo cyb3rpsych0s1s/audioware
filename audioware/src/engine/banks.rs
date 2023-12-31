@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex, OnceLock},
 };
 
-use audioware_types::interop::locale::Locale;
+use audioware_types::interop::{gender::PlayerGender, locale::Locale};
 use fixed_map::Set;
 use kira::sound::static_sound::StaticSoundData;
 use lazy_static::lazy_static;
@@ -16,7 +16,8 @@ use crate::{
     language::Supports,
     types::{
         bank::Bank,
-        redmod::{ModName, REDmod}, voice::Subtitle,
+        redmod::{ModName, REDmod},
+        voice::Subtitle,
     },
 };
 
@@ -94,4 +95,15 @@ pub fn subtitles<'a>(locale: Locale) -> Vec<Subtitle<'a>> {
         }
     }
     subtitles
+}
+
+pub fn reaction_duration(sound: CName, gender: PlayerGender, locale: Locale) -> Option<f32> {
+    if let Some(banks) = BANKS.get() {
+        for bank in banks.values() {
+            if let Some(data) = bank.data(gender, locale, &sound) {
+                return Some(data.duration().as_secs_f32());
+            }
+        }
+    }
+    None
 }

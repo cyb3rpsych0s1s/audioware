@@ -54,6 +54,10 @@ impl Plugin for Audioware {
             "Audioware.SupportedEngineLanguages",
             crate::natives::supported_engine_languages
         );
+        register_function!(
+            "Audioware.GetReactionDuration",
+            crate::natives::get_reaction_duration
+        );
     }
 
     fn post_register() {
