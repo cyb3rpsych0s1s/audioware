@@ -15,6 +15,7 @@ pub fn update(state: State) -> State {
         .unwrap()
 }
 
+#[allow(dead_code)]
 pub fn load() -> State {
     STATE
         .load(std::sync::atomic::Ordering::Relaxed)

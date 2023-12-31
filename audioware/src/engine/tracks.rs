@@ -10,11 +10,13 @@ lazy_static! {
     static ref TRACKS: OnceLock<Tracks> = OnceLock::default();
 }
 
+#[allow(dead_code)]
 struct Tracks {
     reverb: TrackHandle,
     v: V,
 }
 
+#[allow(dead_code)]
 struct V {
     main: TrackHandle,
     vocal: TrackHandle,
