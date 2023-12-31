@@ -31,13 +31,14 @@ impl<'de> Visitor<'de> for SoundIdVisitor {
     where
         E: serde::de::Error,
     {
-        if CName::new(v).is_valid() {
+        if CName::new(v).to_string().as_str() == v {
             return Err(E::custom(format!(
                 "string already exists in CName pool: {}",
                 v
             )));
         }
-        Ok(SoundId(CName::new_pooled(v)))
+        let created = CName::new_pooled(v);
+        Ok(SoundId(created))
     }
 
     #[cfg(test)] // allow to test deserialization

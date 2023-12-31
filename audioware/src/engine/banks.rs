@@ -46,9 +46,6 @@ pub fn setup() -> anyhow::Result<()> {
 }
 
 pub fn exists(id: CName) -> anyhow::Result<bool> {
-    if !id.is_valid() {
-        return Ok(false);
-    }
     if let Ok(guard) = IDS.clone().try_lock() {
         return Ok(guard.contains(&id.into()));
     }

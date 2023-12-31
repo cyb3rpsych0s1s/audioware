@@ -188,7 +188,13 @@ pub fn on_audiosystem_switch(
 }
 
 pub fn is_vanilla(event_name: CName) -> bool {
-    !crate::engine::banks::exists(event_name).unwrap_or(false)
+    if let Ok(exists) = crate::engine::banks::exists(event_name.clone()) {
+        red4ext_rs::info!("sound {event_name} is vanilla ? {}", !exists);
+        return !exists;
+    } else {
+        red4ext_rs::error!("unable to find sound {event_name} existence in banks");
+    }
+    true
 }
 
 pub fn custom_engine_play(event_name: CName, entity_id: EntityId, emitter_name: CName) {
