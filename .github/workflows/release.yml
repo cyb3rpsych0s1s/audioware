@@ -11,12 +11,13 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  IS_DRAFT: ${{ startsWith(github.ref_name, 'beta') || startsWith(github.ref_name, 'alpha') }}
 
 jobs:
-  build:
+  bundle:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Set LIBCLANG_PATH
@@ -24,17 +25,45 @@ jobs:
       - name: Prepare Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: release
       - name: Setup Just
         uses: extractions/setup-just@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Bundle mod files
-        run: just bundle
-      - name: Archive artifacts
-        uses: actions/upload-artifact@v2
+        run: just ci 'Audioware-windows-latest-${{ github.ref_name }}'
+      - name: Zip files
+        if: ${{ startsWith(github.event.ref, 'refs/tags') }}
+        uses: thedoctor0/zip-release@0.7.5
         with:
-          path: |
-            red4ext/**/*
-            r6/**/*
+          type: 'zip'
+          filename: 'Audioware-windows-latest-${{ github.ref_name }}.zip'
+          directory: ./Audioware-windows-latest-${{ github.ref_name }}
+          path: .
+          recursive_exclusions: ${{ 'Debug.reds debug.reds' }}
+      - name: Upload artifact
+        if: ${{ startsWith(github.event.ref, 'refs/tags') }}
+        uses: actions/upload-artifact@v4
+        with:
+          path: './Audioware-windows-latest-${{ github.ref_name }}.zip'
+          name: windows-latest-${{ github.ref_name }}-artifact
+          if-no-files-found: error
+  release:
+    if: ${{ startsWith(github.event.ref, 'refs/tags') }}
+    runs-on: windows-latest
+    needs: bundle
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-latest-${{ github.ref_name }}-artifact
+      - name: Create release ${{ github.ref_name }}
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "Audioware-windows-latest-${{ github.ref_name }}.zip"
+          draft: ${{ env.IS_DRAFT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifactErrorsFailBuild: true

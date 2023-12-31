@@ -7,6 +7,9 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.74"
 
+[profile.release]
+lto = "thin"
+
 [workspace.dependencies]
 anyhow = "1"
 audioware-macros = { path = "audioware-macros" }
