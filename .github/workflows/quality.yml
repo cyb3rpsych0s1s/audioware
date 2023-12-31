@@ -1,0 +1,29 @@
+name: Quality
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Set LIBCLANG_PATH
+        run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
+      - name: Prepare Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: debug
+      - name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check
+        run: just check
+      - name: QA
+        run: just qa
+      - name: Unit-tests
+        run: just test

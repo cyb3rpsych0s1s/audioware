@@ -12,12 +12,12 @@ red4ext_bin_dir     := join(justfile_directory(), "target")
 redscript_repo_dir  := join(justfile_directory(), "audioware", "reds")
 
 # game files
-red4ext_deploy_dir    := join(game_dir, "red4ext", "plugins", plugin_name)
-redscript_deploy_dir  := join(game_dir, "r6", "scripts", capitalize(plugin_name))
-red_cache_dir         := join(game_dir, "r6", "cache")
+red4ext_deploy_dir    := join("red4ext", "plugins", plugin_name)
+redscript_deploy_dir  := join("r6", "scripts", capitalize(plugin_name))
+red_cache_dir         := join("r6", "cache")
 
 # cli
-zoltan_exe            := env_var("ZOLTAN_EXE")
+zoltan_exe            := env_var_or_default("ZOLTAN_EXE", "")
 
 [private]
 setup path:
@@ -43,14 +43,16 @@ now:
   @Write-Host "$(Get-Date) $_"
 
 # 📦 build Rust RED4Ext plugin
-build PROFILE='debug': (setup red4ext_deploy_dir)
+build PROFILE='debug' TO=game_dir: (setup TO)
   @'{{ if PROFILE == "release" { `cargo +nightly build --release` } else { `cargo +nightly build` } }}'
-  @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(red4ext_deploy_dir, plugin_name + ".dll") }}'
+  @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just now
 
 alias b := build
 
 dev: (build 'debug') reload
+
+ci TO: (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
 
 clear:
     @if(Test-Path "{{ join(red_cache_dir, 'final.redscripts.bk') }}" ) { \
@@ -61,17 +63,15 @@ clear:
         Write-Host "missing {{ join(red_cache_dir, 'final.redscripts.bk') }}"; \
     }
 
-reload: (setup redscript_deploy_dir)
-  @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{redscript_deploy_dir}}'
+reload TO=game_dir: (setup redscript_deploy_dir)
+  @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{ join(TO, redscript_deploy_dir) }}'
   @just now
 
 alias r := reload
 
-install PROFILE='debug': (build PROFILE) reload
-
-alias i := install
-
-uninstall: (delete red4ext_deploy_dir) (delete redscript_deploy_dir)
+uninstall FROM=game_dir:
+  just delete '{{ join(FROM, red4ext_deploy_dir) }}'
+  just delete '{{ join(FROM, redscript_deploy_dir) }}'
 
 # 🎨 lint code
 lint:
@@ -80,6 +80,11 @@ lint:
   @cargo +nightly fmt
 
 alias l := lint
+
+qa:
+  @cargo +nightly clippy -- -D warnings
+  @cargo +nightly fix
+  @cargo +nightly fmt --check
 
 test:
   @cargo +nightly test
