@@ -2,6 +2,7 @@
 name = "audioware-macros"
 version.workspace = true
 edition.workspace = true
+publish = false
 
 [lib]
 proc-macro = true
