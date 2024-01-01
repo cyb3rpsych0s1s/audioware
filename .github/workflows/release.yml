@@ -37,17 +37,17 @@ jobs:
         if: ${{ startsWith(github.event.ref, 'refs/tags') }}
         uses: thedoctor0/zip-release@0.7.5
         with:
-          type: 'zip'
-          filename: 'Audioware-windows-latest-${{ github.ref_name }}.zip'
-          directory: ./Audioware-windows-latest-${{ github.ref_name }}
+          type: zip
+          filename: Audioware-windows-latest-${{ github.ref_name }}.zip
+          directory: Audioware-windows-latest-${{ github.ref_name }}
           path: .
-          recursive_exclusions: ${{ 'Debug.reds debug.reds' }}
+          recursive_exclusions: 'Debug.reds debug.reds'
       - name: Upload artifact
         if: ${{ startsWith(github.event.ref, 'refs/tags') }}
         uses: actions/upload-artifact@v4
         with:
-          path: './Audioware-windows-latest-${{ github.ref_name }}.zip'
           name: windows-latest-${{ github.ref_name }}-artifact
+          path: Audioware-windows-latest-${{ github.ref_name }}/Audioware-windows-latest-${{ github.ref_name }}.zip
           if-no-files-found: error
   release:
     if: ${{ startsWith(github.event.ref, 'refs/tags') }}
