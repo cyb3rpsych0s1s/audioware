@@ -34,7 +34,6 @@ jobs:
       - name: Bundle mod files
         run: just ci 'Audioware-windows-latest-${{ github.ref_name }}'
       - name: Zip files
-        if: ${{ startsWith(github.event.ref, 'refs/tags') }}
         uses: thedoctor0/zip-release@0.7.5
         with:
           type: zip
@@ -43,7 +42,6 @@ jobs:
           path: .
           recursive_exclusions: 'Debug.reds debug.reds'
       - name: Upload artifact
-        if: ${{ startsWith(github.event.ref, 'refs/tags') }}
         uses: actions/upload-artifact@v4
         with:
           name: windows-latest-${{ github.ref_name }}-artifact
