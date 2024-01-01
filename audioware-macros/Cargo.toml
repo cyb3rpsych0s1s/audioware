@@ -1,0 +1,13 @@
+[package]
+name = "audioware-macros"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+audioware-types.workspace = true
+syn = "2"
+proc-macro2 = "1"
+quote = "1"

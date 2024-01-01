@@ -1,49 +1,101 @@
+set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 set dotenv-load
 
 # default to steam default game dir
 DEFAULT_GAME_DIR := join("C:\\", "Program Files (x86)", "Steam", "steamapps", "common", "Cyberpunk 2077")
-DEFAULT_FMOD_LOCAL_DIR := join("C:\\", "Program Files (x86)", "FMOD SoundSystem", "FMOD Studio API Windows")
 
-game_dir := env_var_or_default("GAME_DIR", DEFAULT_GAME_DIR)
-fmod_local_dir := env_var_or_default("FMOD_DIR", DEFAULT_FMOD_LOCAL_DIR)
-
-fmod_core_dir := join(fmod_local_dir, "api", "core", "lib", "x64")
-fmod_studio_dir := join(fmod_local_dir, "api", "studio", "lib", "x64")
+game_dir            := env_var_or_default("GAME_DIR", DEFAULT_GAME_DIR)
+plugin_name         := 'audioware'
 
 # codebase (here)
-red4ext_in_dir := join("target", "release")
-redscript_in_dir := "reds"
-fmod_in_dir := join("vendor", "fmod")
+red4ext_bin_dir     := join(justfile_directory(), "target")
+redscript_repo_dir  := join(justfile_directory(), "audioware", "reds")
 
 # game files
-red4ext_out_dir := join("red4ext", "plugins")
-redscript_out_dir := join("r6", "scripts")
+red4ext_deploy_dir    := join("red4ext", "plugins", plugin_name)
+redscript_deploy_dir  := join("r6", "scripts", capitalize(plugin_name))
+red_cache_dir         := join("r6", "cache")
 
-# 📦 vendor FMOD lib
-vendor:
-  cp '{{ join(fmod_core_dir, "fmod.dll") }}' '{{ join(".", fmod_in_dir, "fmod.dll") }}'
-  cp '{{ join(fmod_core_dir, "fmod_vc.lib") }}' '{{ join(".", fmod_in_dir, "fmod.lib") }}'
-  cp '{{ join(fmod_studio_dir, "fmodstudio.dll") }}' '{{ join(".", fmod_in_dir, "fmodstudio.dll") }}'
-  cp '{{ join(fmod_studio_dir, "fmodstudio_vc.lib") }}' '{{ join(".", fmod_in_dir, "fmodstudio.lib") }}'
+# cli
+zoltan_exe            := env_var_or_default("ZOLTAN_EXE", "")
 
-# 📦 link FMOD lib for cargo build
-link PROFILE='debug':
- cp '{{ join(".", fmod_in_dir, "fmod.dll") }}' '{{ join(".", "target", PROFILE, "deps", "fmod.dll") }}'
- cp '{{ join(".", fmod_in_dir, "fmod.lib") }}' '{{ join(".", "target", PROFILE, "deps", "fmod.lib") }}'
- cp '{{ join(".", fmod_in_dir, "fmodstudio.dll") }}'  '{{ join(".", "target", PROFILE, "deps", "fmodstudio.dll") }}'
- cp '{{ join(".", fmod_in_dir, "fmodstudio.lib") }}'  '{{ join(".", "target", PROFILE, "deps", "fmodstudio.lib") }}'
+[private]
+setup path:
+  @if (!(Test-Path '{{path}}')) { [void](New-Item '{{path}}' -ItemType Directory); Write-Host "Created folder at {{path}}"; }
+
+[private]
+delete path:
+  @if (Test-Path '{{path}}') { [void](Remove-Item -Force -Recurse '{{path}}'); Write-Host "Deleted folder at {{path}}"; }
+
+[private]
+copy from to:
+  @Copy-Item -Force '{{from}}' '{{to}}'
+  @Write-Host "Copied {{from}} -> {{to}}"
+
+[private]
+copy-recurse from to:
+  @Copy-Item -Force -Recurse '{{from}}' '{{to}}'
+  @Write-Host "Copied {{from}} -> {{to}}"
+
+# log current time
+[private]
+now:
+  @Write-Host "$(Get-Date) $_"
 
 # 📦 build Rust RED4Ext plugin
-build PROFILE='debug':
-  @'{{ if PROFILE == "release" { `cargo build --release` } else { `cargo build` } }}'
+build PROFILE='debug' TO=game_dir: (setup TO)
+  @'{{ if PROFILE == "release" { `cargo +nightly build --release` } else { `cargo +nightly build` } }}'
+  @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
+  @just now
 
-# 📦 bundle mod files (for release in CI)
-bundle: (build "release")
-  mkdir -p '{{ join(".", red4ext_out_dir, "audioware") }}'
-  mkdir -p '{{ join(".", redscript_out_dir, "audioware") }}'
-  cp -R '{{ join(".", redscript_in_dir) }}'/* '{{ join(".", redscript_out_dir, "audioware") }}'/
-  cp '{{ join(".", red4ext_in_dir) }}'/*.dll '{{ join(".", red4ext_out_dir, "audioware") }}'/
-  cp '{{ join(".", fmod_in_dir, "fmod.dll") }}' '{{ join(".", red4ext_out_dir, "audioware", "fmod.dll") }}'
-  cp '{{ join(".", fmod_in_dir, "fmod.lib") }}' '{{ join(".", red4ext_out_dir, "audioware", "fmod.lib") }}'
-  cp '{{ join(".", fmod_in_dir, "fmodstudio.dll") }}' '{{ join(".", red4ext_out_dir, "audioware", "fmodstudio.dll") }}'
-  cp '{{ join(".", fmod_in_dir, "fmodstudio.lib") }}' '{{ join(".", red4ext_out_dir, "audioware", "fmodstudio.lib") }}'
+alias b := build
+
+dev: (build 'debug') reload
+
+ci TO: (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
+
+clear:
+    @if(Test-Path "{{ join(red_cache_dir, 'final.redscripts.bk') }}" ) { \
+        Write-Host "replacing {{ join(red_cache_dir, 'final.redscripts.bk') }} with {{ join(red_cache_dir, 'final.redscripts.bk') }}"; \
+        cp -Force '{{ join(red_cache_dir, "final.redscripts.bk") }}' '{{ join(red_cache_dir, "final.redscripts") }}'; \
+        Remove-Item -Force -Path '{{ join(red_cache_dir, "final.redscripts.bk") }}'; \
+    } else { \
+        Write-Host "missing {{ join(red_cache_dir, 'final.redscripts.bk') }}"; \
+    }
+
+reload TO=game_dir: (setup redscript_deploy_dir)
+  @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{ join(TO, redscript_deploy_dir) }}'
+  @just now
+
+alias r := reload
+
+uninstall FROM=game_dir:
+  just delete '{{ join(FROM, red4ext_deploy_dir) }}'
+  just delete '{{ join(FROM, redscript_deploy_dir) }}'
+
+# 🎨 lint code
+lint:
+  @cargo +nightly clippy --fix --allow-dirty --allow-staged
+  @cargo +nightly fix --allow-dirty --allow-staged
+  @cargo +nightly fmt
+
+alias l := lint
+
+qa:
+  @cargo +nightly clippy -- -D warnings
+  @cargo +nightly fix
+  @cargo +nightly fmt --check
+
+test:
+  @cargo +nightly test
+
+alias t := test
+
+check:
+  @cargo +nightly check --all
+
+alias c := check
+
+# TODO: finish updating all patterns
+offsets:
+  {{zoltan_exe}} '.\addresses.hpp' '{{ join(game_dir, "bin", "x64", "Cyberpunk2077.exe") }}' -f 'std=c++23' --rust-output '.\addresses.rs'
