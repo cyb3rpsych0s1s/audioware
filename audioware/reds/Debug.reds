@@ -11,7 +11,7 @@ public static exec func TestAudioEvent(game: GameInstance, name: String) -> Void
 // Game.TestPlaySoundEvent("ono_v_effort_short");
 public static exec func TestPlaySoundEvent(game: GameInstance, name: String) -> Void {
     let player = GetPlayer(game);
-    LogChannel(n"DEBUG", s"player is defined: \(ToString(IsDefined(player)))");
+    // LogChannel(n"DEBUG", s"player is defined: \(ToString(IsDefined(player)))");
     let sound: CName = StringToName(name);
     GameObject.PlaySoundEvent(player, sound);
 }
