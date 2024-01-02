@@ -166,13 +166,13 @@ pub fn on_audiosystem_switch(
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut entity_id)) };
     let mut emitter_name: CName = CName::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut emitter_name)) };
-    red4ext_rs::info!(
-        "AudioSystem.switch: switch_name {}, switch_value {}, entity_id {:#?}, emitter_name {}",
-        red4ext_rs::ffi::resolve_cname(&switch_name),
-        red4ext_rs::ffi::resolve_cname(&switch_value),
-        entity_id,
-        red4ext_rs::ffi::resolve_cname(&emitter_name)
-    );
+    // red4ext_rs::info!(
+    //     "AudioSystem.switch: switch_name {}, switch_value {}, entity_id {:#?}, emitter_name {}",
+    //     red4ext_rs::ffi::resolve_cname(&switch_name),
+    //     red4ext_rs::ffi::resolve_cname(&switch_value),
+    //     entity_id,
+    //     red4ext_rs::ffi::resolve_cname(&emitter_name)
+    // );
     if let Ok(ref guard) = HOOK_ON_AUDIOSYSTEM_SWITCH.clone().try_lock() {
         if let Some(detour) = guard.as_ref() {
             // rewind the stack and call vanilla
@@ -189,7 +189,7 @@ pub fn on_audiosystem_switch(
 
 pub fn is_vanilla(event_name: CName) -> bool {
     if let Ok(exists) = crate::engine::banks::exists(event_name.clone()) {
-        red4ext_rs::info!("sound {event_name} is vanilla ? {}", !exists);
+        // red4ext_rs::info!("sound {event_name} is vanilla ? {}", !exists);
         return !exists;
     } else {
         red4ext_rs::error!("unable to find sound {event_name} existence in banks");
@@ -198,12 +198,12 @@ pub fn is_vanilla(event_name: CName) -> bool {
 }
 
 pub fn custom_engine_play(event_name: CName, entity_id: EntityId, emitter_name: CName) {
-    red4ext_rs::info!(
-        "call custom engine Play method with: event_name {}, entity_id {:#?}, emitter_name {}",
-        red4ext_rs::ffi::resolve_cname(&event_name),
-        entity_id,
-        red4ext_rs::ffi::resolve_cname(&emitter_name)
-    );
+    // red4ext_rs::info!(
+    //     "call custom engine Play method with: event_name {}, entity_id {:#?}, emitter_name {}",
+    //     red4ext_rs::ffi::resolve_cname(&event_name),
+    //     entity_id,
+    //     red4ext_rs::ffi::resolve_cname(&emitter_name)
+    // );
     let entity_id = if entity_id == EntityId::default() {
         None
     } else {
@@ -218,12 +218,12 @@ pub fn custom_engine_play(event_name: CName, entity_id: EntityId, emitter_name: 
 }
 
 pub fn custom_engine_stop(event_name: CName, entity_id: EntityId, emitter_name: CName) {
-    red4ext_rs::info!(
-        "call custom engine Stop method with: event_name {}, entity_id {:#?}, emitter_name {}",
-        red4ext_rs::ffi::resolve_cname(&event_name),
-        entity_id,
-        red4ext_rs::ffi::resolve_cname(&emitter_name)
-    );
+    // red4ext_rs::info!(
+    //     "call custom engine Stop method with: event_name {}, entity_id {:#?}, emitter_name {}",
+    //     red4ext_rs::ffi::resolve_cname(&event_name),
+    //     entity_id,
+    //     red4ext_rs::ffi::resolve_cname(&emitter_name)
+    // );
     let entity_id = if entity_id == EntityId::default() {
         None
     } else {
