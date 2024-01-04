@@ -1,9 +1,11 @@
 use anyhow::Context;
 
+/// REDmod folder
 #[derive(Debug)]
 pub struct REDmod(std::path::PathBuf);
 
 impl REDmod {
+    /// try getting REDmod folder, if it exists
     pub fn try_new() -> anyhow::Result<Self> {
         let current_folder = std::env::current_exe()?;
         Ok(Self(
@@ -20,6 +22,7 @@ impl REDmod {
     pub fn as_path(&self) -> &std::path::Path {
         self.0.as_path()
     }
+    /// retrieve mods subfolders
     pub fn mods(&self) -> Vec<Mod> {
         std::fs::read_dir(self.as_path())
             .unwrap()
@@ -30,6 +33,7 @@ impl REDmod {
     }
 }
 
+/// a folder containing YAML and audio files
 #[derive(Debug)]
 pub struct Mod(std::path::PathBuf);
 
@@ -37,11 +41,13 @@ impl Mod {
     pub fn as_path(&self) -> &std::path::Path {
         self.0.as_path()
     }
+    /// get mod folder name (file stem)
     pub fn name(&self) -> ModName {
         ModName(self.0.file_stem().unwrap().to_str().unwrap().to_string())
     }
 }
 
+/// a mod name
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct ModName(String);
 
