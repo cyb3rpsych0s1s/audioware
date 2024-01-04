@@ -74,10 +74,14 @@ uninstall FROM=game_dir:
   just delete '{{ join(FROM, redscript_deploy_dir) }}'
 
 # 🎨 lint code
-lint:
-  @cargo +nightly clippy --fix --allow-dirty --allow-staged
-  @cargo +nightly fix --allow-dirty --allow-staged
+format:
   @cargo +nightly fmt
+
+# 🎨 lint code
+@lint:
+  cargo +nightly clippy --fix --allow-dirty --allow-staged
+  cargo +nightly fix --allow-dirty --allow-staged
+  just format
 
 alias l := lint
 
