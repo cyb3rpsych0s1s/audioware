@@ -1,12 +1,12 @@
 use std::ffi::c_void;
 
 use red4ext_rs::{
-    conv::{ClassType, NativeRepr},
+    conv::NativeRepr,
     macros::{redscript_global, redscript_import},
-    types::{CName, EntityId, MaybeUninitRef, Ref},
+    types::{EntityId, MaybeUninitRef},
 };
 
-use super::iscriptable::IScriptable;
+use super::entity::Entity;
 
 /// public static native GetGameInstance(): GameInstance
 #[redscript_global(native)]
@@ -42,24 +42,4 @@ unsafe impl NativeRepr for GameInstance {
 impl GameInstance {
     /// public static native func FindEntityByID(self: GameInstance, entityId: EntityID) -> Entity
     pub fn find_entity_by_id(this: Self, entity_id: EntityId) -> MaybeUninitRef<Entity>;
-}
-
-#[derive(Debug)]
-pub struct Entity;
-
-impl ClassType for Entity {
-    type BaseClass = IScriptable;
-    const NAME: &'static str = "Entity";
-    const NATIVE_NAME: &'static str = "entEntity";
-}
-
-#[redscript_import]
-impl Entity {
-    pub fn is_exactly_a(self: &Ref<Self>, class_name: CName) -> bool;
-}
-
-impl Entity {
-    pub fn is_player(self: &Ref<Self>) -> bool {
-        self.is_exactly_a(CName::new("PlayerPuppet"))
-    }
 }
