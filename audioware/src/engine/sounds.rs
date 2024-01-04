@@ -49,7 +49,7 @@ pub fn try_get_mut<'a>() -> Option<MutexGuard<'a, HashMap<Ulid, SoundInfos>>> {
 }
 
 pub fn pause() {
-    if let Some(mut pool) = SOUNDS_POOL.get().and_then(|x| x.try_lock().ok()) {
+    if let Some(mut pool) = try_get_mut() {
         pool.values_mut().for_each(
             |SoundInfos {
                  ref sound_name,
@@ -65,7 +65,7 @@ pub fn pause() {
 }
 
 pub fn resume() {
-    if let Some(mut pool) = SOUNDS_POOL.get().and_then(|x| x.try_lock().ok()) {
+    if let Some(mut pool) = try_get_mut() {
         pool.values_mut().for_each(
             |SoundInfos {
                  ref sound_name,
