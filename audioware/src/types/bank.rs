@@ -29,7 +29,7 @@ impl Bank {
         &self.r#mod
     }
     pub fn folder(&self) -> std::path::PathBuf {
-        REDmod::try_new().unwrap().as_path().join(&self.r#mod)
+        REDmod::try_new().unwrap().as_ref().join(&self.r#mod)
     }
     pub fn retain_valid_audio(&mut self) {
         use validator::ValidateArgs;
@@ -80,7 +80,7 @@ impl TryFrom<&Mod> for Bank {
 
     fn try_from(value: &Mod) -> Result<Self, Self::Error> {
         // safety: dir already checked
-        if let Ok(entry) = std::fs::read_dir(value.as_path()) {
+        if let Ok(entry) = std::fs::read_dir(value) {
             if let Some(manifest) = entry
                 .filter_map(std::result::Result::ok)
                 .filter(|x| x.path().is_file())

@@ -4,6 +4,12 @@ use anyhow::Context;
 #[derive(Debug)]
 pub struct REDmod(std::path::PathBuf);
 
+impl AsRef<std::path::Path> for REDmod {
+    fn as_ref(&self) -> &std::path::Path {
+        self.0.as_path()
+    }
+}
+
 impl REDmod {
     /// try getting REDmod folder, if it exists
     pub fn try_new() -> anyhow::Result<Self> {
@@ -19,12 +25,9 @@ impl REDmod {
                 .join("mods"),
         ))
     }
-    pub fn as_path(&self) -> &std::path::Path {
-        self.0.as_path()
-    }
     /// retrieve mods subfolders
     pub fn mods(&self) -> Vec<Mod> {
-        std::fs::read_dir(self.as_path())
+        std::fs::read_dir(self)
             .unwrap()
             .filter_map(std::result::Result::ok)
             .filter(|x| x.path().is_dir())
@@ -37,10 +40,13 @@ impl REDmod {
 #[derive(Debug)]
 pub struct Mod(std::path::PathBuf);
 
-impl Mod {
-    pub fn as_path(&self) -> &std::path::Path {
+impl AsRef<std::path::Path> for Mod {
+    fn as_ref(&self) -> &std::path::Path {
         self.0.as_path()
     }
+}
+
+impl Mod {
     /// get mod folder name (file stem)
     pub fn name(&self) -> ModName {
         ModName(self.0.file_stem().unwrap().to_str().unwrap().to_string())
