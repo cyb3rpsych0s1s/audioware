@@ -96,6 +96,9 @@ check:
 
 alias c := check
 
+@doc:
+  cargo +nightly doc --open --no-deps
+
 # TODO: finish updating all patterns
 offsets:
   {{zoltan_exe}} '.\addresses.hpp' '{{ join(game_dir, "bin", "x64", "Cyberpunk2077.exe") }}' -f 'std=c++23' --rust-output '.\addresses.rs'
