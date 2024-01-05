@@ -2,6 +2,8 @@ pub mod cruid;
 pub mod entity;
 pub mod game;
 pub mod gender;
+pub mod icomponent;
 pub mod iscriptable;
 pub mod locale;
 pub mod localization;
+pub mod vector4;

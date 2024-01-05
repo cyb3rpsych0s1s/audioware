@@ -2,7 +2,7 @@ use std::ffi::c_void;
 
 use red4ext_rs::{
     conv::NativeRepr,
-    macros::{redscript_global, redscript_import},
+    macros::redscript_global,
     types::{EntityId, MaybeUninitRef},
 };
 
@@ -38,8 +38,7 @@ unsafe impl NativeRepr for GameInstance {
     const NATIVE_NAME: &'static str = "ScriptGameInstance";
 }
 
-#[redscript_import]
-impl GameInstance {
-    /// public static native func FindEntityByID(self: GameInstance, entityId: EntityID) -> Entity
-    pub fn find_entity_by_id(this: Self, entity_id: EntityId) -> MaybeUninitRef<Entity>;
-}
+/// there's a weird bug when using `#[redscript_import]` or direct `call!`,
+/// so call it indirectly.
+#[redscript_global(name = "Audioware.FindEntityByID")]
+pub fn find_entity_by_id(gi: GameInstance, id: EntityId) -> MaybeUninitRef<Entity>;

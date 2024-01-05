@@ -113,7 +113,7 @@ pub fn validate_static_sound_data(
     StaticSoundData::from_file(path, StaticSoundSettings::default())
         .map(|_| ())
         .map_err(|e| {
-            red4ext_rs::error!("{:#?}", e);
+            red4ext_rs::error!("{:#?} ({})", e, value.display());
             ValidationError::new("invalid audio file")
         })
 }

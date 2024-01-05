@@ -39,9 +39,8 @@ impl Bank {
         self.voices.voices.values_mut().for_each(|voice| {
             for audio in voice.female.values_mut().chain(voice.male.values_mut()) {
                 if let Some(file) = audio.file.clone() {
-                    if let Err(e) = validate_static_sound_data(&file, &folder) {
+                    if validate_static_sound_data(&file, &folder).is_err() {
                         audio.file = None;
-                        red4ext_rs::error!("invalid audio file: {e}");
                     }
                 }
             }

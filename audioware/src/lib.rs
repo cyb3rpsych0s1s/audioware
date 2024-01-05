@@ -58,6 +58,14 @@ impl Plugin for Audioware {
             "Audioware.GetReactionDuration",
             crate::natives::get_reaction_duration
         );
+        register_function!(
+            "Audioware.RegisterEmitter",
+            crate::natives::register_emitter
+        );
+        register_function!(
+            "Audioware.UnregisterEmitter",
+            crate::natives::unregister_emitter
+        );
     }
 
     fn post_register() {

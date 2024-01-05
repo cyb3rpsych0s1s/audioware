@@ -36,12 +36,16 @@ pub fn update_state(state: State) {
     };
 }
 
+/// play sound
 pub fn play(sound_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>) {
-    // let sound: &SoundId = sound_name.as_ref();
     if let Some(mut manager) = manager::try_get_mut() {
         if let Ok(data) = banks::data(&sound_name) {
-            if let Some(vocal) = tracks::vocal() {
-                data.settings.output_destination(vocal);
+            red4ext_rs::info!("getting output destination...");
+            if let Some(destination) =
+                tracks::output_destination(entity_id.clone(), emitter_name.clone())
+            {
+                data.settings.output_destination(destination);
+                red4ext_rs::info!("playing...");
                 if let Ok(handle) = manager.play(data) {
                     sounds::store(
                         handle,
@@ -50,6 +54,7 @@ pub fn play(sound_name: CName, entity_id: Option<EntityId>, emitter_name: Option
                         emitter_name.clone(),
                     );
                     if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
+                        red4ext_rs::info!("propagating subtitle...");
                         propagate_subtitle(sound_name, entity_id, emitter_name);
                     }
                 } else {
@@ -66,6 +71,10 @@ pub fn play(sound_name: CName, entity_id: Option<EntityId>, emitter_name: Option
     }
 }
 
+/// stop sound(s) matching provided parameters
+///
+/// iterate through all the values of the sounds pool,
+/// matching on `sound_name`, `entity_id` and `emitter_name`
 pub fn stop(sound_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>) {
     if let Some(mut map) = sounds::try_get_mut() {
         for SoundInfos { handle, .. } in map.values_mut().filter(|x| {
@@ -110,4 +119,12 @@ pub fn resume() -> anyhow::Result<()> {
         red4ext_rs::error!("unable to reach sound handle");
     }
     Ok(())
+}
+
+pub fn register_emitter(id: EntityId) {
+    tracks::register_emitter(id);
+}
+
+pub fn unregister_emitter(id: EntityId) {
+    tracks::unregister_emitter(id);
 }

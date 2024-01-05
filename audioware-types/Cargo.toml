@@ -10,6 +10,7 @@ publish = false
 anyhow.workspace = true
 cxx.workspace = true
 fixed-map.workspace = true
+glam.workspace = true
 red4ext-rs.workspace = true
 serde.workspace = true
 strum.workspace = true
@@ -17,3 +18,7 @@ strum_macros.workspace = true
 
 [dev-dependencies]
 static_assertions.workspace = true
+
+[features]
+default = ["codeware"]
+codeware = []

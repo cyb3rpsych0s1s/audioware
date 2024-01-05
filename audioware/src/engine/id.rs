@@ -1,5 +1,15 @@
-use red4ext_rs::types::CName;
+use red4ext_rs::types::{CName, EntityId};
 use serde::{de::Visitor, Deserialize};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct SoundEntityId(pub EntityId);
+
+impl std::hash::Hash for SoundEntityId {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        u64::from(self.0.clone()).hash(state);
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(transparent)]

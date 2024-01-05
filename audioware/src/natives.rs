@@ -54,3 +54,10 @@ pub fn get_reaction_duration(sound: CName) -> f32 {
     let locale = crate::engine::localization::voice().unwrap_or_default();
     crate::engine::banks::reaction_duration(sound, gender, locale).unwrap_or(3.0)
 }
+
+pub fn register_emitter(id: EntityId) {
+    crate::engine::register_emitter(id);
+}
+pub fn unregister_emitter(id: EntityId) {
+    crate::engine::unregister_emitter(id);
+}
