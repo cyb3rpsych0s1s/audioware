@@ -74,13 +74,17 @@ impl<'v_a> ValidateArgs<'v_a> for Voice {
     fn validate_args(&self, args: Self::Args) -> Result<(), validator::ValidationErrors> {
         let mut errors = ValidationErrors::new();
         for audio in self.female.values() {
-            if let Err(e) = validate_static_sound_data(&audio.file, args) {
-                errors.add("female", e);
+            if let Some(file) = &audio.file {
+                if let Err(e) = validate_static_sound_data(file, args) {
+                    errors.add("female", e);
+                }
             }
         }
         for audio in self.male.values() {
-            if let Err(e) = validate_static_sound_data(&audio.file, args) {
-                errors.add("male", e);
+            if let Some(file) = &audio.file {
+                if let Err(e) = validate_static_sound_data(file, args) {
+                    errors.add("male", e);
+                }
             }
         }
         if !errors.is_empty() {
@@ -93,11 +97,11 @@ impl<'v_a> ValidateArgs<'v_a> for Voice {
 #[derive(Debug, Clone, Deserialize, Validate)]
 pub struct AudioSubtitle {
     #[validate(custom(function = "validate_static_sound_data", arg = "&'v_a std::path::Path"))]
-    pub file: std::path::PathBuf,
+    pub file: Option<std::path::PathBuf>,
     pub subtitle: String,
 }
 
-fn validate_static_sound_data(
+pub fn validate_static_sound_data(
     value: &std::path::PathBuf,
     arg: &std::path::Path,
 ) -> Result<(), ValidationError> {
@@ -132,14 +136,14 @@ mod tests {
     pub fn validate() {
         let folder = std::path::PathBuf::from("./tests");
         let audio = AudioSubtitle {
-            file: "en-us/v_sq017_f_19795c050029f000.Wav".into(),
+            file: Some("en-us/v_sq017_f_19795c050029f000.Wav".into()),
             subtitle: "Again?".to_string(),
         };
         let validation = audio.validate_args(folder.as_path());
         assert!(validation.is_ok());
 
         let audio = AudioSubtitle {
-            file: "en-us/../../v_sq017_f_19795c050029f000.Wav".into(),
+            file: Some("en-us/../../v_sq017_f_19795c050029f000.Wav".into()),
             subtitle: "Again?".to_string(),
         };
         let validation = audio.validate_args(folder.as_path());

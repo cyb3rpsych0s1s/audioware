@@ -10,7 +10,10 @@ use kira::sound::static_sound::StaticSoundData;
 use red4ext_rs::types::CName;
 use serde::Deserialize;
 
-use crate::engine::SoundId;
+use crate::{
+    engine::SoundId,
+    types::voice::{validate_static_sound_data, AudioSubtitle},
+};
 
 use super::{
     redmod::{Mod, ModName, REDmod},
@@ -32,11 +35,17 @@ impl Bank {
         REDmod::try_new().unwrap().as_ref().join(&self.r#mod)
     }
     pub fn retain_valid_audio(&mut self) {
-        use validator::ValidateArgs;
         let folder = self.folder();
-        self.voices
-            .voices
-            .retain(|_, voice| voice.validate_args(&folder).is_ok());
+        self.voices.voices.values_mut().for_each(|voice| {
+            for audio in voice.female.values_mut().chain(voice.male.values_mut()) {
+                if let Some(file) = audio.file.clone() {
+                    if let Err(e) = validate_static_sound_data(&file, &folder) {
+                        audio.file = None;
+                        red4ext_rs::error!("invalid audio file: {e}");
+                    }
+                }
+            }
+        });
     }
     pub fn retain_unique_ids(&mut self, ids: &Arc<Mutex<HashSet<SoundId>>>) {
         self.voices.voices.retain(|id, _| {
@@ -60,12 +69,12 @@ impl Bank {
     ) -> Option<StaticSoundData> {
         if let Some(voice) = self.voices.voices.get(&id.clone().into()) {
             let audios = voice.audios(&gender);
-            if let Some(audio) = audios.get(language) {
-                return StaticSoundData::from_file(
-                    self.folder().join(&audio.file),
-                    Default::default(),
-                )
-                .ok();
+            if let Some(AudioSubtitle {
+                file: Some(file), ..
+            }) = audios.get(language)
+            {
+                return StaticSoundData::from_file(self.folder().join(file), Default::default())
+                    .ok();
             }
         }
         None
