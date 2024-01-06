@@ -29,7 +29,7 @@ impl IsValid for CName {
 struct Audioware;
 
 impl Plugin for Audioware {
-    const VERSION: Version = Version::new(0, 0, 1);
+    const VERSION: Version = Version::new(0, 2, 0);
 
     fn register() {
         red4ext_rs::info!("on register audioware");
@@ -66,6 +66,11 @@ impl Plugin for Audioware {
             "Audioware.UnregisterEmitter",
             crate::natives::unregister_emitter
         );
+        register_function!(
+            "Audioware.UpdateActorLocation",
+            crate::natives::update_actor_location
+        );
+        register_function!("Audioware.EmittersCount", crate::natives::emitters_count);
     }
 
     fn post_register() {

@@ -4,7 +4,9 @@ use red4ext_rs::{
     types::{CName, Ref},
 };
 
-use super::{icomponent::IComponent, iscriptable::IScriptable, vector4::Vector4};
+use super::{
+    icomponent::IComponent, iscriptable::IScriptable, quaternion::Quaternion, vector4::Vector4,
+};
 
 #[derive(Debug)]
 pub struct Entity;
@@ -22,6 +24,9 @@ impl Entity {
     /// public native func GetWorldPosition() -> Vector4
     #[redscript(native)]
     pub fn get_world_position(self: &Ref<Self>) -> Vector4;
+    /// public native func GetWorldOrientation() -> Quaternion
+    #[redscript(native)]
+    pub fn get_world_orientation(self: &Ref<Self>) -> Quaternion;
 }
 
 impl Entity {

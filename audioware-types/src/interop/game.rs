@@ -21,7 +21,12 @@ pub struct GameInstance {
 }
 
 #[cfg(test)]
-static_assertions::const_assert_eq!(std::mem::size_of::<GameInstance>(), 0x18);
+mod memory {
+    #[test]
+    fn size() {
+        static_assertions::const_assert_eq!(std::mem::size_of::<super::GameInstance>(), 0x18);
+    }
+}
 
 impl Default for GameInstance {
     fn default() -> Self {

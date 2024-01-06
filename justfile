@@ -50,7 +50,7 @@ build PROFILE='debug' TO=game_dir: (setup TO)
 
 alias b := build
 
-dev: (build 'debug') reload
+dev: (build) reload
 
 ci TO: (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
 
