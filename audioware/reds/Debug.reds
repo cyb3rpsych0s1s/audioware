@@ -1,4 +1,3 @@
-import Audioware.Ventriloquist
 import Audioware.Audioware
 
 // Game.TestAudioEvent("dry_fire");
