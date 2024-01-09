@@ -43,7 +43,7 @@ now:
   @Write-Host "$(Get-Date) $_"
 
 # 📦 build Rust RED4Ext plugin
-build PROFILE='debug' TO=game_dir: (setup TO)
+build PROFILE='debug' TO=game_dir: (setup join(TO, red4ext_deploy_dir))
   @'{{ if PROFILE == "release" { `cargo +nightly build --release` } else { `cargo +nightly build` } }}'
   @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just now
@@ -63,7 +63,7 @@ clear:
         Write-Host "missing {{ join(red_cache_dir, 'final.redscripts.bk') }}"; \
     }
 
-reload TO=game_dir: (setup redscript_deploy_dir)
+reload TO=game_dir: (setup join(TO, redscript_deploy_dir))
   @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{ join(TO, redscript_deploy_dir) }}'
   @just now
 
