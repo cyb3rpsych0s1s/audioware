@@ -45,6 +45,7 @@ public class Audioware extends ScriptableSystem {
         this.m_callbackSystem.RegisterCallback(n"Session/Start", this, n"OnSessionStart");
         this.m_callbackSystem.RegisterCallback(n"Session/Ready", this, n"OnSessionReady");
         this.m_callbackSystem.RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd");
+        this.m_callbackSystem.RegisterCallback(n"Entity/Uninitialize", this, n"OnEntityUninitialize");
     }
 
     private func OnDetach() {
@@ -82,6 +83,10 @@ public class Audioware extends ScriptableSystem {
     }
     private cb func OnSessionBeforeEnd(event: ref<GameSessionEvent>) {
         UpdateEngineState(EngineState.End);
+    }
+    private cb func OnEntityUninitialize(event: ref<EntityLifecycleEvent>) {
+        let id = event.GetEntity().GetEntityID();
+        UnregisterEmitter(id);
     }
 
     public static final func GetInstance(game: GameInstance) -> ref<Audioware> {
