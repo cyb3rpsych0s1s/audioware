@@ -58,10 +58,10 @@ pub fn get_reaction_duration(sound: CName) -> f32 {
 }
 
 pub fn register_emitter(id: EntityId) {
-    crate::engine::register_emitter(id);
+    crate::engine::tracks::register_emitter(id);
 }
 pub fn unregister_emitter(id: EntityId) {
-    crate::engine::unregister_emitter(id);
+    crate::engine::tracks::unregister_emitter(id);
 }
 
 pub fn update_actor_location(id: EntityId, position: Vector4, orientation: Quaternion) {
@@ -69,5 +69,5 @@ pub fn update_actor_location(id: EntityId, position: Vector4, orientation: Quate
 }
 
 pub fn emitters_count() -> i32 {
-    crate::engine::emitters_count()
+    crate::engine::tracks::emitters_count()
 }

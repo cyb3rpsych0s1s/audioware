@@ -4,12 +4,12 @@ use self::sounds::SoundInfos;
 pub use self::state::State;
 
 pub mod banks;
-mod id;
+pub mod id;
 pub mod localization;
-mod manager;
-mod sounds;
-mod state;
-mod tracks;
+pub mod manager;
+pub mod sounds;
+pub mod state;
+pub mod tracks;
 
 use audioware_types::interop::{quaternion::Quaternion, vector4::Vector4};
 pub use id::SoundId;
@@ -119,14 +119,6 @@ pub fn resume() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn register_emitter(id: EntityId) {
-    tracks::register_emitter(id);
-}
-
-pub fn unregister_emitter(id: EntityId) {
-    tracks::unregister_emitter(id);
-}
-
 pub fn update_actor_location(id: EntityId, position: Vector4, orientation: Quaternion) {
     let gi = audioware_types::interop::game::get_game_instance();
     let entity = audioware_types::interop::game::find_entity_by_id(gi, id.clone());
@@ -139,8 +131,4 @@ pub fn update_actor_location(id: EntityId, position: Vector4, orientation: Quate
     } else {
         tracks::update_emitter(id, position);
     }
-}
-
-pub fn emitters_count() -> i32 {
-    tracks::emitters_count()
 }
