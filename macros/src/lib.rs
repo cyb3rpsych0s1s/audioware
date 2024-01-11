@@ -9,12 +9,25 @@ pub fn derive_from_memory(item: TokenStream) -> TokenStream {
         ident,
         generics,
         fields,
+        attrs,
         ..
     } = parse_macro_input!(item as syn::ItemStruct);
     // check that struct has no generics / lifetimes
     assert_eq!(generics.params.len(), 0);
     // check that struct is no tuple
     assert!(fields.iter().all(|x| x.ident.is_some()));
+    // check that struct is annotated with #[repr(C)]
+    assert!(attrs.iter().any(|x| {
+        x.path().is_ident("repr")
+            && x.parse_nested_meta(|x| {
+                if x.path.is_ident("C") {
+                    Ok(())
+                } else {
+                    Err(x.error("struct must be annotated #[repr(C)]"))
+                }
+            })
+            .is_ok()
+    }));
 
     let mut field_name: Ident;
     let mut field_type: Type;
