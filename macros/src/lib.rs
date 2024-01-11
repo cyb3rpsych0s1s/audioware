@@ -3,6 +3,9 @@ use proc_macro2::Ident;
 use quote::quote;
 use syn::{parse_macro_input, Type};
 
+/// automatically derive [`audioware_mem::FromMemory`] for any struct
+/// with named fields which correctly upholds its invariants.
+/// Failing to do so will lead to [undefined behavior](https://doc.rust-lang.org/reference/behavior-considered-undefined.html#behavior-considered-undefined) at runtime.
 #[proc_macro_derive(FromMemory)]
 pub fn derive_from_memory(item: TokenStream) -> TokenStream {
     let syn::ItemStruct {
