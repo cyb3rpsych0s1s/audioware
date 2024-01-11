@@ -11,3 +11,7 @@ pub mod locale;
 pub mod localization;
 pub mod quaternion;
 pub mod vector4;
+
+pub enum Frame {
+    Initial(),
+}

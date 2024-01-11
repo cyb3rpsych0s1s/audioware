@@ -8,7 +8,6 @@ use red4ext_rs::{define_trait_plugin, plugin::Plugin};
 
 mod addresses;
 pub mod engine;
-mod frame;
 mod hook;
 mod language;
 pub mod natives;

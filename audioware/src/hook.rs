@@ -85,7 +85,7 @@ pub fn on_audiosystem_play(
     out: *mut std::ffi::c_void,
     a4: i64,
 ) {
-    let rewind = unsafe { (*frame.cast::<crate::frame::StackFrame>()).code };
+    let rewind = unsafe { (*frame.cast::<::audioware_sys::ffi::StackFrame>()).code };
     // read stack frame
     let mut event_name: CName = CName::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event_name)) };
@@ -99,8 +99,8 @@ pub fn on_audiosystem_play(
             if let Some(detour) = guard.as_ref() {
                 // rewind the stack and call vanilla
                 unsafe {
-                    (*frame.cast::<crate::frame::StackFrame>()).code = rewind;
-                    (*frame.cast::<crate::frame::StackFrame>()).currentParam = 0;
+                    (*frame.cast::<::audioware_sys::ffi::StackFrame>()).code = rewind;
+                    (*frame.cast::<::audioware_sys::ffi::StackFrame>()).currentParam = 0;
                 }
                 let original: ExternFnRedRegisteredFunc =
                     unsafe { std::mem::transmute(detour.trampoline()) };
@@ -120,7 +120,7 @@ pub fn on_audiosystem_stop(
     out: *mut std::ffi::c_void,
     a4: i64,
 ) {
-    let rewind = unsafe { (*frame.cast::<crate::frame::StackFrame>()).code };
+    let rewind = unsafe { (*frame.cast::<::audioware_sys::ffi::StackFrame>()).code };
     // read stack frame
     let mut event_name: CName = CName::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut event_name)) };
@@ -134,8 +134,8 @@ pub fn on_audiosystem_stop(
             if let Some(detour) = guard.as_ref() {
                 // rewind the stack and call vanilla
                 unsafe {
-                    (*frame.cast::<crate::frame::StackFrame>()).code = rewind;
-                    (*frame.cast::<crate::frame::StackFrame>()).currentParam = 0;
+                    (*frame.cast::<::audioware_sys::ffi::StackFrame>()).code = rewind;
+                    (*frame.cast::<::audioware_sys::ffi::StackFrame>()).currentParam = 0;
                 }
                 let original: ExternFnRedRegisteredFunc =
                     unsafe { std::mem::transmute(detour.trampoline()) };
@@ -156,7 +156,7 @@ pub fn on_audiosystem_switch(
     a4: i64,
 ) {
     // switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName
-    let rewind = unsafe { (*frame.cast::<crate::frame::StackFrame>()).code };
+    let rewind = unsafe { (*frame.cast::<::audioware_sys::ffi::StackFrame>()).code };
     // read stack frame
     let mut switch_name: CName = CName::default();
     unsafe { red4ext_rs::ffi::get_parameter(frame, std::mem::transmute(&mut switch_name)) };
@@ -177,8 +177,8 @@ pub fn on_audiosystem_switch(
         if let Some(detour) = guard.as_ref() {
             // rewind the stack and call vanilla
             unsafe {
-                (*frame.cast::<crate::frame::StackFrame>()).code = rewind;
-                (*frame.cast::<crate::frame::StackFrame>()).currentParam = 0;
+                (*frame.cast::<::audioware_sys::ffi::StackFrame>()).code = rewind;
+                (*frame.cast::<::audioware_sys::ffi::StackFrame>()).currentParam = 0;
             }
             let original: ExternFnRedRegisteredFunc =
                 unsafe { std::mem::transmute(detour.trampoline()) };
