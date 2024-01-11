@@ -1,5 +1,5 @@
 [workspace]
-members = ["audioware", "audioware-types", "audioware-macros"]
+members = ["audioware", "sys", "macros", "mem"]
 resolver = "2"
 
 [workspace.package]
@@ -12,8 +12,9 @@ lto = "thin"
 
 [workspace.dependencies]
 anyhow = "1"
-audioware-macros = { path = "audioware-macros" }
-audioware-types = { path = "audioware-types" }
+audioware-macros = { path = "macros" }
+audioware-mem = { path = "mem" }
+audioware-sys = { path = "sys" }
 cxx = "1"
 fixed-map = { version = "0.9.3", features = ["serde"] }
 glam = { version = "0.25.0", features = ["mint"] }

@@ -1,13 +1,13 @@
-use audioware_types::interop::locale::Locale;
-use audioware_types::interop::quaternion::Quaternion;
-use audioware_types::interop::vector4::Vector4;
+use audioware_sys::interop::locale::Locale;
+use audioware_sys::interop::quaternion::Quaternion;
+use audioware_sys::interop::vector4::Vector4;
 use red4ext_rs::macros::redscript_global;
 use red4ext_rs::types::CName;
 use red4ext_rs::types::EntityId;
 use red4ext_rs::types::Ref;
 
-use audioware_types::interop::gender::PlayerGender;
-use audioware_types::interop::localization::LocalizationPackage;
+use audioware_sys::interop::gender::PlayerGender;
+use audioware_sys::interop::localization::LocalizationPackage;
 
 use crate::engine::State;
 use crate::types::voice::Subtitle;

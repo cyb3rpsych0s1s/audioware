@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex, OnceLock},
 };
 
-use audioware_types::interop::{gender::PlayerGender, locale::Locale};
+use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use fixed_map::Set;
 use kira::sound::static_sound::StaticSoundData;
 use lazy_static::lazy_static;

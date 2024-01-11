@@ -33,7 +33,7 @@ pub fn derive_from_memory(item: TokenStream) -> TokenStream {
         });
     }
     quote! {
-        unsafe impl ::audioware_types::FromMemory for #ident {
+        unsafe impl ::audioware_mem::FromMemory for #ident {
             #[allow(non_snake_case)]
             fn from_memory(address: usize) -> Self {
                 #(#from_mem)*

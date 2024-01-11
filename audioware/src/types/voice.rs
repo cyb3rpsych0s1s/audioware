@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use audioware_types::interop::gender::PlayerGender;
+use audioware_sys::interop::gender::PlayerGender;
 use fixed_map::Map;
 use kira::sound::static_sound::{StaticSoundData, StaticSoundSettings};
 use red4ext_rs::types::CName;
@@ -10,7 +10,7 @@ use validator::{Validate, ValidationError};
 use validator::{ValidateArgs, ValidationErrors};
 
 use crate::engine::SoundId;
-use audioware_types::interop::locale::Locale;
+use audioware_sys::interop::locale::Locale;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Voices {

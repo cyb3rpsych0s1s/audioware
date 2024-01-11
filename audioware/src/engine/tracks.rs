@@ -4,7 +4,7 @@ use std::{
     sync::{atomic::AtomicBool, Arc, Mutex, OnceLock},
 };
 
-use audioware_types::interop::{game::get_game_instance, quaternion::Quaternion, vector4::Vector4};
+use audioware_sys::interop::{game::get_game_instance, quaternion::Quaternion, vector4::Vector4};
 use glam::{Quat, Vec3};
 use kira::{
     manager::AudioManager,
@@ -137,7 +137,7 @@ pub fn output_destination(
         .clone()
         .and_then(|x| {
             let gi = get_game_instance();
-            let entity = audioware_types::interop::game::find_entity_by_id(gi, x);
+            let entity = audioware_sys::interop::game::find_entity_by_id(gi, x);
             entity.into_ref().map(|entity| entity.is_player())
         })
         .unwrap_or(false);
@@ -174,7 +174,7 @@ pub fn register_emitter(id: EntityId) {
     ) {
         if let std::collections::hash_map::Entry::Vacant(e) = entities.entry(key) {
             let entity =
-                audioware_types::interop::game::find_entity_by_id(get_game_instance(), id.clone());
+                audioware_sys::interop::game::find_entity_by_id(get_game_instance(), id.clone());
             if let Some(entity) = entity.into_ref() {
                 let position = entity.get_world_position();
                 if let Ok(handle) = unsafe { scene.assume_init_mut() }

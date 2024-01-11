@@ -4,7 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use audioware_types::interop::{gender::PlayerGender, locale::Locale};
+use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use kira::sound::static_sound::StaticSoundData;
 
 use red4ext_rs::types::CName;

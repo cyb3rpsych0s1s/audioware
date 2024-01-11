@@ -1,4 +1,4 @@
-use audioware_types::interop::iscriptable::IScriptable;
+use audioware_sys::interop::iscriptable::IScriptable;
 use red4ext_rs::types::Ref;
 use red4ext_rs::{conv::ClassType, types::CName};
 

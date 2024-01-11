@@ -11,7 +11,7 @@ pub mod sounds;
 pub mod state;
 pub mod tracks;
 
-use audioware_types::interop::{quaternion::Quaternion, vector4::Vector4};
+use audioware_sys::interop::{quaternion::Quaternion, vector4::Vector4};
 pub use id::SoundId;
 use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId};
@@ -120,8 +120,8 @@ pub fn resume() -> anyhow::Result<()> {
 }
 
 pub fn update_actor_location(id: EntityId, position: Vector4, orientation: Quaternion) {
-    let gi = audioware_types::interop::game::get_game_instance();
-    let entity = audioware_types::interop::game::find_entity_by_id(gi, id.clone());
+    let gi = audioware_sys::interop::game::get_game_instance();
+    let entity = audioware_sys::interop::game::find_entity_by_id(gi, id.clone());
     let is = entity
         .into_ref()
         .map(|entity| entity.is_player())
