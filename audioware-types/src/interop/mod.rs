@@ -1,3 +1,4 @@
+pub mod angles;
 pub mod cruid;
 pub mod entity;
 pub mod game;
@@ -6,4 +7,5 @@ pub mod icomponent;
 pub mod iscriptable;
 pub mod locale;
 pub mod localization;
+pub mod quaternion;
 pub mod vector4;

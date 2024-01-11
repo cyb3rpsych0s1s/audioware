@@ -62,7 +62,7 @@ private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName:
     let key: String = NameToString(reaction);
     let subtitle: String = localization.GetSubtitle(key);
     if StrLen(key) > 0 && NotEquals(key, subtitle) {
-      let duration: Float = 3.0;
+      let duration: Float = GetReactionDuration(reaction);
       let line: scnDialogLineData;
       line.duration = duration;
       line.id = CreateCRUID(StringToUint64(NameToString(reaction)));

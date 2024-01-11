@@ -16,10 +16,10 @@ audioware-macros.workspace = true
 anyhow.workspace = true
 cxx.workspace = true
 fixed-map.workspace = true
-kira = "0.8.5"
+glam.workspace = true
+kira.workspace = true
 lazy_static = "1.4.0"
 memoffset = "0.9.0"
-glam.workspace = true
 red4ext-rs.workspace = true
 retour = "0.3.1"
 semver ={ version = "1", features = ["serde"] }

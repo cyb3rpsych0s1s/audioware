@@ -1,4 +1,6 @@
 use audioware_types::interop::locale::Locale;
+use audioware_types::interop::quaternion::Quaternion;
+use audioware_types::interop::vector4::Vector4;
 use red4ext_rs::macros::redscript_global;
 use red4ext_rs::types::CName;
 use red4ext_rs::types::EntityId;
@@ -56,8 +58,16 @@ pub fn get_reaction_duration(sound: CName) -> f32 {
 }
 
 pub fn register_emitter(id: EntityId) {
-    crate::engine::register_emitter(id);
+    crate::engine::tracks::register_emitter(id);
 }
 pub fn unregister_emitter(id: EntityId) {
-    crate::engine::unregister_emitter(id);
+    crate::engine::tracks::unregister_emitter(id);
+}
+
+pub fn update_actor_location(id: EntityId, position: Vector4, orientation: Quaternion) {
+    crate::engine::update_actor_location(id, position, orientation);
+}
+
+pub fn emitters_count() -> i32 {
+    crate::engine::tracks::emitters_count()
 }
