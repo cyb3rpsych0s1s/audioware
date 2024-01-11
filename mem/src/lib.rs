@@ -1,5 +1,5 @@
 /// Read a struct directly from memory at given offset.
-/// 
+///
 /// # Safety
 /// this is only safe as long as it matches memory representation specified in [RED4ext.SDK](https://github.com/WopsS/RED4ext.SDK).
 ///
