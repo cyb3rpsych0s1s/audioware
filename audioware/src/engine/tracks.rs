@@ -129,7 +129,7 @@ pub fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn output_destination<'a>(
+pub fn output_destination(
     entity_id: Option<EntityId>,
     emitter_name: Option<CName>,
 ) -> Option<OutputDestination> {
