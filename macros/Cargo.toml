@@ -9,7 +9,6 @@ proc-macro = true
 
 [dependencies]
 audioware-mem.workspace = true
-audioware-sys.workspace = true
 syn = "2"
 proc-macro2 = "1"
 quote = "1"

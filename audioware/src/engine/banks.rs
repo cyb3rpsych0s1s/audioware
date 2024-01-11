@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex, OnceLock},
 };
 
-use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
+use audioware_sys::interop::{event::Event, gender::PlayerGender, locale::Locale};
 use fixed_map::Set;
 use kira::sound::static_sound::StaticSoundData;
 use lazy_static::lazy_static;
@@ -12,7 +12,6 @@ use strum::IntoEnumIterator;
 
 use crate::{
     engine,
-    interop::event::Event,
     language::Supports,
     types::{
         bank::Bank,

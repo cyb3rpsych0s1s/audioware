@@ -8,11 +8,14 @@ publish = false
 
 [dependencies]
 anyhow.workspace = true
+audioware-macros.workspace = true
+audioware-mem.workspace = true
 cxx.workspace = true
 fixed-map.workspace = true
 glam.workspace = true
 kira.workspace = true
-mint = "0.5.9"
+memoffset.workspace = true
+mint.workspace = true
 red4ext-rs.workspace = true
 serde.workspace = true
 strum.workspace = true

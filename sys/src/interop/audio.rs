@@ -1,7 +1,7 @@
 use audioware_macros::FromMemory;
 use red4ext_rs::types::CName;
 
-use super::ISCRIPTABLE_SIZE;
+use super::iscriptable::ISCRIPTABLE_SIZE;
 
 /// see [RED4ext::audio::EventActionType](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/audio/EventActionType.hpp).
 #[derive(Debug, Clone, Copy, strum_macros::Display, strum_macros::FromRepr, PartialEq)]

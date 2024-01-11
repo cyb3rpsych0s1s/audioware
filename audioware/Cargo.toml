@@ -13,7 +13,6 @@ crate-type = ["cdylib"]
 [dependencies]
 audioware-mem.workspace = true
 audioware-sys.workspace = true
-audioware-macros.workspace = true
 anyhow.workspace = true
 cxx.workspace = true
 fixed-map.workspace = true
