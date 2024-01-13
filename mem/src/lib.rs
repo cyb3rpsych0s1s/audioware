@@ -1,5 +1,7 @@
 mod frame;
+mod hook;
 mod module;
+
 pub use module::*;
 
 /// Read a struct directly from memory at given offset.
@@ -16,14 +18,19 @@ pub unsafe trait FromMemory {
     fn from_memory(address: usize) -> Self;
 }
 
-/// Read native function parameters from `C` stack-frame
-///
-/// # Safety
-/// this is only safe as long as it matches function parameters specified in [RED4ext.SDK](https://github.com/WopsS/RED4ext.SDK).
-///
-/// It usually implies that:
-/// - parameters must be read in order
-/// - parameters type match underlying memory representation
-pub unsafe trait FromFrame {
-    fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self;
+/// hook function lifecycle
+pub trait Hook {
+    fn load()
+    where
+        Self: Sized;
+    fn unload()
+    where
+        Self: Sized;
 }
+
+pub type ExternFnRedRegisteredFunc = unsafe extern "C" fn(
+    ctx: *mut red4ext_rs::ffi::IScriptable,
+    frame: *mut red4ext_rs::ffi::CStackFrame,
+    out: *mut std::ffi::c_void,
+    a4: i64,
+) -> ();

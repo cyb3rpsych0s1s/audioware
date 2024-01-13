@@ -1,6 +1,7 @@
 #![feature(arbitrary_self_types)]
 
-use hook::{Hook, HookAudioSystemPlay, HookAudioSystemStop, HookAudioSystemSwitch};
+use audioware_mem::Hook;
+use hook::{HookAudioSystemPlay, HookAudioSystemStop, HookAudioSystemSwitch};
 use red4ext_rs::plugin::Version;
 use red4ext_rs::register_function;
 use red4ext_rs::types::CName;
