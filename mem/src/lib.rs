@@ -1,4 +1,4 @@
-mod frame;
+pub mod frame;
 mod hook;
 mod module;
 

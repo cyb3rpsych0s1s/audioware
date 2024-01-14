@@ -52,7 +52,7 @@ macro_rules! native_func {
             out: *mut std::ffi::c_void,
             a4: i64,
         ) {
-            let rewind = unsafe { (*frame.cast::<::audioware_sys::ffi::StackFrame>()).code };
+            let rewind = unsafe { (*frame.cast::<$crate::frame::StackFrame>()).code };
             // read stack frame
             $(
                 let mut $param: $ty = <$ty>::default();
@@ -63,8 +63,8 @@ macro_rules! native_func {
                     if let Some(detour) = guard.as_ref() {
                         // rewind the stack and call vanilla
                         unsafe {
-                            (*frame.cast::<::audioware_sys::ffi::StackFrame>()).code = rewind;
-                            (*frame.cast::<::audioware_sys::ffi::StackFrame>()).currentParam = 0;
+                            (*frame.cast::<$crate::frame::StackFrame>()).code = rewind;
+                            (*frame.cast::<$crate::frame::StackFrame>()).currentParam = 0;
                         }
                         let original: $crate::ExternFnRedRegisteredFunc =
                             unsafe { ::std::mem::transmute(detour.trampoline()) };
