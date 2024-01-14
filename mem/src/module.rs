@@ -2,6 +2,8 @@ use retour::RawDetour;
 use widestring::U16CString;
 use winapi::{shared::minwindef::HMODULE, um::libloaderapi::GetModuleHandleW};
 
+use crate::{ExternFnRedRegisteredFunc, LocalFnRustRegisteredFunc};
+
 /// get a Windows module address in memory.
 ///
 /// # Safety
@@ -47,19 +49,9 @@ pub unsafe fn load_native_event_handler(
 /// memory offset must be for a valid native function.
 pub unsafe fn load_native_func(
     offset: usize,
-    hook: fn(
-        *mut red4ext_rs::ffi::IScriptable,
-        *mut red4ext_rs::ffi::CStackFrame,
-        *mut std::ffi::c_void,
-        i64,
-    ) -> (),
+    hook: LocalFnRustRegisteredFunc,
 ) -> Result<RawDetour, ::retour::Error> {
     let address = unsafe { self::locate(offset) };
-    let vanilla: extern "C" fn(
-        *mut red4ext_rs::ffi::IScriptable,
-        *mut red4ext_rs::ffi::CStackFrame,
-        *mut std::ffi::c_void,
-        i64,
-    ) -> () = unsafe { ::std::mem::transmute(address) };
+    let vanilla: ExternFnRedRegisteredFunc = unsafe { ::std::mem::transmute(address) };
     unsafe { ::retour::RawDetour::new(vanilla as *const (), hook as *const ()) }
 }

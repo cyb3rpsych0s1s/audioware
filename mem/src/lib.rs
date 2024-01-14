@@ -2,8 +2,6 @@ pub mod frame;
 mod hook;
 mod module;
 
-use std::sync::MutexGuard;
-
 pub use module::*;
 use red4ext_rs::types::{CName, EntityId};
 use retour::RawDetour;
@@ -39,7 +37,7 @@ pub type ExternFnRedRegisteredFunc = unsafe extern "C" fn(
     a4: i64,
 ) -> ();
 
-pub type LocalFnRustRegisteredFunc = fn(
+pub type LocalFnRustRegisteredFunc = unsafe fn(
     ctx: *mut red4ext_rs::ffi::IScriptable,
     frame: *mut red4ext_rs::ffi::CStackFrame,
     out: *mut std::ffi::c_void,
@@ -50,11 +48,10 @@ pub trait NativeFunc {
     const OFFSET: usize;
     const HOOK: fn(Self::Inputs) -> ();
     const CONDITION: fn(&Self::Inputs) -> bool;
-    //fn bar<F>(mut f: F) where F: MyTrait<i32>
-    // const STORAGE: fn(MutexGuard<'_, RawDetour>);
-    const STORAGE: fn(Box<dyn Fn(&RawDetour)>);
+    const STORE: fn(Option<RawDetour>);
+    const TRAMPOLINE: fn(Box<dyn Fn(&RawDetour)>);
     type Inputs;
-    fn hook(
+    unsafe fn hook(
         ctx: *mut red4ext_rs::ffi::IScriptable,
         frame: *mut red4ext_rs::ffi::CStackFrame,
         out: *mut std::ffi::c_void,
@@ -74,30 +71,10 @@ pub trait NativeFunc {
                     unsafe { ::std::mem::transmute(detour.trampoline()) };
                 unsafe { original(ctx, frame, out, a4) };
             };
-            Self::STORAGE(Box::new(trampoline));
-        } else {
+            Self::TRAMPOLINE(Box::new(trampoline));
         }
     }
     unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs;
-    fn store(detour: RawDetour) {}
-    fn trampoline(
-        rewind: i64,
-        detour: RawDetour,
-        ctx: *mut red4ext_rs::ffi::IScriptable,
-        frame: *mut red4ext_rs::ffi::CStackFrame,
-        out: *mut std::ffi::c_void,
-        a4: i64,
-    ) {
-        // rewind the stack and call vanilla
-        unsafe {
-            (*frame.cast::<frame::StackFrame>()).code = rewind;
-            (*frame.cast::<frame::StackFrame>()).currentParam = 0;
-        }
-        let original: ExternFnRedRegisteredFunc =
-            unsafe { ::std::mem::transmute(detour.trampoline()) };
-        unsafe { original(ctx, frame, out, a4) };
-    }
-    fn clear() {}
 }
 
 #[repr(C)]
@@ -105,26 +82,37 @@ pub struct AudioSystemPlayParams(CName, EntityId, CName);
 pub struct AudioSystemPlay;
 impl NativeFunc for AudioSystemPlay {
     const OFFSET: usize = 0x123;
-    const HOOK: fn(Self::Inputs) -> () = audiosystem_play;
+    const HOOK: fn(Self::Inputs) -> () = detour_audiosystem_play;
     const CONDITION: fn(&Self::Inputs) -> bool = should_detour_audiosystem_play;
-    const STORAGE: fn(Box<dyn Fn(&RawDetour)>) = storage_audiosystem_play;
+    const TRAMPOLINE: fn(Box<dyn Fn(&RawDetour)>) = trampoline_audiosystem_play;
+    const STORE: fn(Option<RawDetour>) = store_audiosystem_play;
     type Inputs = AudioSystemPlayParams;
-
     unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs {
-        todo!()
+        let mut evt: CName = CName::default();
+        unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut evt)) };
+        let mut ent: EntityId = EntityId::default();
+        unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut ent)) };
+        let mut emitter: CName = CName::default();
+        unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut emitter)) };
+        AudioSystemPlayParams(evt, ent, emitter)
     }
 }
 ::lazy_static::lazy_static! {
     static ref AUDIOSYSTEM_PLAY_STORAGE: ::std::sync::Arc<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> =
         ::std::sync::Arc::new(::std::sync::Mutex::new(None));
 }
-fn storage_audiosystem_play(closure: Box<dyn Fn(&RawDetour)>) {
+fn store_audiosystem_play(detour: Option<RawDetour>) {
+    if let Ok(guard) = AUDIOSYSTEM_PLAY_STORAGE.clone().try_lock().as_deref_mut() {
+        *guard = detour;
+    }
+}
+fn trampoline_audiosystem_play(closure: Box<dyn Fn(&RawDetour)>) {
     if let Ok(Some(guard)) = AUDIOSYSTEM_PLAY_STORAGE.clone().try_lock().as_deref() {
         closure(guard);
     }
 }
-fn audiosystem_play(params: AudioSystemPlayParams) {}
-fn should_detour_audiosystem_play(params: &AudioSystemPlayParams) -> bool {
+fn detour_audiosystem_play(_params: AudioSystemPlayParams) {}
+fn should_detour_audiosystem_play(_params: &AudioSystemPlayParams) -> bool {
     false
 }
 impl<T> Hook for T
@@ -138,11 +126,11 @@ where
         match unsafe { load_native_func(Self::OFFSET, Self::hook) } {
             Ok(detour) => match unsafe { detour.enable() } {
                 Ok(_) => {
-                    Self::store(detour);
+                    Self::STORE(Some(detour));
                 }
-                Err(e) => {}
+                Err(_e) => {}
             },
-            Err(e) => {}
+            Err(_e) => {}
         }
     }
 
@@ -150,6 +138,6 @@ where
     where
         Self: Sized,
     {
-        Self::clear();
+        Self::STORE(None);
     }
 }
