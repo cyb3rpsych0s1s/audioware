@@ -44,13 +44,17 @@ pub type LocalFnRustRegisteredFunc = unsafe fn(
     a4: i64,
 ) -> ();
 
-pub trait NativeFunc {
+pub unsafe trait Detour {
     const OFFSET: usize;
+    type Inputs;
+    unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs;
+}
+
+pub trait NativeFunc: Detour {
     const HOOK: fn(Self::Inputs) -> ();
     const CONDITION: fn(&Self::Inputs) -> bool;
     const STORE: fn(Option<RawDetour>);
     const TRAMPOLINE: fn(Box<dyn Fn(&RawDetour)>);
-    type Inputs;
     unsafe fn hook(
         ctx: *mut red4ext_rs::ffi::IScriptable,
         frame: *mut red4ext_rs::ffi::CStackFrame,
@@ -74,18 +78,13 @@ pub trait NativeFunc {
             Self::TRAMPOLINE(Box::new(trampoline));
         }
     }
-    unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs;
 }
 
 #[repr(C)]
 pub struct AudioSystemPlayParams(CName, EntityId, CName);
 pub struct AudioSystemPlay;
-impl NativeFunc for AudioSystemPlay {
+unsafe impl Detour for AudioSystemPlay {
     const OFFSET: usize = 0x123;
-    const HOOK: fn(Self::Inputs) -> () = detour_audiosystem_play;
-    const CONDITION: fn(&Self::Inputs) -> bool = should_detour_audiosystem_play;
-    const TRAMPOLINE: fn(Box<dyn Fn(&RawDetour)>) = trampoline_audiosystem_play;
-    const STORE: fn(Option<RawDetour>) = store_audiosystem_play;
     type Inputs = AudioSystemPlayParams;
     unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs {
         let mut evt: CName = CName::default();
@@ -96,6 +95,12 @@ impl NativeFunc for AudioSystemPlay {
         unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut emitter)) };
         AudioSystemPlayParams(evt, ent, emitter)
     }
+}
+impl NativeFunc for AudioSystemPlay {
+    const HOOK: fn(Self::Inputs) -> () = detour_audiosystem_play;
+    const CONDITION: fn(&Self::Inputs) -> bool = should_detour_audiosystem_play;
+    const TRAMPOLINE: fn(Box<dyn Fn(&RawDetour)>) = trampoline_audiosystem_play;
+    const STORE: fn(Option<RawDetour>) = store_audiosystem_play;
 }
 ::lazy_static::lazy_static! {
     static ref AUDIOSYSTEM_PLAY_STORAGE: ::std::sync::Arc<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> =

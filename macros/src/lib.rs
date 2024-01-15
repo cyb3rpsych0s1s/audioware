@@ -1,9 +1,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
-use syn::{
-    parse_macro_input, parse_str, spanned::Spanned, Expr, ExprLit, Lit, Meta, MetaNameValue, Type,
-};
+use syn::{parse_macro_input, Expr, ExprLit, Lit, Meta, MetaNameValue, Type};
 
 /// automatically derive [`audioware_mem::FromMemory`] for any struct
 /// with named fields which correctly upholds its invariants.
@@ -64,7 +62,7 @@ pub fn derive_from_memory(item: TokenStream) -> TokenStream {
     .into()
 }
 
-#[proc_macro_derive(NativeFunc, attributes(offset, inputs, detour, should))]
+#[proc_macro_derive(NativeFunc, attributes(detour, should))]
 pub fn derive_native_func(input: TokenStream) -> TokenStream {
     let input2 = input.clone();
     let derive = parse_macro_input!(input as syn::DeriveInput);
@@ -77,69 +75,11 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
         Span::call_site(),
     );
     let name = struc.ident;
-    let mut offset: Option<usize> = None;
-    let mut inputs: Option<syn::Type> = None;
-    let mut inputs_impl: Vec<proc_macro2::TokenStream> = vec![];
     let mut detour: Option<String> = None;
     let mut should: Option<String> = None;
     for attr in derive.attrs {
         let meta = attr.meta;
         match meta {
-            Meta::NameValue(MetaNameValue {
-                ref path,
-                ref value,
-                ..
-            }) if path.is_ident("offset") => {
-                if let Expr::Lit(ExprLit { lit, .. }) = value {
-                    if let Lit::Int(lit) = lit {
-                        if let Ok(lit) = lit.base10_parse::<usize>() {
-                            offset = Some(lit);
-                        }
-                    }
-                }
-            }
-            Meta::NameValue(MetaNameValue {
-                ref path,
-                ref value,
-                ..
-            }) if path.is_ident("inputs") => {
-                if let Expr::Lit(ExprLit { lit, .. }) = value {
-                    if let Lit::Str(lit) = lit {
-                        if let Ok(value) = parse_str::<syn::Type>(lit.value().as_str()) {
-                            inputs = Some(value.clone());
-                            match value {
-                                Type::Tuple(tuple) => {
-                                    let mut args = vec![];
-                                    for (idx, elem) in tuple.elems.iter().enumerate() {
-                                        let arg: Ident =
-                                            Ident::new(&format!("arg_{}", idx), Span::call_site());
-                                        args.push(arg.clone());
-                                        inputs_impl.push(quote!{
-                                        let mut #arg: #elem = <#elem>::default();
-                                        unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut #arg)) };
-                                    });
-                                    }
-                                    inputs_impl.push(quote! {
-                                        (#(#args),*)
-                                    })
-                                }
-                                _ => {
-                                    return syn::Error::new(
-                                        value.span(),
-                                        "inputs attribute only supports tuple",
-                                    )
-                                    .to_compile_error()
-                                    .into()
-                                }
-                            }
-                        } else {
-                            return syn::Error::new(value.span(), "invalid inputs attribute")
-                                .to_compile_error()
-                                .into();
-                        }
-                    }
-                }
-            }
             Meta::NameValue(MetaNameValue {
                 ref path,
                 ref value,
@@ -164,16 +104,6 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
             }
             _ => {}
         }
-    }
-    if offset.is_none() {
-        return syn::Error::new(name.span(), "missing offset attribute")
-            .to_compile_error()
-            .into();
-    }
-    if inputs.is_none() {
-        return syn::Error::new(name.span(), "missing inputs attribute")
-            .to_compile_error()
-            .into();
     }
     if detour.is_none() {
         return syn::Error::new(name.span(), "missing detour attribute")
@@ -205,15 +135,10 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
             }
         }
         impl ::audioware_mem::NativeFunc for #name {
-            const OFFSET: usize = #offset;
-            type Inputs = #inputs;
             const HOOK: fn(Self::Inputs) -> () = #detour;
             const CONDITION: fn(&Self::Inputs) -> bool = #should;
             const TRAMPOLINE: fn(Box<dyn Fn(&::retour::RawDetour)>) = self::#private::trampoline;
             const STORE: fn(Option<::retour::RawDetour>) = self::#private::store;
-            unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs {
-                #(#inputs_impl)*
-            }
         }
     };
     quote! {
