@@ -62,6 +62,8 @@ pub fn derive_from_memory(item: TokenStream) -> TokenStream {
     .into()
 }
 
+/// automatically derive [`audioware_mem::NativeFunc`] for a given struct
+/// which already implements [`audioware_mem::Detour`].
 #[proc_macro_derive(NativeFunc, attributes(detour, should))]
 pub fn derive_native_func(input: TokenStream) -> TokenStream {
     let input2 = input.clone();
