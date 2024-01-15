@@ -61,19 +61,21 @@ pub unsafe trait Detour {
     unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs;
 }
 
+pub type Trampoline = fn(Box<dyn Fn(&RawDetour)>);
+
 /// define `native function` detouring.
-/// 
+///
 /// e.g. [AudioSystem::Play](https://jac3km4.github.io/cyberdoc/#33326)
 pub trait NativeFunc: Detour {
     const HOOK: fn(Self::Inputs) -> ();
     const CONDITION: fn(&Self::Inputs) -> bool;
     const STORE: fn(Option<RawDetour>);
-    const TRAMPOLINE: fn(Box<dyn Fn(&RawDetour)>);
+    const TRAMPOLINE: Trampoline;
     /// runtime hook.
-    /// 
+    ///
     /// # Safety
     /// This function is safe as long as safety invariants for [`crate::Detour`] are upheld.
-    /// 
+    ///
     /// Extra care must be taken if you manipulate the stack.
     unsafe fn hook(
         ctx: *mut red4ext_rs::ffi::IScriptable,

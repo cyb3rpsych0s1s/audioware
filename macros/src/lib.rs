@@ -82,25 +82,23 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
         match meta {
             Meta::NameValue(MetaNameValue {
                 ref path,
-                ref value,
+                value:
+                    Expr::Lit(ExprLit {
+                        lit: Lit::Str(lit), ..
+                    }),
                 ..
             }) if path.is_ident("detour") => {
-                if let Expr::Lit(ExprLit { lit, .. }) = value {
-                    if let Lit::Str(lit) = lit {
-                        detour = Some(lit.value());
-                    }
-                }
+                detour = Some(lit.value());
             }
             Meta::NameValue(MetaNameValue {
                 ref path,
-                ref value,
+                value:
+                    Expr::Lit(ExprLit {
+                        lit: Lit::Str(lit), ..
+                    }),
                 ..
             }) if path.is_ident("should") => {
-                if let Expr::Lit(ExprLit { lit, .. }) = value {
-                    if let Lit::Str(lit) = lit {
-                        should = Some(lit.value());
-                    }
-                }
+                should = Some(lit.value());
             }
             _ => {}
         }
