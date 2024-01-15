@@ -44,17 +44,37 @@ pub type LocalFnRustRegisteredFunc = unsafe fn(
     a4: i64,
 ) -> ();
 
+/// define function requirements for detouring.
+///
+/// # Safety
+/// - `offset` must point to valid function in binary
+/// - `Inputs` must list function's parameters with correct type in the right order
 pub unsafe trait Detour {
     const OFFSET: usize;
     type Inputs;
+    /// read function parameters from `C` stack frame.
+    ///
+    /// # Safety
+    /// - memory representation must be valid for each parameter
+    /// - parameters must be read in order
+    /// - stack must not be further manipulated
     unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs;
 }
 
+/// define `native function` detouring.
+/// 
+/// e.g. [AudioSystem::Play](https://jac3km4.github.io/cyberdoc/#33326)
 pub trait NativeFunc: Detour {
     const HOOK: fn(Self::Inputs) -> ();
     const CONDITION: fn(&Self::Inputs) -> bool;
     const STORE: fn(Option<RawDetour>);
     const TRAMPOLINE: fn(Box<dyn Fn(&RawDetour)>);
+    /// runtime hook.
+    /// 
+    /// # Safety
+    /// This function is safe as long as safety invariants for [`crate::Detour`] are upheld.
+    /// 
+    /// Extra care must be taken if you manipulate the stack.
     unsafe fn hook(
         ctx: *mut red4ext_rs::ffi::IScriptable,
         frame: *mut red4ext_rs::ffi::CStackFrame,
