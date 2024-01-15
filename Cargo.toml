@@ -19,9 +19,11 @@ cxx = "1"
 fixed-map = { version = "0.9.3", features = ["serde"] }
 glam = { version = "0.25.0", features = ["mint"] }
 kira = "0.8.5"
+lazy_static = "1.4.0"
 memoffset = "0.9.0"
 mint = "0.5.9"
 red4ext-rs = { git = "https://github.com/Roms1383/red4ext-rs.git", rev = "cfd6221", features = ["macros"] }
+retour = "0.3.1"
 serde = { version = "1.0", features = ["derive"] }
 static_assertions = "1.1.0"
 strum = "0.25"

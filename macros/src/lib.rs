@@ -1,7 +1,10 @@
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
-use syn::{parse_macro_input, Expr, ExprLit, Lit, Meta, MetaNameValue, Type};
+use syn::{
+    parse_macro_input, parse_str, punctuated::Punctuated, spanned::Spanned, Expr, ExprLit, Lit,
+    Meta, MetaNameValue, Token, Type,
+};
 
 /// automatically derive [`audioware_mem::FromMemory`] for any struct
 /// with named fields which correctly upholds its invariants.
@@ -64,7 +67,40 @@ pub fn derive_from_memory(item: TokenStream) -> TokenStream {
 
 /// automatically derive [`audioware_mem::NativeFunc`] for a given struct
 /// which already implements [`audioware_mem::Detour`].
-#[proc_macro_derive(NativeFunc, attributes(detour, should))]
+///
+/// # Examples
+///
+/// Here's an example on how to detour [AudioSystem::Play](https://jac3km4.github.io/cyberdoc/#33326)
+/// whose signature is:
+///
+/// ```swift
+/// public native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName) -> Void
+/// ```
+///
+/// Here's how:
+///
+/// ```
+/// # use audioware_macros::NativeFunc;
+/// # use red4ext_rs::types::{CName, EntityId};
+///
+/// #[derive(NativeFunc)]
+/// #[hook(
+///     // memory offset
+///     offset = 0x975FE4,
+///     // function input parameters
+///     inputs = "(CName, EntityId, CName)",
+///     // control wheter to allow detouring on each call
+///     allow = "allow",
+///     // custom detouring logic
+///     detour = "detour"
+/// )]
+/// pub struct AudioSystemPlay;
+/// # #[allow(unused_variables)]
+/// fn detour(params: (CName, EntityId, CName)) {}
+/// # #[allow(unused_variables)]
+/// fn allow(params: &(CName, EntityId, CName)) -> bool { false }
+/// ```
+#[proc_macro_derive(NativeFunc, attributes(hook))]
 pub fn derive_native_func(input: TokenStream) -> TokenStream {
     let input2 = input.clone();
     let derive = parse_macro_input!(input as syn::DeriveInput);
@@ -77,46 +113,128 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
         Span::call_site(),
     );
     let name = struc.ident;
+    let mut offset: Option<usize> = None;
+    let mut inputs: Option<Type> = None;
+    let mut inputs_impl: Vec<proc_macro2::TokenStream> = vec![];
+    let mut allow: Option<String> = None;
     let mut detour: Option<String> = None;
-    let mut should: Option<String> = None;
-    for attr in derive.attrs {
-        let meta = attr.meta;
+    for ref attr in derive.attrs {
+        let meta = &attr.meta;
         match meta {
-            Meta::NameValue(MetaNameValue {
-                ref path,
-                value:
-                    Expr::Lit(ExprLit {
-                        lit: Lit::Str(lit), ..
-                    }),
-                ..
-            }) if path.is_ident("detour") => {
-                detour = Some(lit.value());
-            }
-            Meta::NameValue(MetaNameValue {
-                ref path,
-                value:
-                    Expr::Lit(ExprLit {
-                        lit: Lit::Str(lit), ..
-                    }),
-                ..
-            }) if path.is_ident("should") => {
-                should = Some(lit.value());
+            Meta::List(list) if list.path.is_ident("hook") => {
+                if let Ok(list) =
+                    list.parse_args_with(Punctuated::<MetaNameValue, Token![,]>::parse_terminated)
+                {
+                    for arg in list {
+                        match arg {
+                            MetaNameValue {
+                                path,
+                                value:
+                                    Expr::Lit(ExprLit {
+                                        lit: Lit::Int(lit), ..
+                                    }),
+                                ..
+                            } if path.is_ident("offset") => {
+                                if let Ok(lit) = lit.base10_parse::<usize>() {
+                                    offset = Some(lit);
+                                }
+                            }
+                            MetaNameValue {
+                                path,
+                                value:
+                                    Expr::Lit(ExprLit {
+                                        lit: Lit::Str(lit), ..
+                                    }),
+                                ..
+                            } if path.is_ident("inputs") => {
+                                if let Ok(value) = parse_str::<syn::Type>(lit.value().as_str()) {
+                                    inputs = Some(value.clone());
+                                    match value {
+                                        Type::Tuple(tuple) => {
+                                            let mut args = vec![];
+                                            for (idx, elem) in tuple.elems.iter().enumerate() {
+                                                let arg: Ident = Ident::new(
+                                                    &format!("arg_{}", idx),
+                                                    Span::call_site(),
+                                                );
+                                                args.push(arg.clone());
+                                                inputs_impl.push(quote!{
+                                                let mut #arg: #elem = <#elem>::default();
+                                                unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut #arg)) };
+                                            });
+                                            }
+                                            inputs_impl.push(quote! {
+                                                (#(#args),*)
+                                            })
+                                        }
+                                        _ => {
+                                            return syn::Error::new(
+                                                value.span(),
+                                                "inputs attribute only supports tuple",
+                                            )
+                                            .to_compile_error()
+                                            .into()
+                                        }
+                                    }
+                                }
+                            }
+                            MetaNameValue {
+                                path,
+                                value:
+                                    Expr::Lit(ExprLit {
+                                        lit: Lit::Str(lit), ..
+                                    }),
+                                ..
+                            } if path.is_ident("allow") => {
+                                allow = Some(lit.value());
+                            }
+                            MetaNameValue {
+                                path,
+                                value:
+                                    Expr::Lit(ExprLit {
+                                        lit: Lit::Str(lit), ..
+                                    }),
+                                ..
+                            } if path.is_ident("detour") => {
+                                detour = Some(lit.value());
+                            }
+                            _ => {
+                                return syn::Error::new(arg.span(), "unknown or invalid attribute")
+                                    .to_compile_error()
+                                    .into()
+                            }
+                        }
+                    }
+                }
             }
             _ => {}
         }
+    }
+    if offset.is_none() {
+        return syn::Error::new(name.span(), "missing offset attribute")
+            .to_compile_error()
+            .into();
+    }
+    if inputs.is_none() {
+        return syn::Error::new(name.span(), "missing inputs attribute")
+            .to_compile_error()
+            .into();
+    }
+    if allow.is_none() {
+        return syn::Error::new(name.span(), "missing allow attribute")
+            .to_compile_error()
+            .into();
     }
     if detour.is_none() {
         return syn::Error::new(name.span(), "missing detour attribute")
             .to_compile_error()
             .into();
     }
-    if should.is_none() {
-        return syn::Error::new(name.span(), "missing should attribute")
-            .to_compile_error()
-            .into();
-    }
+    let allow = Ident::new(allow.unwrap().as_str(), Span::call_site());
     let detour = Ident::new(detour.unwrap().as_str(), Span::call_site());
-    let should = Ident::new(should.unwrap().as_str(), Span::call_site());
+    let offset = format!("{:#X}", offset.unwrap())
+        .parse::<proc_macro2::Literal>()
+        .unwrap();
     let storage = quote! {
         mod #private {
             ::lazy_static::lazy_static! {
@@ -134,11 +252,18 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
                 }
             }
         }
+        unsafe impl ::audioware_mem::Detour for #name {
+            const OFFSET: usize = #offset;
+            type Inputs = #inputs;
+            unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs {
+                #(#inputs_impl)*
+            }
+        }
         impl ::audioware_mem::NativeFunc for #name {
             const HOOK: fn(Self::Inputs) -> () = #detour;
-            const CONDITION: fn(&Self::Inputs) -> bool = #should;
-            const TRAMPOLINE: fn(Box<dyn Fn(&::retour::RawDetour)>) = self::#private::trampoline;
-            const STORE: fn(Option<::retour::RawDetour>) = self::#private::store;
+            const CONDITION: fn(&Self::Inputs) -> bool = #allow;
+            const TRAMPOLINE: fn(Box<dyn Fn(&::retour::RawDetour)>) = #private::trampoline;
+            const STORE: fn(Option<::retour::RawDetour>) = #private::store;
         }
     };
     quote! {
