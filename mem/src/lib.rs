@@ -3,7 +3,7 @@ mod hook;
 mod module;
 
 pub use module::*;
-use red4ext_rs::types::{CName, EntityId};
+
 use retour::RawDetour;
 
 /// Read a struct directly from memory at given offset.
@@ -102,46 +102,6 @@ pub trait NativeFunc: Detour {
     }
 }
 
-#[repr(C)]
-pub struct AudioSystemPlayParams(CName, EntityId, CName);
-pub struct AudioSystemPlay;
-unsafe impl Detour for AudioSystemPlay {
-    const OFFSET: usize = 0x123;
-    type Inputs = AudioSystemPlayParams;
-    unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs {
-        let mut evt: CName = CName::default();
-        unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut evt)) };
-        let mut ent: EntityId = EntityId::default();
-        unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut ent)) };
-        let mut emitter: CName = CName::default();
-        unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut emitter)) };
-        AudioSystemPlayParams(evt, ent, emitter)
-    }
-}
-impl NativeFunc for AudioSystemPlay {
-    const HOOK: fn(Self::Inputs) -> () = detour_audiosystem_play;
-    const CONDITION: fn(&Self::Inputs) -> bool = should_detour_audiosystem_play;
-    const TRAMPOLINE: fn(Box<dyn Fn(&RawDetour)>) = trampoline_audiosystem_play;
-    const STORE: fn(Option<RawDetour>) = store_audiosystem_play;
-}
-::lazy_static::lazy_static! {
-    static ref AUDIOSYSTEM_PLAY_STORAGE: ::std::sync::Arc<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> =
-        ::std::sync::Arc::new(::std::sync::Mutex::new(None));
-}
-fn store_audiosystem_play(detour: Option<RawDetour>) {
-    if let Ok(guard) = AUDIOSYSTEM_PLAY_STORAGE.clone().try_lock().as_deref_mut() {
-        *guard = detour;
-    }
-}
-fn trampoline_audiosystem_play(closure: Box<dyn Fn(&RawDetour)>) {
-    if let Ok(Some(guard)) = AUDIOSYSTEM_PLAY_STORAGE.clone().try_lock().as_deref() {
-        closure(guard);
-    }
-}
-fn detour_audiosystem_play(_params: AudioSystemPlayParams) {}
-fn should_detour_audiosystem_play(_params: &AudioSystemPlayParams) -> bool {
-    false
-}
 impl<T> Hook for T
 where
     T: NativeFunc,
