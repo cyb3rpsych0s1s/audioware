@@ -1,6 +1,7 @@
-use audioware_types::interop::iscriptable::IScriptable;
 use red4ext_rs::types::Ref;
 use red4ext_rs::{conv::ClassType, types::CName};
+
+use super::iscriptable::IScriptable;
 
 #[derive(Debug)]
 pub struct Event;

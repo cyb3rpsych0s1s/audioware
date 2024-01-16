@@ -1,4 +1,4 @@
-use audioware_types::interop::{gender::PlayerGender, locale::Locale};
+use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use fixed_map::Map;
 
 use crate::types::{

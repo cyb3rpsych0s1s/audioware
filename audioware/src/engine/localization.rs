@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use audioware_types::interop::{gender::PlayerGender, locale::Locale};
+use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use lazy_static::lazy_static;
 use red4ext_rs::types::CName;
 

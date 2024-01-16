@@ -4,6 +4,8 @@ use red4ext_rs::{
     types::{CName, Ref},
 };
 
+pub const ISCRIPTABLE_SIZE: usize = 0x40;
+
 #[repr(transparent)]
 pub struct IScriptable(red4ext_rs::types::IScriptable);
 

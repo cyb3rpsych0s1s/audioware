@@ -8,7 +8,12 @@ publish = false
 proc-macro = true
 
 [dependencies]
-audioware-types.workspace = true
+audioware-mem.workspace = true
 syn = "2"
 proc-macro2 = "1"
 quote = "1"
+
+[dev-dependencies]
+lazy_static.workspace = true
+red4ext-rs.workspace = true
+retour.workspace = true

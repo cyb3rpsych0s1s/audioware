@@ -1,6 +1,7 @@
 #![feature(arbitrary_self_types)]
 
-use hook::{Hook, HookAudioSystemPlay, HookAudioSystemStop, HookAudioSystemSwitch};
+use audioware_mem::Hook;
+use hook::{HookAudioSystemPlay, HookAudioSystemStop, HookAudioSystemSwitch};
 use red4ext_rs::plugin::Version;
 use red4ext_rs::register_function;
 use red4ext_rs::types::CName;
@@ -8,9 +9,7 @@ use red4ext_rs::{define_trait_plugin, plugin::Plugin};
 
 mod addresses;
 pub mod engine;
-mod frame;
 mod hook;
-mod interop;
 mod language;
 pub mod natives;
 mod types;
