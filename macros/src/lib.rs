@@ -220,11 +220,15 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
             pub(super) fn store(detour: ::std::option::Option<::retour::RawDetour>) {
                 if let Ok(guard) = self::STORAGE.clone().try_lock().as_deref_mut() {
                     *guard = detour;
+                } else {
+                    ::red4ext_rs::error!("lock contention (store)");
                 }
             }
             pub(super) fn trampoline(closure: std::boxed::Box<dyn std::ops::Fn(&::retour::RawDetour)>) {
                 if let Ok(Some(guard)) = self::STORAGE.clone().try_lock().as_deref() {
                     closure(guard);
+                } else {
+                    ::red4ext_rs::error!("lock contention (trampoline)");
                 }
             }
         }
