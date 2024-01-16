@@ -220,16 +220,16 @@ pub fn update_listener(position: Vector4, orientation: Quaternion) {
         {
             red4ext_rs::error!("error setting listener orientation: {e:#?}");
         }
-        red4ext_rs::info!(
-            "update listener position to {}, {}, {} / orientation to {}, {}, {}, {}",
-            position.x,
-            position.y,
-            position.z,
-            orientation.i,
-            orientation.j,
-            orientation.k,
-            orientation.r
-        );
+        // red4ext_rs::info!(
+        //     "update listener position to {}, {}, {} / orientation to {}, {}, {}, {}",
+        //     position.x,
+        //     position.y,
+        //     position.z,
+        //     orientation.i,
+        //     orientation.j,
+        //     orientation.k,
+        //     orientation.r
+        // );
     } else {
         red4ext_rs::error!("unable to get scene listener");
     }
@@ -245,13 +245,13 @@ pub fn update_emitter(id: EntityId, position: Vector4) {
                     u64::from(id.clone())
                 );
             } else {
-                red4ext_rs::info!(
-                    "update emitter ({}) position to {}, {}, {}",
-                    u64::from(id.clone()),
-                    position.x,
-                    position.y,
-                    position.z
-                );
+                // red4ext_rs::info!(
+                //     "update emitter ({}) position to {}, {}, {}",
+                //     u64::from(id.clone()),
+                //     position.x,
+                //     position.y,
+                //     position.z
+                // );
             }
         } else {
             red4ext_rs::error!("unable to get scene emitter ({})", u64::from(id.clone()));
