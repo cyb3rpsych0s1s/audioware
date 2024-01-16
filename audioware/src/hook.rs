@@ -1,11 +1,13 @@
 use std::borrow::BorrowMut;
 
+use audioware_macros::NativeFunc;
 use audioware_mem::native_func;
 use red4ext_rs::types::{CName, EntityId};
 
 use crate::addresses::{ON_AUDIOSYSTEM_PLAY, ON_AUDIOSYSTEM_STOP, ON_AUDIOSYSTEM_SWITCH};
 
-pub fn is_audioware(event_name: CName, _entity_id: EntityId, _emitter_name: CName) -> bool {
+pub fn is_audioware(params: &(CName, EntityId, CName)) -> bool {
+    let (event_name, ..) = params;
     if let Ok(exists) = crate::engine::banks::exists(event_name.clone()) {
         return exists;
     } else {
@@ -23,13 +25,14 @@ pub fn should_switch(
     false
 }
 
-pub fn custom_engine_play(event_name: CName, entity_id: EntityId, emitter_name: CName) {
+pub fn custom_engine_play(params: (CName, EntityId, CName)) {
     // red4ext_rs::info!(
     //     "call custom engine Play method with: event_name {}, entity_id {:#?}, emitter_name {}",
     //     red4ext_rs::ffi::resolve_cname(&event_name),
     //     entity_id,
     //     red4ext_rs::ffi::resolve_cname(&emitter_name)
     // );
+    let (event_name, entity_id, emitter_name) = params;
     let entity_id = if entity_id == EntityId::default() {
         None
     } else {
@@ -43,13 +46,14 @@ pub fn custom_engine_play(event_name: CName, entity_id: EntityId, emitter_name: 
     crate::engine::play(event_name, entity_id, emitter_name);
 }
 
-pub fn custom_engine_stop(event_name: CName, entity_id: EntityId, emitter_name: CName) {
+pub fn custom_engine_stop(params: (CName, EntityId, CName)) {
     // red4ext_rs::info!(
     //     "call custom engine Stop method with: event_name {}, entity_id {:#?}, emitter_name {}",
     //     red4ext_rs::ffi::resolve_cname(&event_name),
     //     entity_id,
     //     red4ext_rs::ffi::resolve_cname(&emitter_name)
     // );
+    let (event_name, entity_id, emitter_name) = params;
     let entity_id = if entity_id == EntityId::default() {
         None
     } else {
@@ -71,25 +75,23 @@ pub fn custom_engine_switch(
 ) {
 }
 
-native_func!(
-    HookAudioSystemPlay,
-    ON_AUDIOSYSTEM_PLAY,
-    HOOK_ON_AUDIOSYSTEM_PLAY,
-    on_audiosystem_play,
-    (sound_name: CName, entity_id: EntityId, emitter_name: CName) -> (),
-    is_audioware,
-    custom_engine_play
-);
+#[derive(NativeFunc)]
+#[hook(
+    offset = ON_AUDIOSYSTEM_PLAY,
+    inputs = "(CName, EntityId, CName)",
+    allow = "is_audioware",
+    detour = "custom_engine_play"
+)]
+pub struct HookAudioSystemPlay;
 
-native_func!(
-    HookAudioSystemStop,
-    ON_AUDIOSYSTEM_STOP,
-    HOOK_ON_AUDIOSYSTEM_STOP,
-    on_audiosystem_stop,
-    (sound_name: CName, entity_id: EntityId, emitter_name: CName) -> (),
-    is_audioware,
-    custom_engine_stop
-);
+#[derive(NativeFunc)]
+#[hook(
+    offset = ON_AUDIOSYSTEM_STOP,
+    inputs = "(CName, EntityId, CName)",
+    allow = "is_audioware",
+    detour = "custom_engine_stop"
+)]
+pub struct HookAudioSystemStop;
 
 native_func!(
     HookAudioSystemSwitch,
