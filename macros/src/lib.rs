@@ -1,10 +1,18 @@
+use std::ops::Deref;
+
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::{quote, ToTokens};
 use syn::{
     parse_macro_input, parse_str, punctuated::Punctuated, spanned::Spanned, BinOp, Expr,
-    ExprBinary, ExprLit, ExprPath, Lit, Meta, MetaNameValue, Token, Type,
+    ExprBinary, ExprLit, ExprPath, Lit, LitStr, Meta, MetaNameValue, Token, Type,
 };
+
+const HINT_OFFSET: &str = r#"= hint: offset = 0x140975FE4 - 0x140000000
+= hint: offset = 0x975FE4
+= hint: offset = SOME_CONSTANT
+"#;
+const HINT_INPUTS: &str = "= hint: inputs = (CName, EntityId, CName)";
 
 /// automatically derive [`audioware_mem::FromMemory`] for any struct
 /// with named fields which correctly upholds its invariants.
@@ -113,8 +121,7 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
         Span::call_site(),
     );
     let name = struc.ident;
-    let mut offset: Option<usize> = None;
-    let mut offset_var: Option<proc_macro2::TokenStream> = None;
+    let mut offset: Option<proc_macro2::TokenStream> = None;
     let mut inputs: Option<Type> = None;
     let mut inputs_impl: Vec<proc_macro2::TokenStream> = vec![];
     let mut allow: Option<String> = None;
@@ -129,53 +136,12 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
                     for arg in list {
                         match arg {
                             MetaNameValue { path, value, .. } if path.is_ident("offset") => {
-                                match value {
-                                    // offset = 0x123
-                                    Expr::Lit(ExprLit {
-                                        lit: Lit::Int(lit), ..
-                                    }) => {
-                                        if let Ok(lit) = lit.base10_parse::<usize>() {
-                                            offset = Some(lit);
-                                        }
+                                match get_offset(&value) {
+                                    Ok(x) => {
+                                        offset = Some(x);
                                     }
-                                    // offset = 0x456 - 0x123
-                                    Expr::Binary(ExprBinary {
-                                        left,
-                                        right,
-                                        op: BinOp::Sub(_),
-                                        ..
-                                    }) => {
-                                        if let (
-                                            Expr::Lit(ExprLit {
-                                                lit: Lit::Int(left),
-                                                ..
-                                            }),
-                                            Expr::Lit(ExprLit {
-                                                lit: Lit::Int(right),
-                                                ..
-                                            }),
-                                        ) = (*left, *right)
-                                        {
-                                            if let (Ok(left), Ok(right)) = (
-                                                left.base10_parse::<usize>(),
-                                                right.base10_parse::<usize>(),
-                                            ) {
-                                                offset = Some(left - right);
-                                            }
-                                        }
-                                    }
-                                    Expr::Path(ExprPath { path, qself, .. }) if qself.is_none() => {
-                                        offset_var = Some(path.to_token_stream());
-                                    }
-                                    _ => {
-                                        return syn::Error::new(
-                                            name.span(),
-                                            "invalid offset attribute",
-                                        )
-                                        .to_compile_error()
-                                        .into()
-                                    }
-                                };
+                                    Err(e) => return e.to_compile_error().into(),
+                                }
                             }
                             MetaNameValue {
                                 path,
@@ -184,38 +150,13 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
                                         lit: Lit::Str(lit), ..
                                     }),
                                 ..
-                            } if path.is_ident("inputs") => {
-                                if let Ok(value) = parse_str::<syn::Type>(lit.value().as_str()) {
-                                    inputs = Some(value.clone());
-                                    match value {
-                                        Type::Tuple(tuple) => {
-                                            let mut args = vec![];
-                                            for (idx, elem) in tuple.elems.iter().enumerate() {
-                                                let arg: Ident = Ident::new(
-                                                    &format!("arg_{}", idx),
-                                                    Span::call_site(),
-                                                );
-                                                args.push(arg.clone());
-                                                inputs_impl.push(quote!{
-                                                let mut #arg: #elem = <#elem>::default();
-                                                unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut #arg)) };
-                                            });
-                                            }
-                                            inputs_impl.push(quote! {
-                                                (#(#args),*)
-                                            })
-                                        }
-                                        _ => {
-                                            return syn::Error::new(
-                                                value.span(),
-                                                "inputs attribute only supports tuple",
-                                            )
-                                            .to_compile_error()
-                                            .into()
-                                        }
-                                    }
+                            } if path.is_ident("inputs") => match get_inputs(&lit) {
+                                Ok((ty, impls)) => {
+                                    inputs = Some(ty);
+                                    inputs_impl = impls;
                                 }
-                            }
+                                Err(e) => return e.to_compile_error().into(),
+                            },
                             MetaNameValue {
                                 path,
                                 value:
@@ -248,12 +189,12 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
             _ => {}
         }
     }
-    if offset.is_none() && offset_var.is_none() {
+    if offset.is_none() {
         return syn::Error::new(name.span(), "missing offset attribute")
             .to_compile_error()
             .into();
     }
-    if inputs.is_none() {
+    if inputs.is_none() || inputs_impl.is_empty() {
         return syn::Error::new(name.span(), "missing inputs attribute")
             .to_compile_error()
             .into();
@@ -270,14 +211,6 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
     }
     let allow = Ident::new(allow.unwrap().as_str(), Span::call_site());
     let detour = Ident::new(detour.unwrap().as_str(), Span::call_site());
-    let offset_stream: proc_macro2::TokenStream = if let Some(offset) = offset {
-        format!("{:#X}", offset)
-            .parse::<proc_macro2::Literal>()
-            .unwrap()
-            .to_token_stream()
-    } else {
-        offset_var.unwrap()
-    };
     let storage = quote! {
         mod #private {
             ::lazy_static::lazy_static! {
@@ -296,7 +229,7 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
             }
         }
         unsafe impl ::audioware_mem::Detour for #name {
-            const OFFSET: usize = #offset_stream;
+            const OFFSET: usize = #offset;
             type Inputs = #inputs;
             unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs {
                 #(#inputs_impl)*
@@ -313,4 +246,110 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
         #storage
     }
     .into()
+}
+
+fn get_offset(value: &Expr) -> Result<proc_macro2::TokenStream, syn::Error> {
+    match value {
+        // offset = 0x123
+        Expr::Lit(ExprLit {
+            lit: Lit::Int(lit), ..
+        }) => {
+            if let Ok(lit) = lit.base10_parse::<usize>() {
+                return Ok(format_hex(lit)?.to_token_stream());
+            }
+            Err(syn::Error::new(
+                value.span(),
+                format!("unparseable offset attribute\n{}", HINT_OFFSET),
+            ))
+        }
+        // offset = 0x456 - 0x123
+        Expr::Binary(ExprBinary {
+            left,
+            right,
+            op: BinOp::Sub(_),
+            ..
+        }) => {
+            if let (
+                Expr::Lit(ExprLit {
+                    lit: Lit::Int(ref left),
+                    ..
+                }),
+                Expr::Lit(ExprLit {
+                    lit: Lit::Int(ref right),
+                    ..
+                }),
+            ) = (left.deref(), right.deref())
+            {
+                if let (Ok(left), Ok(right)) =
+                    (left.base10_parse::<usize>(), right.base10_parse::<usize>())
+                {
+                    return Ok(format_hex(left - right)?.to_token_stream());
+                }
+                return Err(syn::Error::new(
+                    value.span(),
+                    format!("unparseable offset attribute\n{}", HINT_OFFSET),
+                ));
+            }
+            Err(syn::Error::new(
+                value.span(),
+                format!("unparseable offset attribute\n{}", HINT_OFFSET),
+            ))
+        }
+        // offset = SOME_CONST
+        Expr::Path(ExprPath { path, qself, .. }) => {
+            if qself.is_none() {
+                return Ok(path.to_token_stream());
+            }
+            Err(syn::Error::new(
+                value.span(),
+                "qualified path is not supported for offset attribute",
+            ))
+        }
+        _ => Err(syn::Error::new(
+            value.span(),
+            format!("unparseable offset attribute\n{}", HINT_OFFSET),
+        )),
+    }
+}
+
+fn get_inputs(lit: &LitStr) -> Result<(Type, Vec<proc_macro2::TokenStream>), syn::Error> {
+    let inputs: Type;
+    let mut inputs_impl: Vec<proc_macro2::TokenStream>;
+    if let Ok(value) = parse_str::<syn::Type>(lit.value().as_str()) {
+        inputs = value.clone();
+        match value {
+            Type::Tuple(tuple) => {
+                let mut args = vec![];
+                inputs_impl = vec![];
+                for (idx, elem) in tuple.elems.iter().enumerate() {
+                    let arg: Ident = Ident::new(&format!("arg_{}", idx), Span::call_site());
+                    args.push(arg.clone());
+                    inputs_impl.push(quote!{
+                    let mut #arg: #elem = <#elem>::default();
+                    unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut #arg)) };
+                });
+                }
+                inputs_impl.push(quote! {
+                    (#(#args),*)
+                });
+                return Ok((inputs, inputs_impl));
+            }
+            _ => {
+                return Err(syn::Error::new(
+                    value.span(),
+                    format!("inputs attribute only supports tuple\n{HINT_INPUTS}"),
+                ))
+            }
+        }
+    }
+    Err(syn::Error::new(
+        lit.span(),
+        format!("inputs attribute only supports tuple\n{HINT_INPUTS}"),
+    ))
+}
+
+fn format_hex(lit: usize) -> Result<proc_macro2::Literal, syn::Error> {
+    format!("{:#X}", lit)
+        .parse::<proc_macro2::Literal>()
+        .map_err(|_| syn::Error::new(lit.span(), "invalid hexadecimal"))
 }
