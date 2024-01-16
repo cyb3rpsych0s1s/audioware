@@ -117,9 +117,13 @@ where
                 Ok(_) => {
                     Self::STORE(Some(detour));
                 }
-                Err(_e) => {}
+                Err(e) => {
+                    ::red4ext_rs::error!("could not enable detour ({e})");
+                }
             },
-            Err(_e) => {}
+            Err(e) => {
+                ::red4ext_rs::error!("could not initialize detour ({e})");
+            }
         }
     }
 
