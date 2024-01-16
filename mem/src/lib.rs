@@ -98,6 +98,8 @@ pub trait NativeFunc: Detour {
                 unsafe { original(ctx, frame, out, a4) };
             };
             Self::TRAMPOLINE(Box::new(trampoline));
+        } else {
+            Self::HOOK(inputs);
         }
     }
 }
