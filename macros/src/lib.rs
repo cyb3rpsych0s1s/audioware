@@ -1,9 +1,9 @@
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{
-    parse_macro_input, parse_str, punctuated::Punctuated, spanned::Spanned, Expr, ExprLit, Lit,
-    Meta, MetaNameValue, Token, Type,
+    parse_macro_input, parse_str, punctuated::Punctuated, spanned::Spanned, BinOp, Expr,
+    ExprBinary, ExprLit, ExprPath, Lit, Meta, MetaNameValue, Token, Type,
 };
 
 /// automatically derive [`audioware_mem::FromMemory`] for any struct
@@ -114,6 +114,7 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
     );
     let name = struc.ident;
     let mut offset: Option<usize> = None;
+    let mut offset_var: Option<proc_macro2::TokenStream> = None;
     let mut inputs: Option<Type> = None;
     let mut inputs_impl: Vec<proc_macro2::TokenStream> = vec![];
     let mut allow: Option<String> = None;
@@ -127,17 +128,54 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
                 {
                     for arg in list {
                         match arg {
-                            MetaNameValue {
-                                path,
-                                value:
+                            MetaNameValue { path, value, .. } if path.is_ident("offset") => {
+                                match value {
+                                    // offset = 0x123
                                     Expr::Lit(ExprLit {
                                         lit: Lit::Int(lit), ..
-                                    }),
-                                ..
-                            } if path.is_ident("offset") => {
-                                if let Ok(lit) = lit.base10_parse::<usize>() {
-                                    offset = Some(lit);
-                                }
+                                    }) => {
+                                        if let Ok(lit) = lit.base10_parse::<usize>() {
+                                            offset = Some(lit);
+                                        }
+                                    }
+                                    // offset = 0x456 - 0x123
+                                    Expr::Binary(ExprBinary {
+                                        left,
+                                        right,
+                                        op: BinOp::Sub(_),
+                                        ..
+                                    }) => {
+                                        if let (
+                                            Expr::Lit(ExprLit {
+                                                lit: Lit::Int(left),
+                                                ..
+                                            }),
+                                            Expr::Lit(ExprLit {
+                                                lit: Lit::Int(right),
+                                                ..
+                                            }),
+                                        ) = (*left, *right)
+                                        {
+                                            if let (Ok(left), Ok(right)) = (
+                                                left.base10_parse::<usize>(),
+                                                right.base10_parse::<usize>(),
+                                            ) {
+                                                offset = Some(left - right);
+                                            }
+                                        }
+                                    }
+                                    Expr::Path(ExprPath { path, qself, .. }) if qself.is_none() => {
+                                        offset_var = Some(path.to_token_stream());
+                                    }
+                                    _ => {
+                                        return syn::Error::new(
+                                            name.span(),
+                                            "invalid offset attribute",
+                                        )
+                                        .to_compile_error()
+                                        .into()
+                                    }
+                                };
                             }
                             MetaNameValue {
                                 path,
@@ -210,7 +248,7 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
             _ => {}
         }
     }
-    if offset.is_none() {
+    if offset.is_none() && offset_var.is_none() {
         return syn::Error::new(name.span(), "missing offset attribute")
             .to_compile_error()
             .into();
@@ -232,9 +270,14 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
     }
     let allow = Ident::new(allow.unwrap().as_str(), Span::call_site());
     let detour = Ident::new(detour.unwrap().as_str(), Span::call_site());
-    let offset = format!("{:#X}", offset.unwrap())
-        .parse::<proc_macro2::Literal>()
-        .unwrap();
+    let offset_stream: proc_macro2::TokenStream = if let Some(offset) = offset {
+        format!("{:#X}", offset)
+            .parse::<proc_macro2::Literal>()
+            .unwrap()
+            .to_token_stream()
+    } else {
+        offset_var.unwrap()
+    };
     let storage = quote! {
         mod #private {
             ::lazy_static::lazy_static! {
@@ -253,7 +296,7 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
             }
         }
         unsafe impl ::audioware_mem::Detour for #name {
-            const OFFSET: usize = #offset;
+            const OFFSET: usize = #offset_stream;
             type Inputs = #inputs;
             unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs {
                 #(#inputs_impl)*
