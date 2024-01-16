@@ -1,7 +1,4 @@
-use std::borrow::BorrowMut;
-
 use audioware_macros::NativeFunc;
-use audioware_mem::native_func;
 use red4ext_rs::types::{CName, EntityId};
 
 use crate::addresses::{ON_AUDIOSYSTEM_PLAY, ON_AUDIOSYSTEM_STOP, ON_AUDIOSYSTEM_SWITCH};
@@ -16,12 +13,7 @@ pub fn is_audioware(params: &(CName, EntityId, CName)) -> bool {
     false
 }
 
-pub fn should_switch(
-    _switch_name: CName,
-    _switch_value: CName,
-    _entity_id: EntityId,
-    _emitter_name: CName,
-) -> bool {
+pub fn should_switch(_params: &(CName, CName, EntityId, CName)) -> bool {
     false
 }
 
@@ -67,13 +59,7 @@ pub fn custom_engine_stop(params: (CName, EntityId, CName)) {
     crate::engine::stop(event_name, entity_id, emitter_name);
 }
 
-pub fn custom_engine_switch(
-    _switch_name: CName,
-    _switch_value: CName,
-    _entity_id: EntityId,
-    _emitter_name: CName,
-) {
-}
+pub fn custom_engine_switch(_params: (CName, CName, EntityId, CName)) {}
 
 #[derive(NativeFunc)]
 #[hook(
@@ -93,12 +79,11 @@ pub struct HookAudioSystemPlay;
 )]
 pub struct HookAudioSystemStop;
 
-native_func!(
-    HookAudioSystemSwitch,
-    ON_AUDIOSYSTEM_SWITCH,
-    HOOK_ON_AUDIOSYSTEM_SWITCH,
-    on_audiosystem_switch,
-    (switch_name: CName, switch_value: CName, entity_id: EntityId, emitter_name: CName) -> (),
-    should_switch,
-    custom_engine_switch
-);
+#[derive(NativeFunc)]
+#[hook(
+    offset = ON_AUDIOSYSTEM_SWITCH,
+    inputs = "(CName, CName, EntityId, CName)",
+    allow = "should_switch",
+    detour = "custom_engine_switch"
+)]
+pub struct HookAudioSystemSwitch;
