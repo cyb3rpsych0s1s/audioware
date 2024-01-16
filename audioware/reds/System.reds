@@ -53,6 +53,12 @@ public class Audioware extends ScriptableSystem {
         this.m_callbackSystem.UnregisterCallback(n"Session/Ready", this, n"OnSessionReady");
         this.m_callbackSystem.UnregisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd");
         this.m_callbackSystem = null;
+        if NotEquals(this.m_positionsDelayID, GetInvalidDelayID()) {
+            GameInstance
+            .GetDelaySystem(this.GetGameInstance())
+            .CancelCallback(this.m_positionsDelayID);
+            this.m_positionsDelayID = GetInvalidDelayID();
+        }
     }
 
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {
