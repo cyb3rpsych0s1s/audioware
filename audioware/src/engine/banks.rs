@@ -8,6 +8,7 @@ use fixed_map::Set;
 use kira::sound::static_sound::StaticSoundData;
 use lazy_static::lazy_static;
 use red4ext_rs::types::{CName, Ref};
+
 use strum::IntoEnumIterator;
 
 use crate::{
@@ -27,7 +28,7 @@ lazy_static! {
     static ref IDS: Arc<Mutex<HashSet<SoundId>>> = Arc::new(Mutex::new(HashSet::new()));
 }
 
-pub fn setup() -> anyhow::Result<()> {
+pub async fn setup() -> anyhow::Result<()> {
     let redmod = REDmod::try_new()?;
     let mods = redmod.mods();
     let mut banks = HashMap::with_capacity(mods.len());

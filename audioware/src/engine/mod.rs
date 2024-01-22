@@ -14,10 +14,29 @@ pub mod tracks;
 use audioware_sys::interop::{quaternion::Quaternion, vector4::Vector4};
 pub use id::SoundId;
 use kira::tween::Tween;
+use lazy_static::lazy_static;
 use red4ext_rs::types::{CName, EntityId};
+use smol::Executor;
+
+lazy_static! {
+    static ref EXECUTOR: Executor<'static> = Executor::new();
+}
 
 pub fn setup() -> anyhow::Result<()> {
-    banks::setup()?;
+    let task = EXECUTOR.spawn(async {
+        match banks::setup().await {
+            Ok(_) => {
+                red4ext_rs::info!("banks loaded successfully!");
+            }
+            Err(e) => {
+                red4ext_rs::error!("failed to load banks ({e})");
+            }
+        }
+    });
+    std::thread::spawn(|| {
+        smol::block_on(EXECUTOR.run(task));
+    });
+
     sounds::setup();
     manager::setup();
     Ok(())
