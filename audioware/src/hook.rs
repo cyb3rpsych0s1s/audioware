@@ -13,8 +13,10 @@ pub fn is_audioware(params: &(CName, EntityId, CName)) -> bool {
     false
 }
 
-pub fn should_switch(_params: &(CName, CName, EntityId, CName)) -> bool {
-    false
+pub fn should_switch(params: &(CName, CName, EntityId, CName)) -> bool {
+    let (switch_name, switch_value, entity_id, emitter_name) = params.clone();
+    is_audioware(&(switch_name, entity_id.clone(), emitter_name.clone()))
+        && is_audioware(&(switch_value, entity_id, emitter_name))
 }
 
 pub fn custom_engine_play(params: (CName, EntityId, CName)) {
@@ -59,7 +61,11 @@ pub fn custom_engine_stop(params: (CName, EntityId, CName)) {
     crate::engine::stop(event_name, entity_id, emitter_name);
 }
 
-pub fn custom_engine_switch(_params: (CName, CName, EntityId, CName)) {}
+pub fn custom_engine_switch(params: (CName, CName, EntityId, CName)) {
+    let (switch_name, switch_value, entity_id, emitter_name) = params;
+    custom_engine_stop((switch_name, entity_id.clone(), emitter_name.clone()));
+    custom_engine_play((switch_value, entity_id, emitter_name));
+}
 
 #[derive(NativeFunc)]
 #[hook(
