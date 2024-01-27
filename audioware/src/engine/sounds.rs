@@ -3,7 +3,10 @@ use std::{
     sync::{Mutex, MutexGuard, OnceLock},
 };
 
-use kira::{sound::static_sound::StaticSoundHandle, tween::Tween};
+use kira::{
+    sound::{static_sound::StaticSoundHandle, PlaybackState},
+    tween::Tween,
+};
 use lazy_static::lazy_static;
 use red4ext_rs::types::{CName, EntityId};
 use ulid::Ulid;
@@ -13,6 +16,12 @@ pub struct SoundInfos {
     pub entity_id: Option<EntityId>,
     pub emitter_name: Option<CName>,
     pub handle: StaticSoundHandle,
+}
+
+impl SoundInfos {
+    pub fn finished(&self) -> bool {
+        self.handle.state() == PlaybackState::Stopped
+    }
 }
 
 lazy_static! {
@@ -32,15 +41,19 @@ pub fn store(
     emitter_name: Option<CName>,
 ) {
     if let Some(mut pool) = SOUNDS_POOL.get().and_then(|x| x.try_lock().ok()) {
-        pool.insert(
-            Ulid::new(),
-            SoundInfos {
-                handle,
-                sound_name,
-                entity_id,
-                emitter_name,
-            },
-        );
+        let infos = SoundInfos {
+            handle,
+            sound_name,
+            entity_id,
+            emitter_name,
+        };
+        if let Some(reuse) = pool.values_mut().find(|x| x.finished()) {
+            *reuse = infos;
+        } else {
+            pool.insert(Ulid::new(), infos);
+        }
+    } else {
+        red4ext_rs::error!("unable to reach sounds pool");
     }
 }
 
