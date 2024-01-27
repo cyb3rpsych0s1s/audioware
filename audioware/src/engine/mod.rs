@@ -28,10 +28,14 @@ pub fn update_state(state: State) {
     let previous = state::update(state);
     match (previous, state) {
         (State::InGame, State::InMenu) | (State::InGame, State::InPause) => {
+            red4ext_rs::info!("switch state from {previous:#?} to {state:#?}");
             sounds::pause();
+            crate::natives::pause_hide_subtitle_callback();
         }
         (State::InMenu, State::InGame) | (State::InPause, State::InGame) => {
+            red4ext_rs::info!("switch state from {previous:#?} to {state:#?}");
             sounds::resume();
+            crate::natives::resume_hide_subtitle_callback();
         }
         _ => {}
     };

@@ -50,6 +50,12 @@ pub fn supported_engine_languages() -> Vec<CName> {
 #[redscript_global(name = "Audioware.PropagateSubtitle")]
 pub fn propagate_subtitle(reaction: CName, entity_id: EntityId, emitter_name: CName) -> ();
 
+#[redscript_global(name = "Audioware.PauseHideSubtitleCallback")]
+pub fn pause_hide_subtitle_callback() -> ();
+
+#[redscript_global(name = "Audioware.ResumeHideSubtitleCallback")]
+pub fn resume_hide_subtitle_callback() -> ();
+
 /// get reaction duration (in seconds) from sound, or return default
 pub fn get_reaction_duration(sound: CName) -> f32 {
     let gender = crate::engine::localization::gender().unwrap_or_default();

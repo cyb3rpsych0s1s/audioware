@@ -8,9 +8,13 @@ private native func EmittersCount() -> Int32;
 public class Audioware extends ScriptableSystem {
     private let m_callbackSystem: wref<CallbackSystem>;
     public let m_subtitleDelayID: DelayID;
+    public let m_subtitleRemaining: Float = 0.0;
+    public let m_subtitleLine: scnDialogLineData;
     public let m_positionDelayID: DelayID;
     public let m_positionsDelayID: DelayID;
     private let m_emitters: array<EntityID>;
+    private let m_menuListener: ref<CallbackHandle>;
+    private let m_deathListener: ref<CallbackHandle>;
 
     public func RegisterVentriloquist(id: EntityID) -> Void {
         LogChannel(n"DEBUG", s"register ventriloquist (\(EntityID.ToDebugString(id)))");
@@ -46,6 +50,14 @@ public class Audioware extends ScriptableSystem {
         this.m_callbackSystem.RegisterCallback(n"Session/Ready", this, n"OnSessionReady");
         this.m_callbackSystem.RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd");
         this.m_callbackSystem.RegisterCallback(n"Entity/Uninitialize", this, n"OnEntityUninitialize");
+        let ui: ref<IBlackboard> = GameInstance
+        .GetBlackboardSystem(this.GetGameInstance())
+        .Get(GetAllBlackboardDefs().UI_System);
+        this.m_menuListener = ui.RegisterListenerBool(GetAllBlackboardDefs().UI_System.IsInMenu, this, n"OnInMenu");
+        let psm: ref<IBlackboard> = GameInstance
+        .GetBlackboardSystem(this.GetGameInstance())
+        .Get(GetAllBlackboardDefs().PlayerStateMachine);
+        this.m_deathListener = psm.RegisterListenerBool(GetAllBlackboardDefs().PlayerStateMachine.DisplayDeathMenu, this, n"OnDeathMenu");
     }
 
     private func OnDetach() {
@@ -59,6 +71,14 @@ public class Audioware extends ScriptableSystem {
             .CancelCallback(this.m_positionsDelayID);
             this.m_positionsDelayID = GetInvalidDelayID();
         }
+        let ui: ref<IBlackboard> = GameInstance
+        .GetBlackboardSystem(this.GetGameInstance())
+        .Get(GetAllBlackboardDefs().UI_System);
+        ui.UnregisterListenerBool(GetAllBlackboardDefs().UI_System.IsInMenu, this.m_menuListener);
+        let psm: ref<IBlackboard> = GameInstance
+        .GetBlackboardSystem(this.GetGameInstance())
+        .Get(GetAllBlackboardDefs().PlayerStateMachine);
+        psm.UnregisterListenerBool(GetAllBlackboardDefs().PlayerStateMachine.DisplayDeathMenu, this.m_deathListener);
     }
 
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {
@@ -93,6 +113,17 @@ public class Audioware extends ScriptableSystem {
     private cb func OnEntityUninitialize(event: ref<EntityLifecycleEvent>) {
         let id = event.GetEntity().GetEntityID();
         UnregisterEmitter(id);
+    }
+    protected cb func OnInMenu(value: Bool) -> Bool {
+        LogChannel(n"DEBUG", s"in menu: \(ToString(value))");
+        let state: EngineState = value ? EngineState.InMenu : EngineState.InGame;
+        UpdateEngineState(state);
+        return false;
+    }
+    protected cb func OnDeathMenu(value: Bool) -> Bool {
+        LogChannel(n"DEBUG", s"death menu: \(ToString(value))");
+        if value { UpdateEngineState(EngineState.InMenu); }
+        return false;
     }
 
     public static final func GetInstance(game: GameInstance) -> ref<Audioware> {
@@ -145,6 +176,8 @@ public class HideSubtitleCallback extends DelayCallback {
     GameInstance
     .GetDelaySystem(game)
     .CancelCallback(Audioware.GetInstance(game).m_subtitleDelayID);
+    Audioware.GetInstance(game).m_subtitleRemaining = 0.0;
+    Audioware.GetInstance(game).m_subtitleDelayID = GetInvalidDelayID();
     let board: ref<IBlackboard> = GameInstance.GetBlackboardSystem(game).Get(GetAllBlackboardDefs().UIGameData);
     board.SetVariant(GetAllBlackboardDefs().UIGameData.HideDialogLine, [this.line.id], true);
   }
