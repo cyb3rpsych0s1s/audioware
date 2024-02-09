@@ -66,7 +66,7 @@ public static exec func ApplyVentriloquistOnNPC(gi: GameInstance) -> Void {
     GameInstance.GetDelaySystem(gi).DelayCallback(callback, 3.0, true);
   }
   else {
-    LogChannel(n"DEBUG", s"could not register entity (\(EntityID.ToDebugString(id)))");
+    // LogChannel(n"DEBUG", s"could not register entity (\(EntityID.ToDebugString(id)))");
   }
 }
 
@@ -75,7 +75,7 @@ public class RepeatSameSoundCallback extends DelayCallback {
   public func Call() -> Void {
     if IsDefined(this.npc) {
       let id = this.npc.GetEntityID();
-      LogChannel(n"DEBUG", s"repeat sound (\(EntityID.ToDebugString(id)))");
+      // LogChannel(n"DEBUG", s"repeat sound (\(EntityID.ToDebugString(id)))");
       GameInstance
       .GetAudioSystem(this.npc.GetGame())
       .Play(n"nah_everything_is_all_good", id, n"Jean-Claude");
