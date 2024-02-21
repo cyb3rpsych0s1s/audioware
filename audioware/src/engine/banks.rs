@@ -52,6 +52,18 @@ pub fn exists(id: CName) -> anyhow::Result<bool> {
     anyhow::bail!("unable to reach sound ids");
 }
 
+pub fn exist(ids: &[CName]) -> anyhow::Result<bool> {
+    if let Ok(guard) = IDS.clone().try_lock() {
+        for id in ids {
+            if !guard.contains(&SoundId::from(id.clone())) {
+                return Ok(false);
+            }
+        }
+        return Ok(true);
+    }
+    anyhow::bail!("unable to reach sound ids");
+}
+
 pub fn exists_event(event: &Ref<Event>) -> anyhow::Result<bool> {
     if let Ok(guard) = IDS.clone().try_lock() {
         return Ok(guard.contains(&event.sound_name().into()));

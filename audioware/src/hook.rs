@@ -14,9 +14,18 @@ pub fn is_audioware(params: &(CName, EntityId, CName)) -> bool {
 }
 
 pub fn should_switch(params: &(CName, CName, EntityId, CName)) -> bool {
-    let (switch_name, switch_value, entity_id, emitter_name) = params.clone();
-    is_audioware(&(switch_name, entity_id.clone(), emitter_name.clone()))
-        && is_audioware(&(switch_value, entity_id, emitter_name))
+    let (switch_name, switch_value, ..) = params.clone();
+    match crate::engine::banks::exist(&[switch_name.clone(), switch_value.clone()]) {
+        Ok(exist) => exist,
+        Err(_) => {
+            red4ext_rs::error!(
+                "unable to find sounds existence in banks ({}, {})",
+                switch_name,
+                switch_value
+            );
+            false
+        }
+    }
 }
 
 pub fn custom_engine_play(params: (CName, EntityId, CName)) {
