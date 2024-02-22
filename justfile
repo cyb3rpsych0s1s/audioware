@@ -54,6 +54,9 @@ dev: (build) reload
 
 ci TO: (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
 
+optimize TO:
+    upx --best --lzma '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
+
 clear:
     @if(Test-Path "{{ join(red_cache_dir, 'final.redscripts.bk') }}" ) { \
         Write-Host "replacing {{ join(red_cache_dir, 'final.redscripts.bk') }} with {{ join(red_cache_dir, 'final.redscripts.bk') }}"; \
