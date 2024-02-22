@@ -14,6 +14,10 @@ jobs:
         uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy, rustfmt
+      - name: Additional tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-machete
       - uses: Swatinem/rust-cache@v2
         with:
           key: debug
@@ -27,3 +31,5 @@ jobs:
         run: just qa
       - name: Unit-tests
         run: just test
+      - name: Unused dependencies
+        run: cargo machete
