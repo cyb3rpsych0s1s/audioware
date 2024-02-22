@@ -9,6 +9,8 @@ rust-version = "1.75"
 
 [profile.release]
 lto = "thin"
+strip = true
+codegen-units = 1
 
 [workspace.dependencies]
 anyhow = "1"
