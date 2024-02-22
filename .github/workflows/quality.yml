@@ -27,3 +27,5 @@ jobs:
         run: just qa
       - name: Unit-tests
         run: just test
+      - name: Unused dependencies
+        uses: bnjbvr/cargo-machete@main
