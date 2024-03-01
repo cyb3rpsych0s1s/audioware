@@ -11,8 +11,10 @@ jobs:
       - name: Set LIBCLANG_PATH
         run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
       - name: Prepare Rust toolchain
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: nightly-2024-01-10
+          targets: x86_64-pc-windows-msvc
           components: clippy, rustfmt
       - name: Additional tools
         uses: taiki-e/install-action@v2

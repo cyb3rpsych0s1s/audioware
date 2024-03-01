@@ -28,7 +28,7 @@ impl IsValid for CName {
 struct Audioware;
 
 impl Plugin for Audioware {
-    const VERSION: Version = Version::new(0, 2, 0);
+    const VERSION: Version = Version::new(0, 4, 0);
 
     fn register() {
         red4ext_rs::info!("on register audioware");
