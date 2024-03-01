@@ -46,7 +46,7 @@ now:
 
 # 📦 build Rust RED4Ext plugin
 build PROFILE='debug' TO=game_dir: (setup join(TO, red4ext_deploy_dir))
-  @'{{ if PROFILE == "release" { `cargo +{{SPECIFIC_TARGET}} build --release` } else { `cargo +{{SPECIFIC_TARGET}} build` } }}'
+  @'{{ if PROFILE == "release" { `cargo +nightly-2024-01-10 build --release` } else { `cargo +nightly-2024-01-10 build` } }}'
   @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just now
 
