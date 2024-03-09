@@ -1,0 +1,14 @@
+version: 2.0.0
+voices:
+  ono_hhuh:
+    en-us:
+      fem: vanilla/en-us/v_sq017_f_19795c050029f000.Wav
+      male: vanilla/en-us/v_sq017_m_19795c050029f000.Wav
+      subtitle: Again?
+    fr-fr:
+      fem:
+        file: vanilla/fr-fr/v_sq017_f_19795c050029f000.Wav
+        subtitle: Quelque chose
+      male:
+        file: vanilla/fr-fr/v_sq017_m_19795c050029f000.Wav
+        subtitle: Quelque chose d'autre
