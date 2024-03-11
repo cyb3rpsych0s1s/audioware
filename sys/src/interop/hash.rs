@@ -1,5 +1,5 @@
 /// see [RED4ext.SDK](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Hashing/FNV1a.hpp#L7)
-pub const fn fnv1a32(str: &str) -> u64 {
+pub const fn fnv1a32(str: &str) -> u32 {
     const PRIME: u32 = 0x0100_0193;
     const SEED: u32 = 0x811C_9DC5;
 

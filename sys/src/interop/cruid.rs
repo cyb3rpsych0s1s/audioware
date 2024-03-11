@@ -1,7 +1,6 @@
 use cxx::type_id;
 use cxx::ExternType;
 use red4ext_rs::conv::NativeRepr;
-use red4ext_rs::types::CName;
 
 use super::hash::fnv1a32;
 
@@ -14,7 +13,9 @@ pub struct Cruid {
 impl From<&str> for Cruid {
     /// following psiberx recommendations, see [Discord](https://discord.com/channels/717692382849663036/717720094196760760/1208391892119719946)
     fn from(value: &str) -> Self {
-        0xF000000000000000 | (fnv1a32(value) << 2)
+        Self {
+            unk00: 0xF000000000000000 | ((fnv1a32(value) as u64) << 2_u64),
+        }
     }
 }
 
