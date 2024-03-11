@@ -16,3 +16,19 @@ pub const fn fnv1a32(str: &str) -> u32 {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::fnv1a32;
+
+    #[test]
+    fn hash() {
+        let id: &str = "ono_hhuh";
+        let hash: u32 = fnv1a32(id);
+        assert_eq!(hash, 1820247331);
+
+        let id: &str = "get_this_damn_UI_out_of_my_face";
+        let hash: u32 = fnv1a32(id);
+        assert_eq!(hash, 2677247932);
+    }
+}

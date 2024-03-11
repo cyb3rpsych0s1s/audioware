@@ -39,3 +39,19 @@ unsafe impl ExternType for Cruid {
 unsafe impl NativeRepr for Cruid {
     const NAME: &'static str = "CRUID";
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Cruid;
+
+    #[test]
+    fn conversion() {
+        let id: &str = "ono_hhuh";
+        let cruid: Cruid = Cruid::from(id);
+        assert_eq!(cruid.unk00, 17293822576383693964);
+
+        let id: &str = "get_this_damn_UI_out_of_my_face";
+        let cruid: Cruid = Cruid::from(id);
+        assert_eq!(cruid.unk00, 17293822579811696368);
+    }
+}
