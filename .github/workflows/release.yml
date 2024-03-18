@@ -12,6 +12,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   IS_DRAFT: ${{ startsWith(github.ref_name, 'beta') || startsWith(github.ref_name, 'alpha') }}
+  IS_PRERELEASE: ${{ startsWith(github.ref_name, 'rc') }}
 
 jobs:
   bundle:
@@ -70,5 +71,6 @@ jobs:
         with:
           artifacts: "Audioware-windows-latest-${{ github.ref_name }}.zip"
           draft: ${{ env.IS_DRAFT }}
+          prerelease: ${{ env.IS_PRERELEASE }}
           token: ${{ secrets.GITHUB_TOKEN }}
           artifactErrorsFailBuild: true
