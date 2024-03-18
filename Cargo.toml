@@ -19,8 +19,8 @@ audioware-mem = { path = "mem" }
 audioware-sys = { path = "sys" }
 cxx = "1"
 fixed-map = { version = "0.9.3", features = ["serde"] }
-glam = { version = "0.25.0", features = ["mint"] }
-kira = "0.8.5"
+glam = { version = "0.26.0", features = ["mint"] }
+kira = "0.8.7"
 lazy_static = "1.4.0"
 memoffset = "0.9.0"
 mint = "0.5.9"
