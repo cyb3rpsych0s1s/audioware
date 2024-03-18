@@ -15,3 +15,7 @@ voices:
       fr-fr:
         file: vanilla/fr-fr/v_sq017_m_19795c050029f000.Wav
         subtitle: Encore ?
+  judy_lullaby:
+    en-us:
+      file: vanilla/en-us/v_sq017_m_19795c050029f000.Wav
+      subtitle: La-lalala-lala

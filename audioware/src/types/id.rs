@@ -13,15 +13,15 @@ impl std::hash::Hash for SoundEntityId {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct SoundId(CName);
+pub struct VoiceId(CName);
 
-impl std::hash::Hash for SoundId {
+impl std::hash::Hash for VoiceId {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         u64::from(self.0.clone()).hash(state);
     }
 }
 
-impl AsRef<CName> for SoundId {
+impl AsRef<CName> for VoiceId {
     fn as_ref(&self) -> &CName {
         &self.0
     }
@@ -30,7 +30,7 @@ impl AsRef<CName> for SoundId {
 struct SoundIdVisitor;
 
 impl<'de> Visitor<'de> for SoundIdVisitor {
-    type Value = SoundId;
+    type Value = VoiceId;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         formatter.write_str("a unique CName pool valid string representation")
@@ -48,7 +48,7 @@ impl<'de> Visitor<'de> for SoundIdVisitor {
             )));
         }
         let created = CName::new_pooled(v);
-        Ok(SoundId(created))
+        Ok(VoiceId(created))
     }
 
     #[cfg(test)] // allow to test deserialization
@@ -56,7 +56,7 @@ impl<'de> Visitor<'de> for SoundIdVisitor {
     where
         E: serde::de::Error,
     {
-        Ok(SoundId(CName::new(v)))
+        Ok(VoiceId(CName::new(v)))
     }
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
@@ -67,7 +67,7 @@ impl<'de> Visitor<'de> for SoundIdVisitor {
     }
 }
 
-impl<'de> Deserialize<'de> for SoundId {
+impl<'de> Deserialize<'de> for VoiceId {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -76,25 +76,25 @@ impl<'de> Deserialize<'de> for SoundId {
     }
 }
 
-impl std::fmt::Display for SoundId {
+impl std::fmt::Display for VoiceId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", &self.0)
     }
 }
 
-impl PartialEq<CName> for SoundId {
+impl PartialEq<CName> for VoiceId {
     fn eq(&self, other: &CName) -> bool {
         self.0.eq(other)
     }
 }
 
-impl PartialEq<SoundId> for CName {
-    fn eq(&self, other: &SoundId) -> bool {
+impl PartialEq<VoiceId> for CName {
+    fn eq(&self, other: &VoiceId) -> bool {
         self.eq(&other.0)
     }
 }
 
-impl From<CName> for SoundId {
+impl From<CName> for VoiceId {
     fn from(value: CName) -> Self {
         Self(value)
     }

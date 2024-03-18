@@ -10,14 +10,12 @@ use kira::sound::static_sound::StaticSoundData;
 use red4ext_rs::types::CName;
 use serde::Deserialize;
 
-use crate::{
-    engine::SoundId,
-    types::voice::{validate_static_sound_data, AudioSubtitle},
-};
+use crate::types::voice::{validate_static_sound_data, AudioSubtitle};
 
 use super::{
+    id::VoiceId,
     redmod::{Mod, ModName, REDmod},
-    voice::Voices,
+    voice::{DualVoice, Voices},
 };
 
 #[derive(Debug, Clone, Deserialize)]
@@ -36,17 +34,31 @@ impl Bank {
     }
     pub fn retain_valid_audio(&mut self) {
         let folder = self.folder();
-        self.voices.voices.values_mut().for_each(|voice| {
-            for audio in voice.female.values_mut().chain(voice.male.values_mut()) {
-                if let Some(file) = audio.file.clone() {
-                    if validate_static_sound_data(&file, &folder).is_err() {
-                        audio.file = None;
+        self.voices
+            .voices
+            .values_mut()
+            .for_each(|voice| match voice {
+                super::voice::Voice::Dual(DualVoice { female, male }) => {
+                    for audio in female.values_mut().chain(male.values_mut()) {
+                        if let Some(file) = audio.file.clone() {
+                            if validate_static_sound_data(&file, &folder).is_err() {
+                                audio.file = None;
+                            }
+                        }
                     }
                 }
-            }
-        });
+                super::voice::Voice::Single(voice) => {
+                    for audio in voice.values_mut() {
+                        if let Some(file) = audio.file.clone() {
+                            if validate_static_sound_data(&file, &folder).is_err() {
+                                audio.file = None;
+                            }
+                        }
+                    }
+                }
+            });
     }
-    pub fn retain_unique_ids(&mut self, ids: &Arc<Mutex<HashSet<SoundId>>>) {
+    pub fn retain_unique_ids(&mut self, ids: &Arc<Mutex<HashSet<VoiceId>>>) {
         self.voices.voices.retain(|id, _| {
             if let Ok(mut guard) = ids.clone().borrow_mut().try_lock() {
                 let inserted = guard.insert(id.clone());
