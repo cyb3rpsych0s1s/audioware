@@ -10,12 +10,10 @@ use kira::sound::static_sound::StaticSoundData;
 use red4ext_rs::types::CName;
 use serde::Deserialize;
 
-use crate::{
-    engine::VoiceId,
-    types::voice::{validate_static_sound_data, AudioSubtitle},
-};
+use crate::types::voice::{validate_static_sound_data, AudioSubtitle};
 
 use super::{
+    id::VoiceId,
     redmod::{Mod, ModName, REDmod},
     voice::Voices,
 };

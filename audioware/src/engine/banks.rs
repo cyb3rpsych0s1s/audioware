@@ -15,12 +15,11 @@ use crate::{
     language::Supports,
     types::{
         bank::Bank,
+        id::VoiceId,
         redmod::{ModName, REDmod},
         voice::Subtitle,
     },
 };
-
-use super::VoiceId;
 
 lazy_static! {
     static ref BANKS: OnceLock<HashMap<ModName, Bank>> = OnceLock::default();

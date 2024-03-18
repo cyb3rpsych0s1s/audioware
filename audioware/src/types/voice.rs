@@ -9,8 +9,9 @@ use serde::Deserialize;
 use validator::{Validate, ValidationError};
 use validator::{ValidateArgs, ValidationErrors};
 
-use crate::engine::VoiceId;
 use audioware_sys::interop::locale::Locale;
+
+use super::id::VoiceId;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Voices {
