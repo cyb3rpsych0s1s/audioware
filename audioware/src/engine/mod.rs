@@ -12,7 +12,7 @@ pub mod state;
 pub mod tracks;
 
 use audioware_sys::interop::{quaternion::Quaternion, vector4::Vector4};
-pub use id::SoundId;
+pub use id::VoiceId;
 use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId};
 

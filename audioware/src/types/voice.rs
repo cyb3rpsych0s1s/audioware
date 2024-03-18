@@ -9,13 +9,13 @@ use serde::Deserialize;
 use validator::{Validate, ValidationError};
 use validator::{ValidateArgs, ValidationErrors};
 
-use crate::engine::SoundId;
+use crate::engine::VoiceId;
 use audioware_sys::interop::locale::Locale;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Voices {
     pub version: Version,
-    pub voices: HashMap<SoundId, Voice>,
+    pub voices: HashMap<VoiceId, Voice>,
 }
 
 impl Voices {

@@ -11,7 +11,7 @@ use red4ext_rs::types::CName;
 use serde::Deserialize;
 
 use crate::{
-    engine::SoundId,
+    engine::VoiceId,
     types::voice::{validate_static_sound_data, AudioSubtitle},
 };
 
@@ -46,7 +46,7 @@ impl Bank {
             }
         });
     }
-    pub fn retain_unique_ids(&mut self, ids: &Arc<Mutex<HashSet<SoundId>>>) {
+    pub fn retain_unique_ids(&mut self, ids: &Arc<Mutex<HashSet<VoiceId>>>) {
         self.voices.voices.retain(|id, _| {
             if let Ok(mut guard) = ids.clone().borrow_mut().try_lock() {
                 let inserted = guard.insert(id.clone());
