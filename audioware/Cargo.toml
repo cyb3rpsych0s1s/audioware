@@ -15,20 +15,20 @@ audioware-macros.workspace = true
 audioware-mem.workspace = true
 audioware-sys.workspace = true
 anyhow.workspace = true
-cxx.workspace = true
 fixed-map.workspace = true
 glam.workspace = true
 kira.workspace = true
 lazy_static.workspace = true
-memoffset = "0.9.0"
+memoffset.workspace = true
 red4ext-rs.workspace = true
 retour.workspace = true
-semver ={ version = "1", features = ["serde"] }
+semver = { version = "1", features = ["serde"] }
 serde.workspace = true
 serde_yaml = "0.9"
 strum.workspace = true
 strum_macros.workspace = true
 ulid = "1.1.0"
 validator = { version = "0.16", features = ["derive"] }
-widestring = "1.0.2"
-winapi = { version = "0.3.9", features = ["libloaderapi"] }
+
+[package.metadata.cargo-machete]
+ignored = ["memoffset", "retour", "strum", "strum_macros"]

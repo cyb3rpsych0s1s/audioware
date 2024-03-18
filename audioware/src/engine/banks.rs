@@ -15,16 +15,15 @@ use crate::{
     language::Supports,
     types::{
         bank::Bank,
+        id::VoiceId,
         redmod::{ModName, REDmod},
         voice::Subtitle,
     },
 };
 
-use super::SoundId;
-
 lazy_static! {
     static ref BANKS: OnceLock<HashMap<ModName, Bank>> = OnceLock::default();
-    static ref IDS: Arc<Mutex<HashSet<SoundId>>> = Arc::new(Mutex::new(HashSet::new()));
+    static ref IDS: Arc<Mutex<HashSet<VoiceId>>> = Arc::new(Mutex::new(HashSet::new()));
 }
 
 pub fn setup() -> anyhow::Result<()> {
@@ -48,6 +47,18 @@ pub fn setup() -> anyhow::Result<()> {
 pub fn exists(id: CName) -> anyhow::Result<bool> {
     if let Ok(guard) = IDS.clone().try_lock() {
         return Ok(guard.contains(&id.into()));
+    }
+    anyhow::bail!("unable to reach sound ids");
+}
+
+pub fn exist(ids: &[CName]) -> anyhow::Result<bool> {
+    if let Ok(guard) = IDS.clone().try_lock() {
+        for id in ids {
+            if !guard.contains(&VoiceId::from(id.clone())) {
+                return Ok(false);
+            }
+        }
+        return Ok(true);
     }
     anyhow::bail!("unable to reach sound ids");
 }

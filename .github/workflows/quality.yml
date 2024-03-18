@@ -11,19 +11,23 @@ jobs:
       - name: Set LIBCLANG_PATH
         run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
       - name: Prepare Rust toolchain
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: nightly-2024-01-10
+          targets: x86_64-pc-windows-msvc
           components: clippy, rustfmt
+      - name: Additional tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-machete,just
       - uses: Swatinem/rust-cache@v2
         with:
           key: debug
-      - name: Setup Just
-        uses: extractions/setup-just@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Check
         run: just check
       - name: QA
         run: just qa
       - name: Unit-tests
         run: just test
+      - name: Unused dependencies
+        run: cargo machete

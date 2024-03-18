@@ -5,6 +5,7 @@ pub mod entity;
 pub mod event;
 pub mod game;
 pub mod gender;
+pub mod hash;
 pub mod icomponent;
 pub mod iscriptable;
 pub mod locale;

@@ -20,6 +20,10 @@ typedef void AudioSystem_Play(void* aContext, void* aFrame, float* aOut, void* a
 /// memory address for [AudioSystem::Stop](https://codeberg.org/adamsmasher/cyberpunk/src/branch/master/core/systems/audioSystem.swift#L12)
 typedef void AudioSystem_Stop(void* aContext, void* aFrame, float* aOut, void* a4);
 
+/// @pattern 48 89 5C 24 ? 48 89 74  24 ? 48 89 7C 24 ? 55  48 8B EC 48 83 EC ? 48  8B 02 48 8D 3D ? ? ?  ? FE 42 ? 4C 8D 45 ?  33 F6 45 33 C9 48 89 75  ? 48 8B DA 48 89 72 ?  48 89 72 ? 0F B6 08 48  FF C0 48 89 02 8B C1  48 8B 4A ? FF ? ? 48 8B  03 4C 8D 45 ? FE 43 ?  45 33 C9 48 89 75 ? 48  8B D3 48 89 73 ? 48 89  73 ? 0F B6 08 48 FF C0  48 89 03 8B C1 48 8B 4B  ? FF 14 C7 48 8B 03 4C  8D 45 ? FE 43 ? 45 33  C9 48 89 75 ? 48 8B D3  48 89 73 ? 48 89 73 ?  0F B6 08 48 FF C0 48 89  03 8B C1 48 8B 4B ? FF  14 C7 48 8B 03 4C 8D 45  ? FE 43 ? 45 33 C9 48  89 75 ? 48 8B D3 48 89  73 ? 48 89 73 ?
+/// memory address for [AudioSystem::Switch](https://codeberg.org/adamsmasher/cyberpunk/src/branch/master/core/systems/audioSystem.swift#L14)
+typedef void AudioSystem_Switch(void* aContext, void* aFrame, float* aOut, void* a4);
+
 /// FIXME: is that for inkMenuScenario instead ?
 /// @pattern 48 89 5C 24 ? 57 48 83  EC ? 48 8B 02 4C 8D 15  ? ? ? ? 48 83 62 ?  ? 0F 57 C0 48 83 62 ?  ? 48 8B F9 FE 42 ? 45  33 C9 48 8B 4A ? 48 8B  DA F3 0F 7F 44 24 ? 44  0F B6 00 48 FF C0 48 89  02 41 8B C0 4C 8D 44 24  ? 41 FF 14 C2 48 FF 03  48 8D 54 24 ? 48 8B CF  E8 ? ? ? ? 48 8D 4C  24 ? E8 ? ? ? ? 48  8B 5C 24 ? 48 83 C4 ?  5F C3
 /// @nth 4/23

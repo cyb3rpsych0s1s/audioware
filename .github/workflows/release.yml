@@ -23,16 +23,25 @@ jobs:
       - name: Set LIBCLANG_PATH
         run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
       - name: Prepare Rust toolchain
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2024-01-10
+          targets: x86_64-pc-windows-msvc
       - uses: Swatinem/rust-cache@v2
         with:
           key: release
-      - name: Setup Just
-        uses: extractions/setup-just@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Additional tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - name: Setup UPX
+        uses: crazy-max/ghaction-upx@v3
+        with:
+          install-only: true
       - name: Bundle mod files
         run: just ci 'Audioware-windows-latest-${{ github.ref_name }}'
+      - name: Optimize binary size
+        run: just optimize 'Audioware-windows-latest-${{ github.ref_name }}'
       - name: Zip files
         uses: thedoctor0/zip-release@0.7.5
         with:

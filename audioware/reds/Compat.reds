@@ -55,9 +55,17 @@ private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName:
   let spoken = localization.GetVoiceLanguage();
   let written = localization.GetSubtitleLanguage();
   // if spoken language is not available, abort
-  if !StrBeginsWith(NameToString(spoken), "en-") && !StrBeginsWith(NameToString(spoken), "fr-") { return; }
+  if !StrBeginsWith(NameToString(spoken), "en-")
+  && !StrBeginsWith(NameToString(spoken), "fr-")
+  && !StrBeginsWith(NameToString(spoken), "es-")
+  && !StrBeginsWith(NameToString(spoken), "zh-")
+  && !StrBeginsWith(NameToString(spoken), "pt-") { return; }
   // only show subtitles if they are available
-  if StrBeginsWith(NameToString(written), "en-") || StrBeginsWith(NameToString(written), "fr-") {
+  if StrBeginsWith(NameToString(written), "en-")
+  || StrBeginsWith(NameToString(written), "fr-")
+  || StrBeginsWith(NameToString(written), "es-")
+  || StrBeginsWith(NameToString(written), "zh-")
+  || StrBeginsWith(NameToString(written), "pt-") {
     let board: ref<IBlackboard> = GameInstance.GetBlackboardSystem(game).Get(GetAllBlackboardDefs().UIGameData);
     let key: String = NameToString(reaction);
     let subtitle: String = localization.GetSubtitle(key);

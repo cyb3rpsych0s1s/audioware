@@ -19,7 +19,7 @@ use kira::{
 use lazy_static::lazy_static;
 use red4ext_rs::types::{CName, EntityId};
 
-use super::id::SoundEntityId;
+use crate::types::id::SoundEntityId;
 
 lazy_static! {
     static ref TRACKS: OnceLock<Tracks> = OnceLock::default();

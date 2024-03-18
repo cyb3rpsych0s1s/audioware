@@ -3,7 +3,7 @@ use fixed_map::Map;
 
 use crate::types::{
     bank::Bank,
-    voice::{AudioSubtitle, Voice, Voices},
+    voice::{AudioSubtitle, DualVoice, Voice, Voices},
 };
 
 pub trait Supports {
@@ -22,9 +22,12 @@ impl Supports for Map<Locale, AudioSubtitle> {
 
 impl SupportsBy<PlayerGender> for Voice {
     fn supports_by(&self, locale: Locale, gender: PlayerGender) -> bool {
-        match gender {
-            PlayerGender::Female => self.female.supports(locale),
-            PlayerGender::Male => self.male.supports(locale),
+        match self {
+            Voice::Dual(DualVoice { female, male }) => match gender {
+                PlayerGender::Female => female.supports(locale),
+                PlayerGender::Male => male.supports(locale),
+            },
+            Voice::Single(voice) => voice.supports(locale),
         }
     }
 }

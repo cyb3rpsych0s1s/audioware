@@ -4,7 +4,6 @@ use self::sounds::SoundInfos;
 pub use self::state::State;
 
 pub mod banks;
-pub mod id;
 pub mod localization;
 pub mod manager;
 pub mod sounds;
@@ -12,7 +11,6 @@ pub mod state;
 pub mod tracks;
 
 use audioware_sys::interop::{quaternion::Quaternion, vector4::Vector4};
-pub use id::SoundId;
 use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId};
 
