@@ -1,7 +1,7 @@
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 set dotenv-load
 
-SPECIFIC_TARGET := 'nightly-2024-01-10'
+SPECIFIC_TARGET := 'nightly'
 
 # default to steam default game dir
 DEFAULT_GAME_DIR := join("C:\\", "Program Files (x86)", "Steam", "steamapps", "common", "Cyberpunk 2077")
