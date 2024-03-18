@@ -35,8 +35,18 @@ impl Voices {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, Deserialize)]
-pub struct Voice {
+#[serde(untagged)]
+pub enum Voice {
+    /// for voice that support both gender, e.g. V's
+    Dual(DualVoice),
+    /// for voice that only ever have one gender, e.g. Judy's
+    Single(Map<Locale, AudioSubtitle>),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct DualVoice {
     #[serde(rename = "fem")]
     pub female: Map<Locale, AudioSubtitle>,
     pub male: Map<Locale, AudioSubtitle>,
@@ -50,22 +60,28 @@ pub struct Subtitle<'a> {
 
 impl Voice {
     pub fn audios(&self, gender: &PlayerGender) -> &Map<Locale, AudioSubtitle> {
-        match gender {
-            PlayerGender::Female => &self.female,
-            PlayerGender::Male => &self.male,
+        match self {
+            Voice::Dual(DualVoice { female, male }) => match gender {
+                PlayerGender::Female => female,
+                PlayerGender::Male => male,
+            },
+            Voice::Single(voice) => voice,
         }
     }
     pub fn subtitle(&self, locale: Locale) -> (&str, &str) {
-        (
-            self.female
-                .get(locale)
-                .map(|x| x.subtitle.as_str())
-                .unwrap_or(""),
-            self.male
-                .get(locale)
-                .map(|x| x.subtitle.as_str())
-                .unwrap_or(""),
-        )
+        match self {
+            Voice::Dual(DualVoice { female, male }) => (
+                female
+                    .get(locale)
+                    .map(|x| x.subtitle.as_str())
+                    .unwrap_or(""),
+                male.get(locale).map(|x| x.subtitle.as_str()).unwrap_or(""),
+            ),
+            Voice::Single(voice) => (
+                voice.get(locale).map(|x| x.subtitle.as_str()).unwrap_or(""),
+                voice.get(locale).map(|x| x.subtitle.as_str()).unwrap_or(""),
+            ),
+        }
     }
 }
 
@@ -74,20 +90,33 @@ impl<'v_a> ValidateArgs<'v_a> for Voice {
 
     fn validate_args(&self, args: Self::Args) -> Result<(), validator::ValidationErrors> {
         let mut errors = ValidationErrors::new();
-        for audio in self.female.values() {
-            if let Some(file) = &audio.file {
-                if let Err(e) = validate_static_sound_data(file, args) {
-                    errors.add("female", e);
+        match self {
+            Voice::Dual(DualVoice { female, male }) => {
+                for audio in female.values() {
+                    if let Some(file) = &audio.file {
+                        if let Err(e) = validate_static_sound_data(file, args) {
+                            errors.add("female", e);
+                        }
+                    }
+                }
+                for audio in male.values() {
+                    if let Some(file) = &audio.file {
+                        if let Err(e) = validate_static_sound_data(file, args) {
+                            errors.add("male", e);
+                        }
+                    }
                 }
             }
-        }
-        for audio in self.male.values() {
-            if let Some(file) = &audio.file {
-                if let Err(e) = validate_static_sound_data(file, args) {
-                    errors.add("male", e);
+            Voice::Single(voice) => {
+                for audio in voice.values() {
+                    if let Some(file) = &audio.file {
+                        if let Err(e) = validate_static_sound_data(file, args) {
+                            errors.add("uni", e);
+                        }
+                    }
                 }
             }
-        }
+        };
         if !errors.is_empty() {
             return Err(errors);
         }
