@@ -43,7 +43,7 @@ jobs:
       - name: Optimize binary size
         run: just optimize 'Audioware-windows-latest-${{ github.ref_name }}'
       - name: Zip files
-        uses: thedoctor0/zip-release@0.7.5
+        uses: thedoctor0/zip-release@0.7.6
         with:
           type: zip
           filename: Audioware-windows-latest-${{ github.ref_name }}.zip
