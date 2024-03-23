@@ -80,6 +80,7 @@ private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName:
       line.text = subtitle;
       line.type = scnDialogLineType.Regular;
       board.SetVariant(GetAllBlackboardDefs().UIGameData.ShowDialogLine, ToVariant([line]), true);
+      Audioware.GetInstance(game).m_subtitleLine = line;
       let callback: ref<HideSubtitleCallback> = new HideSubtitleCallback();
       callback.line = line;
       Audioware.GetInstance(game).m_subtitleDelayID = GameInstance
@@ -87,4 +88,26 @@ private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName:
       .DelayCallback(callback, duration);
     }
   }
+}
+
+private func PauseHideSubtitleCallback() -> Void {
+    let game = GetGameInstance();
+    let delay = Audioware.GetInstance(game).m_subtitleDelayID;
+    if NotEquals(delay, GetInvalidDelayID()) {
+        Audioware.GetInstance(game).m_subtitleRemaining = GameInstance.GetDelaySystem(game).GetRemainingDelayTime(delay);
+        GameInstance.GetDelaySystem(game).CancelCallback(delay);
+    }
+}
+
+private func ResumeHideSubtitleCallback() -> Void {
+    let game = GetGameInstance();
+    let remaining = Audioware.GetInstance(game).m_subtitleRemaining;
+    let line = Audioware.GetInstance(game).m_subtitleLine;
+    if remaining >= 0.3 {
+        let callback: ref<HideSubtitleCallback> = new HideSubtitleCallback();
+        callback.line = line;
+        Audioware.GetInstance(game).m_subtitleDelayID = GameInstance
+        .GetDelaySystem(game)
+        .DelayCallback(callback, remaining);
+    }
 }
