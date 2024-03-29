@@ -52,24 +52,10 @@ private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName:
   let target = GameInstance.FindEntityByID(game, entityID);
   if !IsDefined(target) || !target.IsA(n"gameObject") { return; }
   let localization = LocalizationSystem.GetInstance(game);
-  let spoken = localization.GetVoiceLanguage();
-  let written = localization.GetSubtitleLanguage();
-  // if spoken language is not available, abort
-  if !StrBeginsWith(NameToString(spoken), "en-")
-  && !StrBeginsWith(NameToString(spoken), "fr-")
-  && !StrBeginsWith(NameToString(spoken), "es-")
-  && !StrBeginsWith(NameToString(spoken), "zh-")
-  && !StrBeginsWith(NameToString(spoken), "pt-") { return; }
-  // only show subtitles if they are available
-  if StrBeginsWith(NameToString(written), "en-")
-  || StrBeginsWith(NameToString(written), "fr-")
-  || StrBeginsWith(NameToString(written), "es-")
-  || StrBeginsWith(NameToString(written), "zh-")
-  || StrBeginsWith(NameToString(written), "pt-") {
-    let board: ref<IBlackboard> = GameInstance.GetBlackboardSystem(game).Get(GetAllBlackboardDefs().UIGameData);
-    let key: String = NameToString(reaction);
-    let subtitle: String = localization.GetSubtitle(key);
-    if StrLen(key) > 0 && NotEquals(key, subtitle) {
+  let board: ref<IBlackboard> = GameInstance.GetBlackboardSystem(game).Get(GetAllBlackboardDefs().UIGameData);
+  let key: String = NameToString(reaction);
+  let subtitle: String = localization.GetSubtitle(key);
+  if StrLen(key) > 0 && NotEquals(key, subtitle) {
       let duration: Float = GetReactionDuration(reaction);
       let line: scnDialogLineData;
       line.duration = duration;
@@ -85,6 +71,5 @@ private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName:
       Audioware.GetInstance(game).m_subtitleDelayID = GameInstance
       .GetDelaySystem(game)
       .DelayCallback(callback, duration);
-    }
   }
 }
