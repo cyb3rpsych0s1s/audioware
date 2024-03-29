@@ -15,6 +15,7 @@ use super::id::VoiceId;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Voices {
+    #[allow(dead_code)]
     pub version: Version,
     pub voices: HashMap<VoiceId, Voice>,
 }
