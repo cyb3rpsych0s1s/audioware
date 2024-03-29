@@ -11,6 +11,8 @@ Currently in its infancy, further information will be provided at a later time.
 - [x] seamlessly integrates with vanilla `AudioSystem`, but currently restricted to:
       - `Play`
       - `Stop`
+      - `Switch`
+- [x] update reverb via blackboard
 
 ### dependent features
 
