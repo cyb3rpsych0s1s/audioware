@@ -77,7 +77,7 @@ public class Audioware extends ScriptableSystem {
 
             boards = GameInstance.GetBlackboardSystem(this.GetGameInstance());
             board = boards.Get(defs.AudiowareSettings);
-            this.m_playerReverbListener = board.RegisterDelayedListenerFloat(defs.AudiowareSettings.PlayerReverb, this, n"OnReverbChanged", false);
+            this.m_playerReverbListener = board.RegisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this, n"OnReverbChanged", false);
         }
     }
 
@@ -111,7 +111,8 @@ public class Audioware extends ScriptableSystem {
         UnregisterEmitter(id);
     }
     protected cb func OnReverbChanged(value: Float) -> Bool {
-        return UpdatePlayerReverb(value);
+        let result = UpdatePlayerReverb(value);
+        return result;
     }
 
     public static final func GetInstance(game: GameInstance) -> ref<Audioware> {
