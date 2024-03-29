@@ -281,7 +281,9 @@ pub fn update_player_reverb(value: f32) -> bool {
         ) {
             return true;
         }
+        red4ext_rs::warn!("unable to update reverb route volume");
         return false;
     }
+    red4ext_rs::warn!("unable to retrieve reverb track");
     false
 }
