@@ -4,6 +4,7 @@ private native func RegisterEmitter(id: EntityID) -> Void;
 private native func UnregisterEmitter(id: EntityID) -> Void;
 private native func UpdateActorLocation(id: EntityID, position: Vector4, orientation: Quaternion) -> Void;
 private native func EmittersCount() -> Int32;
+private native func UpdatePlayerReverb(value: Float) -> Bool;
 
 public class Audioware extends ScriptableSystem {
     private let m_callbackSystem: wref<CallbackSystem>;
@@ -11,6 +12,7 @@ public class Audioware extends ScriptableSystem {
     public let m_positionDelayID: DelayID;
     public let m_positionsDelayID: DelayID;
     private let m_emitters: array<EntityID>;
+    private let m_playerReverbListener: ref<CallbackHandle>;
 
     public func RegisterVentriloquist(id: EntityID) -> Void {
         // LogChannel(n"DEBUG", s"register ventriloquist (\(EntityID.ToDebugString(id)))");
@@ -62,6 +64,9 @@ public class Audioware extends ScriptableSystem {
     }
 
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {
+        let boards: ref<BlackboardSystem>;
+        let board: ref<IBlackboard>;
+        let defs = GetAllBlackboardDefs();
         let player = request.owner as PlayerPuppet;
         if IsDefined(player) {
             let callback = new UpdateListenerCallback();
@@ -69,15 +74,26 @@ public class Audioware extends ScriptableSystem {
             this.m_positionDelayID = GameInstance
             .GetDelaySystem(this.GetGameInstance())
             .DelayCallback(callback, 0.1, true);
+
+            boards = GameInstance.GetBlackboardSystem(this.GetGameInstance());
+            board = boards.Get(defs.AudiowareSettings);
+            this.m_playerReverbListener = board.RegisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this, n"OnReverbChanged", false);
         }
     }
 
     private final func OnPlayerDetach(request: ref<PlayerDetachRequest>) -> Void {
+        let boards: ref<BlackboardSystem>;
+        let board: ref<IBlackboard>;
+        let defs = GetAllBlackboardDefs();
         if NotEquals(GetInvalidDelayID(), this.m_positionDelayID) {
             GameInstance
             .GetDelaySystem(this.GetGameInstance())
             .CancelCallback(this.m_positionDelayID);
+
             this.m_positionDelayID = GetInvalidDelayID();
+            boards = GameInstance.GetBlackboardSystem(this.GetGameInstance());
+            board = boards.Get(defs.AudiowareSettings);
+            board.UnregisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this.m_playerReverbListener);
         }
     }
 
@@ -94,11 +110,15 @@ public class Audioware extends ScriptableSystem {
         let id = event.GetEntity().GetEntityID();
         UnregisterEmitter(id);
     }
+    protected cb func OnReverbChanged(value: Float) -> Bool {
+        let result = UpdatePlayerReverb(value);
+        return result;
+    }
 
     public static final func GetInstance(game: GameInstance) -> ref<Audioware> {
         let container = GameInstance.GetScriptableSystemsContainer(game);
         return container.Get(n"Audioware.Audioware") as Audioware;
-    } 
+    }
 }
 
 public class UpdateListenerCallback extends DelayCallback {

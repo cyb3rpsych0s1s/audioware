@@ -86,7 +86,7 @@ pub fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
     })?;
     let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
     let main = manager
-        .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.25)))?;
+        .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.)))?;
     let v = scene.add_listener(
         Vec3::ZERO,
         Quat::IDENTITY,
@@ -266,4 +266,24 @@ pub fn emitters_count() -> i32 {
         return guard.len() as i32;
     }
     -1
+}
+
+pub fn update_player_reverb(value: f32) -> bool {
+    if value > 1. {
+        red4ext_rs::error!("reverb must be between 0. and 1. (inclusive)");
+        return false;
+    }
+    if let Some(tracks) = TRACKS.get() {
+        if let Ok(()) = tracks.v.main.set_route(
+            &tracks.reverb,
+            kira::Volume::Amplitude(value as f64),
+            Default::default(),
+        ) {
+            return true;
+        }
+        red4ext_rs::warn!("unable to update reverb route volume");
+        return false;
+    }
+    red4ext_rs::warn!("unable to retrieve reverb track");
+    false
 }

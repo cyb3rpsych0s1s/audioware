@@ -1,4 +1,5 @@
 import Audioware.Audioware
+import Audioware.AudiowareSettingsDef
 
 // Game.TestAudioEvent("dry_fire");
 // Game.TestAudioEvent("ono_v_effort_short");
@@ -50,6 +51,15 @@ public static exec func TestAudioSystemStop(game: GameInstance, name: String) ->
     let player = GetPlayer(game);
     let sound: CName = StringToName(name);
     GameInstance.GetAudioSystem(game).Stop(sound, player.GetEntityID(), n"V");
+}
+
+// Game.TestUpdateReverb(0.); // between 0. and 1.
+public static exec func TestUpdateReverb(gi: GameInstance, value: Float) -> Void {
+    let defs = GetAllBlackboardDefs();
+    let boards = GameInstance.GetBlackboardSystem(gi);
+    let board = boards.Get(defs.AudiowareSettings);
+    // LogChannel(n"DEBUG", s"board exists? \(ToString(IsDefined(board)))");
+    board.SetFloat(defs.AudiowareSettings.PlayerReverb, value, true);
 }
 
 // Game.ApplyVentriloquistOnNPC();
