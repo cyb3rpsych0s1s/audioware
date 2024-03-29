@@ -267,3 +267,21 @@ pub fn emitters_count() -> i32 {
     }
     -1
 }
+
+pub fn update_player_reverb(value: f32) -> bool {
+    if value > 1. {
+        red4ext_rs::error!("reverb must be between 0. and 1. (inclusive)");
+        return false;
+    }
+    if let Some(tracks) = TRACKS.get() {
+        if let Ok(()) = tracks.v.main.set_route(
+            &tracks.reverb,
+            kira::Volume::Amplitude(value as f64),
+            Default::default(),
+        ) {
+            return true;
+        }
+        return false;
+    }
+    false
+}

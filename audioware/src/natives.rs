@@ -71,3 +71,7 @@ pub fn update_actor_location(id: EntityId, position: Vector4, orientation: Quate
 pub fn emitters_count() -> i32 {
     crate::engine::tracks::emitters_count()
 }
+
+pub fn update_player_reverb(value: f32) -> bool {
+    crate::engine::tracks::update_player_reverb(value)
+}

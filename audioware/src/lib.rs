@@ -70,6 +70,10 @@ impl Plugin for Audioware {
             crate::natives::update_actor_location
         );
         register_function!("Audioware.EmittersCount", crate::natives::emitters_count);
+        register_function!(
+            "Audioware.UpdatePlayerReverb",
+            crate::natives::update_player_reverb
+        );
     }
 
     fn post_register() {
