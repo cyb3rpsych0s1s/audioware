@@ -71,6 +71,13 @@ public static exec func TestUpdatePlayerPreset(gi: GameInstance, value: Int32) -
     board.SetInt(defs.AudiowareSettings.PlayerPreset, value, true);
 }
 
+// Game.TestPlayOverThePhone("nah_everything_is_all_good", "V");
+public static exec func TestPlayOverThePhone(gi: GameInstance, name: String, emitter: String) -> Void {
+    let sound: CName = StringToName(name);
+    let speaker: CName = StringToName(emitter);
+    GameInstance.GetAudioSystem(gi).PlayOverThePhone(sound, speaker);
+}
+
 // Game.ApplyVentriloquistOnNPC();
 public static exec func ApplyVentriloquistOnNPC(gi: GameInstance) -> Void {
   let player: ref<PlayerPuppet> = GetPlayer(gi);
