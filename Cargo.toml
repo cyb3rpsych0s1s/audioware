@@ -1,5 +1,5 @@
 [workspace]
-members = ["audioware", "sys", "macros", "mem"]
+members = ["audioware", "sys", "macros", "mem", "addr"]
 resolver = "2"
 
 [workspace.package]
