@@ -15,7 +15,7 @@ use kira::{
     },
     track::{
         effect::{
-            eq_filter::{EqFilterBuilder, EqFilterHandle, EqFilterKind},
+            filter::{FilterBuilder, FilterHandle, FilterMode},
             reverb::ReverbBuilder,
         },
         TrackBuilder, TrackHandle, TrackRoutes,
@@ -28,9 +28,8 @@ use red4ext_rs::types::{CName, EntityId};
 use crate::types::id::SoundEntityId;
 
 use super::effects::{
-    EqPass, HighPass, LowPass, Preset, EQ, EQ_DEFAULT_GAIN, EQ_DEFAULT_Q,
-    EQ_HIGH_PASS_DEFAULT_FREQUENCES, EQ_HIGH_PASS_PHONE_FREQUENCES, EQ_LOW_PASS_DEFAULT_FREQUENCES,
-    EQ_LOW_PASS_PHONE_FREQUENCES, EQ_PHONE_GAIN, EQ_PHONE_Q,
+    EqPass, HighPass, LowPass, Preset, EQ, EQ_HIGH_PASS_PHONE_CUTOFF, EQ_LOW_PASS_PHONE_CUTOFF,
+    EQ_RESONANCE,
 };
 
 lazy_static! {
@@ -104,44 +103,34 @@ pub fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
         builder.add_effect(ReverbBuilder::new().mix(1.0));
         builder
     })?;
-    let player_lowpass: EqFilterHandle;
-    let player_highpass: EqFilterHandle;
-    let holocall_lowpass: EqFilterHandle;
-    let holocall_highpass: EqFilterHandle;
+    let player_lowpass: FilterHandle;
+    let player_highpass: FilterHandle;
+    let holocall_lowpass: FilterHandle;
+    let holocall_highpass: FilterHandle;
     let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
     let main = manager.add_sub_track(
         {
             let mut builder = TrackBuilder::new();
-            player_lowpass = builder.add_effect(EqFilterBuilder::new(
-                EqFilterKind::LowShelf,
-                EQ_LOW_PASS_DEFAULT_FREQUENCES,
-                EQ_DEFAULT_GAIN,
-                EQ_DEFAULT_Q,
-            ));
-            player_highpass = builder.add_effect(EqFilterBuilder::new(
-                EqFilterKind::HighShelf,
-                EQ_HIGH_PASS_DEFAULT_FREQUENCES,
-                EQ_DEFAULT_GAIN,
-                EQ_DEFAULT_Q,
-            ));
+            player_lowpass = builder.add_effect(FilterBuilder::default().mix(0.));
+            player_highpass =
+                builder.add_effect(FilterBuilder::default().mode(FilterMode::HighPass).mix(0.));
             builder
         }
         .routes(TrackRoutes::new().with_route(&reverb, 0.)),
     )?;
     let holocall = manager.add_sub_track({
         let mut builder = TrackBuilder::new();
-        holocall_lowpass = builder.add_effect(EqFilterBuilder::new(
-            EqFilterKind::LowShelf,
-            EQ_LOW_PASS_PHONE_FREQUENCES,
-            EQ_PHONE_GAIN,
-            EQ_PHONE_Q,
-        ));
-        holocall_highpass = builder.add_effect(EqFilterBuilder::new(
-            EqFilterKind::HighShelf,
-            EQ_HIGH_PASS_PHONE_FREQUENCES,
-            EQ_PHONE_GAIN,
-            EQ_PHONE_Q,
-        ));
+        holocall_lowpass = builder.add_effect(
+            FilterBuilder::default()
+                .cutoff(EQ_LOW_PASS_PHONE_CUTOFF)
+                .resonance(EQ_RESONANCE),
+        );
+        holocall_highpass = builder.add_effect(
+            FilterBuilder::default()
+                .mode(FilterMode::HighPass)
+                .cutoff(EQ_HIGH_PASS_PHONE_CUTOFF)
+                .resonance(EQ_RESONANCE),
+        );
         builder
     })?;
     let eq = EQ {
