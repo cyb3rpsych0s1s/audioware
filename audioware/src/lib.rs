@@ -74,6 +74,14 @@ impl Plugin for Audioware {
             "Audioware.UpdatePlayerReverb",
             crate::natives::update_player_reverb
         );
+        register_function!(
+            "Audioware.UpdatePlayerPreset",
+            crate::natives::update_player_preset
+        );
+        register_function!(
+            "Audioware.PlayOverThePhone",
+            crate::natives::play_over_the_phone
+        );
     }
 
     fn post_register() {

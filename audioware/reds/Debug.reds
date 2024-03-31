@@ -62,6 +62,22 @@ public static exec func TestUpdateReverb(gi: GameInstance, value: Float) -> Void
     board.SetFloat(defs.AudiowareSettings.PlayerReverb, value, true);
 }
 
+// Game.TestUpdatePlayerPreset(0); // 0, 1 or 2
+public static exec func TestUpdatePlayerPreset(gi: GameInstance, value: Int32) -> Void {
+    let defs = GetAllBlackboardDefs();
+    let boards = GameInstance.GetBlackboardSystem(gi);
+    let board = boards.Get(defs.AudiowareSettings);
+    LogChannel(n"DEBUG", s"board exists? \(ToString(IsDefined(board)))");
+    board.SetInt(defs.AudiowareSettings.PlayerPreset, value, true);
+}
+
+// Game.TestPlayOverThePhone("nah_everything_is_all_good", "V");
+public static exec func TestPlayOverThePhone(gi: GameInstance, name: String, emitter: String) -> Void {
+    let sound: CName = StringToName(name);
+    let speaker: CName = StringToName(emitter);
+    GameInstance.GetAudioSystem(gi).PlayOverThePhone(sound, speaker);
+}
+
 // Game.ApplyVentriloquistOnNPC();
 public static exec func ApplyVentriloquistOnNPC(gi: GameInstance) -> Void {
   let player: ref<PlayerPuppet> = GetPlayer(gi);

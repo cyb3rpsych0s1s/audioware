@@ -1,5 +1,5 @@
 use audioware_macros::FromMemory;
-use red4ext_rs::types::CName;
+use red4ext_rs::{conv::NativeRepr, types::CName};
 
 use super::iscriptable::ISCRIPTABLE_SIZE;
 
@@ -49,4 +49,27 @@ pub struct AudioEvent {
     pub event_type: AudioEventActionType,
     pub event_flags: AudioAudioEventFlags,
     unk64: i32,
+}
+
+/// see [RED4ext::scn::DialogLineType](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/scn/DialogLineType.hpp).
+#[derive(Debug, Clone, Copy, strum_macros::Display, strum_macros::FromRepr, PartialEq)]
+#[repr(u32)]
+pub enum ScnDialogLineType {
+    None = 0,
+    Regular = 1,
+    Holocall = 2,
+    SceneComment = 3,
+    OverHead = 4,
+    Radio = 5,
+    GlobalTV = 6,
+    Invisible = 7,
+    OverHeadAlwaysVisible = 9,
+    OwnerlessRegular = 10,
+    AlwaysCinematicNoSpeaker = 11,
+    GlobalTVAlwaysVisible = 12,
+    Narrator = 13,
+}
+
+unsafe impl NativeRepr for ScnDialogLineType {
+    const NAME: &'static str = "scnDialogLineType";
 }

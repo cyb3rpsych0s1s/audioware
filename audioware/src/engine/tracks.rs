@@ -13,13 +13,25 @@ use kira::{
         listener::{ListenerHandle, ListenerSettings},
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
-    track::{effect::reverb::ReverbBuilder, TrackBuilder, TrackHandle, TrackRoutes},
+    track::{
+        effect::{
+            eq_filter::{EqFilterBuilder, EqFilterHandle, EqFilterKind},
+            reverb::ReverbBuilder,
+        },
+        TrackBuilder, TrackHandle, TrackRoutes,
+    },
     OutputDestination,
 };
 use lazy_static::lazy_static;
 use red4ext_rs::types::{CName, EntityId};
 
 use crate::types::id::SoundEntityId;
+
+use super::effects::{
+    EqPass, HighPass, LowPass, Preset, EQ, EQ_DEFAULT_GAIN, EQ_DEFAULT_Q,
+    EQ_HIGH_PASS_DEFAULT_FREQUENCES, EQ_HIGH_PASS_PHONE_FREQUENCES, EQ_LOW_PASS_DEFAULT_FREQUENCES,
+    EQ_LOW_PASS_PHONE_FREQUENCES, EQ_PHONE_GAIN, EQ_PHONE_Q,
+};
 
 lazy_static! {
     static ref TRACKS: OnceLock<Tracks> = OnceLock::default();
@@ -30,6 +42,7 @@ lazy_static! {
 struct Tracks {
     reverb: TrackHandle,
     v: V,
+    holocall: Holocall,
 }
 
 #[allow(dead_code)]
@@ -38,6 +51,13 @@ struct V {
     vocal: TrackHandle,
     mental: TrackHandle,
     emissive: TrackHandle,
+    eq: Mutex<EQ>,
+}
+
+#[allow(dead_code)]
+struct Holocall {
+    main: TrackHandle,
+    eq: Mutex<EQ>,
 }
 
 struct Scene {
@@ -84,20 +104,58 @@ pub fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
         builder.add_effect(ReverbBuilder::new().mix(1.0));
         builder
     })?;
+    let player_lowpass: EqFilterHandle;
+    let player_highpass: EqFilterHandle;
+    let holocall_lowpass: EqFilterHandle;
+    let holocall_highpass: EqFilterHandle;
     let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
-    let main = manager
-        .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.)))?;
+    let main = manager.add_sub_track(
+        {
+            let mut builder = TrackBuilder::new();
+            player_lowpass = builder.add_effect(EqFilterBuilder::new(
+                EqFilterKind::LowShelf,
+                EQ_LOW_PASS_DEFAULT_FREQUENCES,
+                EQ_DEFAULT_GAIN,
+                EQ_DEFAULT_Q,
+            ));
+            player_highpass = builder.add_effect(EqFilterBuilder::new(
+                EqFilterKind::HighShelf,
+                EQ_HIGH_PASS_DEFAULT_FREQUENCES,
+                EQ_DEFAULT_GAIN,
+                EQ_DEFAULT_Q,
+            ));
+            builder
+        }
+        .routes(TrackRoutes::new().with_route(&reverb, 0.)),
+    )?;
+    let holocall = manager.add_sub_track({
+        let mut builder = TrackBuilder::new();
+        holocall_lowpass = builder.add_effect(EqFilterBuilder::new(
+            EqFilterKind::LowShelf,
+            EQ_LOW_PASS_PHONE_FREQUENCES,
+            EQ_PHONE_GAIN,
+            EQ_PHONE_Q,
+        ));
+        holocall_highpass = builder.add_effect(EqFilterBuilder::new(
+            EqFilterKind::HighShelf,
+            EQ_HIGH_PASS_PHONE_FREQUENCES,
+            EQ_PHONE_GAIN,
+            EQ_PHONE_Q,
+        ));
+        builder
+    })?;
+    let eq = EQ {
+        lowpass: LowPass(player_lowpass),
+        highpass: HighPass(player_highpass),
+    };
     let v = scene.add_listener(
         Vec3::ZERO,
         Quat::IDENTITY,
         ListenerSettings::new().track(&main),
     )?;
-    let vocal = manager
-        .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&main, 1.)))?;
-    let mental = manager
-        .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&main, 1.)))?;
-    let emissive = manager
-        .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&main, 1.)))?;
+    let vocal = manager.add_sub_track(TrackBuilder::new().routes(TrackRoutes::parent(&main)))?;
+    let mental = manager.add_sub_track(TrackBuilder::new().routes(TrackRoutes::parent(&main)))?;
+    let emissive = manager.add_sub_track(TrackBuilder::new().routes(TrackRoutes::parent(&main)))?;
     TRACKS
         .set(Tracks {
             reverb,
@@ -106,6 +164,14 @@ pub fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
                 vocal,
                 mental,
                 emissive,
+                eq: Mutex::new(eq),
+            },
+            holocall: Holocall {
+                main: holocall,
+                eq: Mutex::new(EQ {
+                    lowpass: LowPass(holocall_lowpass),
+                    highpass: HighPass(holocall_highpass),
+                }),
             },
         })
         .map_err(|_| anyhow::anyhow!("error setting audio engine tracks"))?;
@@ -132,6 +198,7 @@ pub fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
 pub fn output_destination(
     entity_id: Option<EntityId>,
     emitter_name: Option<CName>,
+    over_the_phone: bool,
 ) -> Option<OutputDestination> {
     let is_player = entity_id
         .clone()
@@ -141,16 +208,16 @@ pub fn output_destination(
             entity.into_ref().map(|entity| entity.is_player())
         })
         .unwrap_or(false);
-    match (entity_id, emitter_name, is_player) {
-        (Some(_), Some(_), true) => TRACKS
+    match (entity_id, emitter_name, is_player, over_the_phone) {
+        (Some(_), Some(_), true, _) => TRACKS
             .get()
             .map(|x| &x.v.vocal)
             .map(OutputDestination::from),
-        (Some(_), None, true) => TRACKS
+        (Some(_), None, true, _) => TRACKS
             .get()
             .map(|x| &x.v.emissive)
             .map(OutputDestination::from),
-        (Some(id), _, false) => {
+        (Some(id), _, false, _) => {
             red4ext_rs::info!(
                 "retrieving entity id from scene ({})",
                 u64::from(id.clone())
@@ -162,7 +229,11 @@ pub fn output_destination(
                 .ok()
                 .and_then(|x| x.get(&SoundEntityId(id)).map(OutputDestination::from))
         }
-        (None, _, _) => TRACKS.get().map(|x| &x.v.main).map(OutputDestination::from),
+        (None, Some(_), false, true) => TRACKS
+            .get()
+            .map(|x| &x.holocall.main)
+            .map(OutputDestination::from),
+        (None, _, _, _) => TRACKS.get().map(|x| &x.v.main).map(OutputDestination::from),
     }
 }
 
@@ -286,4 +357,16 @@ pub fn update_player_reverb(value: f32) -> bool {
     }
     red4ext_rs::warn!("unable to retrieve reverb track");
     false
+}
+
+pub fn update_player_preset(value: Preset) -> anyhow::Result<()> {
+    if let Some(tracks) = TRACKS.get() {
+        if let Ok(mut guard) = tracks.v.eq.try_lock() {
+            guard.preset(value)?;
+            red4ext_rs::info!("successfully updated player preset to {value}");
+            return Ok(());
+        }
+        anyhow::bail!("lock contention")
+    }
+    anyhow::bail!("unable to reach tracks")
 }
