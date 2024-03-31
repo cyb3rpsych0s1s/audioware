@@ -46,7 +46,7 @@ pub fn custom_engine_play(params: (CName, EntityId, CName)) {
     } else {
         Some(emitter_name)
     };
-    crate::engine::play(event_name, entity_id, emitter_name);
+    crate::engine::play(event_name, entity_id, emitter_name, None);
 }
 
 pub fn custom_engine_stop(params: (CName, EntityId, CName)) {

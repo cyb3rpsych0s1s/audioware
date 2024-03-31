@@ -8,6 +8,15 @@ pub const EQ_HIGH_PASS_DEFAULT_FREQUENCES: f64 = 0.;
 pub const EQ_DEFAULT_GAIN: f64 = 0.;
 pub const EQ_DEFAULT_Q: f64 = 0.;
 
+pub const EQ_LOW_PASS_PHONE_FREQUENCES: f64 = 5000.;
+pub const EQ_HIGH_PASS_PHONE_FREQUENCES: f64 = 500.;
+pub const EQ_PHONE_GAIN: f64 = 6.;
+pub const EQ_PHONE_Q: f64 = 2.;
+
+pub const EQ_LOW_PASS_UNDERWATER_FREQUENCES: f64 = 1_000.;
+pub const EQ_UNDERWATER_GAIN: f64 = EQ_DEFAULT_GAIN;
+pub const EQ_UNDERWATER_Q: f64 = EQ_DEFAULT_Q;
+
 pub struct EQ {
     pub lowpass: LowPass,
     pub highpass: HighPass,
@@ -53,14 +62,16 @@ impl EqPass for LowPass {
                 self.0.set_q(EQ_DEFAULT_Q, Default::default())?;
             }
             Preset::OnThePhone => {
-                self.0.set_frequency(5000., Default::default())?;
-                self.0.set_gain(6., Default::default())?;
-                self.0.set_q(2., Default::default())?;
+                self.0
+                    .set_frequency(EQ_LOW_PASS_PHONE_FREQUENCES, Default::default())?;
+                self.0.set_gain(EQ_PHONE_GAIN, Default::default())?;
+                self.0.set_q(EQ_PHONE_Q, Default::default())?;
             }
             Preset::Underwater => {
-                self.0.set_frequency(1_000., Default::default())?;
-                self.0.set_gain(0., Default::default())?;
-                self.0.set_q(0., Default::default())?;
+                self.0
+                    .set_frequency(EQ_LOW_PASS_UNDERWATER_FREQUENCES, Default::default())?;
+                self.0.set_gain(EQ_UNDERWATER_GAIN, Default::default())?;
+                self.0.set_q(EQ_UNDERWATER_Q, Default::default())?;
             }
         }
         Ok(())
@@ -77,9 +88,10 @@ impl EqPass for HighPass {
                 self.0.set_q(EQ_DEFAULT_Q, Default::default())?;
             }
             Preset::OnThePhone => {
-                self.0.set_frequency(500., Default::default())?;
-                self.0.set_gain(6., Default::default())?;
-                self.0.set_q(2., Default::default())?;
+                self.0
+                    .set_frequency(EQ_HIGH_PASS_PHONE_FREQUENCES, Default::default())?;
+                self.0.set_gain(EQ_PHONE_GAIN, Default::default())?;
+                self.0.set_q(EQ_PHONE_Q, Default::default())?;
             }
         }
         Ok(())

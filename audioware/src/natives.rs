@@ -1,3 +1,4 @@
+use audioware_sys::interop::audio::ScnDialogLineType;
 use audioware_sys::interop::locale::Locale;
 use audioware_sys::interop::quaternion::Quaternion;
 use audioware_sys::interop::vector4::Vector4;
@@ -49,7 +50,12 @@ pub fn supported_engine_languages() -> Vec<CName> {
 }
 
 #[redscript_global(name = "Audioware.PropagateSubtitle")]
-pub fn propagate_subtitle(reaction: CName, entity_id: EntityId, emitter_name: CName) -> ();
+pub fn propagate_subtitle(
+    reaction: CName,
+    entity_id: EntityId,
+    emitter_name: CName,
+    scene_dialog_line_type: ScnDialogLineType,
+) -> ();
 
 /// get reaction duration (in seconds) from sound, or return default
 pub fn get_reaction_duration(sound: CName) -> f32 {
@@ -91,4 +97,13 @@ pub fn update_player_preset(preset: Preset) -> bool {
             _ => true,
         },
     }
+}
+
+pub fn play_over_the_phone(event_name: CName, emitter_name: CName) {
+    crate::engine::play(
+        event_name,
+        None,
+        Some(emitter_name),
+        Some(ScnDialogLineType::Holocall),
+    );
 }

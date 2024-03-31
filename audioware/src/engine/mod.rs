@@ -11,7 +11,7 @@ pub mod sounds;
 pub mod state;
 pub mod tracks;
 
-use audioware_sys::interop::{quaternion::Quaternion, vector4::Vector4};
+use audioware_sys::interop::{audio::ScnDialogLineType, quaternion::Quaternion, vector4::Vector4};
 use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId};
 
@@ -37,12 +37,19 @@ pub fn update_state(state: State) {
 }
 
 /// play sound
-pub fn play(sound_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>) {
+pub fn play(
+    sound_name: CName,
+    entity_id: Option<EntityId>,
+    emitter_name: Option<CName>,
+    line_type: Option<ScnDialogLineType>,
+) {
     if let Some(mut manager) = manager::try_get_mut() {
         if let Ok(mut data) = banks::data(&sound_name) {
-            if let Some(destination) =
-                tracks::output_destination(entity_id.clone(), emitter_name.clone())
-            {
+            if let Some(destination) = tracks::output_destination(
+                entity_id.clone(),
+                emitter_name.clone(),
+                line_type == Some(ScnDialogLineType::Holocall),
+            ) {
                 data.settings.output_destination = destination;
                 if let Ok(handle) = manager.play(data) {
                     sounds::store(
@@ -51,8 +58,23 @@ pub fn play(sound_name: CName, entity_id: Option<EntityId>, emitter_name: Option
                         entity_id.clone(),
                         emitter_name.clone(),
                     );
-                    if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
-                        propagate_subtitle(sound_name, entity_id, emitter_name);
+                    if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name.clone())
+                    {
+                        propagate_subtitle(
+                            sound_name,
+                            entity_id,
+                            emitter_name,
+                            line_type.unwrap_or(ScnDialogLineType::Regular),
+                        );
+                    } else if let (Some(emitter_name), Some(ScnDialogLineType::Holocall)) =
+                        (emitter_name, line_type)
+                    {
+                        propagate_subtitle(
+                            sound_name,
+                            EntityId::from(0),
+                            emitter_name,
+                            line_type.unwrap(),
+                        );
                     }
                 } else {
                     red4ext_rs::error!("error playing sound {sound_name}");

@@ -46,7 +46,7 @@ public class LocalizationPackage extends ModLocalizationPackage {
     }
 }
 
-private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName: CName) -> Void {
+private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName: CName, lineType: scnDialogLineType) -> Void {
   if !IsNameValid(reaction) { return; }
   let game = GetGameInstance();
   let target = GameInstance.FindEntityByID(game, entityID);
@@ -64,7 +64,7 @@ private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName:
       line.speaker = target as GameObject;
       line.speakerName = NameToString(emitterName);
       line.text = subtitle;
-      line.type = scnDialogLineType.Regular;
+      line.type = lineType;
       board.SetVariant(GetAllBlackboardDefs().UIGameData.ShowDialogLine, ToVariant([line]), true);
       let callback: ref<HideSubtitleCallback> = new HideSubtitleCallback();
       callback.line = line;
