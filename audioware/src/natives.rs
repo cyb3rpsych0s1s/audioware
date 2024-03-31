@@ -9,6 +9,7 @@ use red4ext_rs::types::Ref;
 use audioware_sys::interop::gender::PlayerGender;
 use audioware_sys::interop::localization::LocalizationPackage;
 
+use crate::engine::effects::Preset;
 use crate::engine::State;
 use crate::types::voice::Subtitle;
 
@@ -74,4 +75,20 @@ pub fn emitters_count() -> i32 {
 
 pub fn update_player_reverb(value: f32) -> bool {
     crate::engine::tracks::update_player_reverb(value)
+}
+
+pub fn update_player_preset(preset: Preset) -> bool {
+    match crate::engine::state::update_player_preset(preset) {
+        Err(e) => {
+            red4ext_rs::warn!("{e}");
+            false
+        }
+        _ => match crate::engine::tracks::update_player_preset(preset) {
+            Err(e) => {
+                red4ext_rs::warn!("{e}");
+                false
+            }
+            _ => true,
+        },
+    }
 }

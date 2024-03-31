@@ -1,9 +1,10 @@
 use crate::natives::propagate_subtitle;
 
-use self::sounds::SoundInfos;
 pub use self::state::State;
+use self::{effects::Preset, sounds::SoundInfos};
 
 pub mod banks;
+pub mod effects;
 pub mod localization;
 pub mod manager;
 pub mod sounds;
@@ -129,4 +130,11 @@ pub fn update_actor_location(id: EntityId, position: Vector4, orientation: Quate
     } else {
         tracks::update_emitter(id, position);
     }
+}
+
+pub fn update_player_preset(preset: Preset) -> anyhow::Result<()> {
+    if let Ok(()) = crate::engine::state::update_player_preset(preset) {
+        crate::engine::tracks::update_player_preset(preset)?;
+    }
+    anyhow::bail!("unable to update player preset")
 }

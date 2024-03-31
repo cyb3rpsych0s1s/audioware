@@ -5,6 +5,7 @@ private native func UnregisterEmitter(id: EntityID) -> Void;
 private native func UpdateActorLocation(id: EntityID, position: Vector4, orientation: Quaternion) -> Void;
 private native func EmittersCount() -> Int32;
 private native func UpdatePlayerReverb(value: Float) -> Bool;
+private native func UpdatePlayerPreset(preset: Preset) -> Bool;
 
 public class Audioware extends ScriptableSystem {
     private let m_callbackSystem: wref<CallbackSystem>;
@@ -13,6 +14,7 @@ public class Audioware extends ScriptableSystem {
     public let m_positionsDelayID: DelayID;
     private let m_emitters: array<EntityID>;
     private let m_playerReverbListener: ref<CallbackHandle>;
+    private let m_playerPresetListener: ref<CallbackHandle>;
 
     public func RegisterVentriloquist(id: EntityID) -> Void {
         // LogChannel(n"DEBUG", s"register ventriloquist (\(EntityID.ToDebugString(id)))");
@@ -78,6 +80,7 @@ public class Audioware extends ScriptableSystem {
             boards = GameInstance.GetBlackboardSystem(this.GetGameInstance());
             board = boards.Get(defs.AudiowareSettings);
             this.m_playerReverbListener = board.RegisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this, n"OnReverbChanged", false);
+            this.m_playerPresetListener = board.RegisterListenerInt(defs.AudiowareSettings.PlayerPreset, this, n"OnPlayerPresetChanged", false);
         }
     }
 
@@ -94,6 +97,7 @@ public class Audioware extends ScriptableSystem {
             boards = GameInstance.GetBlackboardSystem(this.GetGameInstance());
             board = boards.Get(defs.AudiowareSettings);
             board.UnregisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this.m_playerReverbListener);
+            board.UnregisterListenerInt(defs.AudiowareSettings.PlayerPreset, this.m_playerPresetListener);
         }
     }
 
@@ -112,6 +116,11 @@ public class Audioware extends ScriptableSystem {
     }
     protected cb func OnReverbChanged(value: Float) -> Bool {
         let result = UpdatePlayerReverb(value);
+        return result;
+    }
+    protected cb func OnPlayerPresetChanged(value: Int32) -> Bool {
+        let preset: Preset = IntEnum<Preset>(value);
+        let result = UpdatePlayerPreset(preset);
         return result;
     }
 

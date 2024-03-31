@@ -1,11 +1,13 @@
-use std::sync::atomic::AtomicU8;
+use std::sync::{atomic::AtomicU8, Arc, Mutex};
 
-use anyhow::Ok;
 use lazy_static::lazy_static;
 use red4ext_rs::conv::NativeRepr;
 
+use super::effects::Preset;
+
 lazy_static! {
     static ref STATE: AtomicU8 = AtomicU8::new(State::default() as u8);
+    static ref PRESET: Arc<Mutex<Preset>> = Arc::new(Mutex::new(Preset::default()));
 }
 
 pub fn update(state: State) -> State {
@@ -65,4 +67,13 @@ impl TryFrom<u8> for State {
             _ => anyhow::bail!(format!("invalid State ({})", value)),
         }
     }
+}
+
+pub fn update_player_preset(value: Preset) -> anyhow::Result<()> {
+    if let Ok(mut guard) = PRESET.clone().try_lock() {
+        *guard = value;
+        return Ok(());
+    }
+    red4ext_rs::error!("lock contention");
+    anyhow::bail!("lock contention")
 }

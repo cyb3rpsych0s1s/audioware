@@ -13,13 +13,24 @@ use kira::{
         listener::{ListenerHandle, ListenerSettings},
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
-    track::{effect::reverb::ReverbBuilder, TrackBuilder, TrackHandle, TrackRoutes},
+    track::{
+        effect::{
+            eq_filter::{EqFilterBuilder, EqFilterHandle, EqFilterKind},
+            reverb::ReverbBuilder,
+        },
+        TrackBuilder, TrackHandle, TrackRoutes,
+    },
     OutputDestination,
 };
 use lazy_static::lazy_static;
 use red4ext_rs::types::{CName, EntityId};
 
 use crate::types::id::SoundEntityId;
+
+use super::effects::{
+    EqPass, HighPass, LowPass, Preset, EQ, EQ_DEFAULT_GAIN, EQ_DEFAULT_Q,
+    EQ_HIGH_PASS_DEFAULT_FREQUENCES, EQ_LOW_PASS_DEFAULT_FREQUENCES,
+};
 
 lazy_static! {
     static ref TRACKS: OnceLock<Tracks> = OnceLock::default();
@@ -38,6 +49,13 @@ struct V {
     vocal: TrackHandle,
     mental: TrackHandle,
     emissive: TrackHandle,
+    eq: Mutex<EQ>,
+}
+
+#[allow(dead_code)]
+struct Holocall {
+    main: TrackHandle,
+    eq: Mutex<EQ>,
 }
 
 struct Scene {
@@ -84,9 +102,32 @@ pub fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
         builder.add_effect(ReverbBuilder::new().mix(1.0));
         builder
     })?;
+    let lowpass: EqFilterHandle;
+    let highpass: EqFilterHandle;
     let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
-    let main = manager
-        .add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.)))?;
+    let main = manager.add_sub_track(
+        {
+            let mut builder = TrackBuilder::new();
+            lowpass = builder.add_effect(EqFilterBuilder::new(
+                EqFilterKind::LowShelf,
+                EQ_LOW_PASS_DEFAULT_FREQUENCES,
+                EQ_DEFAULT_GAIN,
+                EQ_DEFAULT_Q,
+            ));
+            highpass = builder.add_effect(EqFilterBuilder::new(
+                EqFilterKind::HighShelf,
+                EQ_HIGH_PASS_DEFAULT_FREQUENCES,
+                EQ_DEFAULT_GAIN,
+                EQ_DEFAULT_Q,
+            ));
+            builder
+        }
+        .routes(TrackRoutes::new().with_route(&reverb, 0.)),
+    )?;
+    let eq = EQ {
+        lowpass: LowPass(lowpass),
+        highpass: HighPass(highpass),
+    };
     let v = scene.add_listener(
         Vec3::ZERO,
         Quat::IDENTITY,
@@ -106,6 +147,7 @@ pub fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
                 vocal,
                 mental,
                 emissive,
+                eq: Mutex::new(eq),
             },
         })
         .map_err(|_| anyhow::anyhow!("error setting audio engine tracks"))?;
@@ -286,4 +328,16 @@ pub fn update_player_reverb(value: f32) -> bool {
     }
     red4ext_rs::warn!("unable to retrieve reverb track");
     false
+}
+
+pub fn update_player_preset(value: Preset) -> anyhow::Result<()> {
+    if let Some(tracks) = TRACKS.get() {
+        if let Ok(mut guard) = tracks.v.eq.try_lock() {
+            guard.preset(value)?;
+            red4ext_rs::info!("successfully updated player preset to {value}");
+            return Ok(());
+        }
+        anyhow::bail!("lock contention")
+    }
+    anyhow::bail!("unable to reach tracks")
 }

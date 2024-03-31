@@ -74,6 +74,10 @@ impl Plugin for Audioware {
             "Audioware.UpdatePlayerReverb",
             crate::natives::update_player_reverb
         );
+        register_function!(
+            "Audioware.UpdatePlayerPreset",
+            crate::natives::update_player_preset
+        );
     }
 
     fn post_register() {
