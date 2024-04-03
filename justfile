@@ -109,3 +109,6 @@ alias c := check
 # TODO: finish updating all patterns
 offsets:
   {{zoltan_exe}} '.\addresses.hpp' '{{ join(game_dir, "bin", "x64", "Cyberpunk2077.exe") }}' -f 'std=c++23' --rust-output '.\addresses.rs'
+
+checksum TO:
+  Get-FileHash -Path "{{TO}}" -Algorithm SHA256 | Select-Object -ExpandProperty Hash
