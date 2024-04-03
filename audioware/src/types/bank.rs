@@ -88,7 +88,7 @@ impl Bank {
             {
                 return StaticSoundData::from_file(
                     self.folder().join(file),
-                    settings.clone().map(|x| x.into()).unwrap_or_default(),
+                    settings.clone().map(Into::into).unwrap_or_default(),
                 )
                 .ok();
             }

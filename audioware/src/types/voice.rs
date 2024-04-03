@@ -11,7 +11,7 @@ use validator::{ValidateArgs, ValidationErrors};
 
 use audioware_sys::interop::locale::Locale;
 
-use crate::engine::settings::Settings;
+use crate::engine::settings::{Settings, StaticOnlySettings};
 
 use super::id::VoiceId;
 
@@ -132,7 +132,7 @@ pub struct AudioSubtitle {
     #[validate(custom(function = "validate_static_sound_data", arg = "&'v_a std::path::Path"))]
     pub file: Option<std::path::PathBuf>,
     pub subtitle: String,
-    pub settings: Option<Settings>,
+    pub settings: Option<Settings<StaticOnlySettings>>,
 }
 
 pub fn validate_static_sound_data(
