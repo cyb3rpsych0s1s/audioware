@@ -16,7 +16,7 @@ use crate::{
     types::{
         bank::Bank,
         id::VoiceId,
-        redmod::{ModName, REDmod},
+        redmod::{ModName, R6Audioware, REDmod},
         voice::Subtitle,
     },
 };
@@ -28,7 +28,16 @@ lazy_static! {
 
 pub fn setup() -> anyhow::Result<()> {
     let redmod = REDmod::try_new()?;
-    let mods = redmod.mods();
+    let mut mods = redmod.mods();
+    if let Ok(r6audioware) = R6Audioware::try_new() {
+        for m in r6audioware.mods().into_iter() {
+            if mods.iter().any(|x| x.same_folder_name(m.as_ref())) {
+                red4ext_rs::error!("duplicate folder across 'r6\\audioware' and 'mods' folders, skipping folder in 'r6\\audioware");
+                continue;
+            }
+            mods.push(m);
+        }
+    }
     let mut banks = HashMap::with_capacity(mods.len());
     for ref m in mods {
         if let Ok(mut bank) = Bank::try_from(m) {
