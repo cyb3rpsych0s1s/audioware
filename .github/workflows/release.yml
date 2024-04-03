@@ -42,6 +42,12 @@ jobs:
         run: just ci 'Audioware-windows-latest-${{ github.ref_name }}'
       - name: Optimize binary size
         run: just optimize 'Audioware-windows-latest-${{ github.ref_name }}'
+      - name: Generate binary checksum
+        uses: jmgilman/actions-generate-checksum@v1
+        with:
+          patterns: Audioware-windows-latest-${{ github.ref_name }}/red4ext/plugins/audioware/audioware.dll
+          method: sha256
+          output: Audioware-windows-latest-${{ github.ref_name }}/red4ext/plugins/audioware/checksum.txt
       - name: Zip files
         uses: thedoctor0/zip-release@0.7.6
         with:
