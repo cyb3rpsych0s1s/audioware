@@ -1,4 +1,8 @@
-use kira::{sound::static_sound::StaticSoundSettings, tween::Value, Volume};
+use kira::{
+    sound::{static_sound::StaticSoundSettings, PlaybackRate},
+    tween::Value,
+    Volume,
+};
 use serde::{
     de::{MapAccess, Visitor},
     Deserialize,
@@ -15,6 +19,8 @@ impl Safety for Volume {
 #[derive(Debug, Clone)]
 pub struct Settings<Extra: Sized> {
     pub volume: Value<Volume>,
+    pub rate: Value<PlaybackRate>,
+    pub panning: Value<f64>,
     pub extra: Extra,
 }
 
@@ -28,6 +34,8 @@ impl From<Settings<StaticOnlySettings>> for StaticSoundSettings {
         Self::default()
             .volume(value.volume)
             .reverse(value.extra.reverse)
+            .playback_rate(value.rate)
+            .panning(value.panning)
     }
 }
 
@@ -41,6 +49,8 @@ impl<'de> Deserialize<'de> for Settings<StaticOnlySettings> {
         enum Field {
             Volume,
             Reverse,
+            Rate,
+            Panning,
         }
         struct SettingsVisitor;
         impl<'de> Visitor<'de> for SettingsVisitor {
@@ -56,6 +66,8 @@ impl<'de> Deserialize<'de> for Settings<StaticOnlySettings> {
             {
                 let mut volume = None;
                 let mut reverse = None;
+                let mut rate = None;
+                let mut panning = None;
                 while let Some(key) = map.next_key()? {
                     match key {
                         Field::Volume => {
@@ -114,22 +126,44 @@ impl<'de> Deserialize<'de> for Settings<StaticOnlySettings> {
                             }
                             reverse = Some(map.next_value()?);
                         }
+                        Field::Rate => {
+                            if rate.is_some() {
+                                return Err(serde::de::Error::duplicate_field("reverse"));
+                            }
+                            let raw = map.next_value::<f64>()?;
+                            rate = Some(Value::Fixed(PlaybackRate::Factor(raw)));
+                        }
+                        Field::Panning => {
+                            if panning.is_some() {
+                                return Err(serde::de::Error::duplicate_field("panning"));
+                            }
+                            let raw = map.next_value::<f64>()?;
+                            if !(0. ..=1.).contains(&raw) {
+                                return Err(serde::de::Error::invalid_value(
+                                    serde::de::Unexpected::Float(raw),
+                                    &self,
+                                ));
+                            }
+                            panning = Some(Value::Fixed(raw));
+                        }
                     }
                 }
-                if volume.is_none() && reverse.is_none() {
+                if volume.is_none() && reverse.is_none() && rate.is_none() {
                     return Err(serde::de::Error::missing_field(
-                        "missing at least one field: volume, reverse",
+                        "missing at least one field: volume, reverse, rate, panning",
                     ));
                 }
                 Ok(Settings {
                     volume: volume.unwrap_or(Value::Fixed(Volume::default())),
+                    rate: rate.unwrap_or(Value::Fixed(PlaybackRate::default())),
+                    panning: panning.unwrap_or(Value::Fixed(0.5)),
                     extra: StaticOnlySettings {
                         reverse: reverse.unwrap_or_default(),
                     },
                 })
             }
         }
-        const FIELDS: &[&str] = &["volume", "reverse"];
+        const FIELDS: &[&str] = &["volume", "reverse", "rate", "panning"];
         deserializer.deserialize_struct("Settings", FIELDS, SettingsVisitor)
     }
 }
