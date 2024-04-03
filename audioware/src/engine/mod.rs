@@ -7,6 +7,7 @@ pub mod banks;
 pub mod effects;
 pub mod localization;
 pub mod manager;
+pub mod settings;
 pub mod sounds;
 pub mod state;
 pub mod tracks;

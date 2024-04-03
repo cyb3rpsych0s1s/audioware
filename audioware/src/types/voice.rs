@@ -11,6 +11,8 @@ use validator::{ValidateArgs, ValidationErrors};
 
 use audioware_sys::interop::locale::Locale;
 
+use crate::engine::settings::Settings;
+
 use super::id::VoiceId;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -130,6 +132,7 @@ pub struct AudioSubtitle {
     #[validate(custom(function = "validate_static_sound_data", arg = "&'v_a std::path::Path"))]
     pub file: Option<std::path::PathBuf>,
     pub subtitle: String,
+    pub settings: Option<Settings>,
 }
 
 pub fn validate_static_sound_data(
@@ -169,6 +172,7 @@ mod tests {
         let audio = AudioSubtitle {
             file: Some("en-us/v_sq017_f_19795c050029f000.Wav".into()),
             subtitle: "Again?".to_string(),
+            settings: None,
         };
         let validation = audio.validate_args(folder.as_path());
         assert!(validation.is_ok());
@@ -176,6 +180,7 @@ mod tests {
         let audio = AudioSubtitle {
             file: Some("en-us/../../v_sq017_f_19795c050029f000.Wav".into()),
             subtitle: "Again?".to_string(),
+            settings: None,
         };
         let validation = audio.validate_args(folder.as_path());
         assert!(validation.is_err());
