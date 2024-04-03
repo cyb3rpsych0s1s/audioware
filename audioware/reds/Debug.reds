@@ -67,7 +67,7 @@ public static exec func TestUpdatePlayerPreset(gi: GameInstance, value: Int32) -
     let defs = GetAllBlackboardDefs();
     let boards = GameInstance.GetBlackboardSystem(gi);
     let board = boards.Get(defs.AudiowareSettings);
-    LogChannel(n"DEBUG", s"board exists? \(ToString(IsDefined(board)))");
+    // LogChannel(n"DEBUG", s"board exists? \(ToString(IsDefined(board)))");
     board.SetInt(defs.AudiowareSettings.PlayerPreset, value, true);
 }
 
