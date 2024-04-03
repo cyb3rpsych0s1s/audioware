@@ -27,11 +27,15 @@ lazy_static! {
 }
 
 pub fn setup() -> anyhow::Result<()> {
-    let redmod = REDmod::try_new()?;
-    let mut mods = redmod.mods();
+    let mut mods = Vec::with_capacity(10);
+    let mut redmod_exists = false;
+    if let Ok(redmod) = REDmod::try_new() {
+        mods = redmod.mods();
+        redmod_exists = true;
+    }
     if let Ok(r6audioware) = R6Audioware::try_new() {
         for m in r6audioware.mods().into_iter() {
-            if mods.iter().any(|x| x.same_folder_name(m.as_ref())) {
+            if redmod_exists && mods.iter().any(|x| x.same_folder_name(m.as_ref())) {
                 red4ext_rs::error!("duplicate folder across 'r6\\audioware' and 'mods' folders, skipping folder in 'r6\\audioware'");
                 continue;
             }

@@ -32,7 +32,10 @@ impl Plugin for Audioware {
 
     fn register() {
         red4ext_rs::info!("on register audioware");
-        let _ = engine::setup();
+        if let Err(e) = engine::setup() {
+            red4ext_rs::error!("unable to setup ({e})");
+            return;
+        }
         register_function!(
             "Audioware.UpdateEngineState",
             crate::natives::update_engine_state
