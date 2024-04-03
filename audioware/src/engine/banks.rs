@@ -32,7 +32,7 @@ pub fn setup() -> anyhow::Result<()> {
     if let Ok(r6audioware) = R6Audioware::try_new() {
         for m in r6audioware.mods().into_iter() {
             if mods.iter().any(|x| x.same_folder_name(m.as_ref())) {
-                red4ext_rs::error!("duplicate folder across 'r6\\audioware' and 'mods' folders, skipping folder in 'r6\\audioware");
+                red4ext_rs::error!("duplicate folder across 'r6\\audioware' and 'mods' folders, skipping folder in 'r6\\audioware'");
                 continue;
             }
             mods.push(m);
