@@ -81,11 +81,16 @@ impl Bank {
         if let Some(voice) = self.voices.voices.get(&id.clone().into()) {
             let audios = voice.audios(&gender);
             if let Some(AudioSubtitle {
-                file: Some(file), ..
+                file: Some(file),
+                settings,
+                ..
             }) = audios.get(language)
             {
-                return StaticSoundData::from_file(self.folder().join(file), Default::default())
-                    .ok();
+                return StaticSoundData::from_file(
+                    self.folder().join(file),
+                    settings.clone().map(|x| x.into()).unwrap_or_default(),
+                )
+                .ok();
             }
         }
         None
