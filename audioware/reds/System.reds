@@ -109,6 +109,8 @@ public class Audioware extends ScriptableSystem {
     }
     private cb func OnSessionBeforeEnd(event: ref<GameSessionEvent>) {
         UpdateEngineState(EngineState.End);
+        this.ResetPreset();
+        this.ResetReverb();
     }
     private cb func OnEntityUninitialize(event: ref<EntityLifecycleEvent>) {
         let id = event.GetEntity().GetEntityID();
@@ -122,6 +124,14 @@ public class Audioware extends ScriptableSystem {
         let preset: Preset = IntEnum<Preset>(value);
         let result = UpdatePlayerPreset(preset);
         return result;
+    }
+    public func ResetReverb() -> Bool {
+        let reset = UpdatePlayerReverb(0.);
+        return reset;
+    }
+    public func ResetPreset() -> Bool {
+        let reset = UpdatePlayerPreset(Preset.None);
+        return reset;
     }
 
     public static final func GetInstance(game: GameInstance) -> ref<Audioware> {
