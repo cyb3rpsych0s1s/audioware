@@ -27,7 +27,7 @@ impl REDmod {
     }
     /// retrieve mods subfolders
     pub fn mods(&self) -> Vec<Mod> {
-        std::fs::read_dir(self)
+        std::fs::read_dir(Self::try_new().unwrap())
             .unwrap()
             .filter_map(std::result::Result::ok)
             .filter(|x| x.path().is_dir())
@@ -64,7 +64,7 @@ impl R6Audioware {
     }
     /// retrieve mods subfolders
     pub fn mods(&self) -> Vec<Mod> {
-        std::fs::read_dir(self)
+        std::fs::read_dir(Self::try_new().unwrap())
             .unwrap()
             .filter_map(std::result::Result::ok)
             .filter(|x| x.path().is_dir())

@@ -1,6 +1,7 @@
 use std::{
     borrow::BorrowMut,
     collections::HashSet,
+    path::PathBuf,
     sync::{Arc, Mutex},
 };
 
@@ -14,7 +15,7 @@ use crate::types::voice::{validate_static_sound_data, AudioSubtitle};
 
 use super::{
     id::VoiceId,
-    redmod::{Mod, ModName, REDmod},
+    redmod::{Mod, ModName},
     voice::{DualVoice, Voices},
 };
 
@@ -30,7 +31,7 @@ impl Bank {
         &self.r#mod
     }
     pub fn folder(&self) -> std::path::PathBuf {
-        REDmod::try_new().unwrap().as_ref().join(&self.r#mod)
+        PathBuf::new()
     }
     pub fn retain_valid_audio(&mut self) {
         let folder = self.folder();
