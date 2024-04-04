@@ -1,7 +1,6 @@
 use std::{
     borrow::BorrowMut,
     collections::HashSet,
-    path::PathBuf,
     sync::{Arc, Mutex},
 };
 
@@ -9,7 +8,6 @@ use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use kira::sound::static_sound::StaticSoundData;
 
 use red4ext_rs::types::CName;
-use serde::Deserialize;
 
 use crate::types::voice::{validate_static_sound_data, AudioSubtitle};
 
@@ -19,11 +17,11 @@ use super::{
     voice::{DualVoice, Voices},
 };
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Bank {
-    #[serde(skip)]
     r#mod: ModName,
     voices: Voices,
+    folder: std::path::PathBuf,
 }
 
 impl Bank {
@@ -31,7 +29,7 @@ impl Bank {
         &self.r#mod
     }
     pub fn folder(&self) -> std::path::PathBuf {
-        PathBuf::new()
+        self.folder.clone()
     }
     pub fn retain_valid_audio(&mut self) {
         let folder = self.folder();
@@ -113,6 +111,7 @@ impl TryFrom<&Mod> for Bank {
                 return Ok(Self {
                     r#mod: value.name(),
                     voices,
+                    folder: value.as_ref().to_owned(),
                 });
             }
         }
