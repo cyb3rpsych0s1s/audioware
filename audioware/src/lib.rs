@@ -34,7 +34,6 @@ impl Plugin for Audioware {
         red4ext_rs::info!("on register audioware");
         if let Err(e) = engine::setup() {
             red4ext_rs::error!("unable to setup ({e})");
-            return;
         }
         register_function!(
             "Audioware.UpdateEngineState",
