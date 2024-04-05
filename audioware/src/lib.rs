@@ -99,6 +99,10 @@ impl Plugin for Audioware {
         HookAudioSystemStop::unload();
         HookAudioSystemSwitch::unload();
     }
+
+    fn is_version_independent() -> bool {
+        false
+    }
 }
 
 define_trait_plugin! (
