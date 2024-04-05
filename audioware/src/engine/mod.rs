@@ -73,7 +73,7 @@ pub fn play(
                             sound_name,
                             EntityId::from(0),
                             emitter_name,
-                            line_type.unwrap(),
+                            ScnDialogLineType::Holocall,
                         );
                     }
                 } else {
