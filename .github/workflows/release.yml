@@ -34,14 +34,8 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: just
-      - name: Setup UPX
-        uses: crazy-max/ghaction-upx@v3
-        with:
-          install-only: true
       - name: Bundle mod files
         run: just ci 'Audioware-windows-latest-${{ github.ref_name }}'
-      - name: Optimize binary size
-        run: just optimize 'Audioware-windows-latest-${{ github.ref_name }}'
       - name: Zip files
         uses: thedoctor0/zip-release@0.7.6
         with:
