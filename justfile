@@ -89,7 +89,7 @@ format:
 alias l := lint
 
 qa:
-  @cargo +nightly clippy -- -D warnings
+  @cargo +nightly clippy -- -D warnings -A non-local-definitions
   @cargo +nightly fix
   @cargo +nightly fmt --check
 
