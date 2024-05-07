@@ -5,7 +5,7 @@ public static func E(msg: String) -> Void {
 }
 public static func F(msg: String, opt context: String) -> Void {
     let error = s"[ERROR]";
-    if NotEquals(context, "") { error += s" \(context)"; }
+    if NotEquals(context, "") { error += s"[\(context)]"; }
     error += s" \(msg)";
     E(error);
 }
