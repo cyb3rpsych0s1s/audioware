@@ -66,7 +66,9 @@ impl TryFrom<u8> for State {
             v if State::InPause as u8 == v => Ok(State::InPause),
             v if State::End as u8 == v => Ok(State::End),
             v if State::Unload as u8 == v => Ok(State::Unload),
-            v if State::Unreachable as u8 == v => anyhow::bail!(format!("unreachable State ({})", value)),
+            v if State::Unreachable as u8 == v => {
+                anyhow::bail!(format!("unreachable State ({})", value))
+            }
             _ => anyhow::bail!(format!("invalid State ({})", value)),
         }
     }
