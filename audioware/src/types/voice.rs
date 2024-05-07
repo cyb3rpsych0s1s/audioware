@@ -171,14 +171,14 @@ mod tests {
             file: Some("en-us/v_sq017_f_19795c050029f000.Wav".into()),
             subtitle: "Again?".to_string(),
         };
-        let validation = audio.validate_args(folder.as_path());
+        let validation = audio.validate_with_args(folder.as_path());
         assert!(validation.is_ok());
 
         let audio = AudioSubtitle {
             file: Some("en-us/../../v_sq017_f_19795c050029f000.Wav".into()),
             subtitle: "Again?".to_string(),
         };
-        let validation = audio.validate_args(folder.as_path());
+        let validation = audio.validate_with_args(folder.as_path());
         assert!(validation.is_err());
     }
 }
