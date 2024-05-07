@@ -10,7 +10,8 @@ lazy_static! {
 }
 
 pub fn setup() {
-    let mut manager = AudioManager::new(AudioManagerSettings::default()).unwrap();
+    let mut manager =
+        AudioManager::new(AudioManagerSettings::default()).expect("unable to create audio manager");
     if engine::tracks::setup(&mut manager).is_err() {
         red4ext_rs::error!("error initializing tracks on Audio Manager");
     }

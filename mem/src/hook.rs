@@ -34,9 +34,8 @@ macro_rules! hook {
                 let _ = $storage
                 .clone()
                 .borrow_mut()
-                .lock()
-                .unwrap()
-                .take();
+                .try_lock()
+                .map(|x| x.take());
             }
         }
     };

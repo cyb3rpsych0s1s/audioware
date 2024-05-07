@@ -20,14 +20,16 @@ pub unsafe fn get_module(module: &str) -> Option<HMODULE> {
 /// Cyberpunk 2077 must be installed and this binary installed correctly
 #[inline]
 unsafe fn locate(offset: usize) -> usize {
-    let base: usize = unsafe { self::get_module("Cyberpunk2077.exe").unwrap() as usize };
-    #[cfg(debug_assertions)]
-    {
-        ::red4ext_rs::info!("base address:       0x{base:X}"); //            e.g. 0x7FF6C51B0000
-        ::red4ext_rs::info!("relative address:   0x{offset:X}"); //          e.g. 0x1419130
-        ::red4ext_rs::info!("calculated address: 0x{:X}", base + offset); // e.g. 0x7FF6C65C9130
+    if let Some(base) = unsafe { self::get_module("Cyberpunk2077.exe") }.map(|x| x as usize) {
+        #[cfg(debug_assertions)]
+        {
+            ::red4ext_rs::info!("base address:       0x{base:X}"); //            e.g. 0x7FF6C51B0000
+            ::red4ext_rs::info!("relative address:   0x{offset:X}"); //          e.g. 0x1419130
+            ::red4ext_rs::info!("calculated address: 0x{:X}", base + offset); // e.g. 0x7FF6C65C9130
+        }
+        return base + offset;
     }
-    base + offset
+    0
 }
 
 /// load a hook for a native event handler
@@ -39,6 +41,9 @@ pub unsafe fn load_native_event_handler(
     hook: fn(usize, usize) -> (),
 ) -> Result<RawDetour, ::retour::Error> {
     let address = unsafe { self::locate(offset) };
+    if address == 0 {
+        return Err(::retour::Error::NotExecutable);
+    }
     let vanilla: extern "C" fn(usize, usize) -> () = unsafe { ::std::mem::transmute(address) };
     unsafe { ::retour::RawDetour::new(vanilla as *const (), hook as *const ()) }
 }
@@ -52,6 +57,9 @@ pub unsafe fn load_native_func(
     hook: LocalFnRustRegisteredFunc,
 ) -> Result<RawDetour, ::retour::Error> {
     let address = unsafe { self::locate(offset) };
+    if address == 0 {
+        return Err(::retour::Error::NotExecutable);
+    }
     let vanilla: ExternFnRedRegisteredFunc = unsafe { ::std::mem::transmute(address) };
     unsafe { ::retour::RawDetour::new(vanilla as *const (), hook as *const ()) }
 }

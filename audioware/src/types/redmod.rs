@@ -106,7 +106,14 @@ impl AsRef<std::path::Path> for Mod {
 impl Mod {
     /// get mod folder name (file stem)
     pub fn name(&self) -> ModName {
-        ModName(self.0.file_stem().unwrap().to_str().unwrap().to_string())
+        ModName(
+            self.0
+                .file_stem()
+                .expect("unable to get folder stem")
+                .to_str()
+                .expect("unable to get folder name")
+                .to_string(),
+        )
     }
 }
 

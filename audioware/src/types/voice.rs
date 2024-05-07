@@ -89,7 +89,7 @@ impl Voice {
 impl<'v_a> ValidateArgs<'v_a> for Voice {
     type Args = &'v_a std::path::Path;
 
-    fn validate_args(&self, args: Self::Args) -> Result<(), validator::ValidationErrors> {
+    fn validate_with_args(&self, args: Self::Args) -> Result<(), validator::ValidationErrors> {
         let mut errors = ValidationErrors::new();
         match self {
             Voice::Dual(DualVoice { female, male }) => {
@@ -126,8 +126,9 @@ impl<'v_a> ValidateArgs<'v_a> for Voice {
 }
 
 #[derive(Debug, Clone, Deserialize, Validate)]
+#[validate(context = "std::path::Path")]
 pub struct AudioSubtitle {
-    #[validate(custom(function = "validate_static_sound_data", arg = "&'v_a std::path::Path"))]
+    #[validate(custom(function = "validate_static_sound_data", use_context))]
     pub file: Option<std::path::PathBuf>,
     pub subtitle: String,
 }
@@ -136,7 +137,7 @@ pub fn validate_static_sound_data(
     value: &std::path::PathBuf,
     arg: &std::path::Path,
 ) -> Result<(), ValidationError> {
-    let arg = std::fs::canonicalize(arg).unwrap();
+    let arg = std::fs::canonicalize(arg).expect("unable to canonicalize audio filepath");
     let path = arg.join(value);
     if !path.starts_with(arg) {
         return Err(ValidationError::new("file located outside of mod folder"));
