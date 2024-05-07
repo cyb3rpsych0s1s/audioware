@@ -24,6 +24,10 @@ pub fn setup() -> anyhow::Result<()> {
 
 #[inline]
 pub fn update_state(state: State) {
+    if state == State::Unreachable {
+        red4ext_rs::error!("unreachable State is not meant to be set from .reds");
+        return;
+    }
     let previous = state::update(state);
     match (previous, state) {
         (State::InGame, State::InMenu) | (State::InGame, State::InPause) => {

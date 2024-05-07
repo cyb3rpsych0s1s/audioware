@@ -14,7 +14,7 @@ pub fn update(state: State) -> State {
     STATE
         .swap(state as u8, std::sync::atomic::Ordering::SeqCst)
         .try_into()
-        .expect("unable to update game state")
+        .unwrap_or(State::Unreachable)
 }
 
 #[allow(dead_code)]
@@ -22,7 +22,7 @@ pub fn load() -> State {
     STATE
         .load(std::sync::atomic::Ordering::Relaxed)
         .try_into()
-        .expect("unable to load game state")
+        .unwrap_or(State::Unreachable)
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -45,7 +45,7 @@ pub enum State {
     End = 6,
     /// unload game
     Unload = 7,
-    /// error
+    /// error (lock contention)
     Unreachable = 8,
 }
 
@@ -66,6 +66,7 @@ impl TryFrom<u8> for State {
             v if State::InPause as u8 == v => Ok(State::InPause),
             v if State::End as u8 == v => Ok(State::End),
             v if State::Unload as u8 == v => Ok(State::Unload),
+            v if State::Unreachable as u8 == v => anyhow::bail!(format!("unreachable State ({})", value)),
             _ => anyhow::bail!(format!("invalid State ({})", value)),
         }
     }

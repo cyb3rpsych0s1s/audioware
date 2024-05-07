@@ -9,6 +9,7 @@ enum EngineState {
     InPause = 5,
     End = 6,
     Unload = 7,
+    Unreachable = 8, // special state to indicate internal error: should not be set from .reds
 }
 
 private native func UpdateEngineState(state: EngineState) -> Void;

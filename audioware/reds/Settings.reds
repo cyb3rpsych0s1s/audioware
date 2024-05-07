@@ -12,9 +12,11 @@ public class AudiowareSettingsDef extends BlackboardDefinition {
     public final const func AutoCreateInSystem() -> Bool {
         return true;
     }
-    public final const func Initialize(blackboard: ref<IBlackboard>) -> Void {
-        blackboard.SetFloat(this.PlayerReverb, 0.);
-        blackboard.SetInt(this.PlayerPreset, EnumInt(Preset.None));
+    public final const func Initialize(blackboard: wref<IBlackboard>) -> Void {
+        if IsDefined(blackboard) {
+            blackboard.SetFloat(this.PlayerReverb, 0.);
+            blackboard.SetInt(this.PlayerPreset, EnumInt(Preset.None));
+        } else { F("blackboard should not be undefined", "AudiowareSettingsDef.Initialize"); }
     }
 }
 

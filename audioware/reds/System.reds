@@ -13,8 +13,8 @@ public class Audioware extends ScriptableSystem {
     public let m_positionDelayID: DelayID;
     public let m_positionsDelayID: DelayID;
     private let m_emitters: array<EntityID>;
-    private let m_playerReverbListener: ref<CallbackHandle>;
-    private let m_playerPresetListener: ref<CallbackHandle>;
+    private let m_playerReverbListener: wref<CallbackHandle>;
+    private let m_playerPresetListener: wref<CallbackHandle>;
 
     public func RegisterVentriloquist(id: EntityID) -> Void {
         // LogChannel(n"DEBUG", s"register ventriloquist (\(EntityID.ToDebugString(id)))");
@@ -96,8 +96,12 @@ public class Audioware extends ScriptableSystem {
             this.m_positionDelayID = GetInvalidDelayID();
             boards = GameInstance.GetBlackboardSystem(this.GetGameInstance());
             board = boards.Get(defs.AudiowareSettings);
-            board.UnregisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this.m_playerReverbListener);
-            board.UnregisterListenerInt(defs.AudiowareSettings.PlayerPreset, this.m_playerPresetListener);
+            if IsDefined(this.m_playerReverbListener) {
+                board.UnregisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this.m_playerReverbListener);
+            }
+            if IsDefined(this.m_playerPresetListener) {
+                board.UnregisterListenerInt(defs.AudiowareSettings.PlayerPreset, this.m_playerPresetListener);
+            }
         }
     }
 
