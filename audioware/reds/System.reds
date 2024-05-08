@@ -15,6 +15,7 @@ public class Audioware extends ScriptableSystem {
     private let m_emitters: array<EntityID>;
     private let m_playerReverbListener: ref<CallbackHandle>;
     private let m_playerPresetListener: ref<CallbackHandle>;
+    private let m_sessionEnding: Bool;
 
     public func RegisterVentriloquist(id: EntityID) -> Void {
         // LogChannel(n"DEBUG", s"register ventriloquist (\(EntityID.ToDebugString(id)))");
@@ -42,6 +43,7 @@ public class Audioware extends ScriptableSystem {
     }
 
     private func OnAttach() {
+        this.m_sessionEnding = false;
         this.m_emitters = [];
         this.m_positionsDelayID = GetInvalidDelayID();
         this.m_callbackSystem = GameInstance.GetCallbackSystem();
@@ -49,6 +51,7 @@ public class Audioware extends ScriptableSystem {
         this.m_callbackSystem.RegisterCallback(n"Session/Start", this, n"OnSessionStart");
         this.m_callbackSystem.RegisterCallback(n"Session/Ready", this, n"OnSessionReady");
         this.m_callbackSystem.RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd");
+        this.m_callbackSystem.RegisterCallback(n"Session/End", this, n"OnSessionEnd");
         this.m_callbackSystem.RegisterCallback(n"Entity/Uninitialize", this, n"OnEntityUninitialize");
     }
 
@@ -56,6 +59,7 @@ public class Audioware extends ScriptableSystem {
         this.m_callbackSystem.UnregisterCallback(n"Session/BeforeStart", this, n"OnSessionBeforeStart");
         this.m_callbackSystem.UnregisterCallback(n"Session/Ready", this, n"OnSessionReady");
         this.m_callbackSystem.UnregisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd");
+        this.m_callbackSystem.UnregisterCallback(n"Session/End", this, n"OnSessionEnd");
         this.m_callbackSystem = null;
         if NotEquals(this.m_positionsDelayID, GetInvalidDelayID()) {
             GameInstance
@@ -112,9 +116,16 @@ public class Audioware extends ScriptableSystem {
         this.ResetPreset();
         this.ResetReverb();
     }
+    private cb func OnSessionEnd(event: ref<GameSessionEvent>) {
+        if !this.m_sessionEnding {
+            this.m_sessionEnding = true;
+        }
+    }
     private cb func OnEntityUninitialize(event: ref<EntityLifecycleEvent>) {
-        let id = event.GetEntity().GetEntityID();
-        UnregisterEmitter(id);
+        if !this.m_sessionEnding {
+            let id = event.GetEntity().GetEntityID();
+            UnregisterEmitter(id);
+        }
     }
     protected cb func OnReverbChanged(value: Float) -> Bool {
         let result = UpdatePlayerReverb(value);
