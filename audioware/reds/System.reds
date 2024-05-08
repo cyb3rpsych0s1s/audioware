@@ -51,7 +51,6 @@ public class Audioware extends ScriptableSystem {
         this.m_callbackSystem.RegisterCallback(n"Session/Start", this, n"OnSessionStart");
         this.m_callbackSystem.RegisterCallback(n"Session/Ready", this, n"OnSessionReady");
         this.m_callbackSystem.RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd");
-        this.m_callbackSystem.RegisterCallback(n"Session/End", this, n"OnSessionEnd");
         this.m_callbackSystem.RegisterCallback(n"Entity/Uninitialize", this, n"OnEntityUninitialize");
     }
 
@@ -59,8 +58,7 @@ public class Audioware extends ScriptableSystem {
         this.m_callbackSystem.UnregisterCallback(n"Session/BeforeStart", this, n"OnSessionBeforeStart");
         this.m_callbackSystem.UnregisterCallback(n"Session/Ready", this, n"OnSessionReady");
         this.m_callbackSystem.UnregisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd");
-        this.m_callbackSystem.UnregisterCallback(n"Session/End", this, n"OnSessionEnd");
-        this.m_callbackSystem = null;
+        this.m_callbackSystem.RegisterCallback(n"Session/End", this, n"OnSessionEnd");
         if NotEquals(this.m_positionsDelayID, GetInvalidDelayID()) {
             GameInstance
             .GetDelaySystem(this.GetGameInstance())
@@ -120,6 +118,8 @@ public class Audioware extends ScriptableSystem {
         if !this.m_sessionEnding {
             this.m_sessionEnding = true;
         }
+        this.m_callbackSystem.UnregisterCallback(n"Session/End", this, n"OnSessionEnd");
+        this.m_callbackSystem = null;
     }
     private cb func OnEntityUninitialize(event: ref<EntityLifecycleEvent>) {
         if !this.m_sessionEnding {
