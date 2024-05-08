@@ -89,7 +89,7 @@ impl Voice {
 impl<'v_a> ValidateArgs<'v_a> for Voice {
     type Args = &'v_a std::path::Path;
 
-    fn validate_args(&self, args: Self::Args) -> Result<(), validator::ValidationErrors> {
+    fn validate_with_args(&self, args: Self::Args) -> Result<(), validator::ValidationErrors> {
         let mut errors = ValidationErrors::new();
         match self {
             Voice::Dual(DualVoice { female, male }) => {
@@ -126,8 +126,9 @@ impl<'v_a> ValidateArgs<'v_a> for Voice {
 }
 
 #[derive(Debug, Clone, Deserialize, Validate)]
+#[validate(context = "std::path::Path")]
 pub struct AudioSubtitle {
-    #[validate(custom(function = "validate_static_sound_data", arg = "&'v_a std::path::Path"))]
+    #[validate(custom(function = "validate_static_sound_data", use_context))]
     pub file: Option<std::path::PathBuf>,
     pub subtitle: String,
 }
@@ -170,14 +171,14 @@ mod tests {
             file: Some("en-us/v_sq017_f_19795c050029f000.Wav".into()),
             subtitle: "Again?".to_string(),
         };
-        let validation = audio.validate_args(folder.as_path());
+        let validation = audio.validate_with_args(folder.as_path());
         assert!(validation.is_ok());
 
         let audio = AudioSubtitle {
             file: Some("en-us/../../v_sq017_f_19795c050029f000.Wav".into()),
             subtitle: "Again?".to_string(),
         };
-        let validation = audio.validate_args(folder.as_path());
+        let validation = audio.validate_with_args(folder.as_path());
         assert!(validation.is_err());
     }
 }
