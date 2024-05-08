@@ -11,5 +11,5 @@ cxx.workspace = true
 lazy_static.workspace = true
 red4ext-rs.workspace = true
 retour.workspace = true
-widestring = "1.0.2"
+widestring = "1.1.0"
 winapi = { version = "0.3.9", features = ["libloaderapi"] }
