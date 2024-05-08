@@ -1,9 +1,9 @@
 #![feature(arbitrary_self_types)]
 
 //! # Detouring natives
-//! 
+//!
 //! This crate provides (and uses itself) both traits and derive macros to detour native functions from the game.
-//! 
+//!
 //! automatically derive [`audioware_mem::NativeFunc`] for a given struct
 //! which already implements [`audioware_mem::Detour`].
 //!
