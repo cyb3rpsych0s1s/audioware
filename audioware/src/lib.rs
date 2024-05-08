@@ -1,5 +1,45 @@
 #![feature(arbitrary_self_types)]
 
+//! # Detouring natives
+//!
+//! This crate provides (and uses itself) both traits and derive macros to detour native functions from the game.
+//!
+//! automatically derive [`audioware_mem::NativeFunc`] for a given struct
+//! which already implements [`audioware_mem::Detour`].
+//!
+//! ## Examples
+//!
+//! Here's an example on how to detour [AudioSystem::Play](https://jac3km4.github.io/cyberdoc/#33326)
+//! whose signature is:
+//!
+//! ```swift
+//! public native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName) -> Void
+//! ```
+//!
+//! Here's how:
+//!
+//! ```
+//! # use audioware_macros::NativeFunc;
+//! # use red4ext_rs::types::{CName, EntityId};
+//!
+//! #[derive(NativeFunc)]
+//! #[hook(
+//!     // memory offset
+//!     offset = 0x975FE4,
+//!     // function input parameters
+//!     inputs = "(CName, EntityId, CName)",
+//!     // control wheter to allow detouring on each call
+//!     allow = "allow",
+//!     // custom detouring logic
+//!     detour = "detour"
+//! )]
+//! pub struct AudioSystemPlay;
+//! # #[allow(unused_variables)]
+//! fn detour(params: (CName, EntityId, CName)) {}
+//! # #[allow(unused_variables)]
+//! fn allow(params: &(CName, EntityId, CName)) -> bool { false }
+//! ```
+
 use audioware_mem::Hook;
 use hook::{HookAudioSystemPlay, HookAudioSystemStop, HookAudioSystemSwitch};
 use red4ext_rs::plugin::Version;

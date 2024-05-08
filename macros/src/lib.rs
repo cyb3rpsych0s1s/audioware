@@ -73,41 +73,6 @@ pub fn derive_from_memory(item: TokenStream) -> TokenStream {
     .into()
 }
 
-/// automatically derive [`audioware_mem::NativeFunc`] for a given struct
-/// which already implements [`audioware_mem::Detour`].
-///
-/// # Examples
-///
-/// Here's an example on how to detour [AudioSystem::Play](https://jac3km4.github.io/cyberdoc/#33326)
-/// whose signature is:
-///
-/// ```swift
-/// public native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName) -> Void
-/// ```
-///
-/// Here's how:
-///
-/// ```
-/// # use audioware_macros::NativeFunc;
-/// # use red4ext_rs::types::{CName, EntityId};
-///
-/// #[derive(NativeFunc)]
-/// #[hook(
-///     // memory offset
-///     offset = 0x975FE4,
-///     // function input parameters
-///     inputs = "(CName, EntityId, CName)",
-///     // control wheter to allow detouring on each call
-///     allow = "allow",
-///     // custom detouring logic
-///     detour = "detour"
-/// )]
-/// pub struct AudioSystemPlay;
-/// # #[allow(unused_variables)]
-/// fn detour(params: (CName, EntityId, CName)) {}
-/// # #[allow(unused_variables)]
-/// fn allow(params: &(CName, EntityId, CName)) -> bool { false }
-/// ```
 #[proc_macro_derive(NativeFunc, attributes(hook))]
 pub fn derive_native_func(input: TokenStream) -> TokenStream {
     let input2 = input.clone();
