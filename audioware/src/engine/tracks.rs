@@ -154,11 +154,11 @@ pub fn output_destination(
         (Some(_), Some(_), true, _) => TRACKS
             .get()
             .and_then(|x| x.v.vocal.try_lock().ok())
-            .map(OutputDestination::from),
+            .map(|x| OutputDestination::from(&*x)),
         (Some(_), None, true, _) => TRACKS
             .get()
             .and_then(|x: &Tracks| x.v.emissive.try_lock().ok())
-            .map(OutputDestination::from),
+            .map(|x| OutputDestination::from(&*x)),
         (Some(id), _, false, _) => {
             red4ext_rs::info!(
                 "retrieving entity id from scene ({})",
@@ -172,12 +172,11 @@ pub fn output_destination(
         (None, Some(_), false, true) => TRACKS
             .get()
             .map(|x| &x.holocall.main)
-            .map(OutputDestination::from),
-        // (None, _, _, _) => TRACKS.get().map(|x| &x.v.main.try_lock().ok().as_deref()).map(OutputDestination::from),
+            .map(|x| OutputDestination::from(&*x)),
         (None, _, _, _) => TRACKS
             .get()
             .and_then(|x| x.v.main.try_lock().ok())
-            .map(OutputDestination::from),
+            .map(|x| OutputDestination::from(&*x)),
     }
 }
 
