@@ -8,14 +8,11 @@ private native func UpdatePlayerReverb(value: Float) -> Bool;
 private native func UpdatePlayerPreset(preset: Preset) -> Bool;
 
 public class Audioware extends ScriptableSystem {
-    private let m_callbackSystem: wref<CallbackSystem>;
     public let m_subtitleDelayID: DelayID;
     public let m_positionDelayID: DelayID;
     public let m_positionsDelayID: DelayID;
-    private let m_emitters: array<EntityID>;
     private let m_playerReverbListener: ref<CallbackHandle>;
     private let m_playerPresetListener: ref<CallbackHandle>;
-    private let m_sessionEnding: Bool;
 
     public func RegisterVentriloquist(id: EntityID) -> Void {
         // LogChannel(n"DEBUG", s"register ventriloquist (\(EntityID.ToDebugString(id)))");
@@ -43,22 +40,17 @@ public class Audioware extends ScriptableSystem {
     }
 
     private func OnAttach() {
-        this.m_sessionEnding = false;
-        this.m_emitters = [];
+        UpdateEngineState(EngineState.Start);
         this.m_positionsDelayID = GetInvalidDelayID();
-        this.m_callbackSystem = GameInstance.GetCallbackSystem();
-        this.m_callbackSystem.RegisterCallback(n"Session/BeforeStart", this, n"OnSessionBeforeStart");
-        this.m_callbackSystem.RegisterCallback(n"Session/Start", this, n"OnSessionStart");
-        this.m_callbackSystem.RegisterCallback(n"Session/Ready", this, n"OnSessionReady");
-        this.m_callbackSystem.RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd");
-        this.m_callbackSystem.RegisterCallback(n"Entity/Uninitialize", this, n"OnEntityUninitialize");
+        this.ResetPreset();
+        this.ResetReverb();
+        GameInstance.GetCallbackSystem()
+        .RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd").SetRunMode(CallbackRunMode.Once);
+        GameInstance.GetCallbackSystem().RegisterCallback(n"Entity/Uninitialize", this, n"OnEntityUninitialize");
     }
 
     private func OnDetach() {
-        this.m_callbackSystem.UnregisterCallback(n"Session/BeforeStart", this, n"OnSessionBeforeStart");
-        this.m_callbackSystem.UnregisterCallback(n"Session/Ready", this, n"OnSessionReady");
-        this.m_callbackSystem.UnregisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd");
-        this.m_callbackSystem.RegisterCallback(n"Session/End", this, n"OnSessionEnd");
+        UpdateEngineState(EngineState.End);
         if NotEquals(this.m_positionsDelayID, GetInvalidDelayID()) {
             GameInstance
             .GetDelaySystem(this.GetGameInstance())
@@ -72,17 +64,17 @@ public class Audioware extends ScriptableSystem {
         let board: ref<IBlackboard>;
         let defs = GetAllBlackboardDefs();
         let player = request.owner as PlayerPuppet;
+        boards = GameInstance.GetBlackboardSystem(this.GetGameInstance());
+        board = boards.Get(defs.AudiowareSettings);
+        this.m_playerReverbListener = board.RegisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this, n"OnReverbChanged", false);
+        this.m_playerPresetListener = board.RegisterListenerInt(defs.AudiowareSettings.PlayerPreset, this, n"OnPlayerPresetChanged", false);
         if IsDefined(player) {
+            UpdateEngineState(EngineState.InGame);
             let callback = new UpdateListenerCallback();
             callback.player = player;
             this.m_positionDelayID = GameInstance
             .GetDelaySystem(this.GetGameInstance())
             .DelayCallback(callback, 0.1, true);
-
-            boards = GameInstance.GetBlackboardSystem(this.GetGameInstance());
-            board = boards.Get(defs.AudiowareSettings);
-            this.m_playerReverbListener = board.RegisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this, n"OnReverbChanged", false);
-            this.m_playerPresetListener = board.RegisterListenerInt(defs.AudiowareSettings.PlayerPreset, this, n"OnPlayerPresetChanged", false);
         }
     }
 
@@ -90,42 +82,26 @@ public class Audioware extends ScriptableSystem {
         let boards: ref<BlackboardSystem>;
         let board: ref<IBlackboard>;
         let defs = GetAllBlackboardDefs();
+        boards = GameInstance.GetBlackboardSystem(this.GetGameInstance());
+        board = boards.Get(defs.AudiowareSettings);
+        board.UnregisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this.m_playerReverbListener);
+        board.UnregisterListenerInt(defs.AudiowareSettings.PlayerPreset, this.m_playerPresetListener);
+        this.m_playerPresetListener = null;
+        this.m_playerPresetListener = null;
         if NotEquals(GetInvalidDelayID(), this.m_positionDelayID) {
             GameInstance
             .GetDelaySystem(this.GetGameInstance())
             .CancelCallback(this.m_positionDelayID);
-
             this.m_positionDelayID = GetInvalidDelayID();
-            boards = GameInstance.GetBlackboardSystem(this.GetGameInstance());
-            board = boards.Get(defs.AudiowareSettings);
-            board.UnregisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this.m_playerReverbListener);
-            board.UnregisterListenerInt(defs.AudiowareSettings.PlayerPreset, this.m_playerPresetListener);
         }
     }
-
-    private cb func OnSessionBeforeStart(event: ref<GameSessionEvent>) {
-        UpdateEngineState(EngineState.Start);
-    }
-    private cb func OnSessionReady(event: ref<GameSessionEvent>) {
-        UpdateEngineState(EngineState.InGame);
-    }
+    
     private cb func OnSessionBeforeEnd(event: ref<GameSessionEvent>) {
-        UpdateEngineState(EngineState.End);
-        this.ResetPreset();
-        this.ResetReverb();
-    }
-    private cb func OnSessionEnd(event: ref<GameSessionEvent>) {
-        if !this.m_sessionEnding {
-            this.m_sessionEnding = true;
-        }
-        this.m_callbackSystem.UnregisterCallback(n"Session/End", this, n"OnSessionEnd");
-        this.m_callbackSystem = null;
+        GameInstance.GetCallbackSystem().UnregisterCallback(n"Entity/Uninitialize", this, n"OnEntityUninitialize");
     }
     private cb func OnEntityUninitialize(event: ref<EntityLifecycleEvent>) {
-        if !this.m_sessionEnding {
-            let id = event.GetEntity().GetEntityID();
-            UnregisterEmitter(id);
-        }
+        let id = event.GetEntity().GetEntityID();
+        UnregisterEmitter(id);
     }
     protected cb func OnReverbChanged(value: Float) -> Bool {
         let result = UpdatePlayerReverb(value);
