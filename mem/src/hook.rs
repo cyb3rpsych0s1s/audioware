@@ -1,9 +1,11 @@
 #[macro_export]
 macro_rules! hook {
     ($name:ident, $address:ident, $fn_ty:ty, $hook:ident, $storage:ident) => {
-        ::lazy_static::lazy_static! {
-            static ref $storage: ::std::sync::Arc<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> =
-                ::std::sync::Arc::new(::std::sync::Mutex::new(None));
+        fn $storage() -> &'static ::std::sync::Mutex<::std::option::Option<::retour::RawDetour>> {
+            static INSTANCE: ::once_cell::sync::OnceCell<
+                ::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>,
+            > = ::once_cell::sync::OnceCell::new();
+            return INSTANCE.get_or_init(::std::default::Default::default)
         }
         pub struct $name;
         impl $crate::Hook for $name {
@@ -13,7 +15,7 @@ macro_rules! hook {
                 match unsafe { $crate::load_native_func($address, $hook) } {
                     Ok(detour) => match unsafe { detour.enable() } {
                         Ok(_) => {
-                            if let Ok(mut guard) = $storage.clone().borrow_mut().try_lock() {
+                            if let Ok(mut guard) = $storage().try_lock() {
                                 *guard = Some(detour);
                             } else {
                                 ::red4ext_rs::error!("could not store detour");
@@ -31,11 +33,7 @@ macro_rules! hook {
             fn unload() {
                 #[cfg(debug_assertions)]
                 ::red4ext_rs::info!("[{}] unload", ::std::stringify! {$name});
-                let _ = $storage
-                .clone()
-                .borrow_mut()
-                .try_lock()
-                .map(Option::take);
+                let _ = $storage().try_lock().map(Option::take);
             }
         }
     };
@@ -58,7 +56,7 @@ macro_rules! native_func {
                 unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut $param)) };
             )*
             if !$should($($param.clone(),)*) {
-                if let Ok(ref guard) = $storage.clone().try_lock() {
+                if let Ok(ref guard) = $storage().try_lock() {
                     if let Some(detour) = guard.as_ref() {
                         // rewind the stack and call vanilla
                         unsafe {

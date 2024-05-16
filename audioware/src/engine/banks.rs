@@ -1,12 +1,12 @@
 use std::{
     collections::{HashMap, HashSet},
-    sync::{Arc, Mutex, OnceLock},
+    sync::Mutex,
 };
 
 use audioware_sys::interop::{event::Event, gender::PlayerGender, locale::Locale};
 use fixed_map::Set;
 use kira::sound::static_sound::StaticSoundData;
-use lazy_static::lazy_static;
+use once_cell::sync::OnceCell;
 use red4ext_rs::types::{CName, Ref};
 use strum::IntoEnumIterator;
 
@@ -21,9 +21,11 @@ use crate::{
     },
 };
 
-lazy_static! {
-    static ref BANKS: OnceLock<HashMap<ModName, Bank>> = OnceLock::default();
-    static ref IDS: Arc<Mutex<HashSet<VoiceId>>> = Arc::new(Mutex::new(HashSet::new()));
+static BANKS: OnceCell<HashMap<ModName, Bank>> = OnceCell::new();
+
+fn ids() -> &'static Mutex<HashSet<VoiceId>> {
+    static INSTANCE: OnceCell<Mutex<HashSet<VoiceId>>> = OnceCell::new();
+    INSTANCE.get_or_init(Default::default)
 }
 
 pub fn setup() -> anyhow::Result<()> {
@@ -46,7 +48,7 @@ pub fn setup() -> anyhow::Result<()> {
     for ref m in mods {
         if let Ok(mut bank) = Bank::try_from(m) {
             bank.retain_valid_audio();
-            bank.retain_unique_ids(&IDS);
+            bank.retain_unique_ids(self::ids());
             banks.insert(bank.name().clone(), bank);
         }
     }
@@ -58,14 +60,14 @@ pub fn setup() -> anyhow::Result<()> {
 }
 
 pub fn exists(id: CName) -> anyhow::Result<bool> {
-    if let Ok(guard) = IDS.clone().try_lock() {
+    if let Ok(guard) = self::ids().try_lock() {
         return Ok(guard.contains(&id.into()));
     }
     anyhow::bail!("unable to reach sound ids");
 }
 
 pub fn exist(ids: &[CName]) -> anyhow::Result<bool> {
-    if let Ok(guard) = IDS.clone().try_lock() {
+    if let Ok(guard) = self::ids().try_lock() {
         for id in ids {
             if !guard.contains(&VoiceId::from(id.clone())) {
                 return Ok(false);
@@ -77,15 +79,15 @@ pub fn exist(ids: &[CName]) -> anyhow::Result<bool> {
 }
 
 pub fn exists_event(event: &Ref<Event>) -> anyhow::Result<bool> {
-    if let Ok(guard) = IDS.clone().try_lock() {
+    if let Ok(guard) = self::ids().try_lock() {
         return Ok(guard.contains(&event.sound_name().into()));
     }
     anyhow::bail!("unable to reach sound ids");
 }
 
 pub fn data(id: &CName) -> anyhow::Result<StaticSoundData> {
-    let gender = engine::localization::gender()?;
-    let language = engine::localization::voice()?;
+    let gender = engine::localization::maybe_gender()?;
+    let language = engine::localization::maybe_voice()?;
     if let Some(banks) = BANKS.get() {
         for bank in banks.values() {
             if let Some(data) = bank.data(gender, language, id) {

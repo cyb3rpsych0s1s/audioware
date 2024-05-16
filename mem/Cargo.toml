@@ -8,7 +8,7 @@ rust-version.workspace = true
 
 [dependencies]
 cxx.workspace = true
-lazy_static.workspace = true
+once_cell.workspace = true
 red4ext-rs.workspace = true
 retour.workspace = true
 widestring = "1.1.0"

@@ -178,19 +178,19 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
     let detour = Ident::new(detour.unwrap().as_str(), Span::call_site());
     let storage = quote! {
         mod #private {
-            ::lazy_static::lazy_static! {
-                static ref STORAGE: ::std::sync::Arc<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> =
-                    ::std::sync::Arc::new(::std::sync::Mutex::new(None));
+            fn storage() -> &'static ::std::sync::Mutex<::std::option::Option<::retour::RawDetour>> {
+                static INSTANCE: ::once_cell::sync::OnceCell<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> = ::once_cell::sync::OnceCell::new();
+                return INSTANCE.get_or_init(::std::default::Default::default)
             }
             pub(super) fn store(detour: ::std::option::Option<::retour::RawDetour>) {
-                if let Ok(guard) = self::STORAGE.clone().try_lock().as_deref_mut() {
+                if let Ok(mut guard) = self::storage().try_lock() {
                     *guard = detour;
                 } else {
                     ::red4ext_rs::error!("lock contention (store)");
                 }
             }
-            pub(super) fn trampoline(closure: std::boxed::Box<dyn std::ops::Fn(&::retour::RawDetour)>) {
-                if let Ok(Some(guard)) = self::STORAGE.clone().try_lock().as_deref() {
+            pub(super) fn trampoline(closure: ::std::boxed::Box<dyn ::std::ops::Fn(&::retour::RawDetour)>) {
+                if let Ok(Some(guard)) = self::storage().try_lock().as_deref() {
                     closure(guard);
                 } else {
                     ::red4ext_rs::error!("lock contention (trampoline)");

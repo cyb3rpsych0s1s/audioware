@@ -1,8 +1,4 @@
-use std::{
-    borrow::BorrowMut,
-    collections::HashSet,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashSet, sync::Mutex};
 
 use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use kira::sound::static_sound::StaticSoundData;
@@ -57,9 +53,9 @@ impl Bank {
                 }
             });
     }
-    pub fn retain_unique_ids(&mut self, ids: &Arc<Mutex<HashSet<VoiceId>>>) {
+    pub fn retain_unique_ids(&mut self, ids: &Mutex<HashSet<VoiceId>>) {
         self.voices.voices.retain(|id, _| {
-            if let Ok(mut guard) = ids.clone().borrow_mut().try_lock() {
+            if let Ok(mut guard) = ids.try_lock() {
                 let inserted = guard.insert(id.clone());
                 if !inserted {
                     red4ext_rs::error!("duplicate sound id ({id})");

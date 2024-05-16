@@ -59,8 +59,8 @@ pub fn propagate_subtitle(
 
 /// get reaction duration (in seconds) from sound, or return default
 pub fn get_reaction_duration(sound: CName) -> f32 {
-    let gender = crate::engine::localization::gender().unwrap_or_default();
-    let locale = crate::engine::localization::voice().unwrap_or_default();
+    let gender = crate::engine::localization::maybe_gender().unwrap_or_default();
+    let locale = crate::engine::localization::maybe_voice().unwrap_or_default();
     crate::engine::banks::reaction_duration(sound, gender, locale).unwrap_or(3.0)
 }
 
