@@ -172,7 +172,7 @@ pub fn output_destination(
         (None, Some(_), false, true) => TRACKS
             .get()
             .map(|x| &x.holocall.main)
-            .map(|x| OutputDestination::from(&*x)),
+            .map(OutputDestination::from),
         (None, _, _, _) => TRACKS
             .get()
             .and_then(|x| x.v.main.try_lock().ok())
