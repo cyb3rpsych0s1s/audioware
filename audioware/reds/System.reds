@@ -15,7 +15,6 @@ public class Audioware extends ScriptableSystem {
     private let m_playerPresetListener: ref<CallbackHandle>;
 
     public func RegisterVentriloquist(id: EntityID) -> Void {
-        // LogChannel(n"DEBUG", s"register ventriloquist (\(EntityID.ToDebugString(id)))");
         RegisterEmitter(id);
         if Equals(this.m_positionsDelayID, GetInvalidDelayID()) {
             let callback = new UpdateEmitterCallback();
@@ -27,10 +26,8 @@ public class Audioware extends ScriptableSystem {
     }
 
     public func UnregisterVentriloquist(id: EntityID) -> Void {
-        // LogChannel(n"DEBUG", s"unregister ventriloquist (\(EntityID.ToDebugString(id)))");
         UnregisterEmitter(id);
         let size = EmittersCount();
-        // LogChannel(n"DEBUG", s"emitters count (\(ToString(size)))");
         if size == 0 && NotEquals(this.m_positionsDelayID, GetInvalidDelayID()) {
             GameInstance
             .GetDelaySystem(this.GetGameInstance())
@@ -130,7 +127,6 @@ public class Audioware extends ScriptableSystem {
 public class UpdateListenerCallback extends DelayCallback {
     public let player: wref<PlayerPuppet>;
     public func Call() -> Void {
-        // LogChannel(n"DEBUG", "update listener callback");
         if IsDefined(this.player) {
             let system = Audioware.GetInstance(this.player.GetGame());
             let id = this.player.GetEntityID();
@@ -149,7 +145,6 @@ public class UpdateListenerCallback extends DelayCallback {
 public class UpdateEmitterCallback extends DelayCallback {
   public let npc: wref<GameObject>;
   public func Call() -> Void {
-    // LogChannel(n"DEBUG", "update emitter callback");
     if IsDefined(this.npc) {
         let system = Audioware.GetInstance(this.npc.GetGame());
         let id = this.npc.GetEntityID();
