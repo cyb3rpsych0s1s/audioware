@@ -1,4 +1,4 @@
-use kira::{track::effect::filter::FilterHandle, CommandError};
+use kira::effect::filter::FilterHandle;
 use red4ext_rs::conv::NativeRepr;
 
 /// suppress high frequences (from 20k to x)
@@ -44,54 +44,51 @@ unsafe impl NativeRepr for Preset {
 }
 
 pub trait EqPass {
-    fn preset(&mut self, preset: Preset) -> Result<(), CommandError>;
+    fn preset(&mut self, preset: Preset);
 }
 
 impl EqPass for LowPass {
-    fn preset(&mut self, preset: Preset) -> Result<(), CommandError> {
+    fn preset(&mut self, preset: Preset) {
         match preset {
             Preset::None => {
-                self.0.set_mix(0., Default::default())?;
+                self.0.set_mix(0., Default::default());
             }
             Preset::OnThePhone => {
                 self.0
-                    .set_cutoff(EQ_LOW_PASS_PHONE_CUTOFF, Default::default())?;
-                self.0.set_resonance(EQ_RESONANCE, Default::default())?;
-                self.0.set_mix(1., Default::default())?;
+                    .set_cutoff(EQ_LOW_PASS_PHONE_CUTOFF, Default::default());
+                self.0.set_resonance(EQ_RESONANCE, Default::default());
+                self.0.set_mix(1., Default::default());
             }
             Preset::Underwater => {
                 self.0
-                    .set_cutoff(EQ_LOW_PASS_UNDERWATER_CUTOFF, Default::default())?;
-                self.0.set_resonance(EQ_RESONANCE, Default::default())?;
-                self.0.set_mix(1., Default::default())?;
+                    .set_cutoff(EQ_LOW_PASS_UNDERWATER_CUTOFF, Default::default());
+                self.0.set_resonance(EQ_RESONANCE, Default::default());
+                self.0.set_mix(1., Default::default());
             }
         }
-        Ok(())
     }
 }
 
 impl EqPass for HighPass {
-    fn preset(&mut self, preset: Preset) -> Result<(), CommandError> {
+    fn preset(&mut self, preset: Preset) {
         match preset {
             Preset::None | Preset::Underwater => {
-                self.0.set_mix(0., Default::default())?;
+                self.0.set_mix(0., Default::default());
             }
             Preset::OnThePhone => {
                 self.0
-                    .set_cutoff(EQ_HIGH_PASS_PHONE_CUTOFF, Default::default())?;
-                self.0.set_resonance(EQ_RESONANCE, Default::default())?;
-                self.0.set_mix(1., Default::default())?;
+                    .set_cutoff(EQ_HIGH_PASS_PHONE_CUTOFF, Default::default());
+                self.0.set_resonance(EQ_RESONANCE, Default::default());
+                self.0.set_mix(1., Default::default());
             }
         }
-        Ok(())
     }
 }
 
 impl EqPass for EQ {
-    fn preset(&mut self, preset: Preset) -> Result<(), CommandError> {
-        self.lowpass.preset(preset)?;
-        self.highpass.preset(preset)?;
+    fn preset(&mut self, preset: Preset) {
+        self.lowpass.preset(preset);
+        self.highpass.preset(preset);
         red4ext_rs::info!("updated preset successfully to {preset}");
-        Ok(())
     }
 }

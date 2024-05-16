@@ -21,6 +21,7 @@ use red4ext_rs::types::{CName, EntityId};
 
 pub fn setup() -> anyhow::Result<()> {
     banks::setup()?;
+    tracks::setup()?;
     Ok(())
 }
 
@@ -101,9 +102,7 @@ pub fn stop(sound_name: CName, entity_id: Option<EntityId>, emitter_name: Option
         for SoundInfos { handle, .. } in map.values_mut().filter(|x| {
             x.sound_name == sound_name && x.entity_id == entity_id && x.emitter_name == emitter_name
         }) {
-            if handle.stop(Tween::default()).is_err() {
-                red4ext_rs::warn!("unable to stop sound handle ({sound_name})");
-            }
+            handle.stop(Tween::default());
         }
     } else {
         red4ext_rs::error!("unable to reach sound handle");
@@ -112,13 +111,8 @@ pub fn stop(sound_name: CName, entity_id: Option<EntityId>, emitter_name: Option
 
 pub fn pause() -> anyhow::Result<()> {
     if let Ok(mut map) = sounds_pool().try_lock() {
-        for SoundInfos {
-            handle, sound_name, ..
-        } in map.values_mut()
-        {
-            if handle.pause(Tween::default()).is_err() {
-                red4ext_rs::warn!("unable to pause sound handle ({})", sound_name);
-            }
+        for SoundInfos { handle, .. } in map.values_mut() {
+            handle.pause(Tween::default());
         }
     } else {
         red4ext_rs::error!("unable to reach sound handle");
@@ -128,13 +122,8 @@ pub fn pause() -> anyhow::Result<()> {
 
 pub fn resume() -> anyhow::Result<()> {
     if let Ok(mut map) = sounds_pool().try_lock() {
-        for SoundInfos {
-            handle, sound_name, ..
-        } in map.values_mut()
-        {
-            if handle.resume(Tween::default()).is_err() {
-                red4ext_rs::warn!("unable to pause sound handle ({sound_name})");
-            }
+        for SoundInfos { handle, .. } in map.values_mut() {
+            handle.resume(Tween::default());
         }
     } else {
         red4ext_rs::error!("unable to reach sound handle");

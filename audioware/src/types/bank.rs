@@ -79,8 +79,7 @@ impl Bank {
                 file: Some(file), ..
             }) = audios.get(language)
             {
-                return StaticSoundData::from_file(self.folder().join(file), Default::default())
-                    .ok();
+                return StaticSoundData::from_file(self.folder().join(file)).ok();
             }
         }
         None

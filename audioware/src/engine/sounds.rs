@@ -51,32 +51,16 @@ pub fn store(
 
 pub fn pause() {
     if let Ok(mut pool) = self::sounds_pool().try_lock() {
-        pool.values_mut().for_each(
-            |SoundInfos {
-                 ref sound_name,
-                 handle,
-                 ..
-             }| {
-                if handle.pause(Tween::default()).is_err() {
-                    red4ext_rs::warn!("unable to pause sound handle ({sound_name})");
-                }
-            },
-        );
+        pool.values_mut().for_each(|SoundInfos { handle, .. }| {
+            handle.pause(Tween::default());
+        });
     }
 }
 
 pub fn resume() {
     if let Ok(mut pool) = self::sounds_pool().try_lock() {
-        pool.values_mut().for_each(
-            |SoundInfos {
-                 ref sound_name,
-                 handle,
-                 ..
-             }| {
-                if handle.resume(Tween::default()).is_err() {
-                    red4ext_rs::warn!("unable to resume sound handle ({sound_name})");
-                }
-            },
-        );
+        pool.values_mut().for_each(|SoundInfos { handle, .. }| {
+            handle.resume(Tween::default());
+        });
     }
 }

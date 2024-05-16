@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use audioware_sys::interop::gender::PlayerGender;
 use fixed_map::Map;
-use kira::sound::static_sound::{StaticSoundData, StaticSoundSettings};
+use kira::sound::static_sound::StaticSoundData;
 use red4ext_rs::types::CName;
 use semver::Version;
 use serde::Deserialize;
@@ -142,12 +142,10 @@ pub fn validate_static_sound_data(
     if !path.starts_with(arg) {
         return Err(ValidationError::new("file located outside of mod folder"));
     }
-    StaticSoundData::from_file(path, StaticSoundSettings::default())
-        .map(|_| ())
-        .map_err(|e| {
-            red4ext_rs::error!("{:#?} ({})", e, value.display());
-            ValidationError::new("invalid audio file")
-        })
+    StaticSoundData::from_file(path).map(|_| ()).map_err(|e| {
+        red4ext_rs::error!("{:#?} ({})", e, value.display());
+        ValidationError::new("invalid audio file")
+    })
 }
 
 #[cfg(test)]

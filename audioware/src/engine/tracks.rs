@@ -3,19 +3,16 @@ use std::{collections::HashMap, sync::Mutex};
 use audioware_sys::interop::{game::get_game_instance, quaternion::Quaternion, vector4::Vector4};
 use glam::{Quat, Vec3};
 use kira::{
-    manager::AudioManager,
+    effect::{
+        filter::{FilterBuilder, FilterHandle, FilterMode},
+        reverb::ReverbBuilder,
+    },
     spatial::{
         emitter::{EmitterHandle, EmitterSettings},
         listener::{ListenerHandle, ListenerSettings},
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
-    track::{
-        effect::{
-            filter::{FilterBuilder, FilterHandle, FilterMode},
-            reverb::ReverbBuilder,
-        },
-        TrackBuilder, TrackHandle, TrackRoutes,
-    },
+    track::{TrackBuilder, TrackHandle, TrackRoutes},
     OutputDestination,
 };
 use once_cell::sync::OnceCell;
@@ -23,9 +20,12 @@ use red4ext_rs::types::{CName, EntityId};
 
 use crate::types::id::SoundEntityId;
 
-use super::effects::{
-    EqPass, HighPass, LowPass, Preset, EQ, EQ_HIGH_PASS_PHONE_CUTOFF, EQ_LOW_PASS_PHONE_CUTOFF,
-    EQ_RESONANCE,
+use super::{
+    effects::{
+        EqPass, HighPass, LowPass, Preset, EQ, EQ_HIGH_PASS_PHONE_CUTOFF, EQ_LOW_PASS_PHONE_CUTOFF,
+        EQ_RESONANCE,
+    },
+    manager::audio_manager,
 };
 
 static TRACKS: OnceCell<Tracks> = OnceCell::new();
@@ -33,17 +33,17 @@ static SCENE: OnceCell<Scene> = OnceCell::new();
 
 #[allow(dead_code)]
 struct Tracks {
-    reverb: TrackHandle,
+    reverb: Mutex<TrackHandle>,
     v: V,
     holocall: Holocall,
 }
 
 #[allow(dead_code)]
 struct V {
-    main: TrackHandle,
-    vocal: TrackHandle,
-    mental: TrackHandle,
-    emissive: TrackHandle,
+    main: Mutex<TrackHandle>,
+    vocal: Mutex<TrackHandle>,
+    mental: Mutex<TrackHandle>,
+    emissive: Mutex<TrackHandle>,
     eq: Mutex<EQ>,
 }
 
@@ -59,7 +59,8 @@ struct Scene {
     entities: Mutex<HashMap<SoundEntityId, EmitterHandle>>,
 }
 
-pub fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
+pub fn setup() -> anyhow::Result<()> {
+    let mut manager = audio_manager().lock().unwrap();
     let reverb = manager.add_sub_track({
         let mut builder = TrackBuilder::new();
         builder.add_effect(ReverbBuilder::new().mix(1.0));
@@ -109,12 +110,12 @@ pub fn setup(manager: &mut AudioManager) -> anyhow::Result<()> {
     let emissive = manager.add_sub_track(TrackBuilder::new().routes(TrackRoutes::parent(&main)))?;
     TRACKS
         .set(Tracks {
-            reverb,
+            reverb: Mutex::new(reverb),
             v: V {
-                main,
-                vocal,
-                mental,
-                emissive,
+                main: Mutex::new(main),
+                vocal: Mutex::new(vocal),
+                mental: Mutex::new(mental),
+                emissive: Mutex::new(emissive),
                 eq: Mutex::new(eq),
             },
             holocall: Holocall {
@@ -152,11 +153,11 @@ pub fn output_destination(
     match (entity_id, emitter_name, is_player, over_the_phone) {
         (Some(_), Some(_), true, _) => TRACKS
             .get()
-            .map(|x| &x.v.vocal)
+            .and_then(|x| x.v.vocal.try_lock().ok())
             .map(OutputDestination::from),
         (Some(_), None, true, _) => TRACKS
             .get()
-            .map(|x| &x.v.emissive)
+            .and_then(|x: &Tracks| x.v.emissive.try_lock().ok())
             .map(OutputDestination::from),
         (Some(id), _, false, _) => {
             red4ext_rs::info!(
@@ -172,7 +173,11 @@ pub fn output_destination(
             .get()
             .map(|x| &x.holocall.main)
             .map(OutputDestination::from),
-        (None, _, _, _) => TRACKS.get().map(|x| &x.v.main).map(OutputDestination::from),
+        // (None, _, _, _) => TRACKS.get().map(|x| &x.v.main.try_lock().ok().as_deref()).map(OutputDestination::from),
+        (None, _, _, _) => TRACKS
+            .get()
+            .and_then(|x| x.v.main.try_lock().ok())
+            .map(OutputDestination::from),
     }
 }
 
@@ -218,12 +223,8 @@ pub fn unregister_emitter(id: EntityId) {
 
 pub fn update_listener(position: Vector4, orientation: Quaternion) {
     if let Some(mut listener) = SCENE.get().and_then(|x| x.v.try_lock().ok()) {
-        if let Err(e) = listener.set_position(position.clone(), Default::default()) {
-            red4ext_rs::error!("error setting listener position: {e:#?}");
-        }
-        if let Err(e) = listener.set_orientation(orientation.clone(), Default::default()) {
-            red4ext_rs::error!("error setting listener orientation: {e:#?}");
-        }
+        listener.set_position(position.clone(), Default::default());
+        listener.set_orientation(orientation.clone(), Default::default());
         // red4ext_rs::info!(
         //     "update listener position to {}, {}, {} / orientation to {}, {}, {}, {}",
         //     position.x,
@@ -243,20 +244,7 @@ pub fn update_emitter(id: EntityId, position: Vector4) {
     let key = SoundEntityId(id.clone());
     if let Some(mut guard) = SCENE.get().and_then(|x| x.entities.try_lock().ok()) {
         if let Some(emitter) = guard.get_mut(&key) {
-            if let Err(e) = emitter.set_position(position.clone(), Default::default()) {
-                red4ext_rs::error!(
-                    "unable to set emitter position: {e} ({})",
-                    u64::from(id.clone())
-                );
-            } else {
-                // red4ext_rs::info!(
-                //     "update emitter ({}) position to {}, {}, {}",
-                //     u64::from(id.clone()),
-                //     position.x,
-                //     position.y,
-                //     position.z
-                // );
-            }
+            emitter.set_position(position.clone(), Default::default());
         } else {
             red4ext_rs::error!("unable to get scene emitter ({})", u64::from(id.clone()));
         }
@@ -278,12 +266,14 @@ pub fn update_player_reverb(value: f32) -> bool {
         return false;
     }
     if let Some(tracks) = TRACKS.get() {
-        if let Ok(()) = tracks.v.main.set_route(
-            &tracks.reverb,
-            kira::Volume::Amplitude(value as f64),
-            Default::default(),
-        ) {
-            return true;
+        if let (Ok(reverb), Ok(mut main)) = (tracks.reverb.try_lock(), tracks.v.main.try_lock()) {
+            if let Ok(()) = main.set_route(
+                &*reverb,
+                kira::Volume::Amplitude(value as f64),
+                Default::default(),
+            ) {
+                return true;
+            }
         }
         red4ext_rs::warn!("unable to update reverb route volume");
         return false;
@@ -295,7 +285,7 @@ pub fn update_player_reverb(value: f32) -> bool {
 pub fn update_player_preset(value: Preset) -> anyhow::Result<()> {
     if let Some(tracks) = TRACKS.get() {
         if let Ok(mut guard) = tracks.v.eq.try_lock() {
-            guard.preset(value)?;
+            guard.preset(value);
             red4ext_rs::info!("successfully updated player preset to {value}");
             return Ok(());
         }
