@@ -1,8 +1,6 @@
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 set dotenv-load
 
-SPECIFIC_TARGET := 'nightly-2024-01-10'
-
 # default to steam default game dir
 DEFAULT_GAME_DIR := join("C:\\", "Program Files (x86)", "Steam", "steamapps", "common", "Cyberpunk 2077")
 
@@ -46,7 +44,7 @@ now:
 
 # 📦 build Rust RED4Ext plugin
 build PROFILE='debug' TO=game_dir: (setup join(TO, red4ext_deploy_dir))
-  @'{{ if PROFILE == "release" { `cargo +nightly-2024-01-10 build --release` } else { `cargo +nightly-2024-01-10 build` } }}'
+  @'{{ if PROFILE == "release" { `cargo +nightly build --release` } else { `cargo +nightly build` } }}'
   @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just now
 
@@ -80,34 +78,37 @@ uninstall FROM=game_dir:
 
 # 🎨 lint code
 format:
-  @cargo +{{SPECIFIC_TARGET}} fmt
+  @cargo +nightly fmt
 
 # 🎨 lint code
 @lint:
-  cargo +{{SPECIFIC_TARGET}} clippy --fix --allow-dirty --allow-staged
-  cargo +{{SPECIFIC_TARGET}} fix --allow-dirty --allow-staged
+  cargo +nightly clippy --fix --allow-dirty --allow-staged
+  cargo +nightly fix --allow-dirty --allow-staged
   just format
 
 alias l := lint
 
 qa:
-  @cargo +{{SPECIFIC_TARGET}} clippy -- -D warnings
-  @cargo +{{SPECIFIC_TARGET}} fix
-  @cargo +{{SPECIFIC_TARGET}} fmt --check
+  @cargo +nightly clippy -- -D warnings
+  @cargo +nightly fix
+  @cargo +nightly fmt --check
 
 test:
-  @cargo +{{SPECIFIC_TARGET}} test
+  @cargo +nightly test
 
 alias t := test
 
 check:
-  @cargo +{{SPECIFIC_TARGET}} check --all
+  @cargo +nightly check --all
 
 alias c := check
 
 @doc:
-  cargo +{{SPECIFIC_TARGET}} doc --open --no-deps
+  cargo +nightly doc --open --no-deps
 
 # TODO: finish updating all patterns
 offsets:
   {{zoltan_exe}} '.\addresses.hpp' '{{ join(game_dir, "bin", "x64", "Cyberpunk2077.exe") }}' -f 'std=c++23' --rust-output '.\addresses.rs'
+
+checksum TO:
+  Get-FileHash -Path "{{TO}}" -Algorithm SHA256 | Select-Object -ExpandProperty Hash

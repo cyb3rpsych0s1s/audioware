@@ -1,15 +1,22 @@
-use std::sync::atomic::AtomicU8;
+use std::sync::{atomic::AtomicU8, Mutex};
 
-use anyhow::Ok;
-use lazy_static::lazy_static;
+use once_cell::sync::OnceCell;
 use red4ext_rs::conv::NativeRepr;
 
-lazy_static! {
-    static ref STATE: AtomicU8 = AtomicU8::new(State::default() as u8);
+use super::effects::Preset;
+
+fn state() -> &'static AtomicU8 {
+    static INSTANCE: OnceCell<AtomicU8> = OnceCell::new();
+    INSTANCE.get_or_init(|| AtomicU8::new(State::default() as u8))
+}
+
+fn preset() -> &'static Mutex<Preset> {
+    static INSTANCE: OnceCell<Mutex<Preset>> = OnceCell::new();
+    INSTANCE.get_or_init(Default::default)
 }
 
 pub fn update(state: State) -> State {
-    STATE
+    self::state()
         .swap(state as u8, std::sync::atomic::Ordering::SeqCst)
         .try_into()
         .unwrap()
@@ -17,7 +24,7 @@ pub fn update(state: State) -> State {
 
 #[allow(dead_code)]
 pub fn load() -> State {
-    STATE
+    self::state()
         .load(std::sync::atomic::Ordering::Relaxed)
         .try_into()
         .unwrap()
@@ -65,4 +72,13 @@ impl TryFrom<u8> for State {
             _ => anyhow::bail!(format!("invalid State ({})", value)),
         }
     }
+}
+
+pub fn update_player_preset(value: Preset) -> anyhow::Result<()> {
+    if let Ok(mut guard) = self::preset().try_lock() {
+        *guard = value;
+        return Ok(());
+    }
+    red4ext_rs::error!("lock contention");
+    anyhow::bail!("lock contention")
 }

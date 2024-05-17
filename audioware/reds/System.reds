@@ -4,9 +4,10 @@ private native func RegisterEmitter(id: EntityID) -> Void;
 private native func UnregisterEmitter(id: EntityID) -> Void;
 private native func UpdateActorLocation(id: EntityID, position: Vector4, orientation: Quaternion) -> Void;
 private native func EmittersCount() -> Int32;
+private native func UpdatePlayerReverb(value: Float) -> Bool;
+private native func UpdatePlayerPreset(preset: Preset) -> Bool;
 
 public class Audioware extends ScriptableSystem {
-    private let m_callbackSystem: wref<CallbackSystem>;
     public let m_subtitleDelayID: DelayID;
     public let m_subtitleRemaining: Float = 0.0;
     public let m_subtitleLine: scnDialogLineData;
@@ -15,9 +16,10 @@ public class Audioware extends ScriptableSystem {
     private let m_emitters: array<EntityID>;
     private let m_menuListener: ref<CallbackHandle>;
     private let m_deathListener: ref<CallbackHandle>;
+    private let m_playerReverbListener: ref<CallbackHandle>;
+    private let m_playerPresetListener: ref<CallbackHandle>;
 
     public func RegisterVentriloquist(id: EntityID) -> Void {
-        // LogChannel(n"DEBUG", s"register ventriloquist (\(EntityID.ToDebugString(id)))");
         RegisterEmitter(id);
         if Equals(this.m_positionsDelayID, GetInvalidDelayID()) {
             let callback = new UpdateEmitterCallback();
@@ -29,10 +31,8 @@ public class Audioware extends ScriptableSystem {
     }
 
     public func UnregisterVentriloquist(id: EntityID) -> Void {
-        // LogChannel(n"DEBUG", s"unregister ventriloquist (\(EntityID.ToDebugString(id)))");
         UnregisterEmitter(id);
         let size = EmittersCount();
-        // LogChannel(n"DEBUG", s"emitters count (\(ToString(size)))");
         if size == 0 && NotEquals(this.m_positionsDelayID, GetInvalidDelayID()) {
             GameInstance
             .GetDelaySystem(this.GetGameInstance())
@@ -42,14 +42,8 @@ public class Audioware extends ScriptableSystem {
     }
 
     private func OnAttach() {
-        this.m_emitters = [];
+        UpdateEngineState(EngineState.Start);
         this.m_positionsDelayID = GetInvalidDelayID();
-        this.m_callbackSystem = GameInstance.GetCallbackSystem();
-        this.m_callbackSystem.RegisterCallback(n"Session/BeforeStart", this, n"OnSessionBeforeStart");
-        this.m_callbackSystem.RegisterCallback(n"Session/Start", this, n"OnSessionStart");
-        this.m_callbackSystem.RegisterCallback(n"Session/Ready", this, n"OnSessionReady");
-        this.m_callbackSystem.RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd");
-        this.m_callbackSystem.RegisterCallback(n"Entity/Uninitialize", this, n"OnEntityUninitialize");
         let ui: ref<IBlackboard> = GameInstance
         .GetBlackboardSystem(this.GetGameInstance())
         .Get(GetAllBlackboardDefs().UI_System);
@@ -58,13 +52,15 @@ public class Audioware extends ScriptableSystem {
         .GetBlackboardSystem(this.GetGameInstance())
         .Get(GetAllBlackboardDefs().PlayerStateMachine);
         this.m_deathListener = psm.RegisterListenerBool(GetAllBlackboardDefs().PlayerStateMachine.DisplayDeathMenu, this, n"OnDeathMenu");
+        this.ResetPreset();
+        this.ResetReverb();
+        GameInstance.GetCallbackSystem()
+        .RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd").SetRunMode(CallbackRunMode.Once);
+        GameInstance.GetCallbackSystem().RegisterCallback(n"Entity/Uninitialize", this, n"OnEntityUninitialize");
     }
 
     private func OnDetach() {
-        this.m_callbackSystem.UnregisterCallback(n"Session/BeforeStart", this, n"OnSessionBeforeStart");
-        this.m_callbackSystem.UnregisterCallback(n"Session/Ready", this, n"OnSessionReady");
-        this.m_callbackSystem.UnregisterCallback(n"Session/BeforeEnd", this, n"OnSessionBeforeEnd");
-        this.m_callbackSystem = null;
+        UpdateEngineState(EngineState.End);
         if NotEquals(this.m_positionsDelayID, GetInvalidDelayID()) {
             GameInstance
             .GetDelaySystem(this.GetGameInstance())
@@ -82,8 +78,16 @@ public class Audioware extends ScriptableSystem {
     }
 
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {
+        let boards: ref<BlackboardSystem>;
+        let board: ref<IBlackboard>;
+        let defs = GetAllBlackboardDefs();
         let player = request.owner as PlayerPuppet;
+        boards = GameInstance.GetBlackboardSystem(this.GetGameInstance());
+        board = boards.Get(defs.AudiowareSettings);
+        this.m_playerReverbListener = board.RegisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this, n"OnReverbChanged", false);
+        this.m_playerPresetListener = board.RegisterListenerInt(defs.AudiowareSettings.PlayerPreset, this, n"OnPlayerPresetChanged", false);
         if IsDefined(player) {
+            UpdateEngineState(EngineState.InGame);
             let callback = new UpdateListenerCallback();
             callback.player = player;
             this.m_positionDelayID = GameInstance
@@ -93,6 +97,15 @@ public class Audioware extends ScriptableSystem {
     }
 
     private final func OnPlayerDetach(request: ref<PlayerDetachRequest>) -> Void {
+        let boards: ref<BlackboardSystem>;
+        let board: ref<IBlackboard>;
+        let defs = GetAllBlackboardDefs();
+        boards = GameInstance.GetBlackboardSystem(this.GetGameInstance());
+        board = boards.Get(defs.AudiowareSettings);
+        board.UnregisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this.m_playerReverbListener);
+        board.UnregisterListenerInt(defs.AudiowareSettings.PlayerPreset, this.m_playerPresetListener);
+        this.m_playerReverbListener = null;
+        this.m_playerPresetListener = null;
         if NotEquals(GetInvalidDelayID(), this.m_positionDelayID) {
             GameInstance
             .GetDelaySystem(this.GetGameInstance())
@@ -100,15 +113,9 @@ public class Audioware extends ScriptableSystem {
             this.m_positionDelayID = GetInvalidDelayID();
         }
     }
-
-    private cb func OnSessionBeforeStart(event: ref<GameSessionEvent>) {
-        UpdateEngineState(EngineState.Start);
-    }
-    private cb func OnSessionReady(event: ref<GameSessionEvent>) {
-        UpdateEngineState(EngineState.InGame);
-    }
+    
     private cb func OnSessionBeforeEnd(event: ref<GameSessionEvent>) {
-        UpdateEngineState(EngineState.End);
+        GameInstance.GetCallbackSystem().UnregisterCallback(n"Entity/Uninitialize", this, n"OnEntityUninitialize");
     }
     private cb func OnEntityUninitialize(event: ref<EntityLifecycleEvent>) {
         let id = event.GetEntity().GetEntityID();
@@ -125,17 +132,33 @@ public class Audioware extends ScriptableSystem {
         if value { UpdateEngineState(EngineState.InMenu); }
         return false;
     }
+    protected cb func OnReverbChanged(value: Float) -> Bool {
+        let result = UpdatePlayerReverb(value);
+        return result;
+    }
+    protected cb func OnPlayerPresetChanged(value: Int32) -> Bool {
+        let preset: Preset = IntEnum<Preset>(value);
+        let result = UpdatePlayerPreset(preset);
+        return result;
+    }
+    public func ResetReverb() -> Bool {
+        let reset = UpdatePlayerReverb(0.);
+        return reset;
+    }
+    public func ResetPreset() -> Bool {
+        let reset = UpdatePlayerPreset(Preset.None);
+        return reset;
+    }
 
     public static final func GetInstance(game: GameInstance) -> ref<Audioware> {
         let container = GameInstance.GetScriptableSystemsContainer(game);
         return container.Get(n"Audioware.Audioware") as Audioware;
-    } 
+    }
 }
 
 public class UpdateListenerCallback extends DelayCallback {
     public let player: wref<PlayerPuppet>;
     public func Call() -> Void {
-        // LogChannel(n"DEBUG", "update listener callback");
         if IsDefined(this.player) {
             let system = Audioware.GetInstance(this.player.GetGame());
             let id = this.player.GetEntityID();
@@ -154,7 +177,6 @@ public class UpdateListenerCallback extends DelayCallback {
 public class UpdateEmitterCallback extends DelayCallback {
   public let npc: wref<GameObject>;
   public func Call() -> Void {
-    // LogChannel(n"DEBUG", "update emitter callback");
     if IsDefined(this.npc) {
         let system = Audioware.GetInstance(this.npc.GetGame());
         let id = this.npc.GetEntityID();

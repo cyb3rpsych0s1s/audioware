@@ -73,41 +73,6 @@ pub fn derive_from_memory(item: TokenStream) -> TokenStream {
     .into()
 }
 
-/// automatically derive [`audioware_mem::NativeFunc`] for a given struct
-/// which already implements [`audioware_mem::Detour`].
-///
-/// # Examples
-///
-/// Here's an example on how to detour [AudioSystem::Play](https://jac3km4.github.io/cyberdoc/#33326)
-/// whose signature is:
-///
-/// ```swift
-/// public native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName) -> Void
-/// ```
-///
-/// Here's how:
-///
-/// ```
-/// # use audioware_macros::NativeFunc;
-/// # use red4ext_rs::types::{CName, EntityId};
-///
-/// #[derive(NativeFunc)]
-/// #[hook(
-///     // memory offset
-///     offset = 0x975FE4,
-///     // function input parameters
-///     inputs = "(CName, EntityId, CName)",
-///     // control wheter to allow detouring on each call
-///     allow = "allow",
-///     // custom detouring logic
-///     detour = "detour"
-/// )]
-/// pub struct AudioSystemPlay;
-/// # #[allow(unused_variables)]
-/// fn detour(params: (CName, EntityId, CName)) {}
-/// # #[allow(unused_variables)]
-/// fn allow(params: &(CName, EntityId, CName)) -> bool { false }
-/// ```
 #[proc_macro_derive(NativeFunc, attributes(hook))]
 pub fn derive_native_func(input: TokenStream) -> TokenStream {
     let input2 = input.clone();
@@ -213,19 +178,19 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
     let detour = Ident::new(detour.unwrap().as_str(), Span::call_site());
     let storage = quote! {
         mod #private {
-            ::lazy_static::lazy_static! {
-                static ref STORAGE: ::std::sync::Arc<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> =
-                    ::std::sync::Arc::new(::std::sync::Mutex::new(None));
+            fn storage() -> &'static ::std::sync::Mutex<::std::option::Option<::retour::RawDetour>> {
+                static INSTANCE: ::once_cell::sync::OnceCell<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> = ::once_cell::sync::OnceCell::new();
+                return INSTANCE.get_or_init(::std::default::Default::default)
             }
             pub(super) fn store(detour: ::std::option::Option<::retour::RawDetour>) {
-                if let Ok(guard) = self::STORAGE.clone().try_lock().as_deref_mut() {
+                if let Ok(mut guard) = self::storage().try_lock() {
                     *guard = detour;
                 } else {
                     ::red4ext_rs::error!("lock contention (store)");
                 }
             }
-            pub(super) fn trampoline(closure: std::boxed::Box<dyn std::ops::Fn(&::retour::RawDetour)>) {
-                if let Ok(Some(guard)) = self::STORAGE.clone().try_lock().as_deref() {
+            pub(super) fn trampoline(closure: ::std::boxed::Box<dyn ::std::ops::Fn(&::retour::RawDetour)>) {
+                if let Ok(Some(guard)) = self::storage().try_lock().as_deref() {
                     closure(guard);
                 } else {
                     ::red4ext_rs::error!("lock contention (trampoline)");
