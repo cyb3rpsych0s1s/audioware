@@ -1,13 +1,10 @@
-use std::{
-    collections::HashMap,
-    sync::{Mutex, MutexGuard, OnceLock},
-};
+use std::{collections::HashMap, sync::Mutex};
 
 use kira::{
     sound::{static_sound::StaticSoundHandle, PlaybackState},
     tween::Tween,
 };
-use lazy_static::lazy_static;
+use once_cell::sync::OnceCell;
 use red4ext_rs::types::{CName, EntityId};
 use ulid::Ulid;
 
@@ -24,14 +21,9 @@ impl SoundInfos {
     }
 }
 
-lazy_static! {
-    static ref SOUNDS_POOL: OnceLock<Mutex<HashMap<Ulid, SoundInfos>>> = OnceLock::default();
-}
-
-pub fn setup() {
-    if SOUNDS_POOL.set(Mutex::new(HashMap::default())).is_err() {
-        red4ext_rs::error!("error initializing sounds pool");
-    }
+pub(super) fn sounds_pool() -> &'static Mutex<HashMap<Ulid, SoundInfos>> {
+    static INSTANCE: OnceCell<Mutex<HashMap<Ulid, SoundInfos>>> = OnceCell::new();
+    INSTANCE.get_or_init(Default::default)
 }
 
 pub fn store(
@@ -40,7 +32,7 @@ pub fn store(
     entity_id: Option<EntityId>,
     emitter_name: Option<CName>,
 ) {
-    if let Some(mut pool) = SOUNDS_POOL.get().and_then(|x| x.try_lock().ok()) {
+    if let Ok(mut pool) = self::sounds_pool().try_lock() {
         let infos = SoundInfos {
             handle,
             sound_name,
@@ -57,38 +49,18 @@ pub fn store(
     }
 }
 
-pub fn try_get_mut<'a>() -> Option<MutexGuard<'a, HashMap<Ulid, SoundInfos>>> {
-    SOUNDS_POOL.get().and_then(|x| x.try_lock().ok())
-}
-
 pub fn pause() {
-    if let Some(mut pool) = try_get_mut() {
-        pool.values_mut().for_each(
-            |SoundInfos {
-                 ref sound_name,
-                 handle,
-                 ..
-             }| {
-                if handle.pause(Tween::default()).is_err() {
-                    red4ext_rs::warn!("unable to pause sound handle ({sound_name})");
-                }
-            },
-        );
+    if let Ok(mut pool) = self::sounds_pool().try_lock() {
+        pool.values_mut().for_each(|SoundInfos { handle, .. }| {
+            handle.pause(Tween::default());
+        });
     }
 }
 
 pub fn resume() {
-    if let Some(mut pool) = try_get_mut() {
-        pool.values_mut().for_each(
-            |SoundInfos {
-                 ref sound_name,
-                 handle,
-                 ..
-             }| {
-                if handle.resume(Tween::default()).is_err() {
-                    red4ext_rs::warn!("unable to resume sound handle ({sound_name})");
-                }
-            },
-        );
+    if let Ok(mut pool) = self::sounds_pool().try_lock() {
+        pool.values_mut().for_each(|SoundInfos { handle, .. }| {
+            handle.resume(Tween::default());
+        });
     }
 }

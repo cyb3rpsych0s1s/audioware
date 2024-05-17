@@ -27,12 +27,16 @@ impl REDmod {
     }
     /// retrieve mods subfolders
     pub fn mods(&self) -> Vec<Mod> {
-        std::fs::read_dir(self)
-            .unwrap()
-            .filter_map(std::result::Result::ok)
-            .filter(|x| x.path().is_dir())
-            .map(|x| Mod(x.path()))
-            .collect()
+        if let Ok(depot) = Self::try_new() {
+            if let Ok(readdir) = std::fs::read_dir(depot) {
+                return readdir
+                    .filter_map(std::result::Result::ok)
+                    .filter(|x| x.path().is_dir())
+                    .map(|x| Mod(x.path()))
+                    .collect();
+            }
+        }
+        Vec::new()
     }
 }
 
@@ -64,12 +68,16 @@ impl R6Audioware {
     }
     /// retrieve mods subfolders
     pub fn mods(&self) -> Vec<Mod> {
-        std::fs::read_dir(self)
-            .unwrap()
-            .filter_map(std::result::Result::ok)
-            .filter(|x| x.path().is_dir())
-            .map(|x| Mod(x.path()))
-            .collect()
+        if let Ok(depot) = Self::try_new() {
+            if let Ok(readdir) = std::fs::read_dir(depot) {
+                return readdir
+                    .filter_map(std::result::Result::ok)
+                    .filter(|x| x.path().is_dir())
+                    .map(|x| Mod(x.path()))
+                    .collect();
+            }
+        }
+        Vec::new()
     }
 }
 
