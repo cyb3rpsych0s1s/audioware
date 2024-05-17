@@ -34,14 +34,8 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: just
-      - name: Setup UPX
-        uses: crazy-max/ghaction-upx@v3
-        with:
-          install-only: true
       - name: Bundle mod files
         run: just ci 'Audioware-windows-latest-${{ github.ref_name }}'
-      - name: Optimize binary size
-        run: just optimize 'Audioware-windows-latest-${{ github.ref_name }}'
       - name: Zip files
         uses: thedoctor0/zip-release@0.7.6
         with:
@@ -49,12 +43,19 @@ jobs:
           filename: Audioware-windows-latest-${{ github.ref_name }}.zip
           directory: Audioware-windows-latest-${{ github.ref_name }}
           path: .
-          recursive_exclusions: 'Debug.reds debug.reds'
+      - name: Generate zip checksum
+        run: Get-FileHash -Path "Audioware-windows-latest-${{ github.ref_name }}\Audioware-windows-latest-${{ github.ref_name }}.zip" -Algorithm SHA256 | Select-Object -ExpandProperty Hash > "checksum.txt"
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-latest-${{ github.ref_name }}-artifact
           path: Audioware-windows-latest-${{ github.ref_name }}/Audioware-windows-latest-${{ github.ref_name }}.zip
+          if-no-files-found: error
+      - name: Upload artifact checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-latest-${{ github.ref_name }}-artifact-checksum
+          path: checksum.txt
           if-no-files-found: error
   release:
     if: ${{ startsWith(github.event.ref, 'refs/tags') }}
@@ -64,11 +65,12 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: windows-latest-${{ github.ref_name }}-artifact
+          path: release
+          merge-multiple: true
       - name: Create release ${{ github.ref_name }}
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "Audioware-windows-latest-${{ github.ref_name }}.zip"
+          artifacts: "release/Audioware-windows-latest-${{ github.ref_name }}.zip,release/checksum.txt"
           draft: ${{ env.IS_DRAFT }}
           prerelease: ${{ env.IS_PRERELEASE }}
           token: ${{ secrets.GITHUB_TOKEN }}

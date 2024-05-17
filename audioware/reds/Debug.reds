@@ -14,7 +14,6 @@ public static exec func TestAudioEvent(game: GameInstance, name: String) -> Void
 // Game.TestPlaySoundEvent("ono_v_effort_short");
 public static exec func TestPlaySoundEvent(game: GameInstance, name: String) -> Void {
     let player = GetPlayer(game);
-    // LogChannel(n"DEBUG", s"player is defined: \(ToString(IsDefined(player)))");
     let sound: CName = StringToName(name);
     GameObject.PlaySoundEvent(player, sound);
 }
@@ -39,10 +38,6 @@ public static exec func TestEntityQueueEvent(game: GameInstance, name: String) -
 public static exec func TestAudioSystemPlay(game: GameInstance, name: String) -> Void {
     let player = GetPlayer(game);
     let sound: CName = StringToName(name);
-    // // LogChannel(n"DEBUG", s"player.GetEntityID() string: \(EntityID.ToDebugString(player.GetEntityID()))");
-    // // LogChannel(n"DEBUG", s"player.GetEntityID() string dec: \(EntityID.ToDebugStringDecimal(player.GetEntityID()))");
-    // // LogChannel(n"DEBUG", s"player.GetEntityID() hash: \(ToString(EntityID.GetHash(player.GetEntityID())))");
-    // // always `1` for player
     GameInstance.GetAudioSystem(game).Play(sound, player.GetEntityID(), n"V");
 }
 
@@ -58,7 +53,6 @@ public static exec func TestUpdateReverb(gi: GameInstance, value: Float) -> Void
     let defs = GetAllBlackboardDefs();
     let boards = GameInstance.GetBlackboardSystem(gi);
     let board = boards.Get(defs.AudiowareSettings);
-    // LogChannel(n"DEBUG", s"board exists? \(ToString(IsDefined(board)))");
     board.SetFloat(defs.AudiowareSettings.PlayerReverb, value, true);
 }
 
@@ -67,7 +61,6 @@ public static exec func TestUpdatePlayerPreset(gi: GameInstance, value: Int32) -
     let defs = GetAllBlackboardDefs();
     let boards = GameInstance.GetBlackboardSystem(gi);
     let board = boards.Get(defs.AudiowareSettings);
-    LogChannel(n"DEBUG", s"board exists? \(ToString(IsDefined(board)))");
     board.SetInt(defs.AudiowareSettings.PlayerPreset, value, true);
 }
 
@@ -91,9 +84,6 @@ public static exec func ApplyVentriloquistOnNPC(gi: GameInstance) -> Void {
     callback.npc = entity as GameObject;
     GameInstance.GetDelaySystem(gi).DelayCallback(callback, 3.0, true);
   }
-  else {
-    // LogChannel(n"DEBUG", s"could not register entity (\(EntityID.ToDebugString(id)))");
-  }
 }
 
 public class RepeatSameSoundCallback extends DelayCallback {
@@ -101,7 +91,6 @@ public class RepeatSameSoundCallback extends DelayCallback {
   public func Call() -> Void {
     if IsDefined(this.npc) {
       let id = this.npc.GetEntityID();
-      // LogChannel(n"DEBUG", s"repeat sound (\(EntityID.ToDebugString(id)))");
       GameInstance
       .GetAudioSystem(this.npc.GetGame())
       .Play(n"nah_everything_is_all_good", id, n"Jean-Claude");

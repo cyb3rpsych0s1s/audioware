@@ -1,28 +1,23 @@
-use std::{
-    borrow::BorrowMut,
-    collections::HashSet,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashSet, sync::Mutex};
 
 use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use kira::sound::static_sound::StaticSoundData;
 
 use red4ext_rs::types::CName;
-use serde::Deserialize;
 
 use crate::types::voice::{validate_static_sound_data, AudioSubtitle};
 
 use super::{
     id::VoiceId,
-    redmod::{Mod, ModName, REDmod},
+    redmod::{Mod, ModName},
     voice::{DualVoice, Voices},
 };
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Bank {
-    #[serde(skip)]
     r#mod: ModName,
     voices: Voices,
+    folder: std::path::PathBuf,
 }
 
 impl Bank {
@@ -30,7 +25,7 @@ impl Bank {
         &self.r#mod
     }
     pub fn folder(&self) -> std::path::PathBuf {
-        REDmod::try_new().unwrap().as_ref().join(&self.r#mod)
+        self.folder.clone()
     }
     pub fn retain_valid_audio(&mut self) {
         let folder = self.folder();
@@ -58,9 +53,9 @@ impl Bank {
                 }
             });
     }
-    pub fn retain_unique_ids(&mut self, ids: &Arc<Mutex<HashSet<VoiceId>>>) {
+    pub fn retain_unique_ids(&mut self, ids: &Mutex<HashSet<VoiceId>>) {
         self.voices.voices.retain(|id, _| {
-            if let Ok(mut guard) = ids.clone().borrow_mut().try_lock() {
+            if let Ok(mut guard) = ids.try_lock() {
                 let inserted = guard.insert(id.clone());
                 if !inserted {
                     red4ext_rs::error!("duplicate sound id ({id})");
@@ -84,8 +79,7 @@ impl Bank {
                 file: Some(file), ..
             }) = audios.get(language)
             {
-                return StaticSoundData::from_file(self.folder().join(file), Default::default())
-                    .ok();
+                return StaticSoundData::from_file(self.folder().join(file)).ok();
             }
         }
         None
@@ -112,6 +106,7 @@ impl TryFrom<&Mod> for Bank {
                 return Ok(Self {
                     r#mod: value.name(),
                     voices,
+                    folder: value.as_ref().to_owned(),
                 });
             }
         }

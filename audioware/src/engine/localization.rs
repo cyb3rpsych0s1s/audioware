@@ -1,20 +1,26 @@
-use std::{
-    borrow::BorrowMut,
-    sync::{Arc, Mutex},
-};
+use std::sync::Mutex;
 
 use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
-use lazy_static::lazy_static;
+use once_cell::sync::OnceCell;
 use red4ext_rs::types::CName;
 
-lazy_static! {
-    static ref GENDER: Arc<Mutex<PlayerGender>> = Arc::new(Mutex::new(PlayerGender::default()));
-    static ref VOICE: Arc<Mutex<Locale>> = Arc::new(Mutex::new(Locale::default()));
-    static ref SUBTITLES: Arc<Mutex<Locale>> = Arc::new(Mutex::new(Locale::default()));
+fn gender() -> &'static Mutex<PlayerGender> {
+    static INSTANCE: OnceCell<Mutex<PlayerGender>> = OnceCell::new();
+    INSTANCE.get_or_init(Default::default)
+}
+
+fn voice() -> &'static Mutex<Locale> {
+    static INSTANCE: OnceCell<Mutex<Locale>> = OnceCell::new();
+    INSTANCE.get_or_init(Default::default)
+}
+
+fn subtitles() -> &'static Mutex<Locale> {
+    static INSTANCE: OnceCell<Mutex<Locale>> = OnceCell::new();
+    INSTANCE.get_or_init(Default::default)
 }
 
 pub fn update_gender(gender: PlayerGender) {
-    if let Ok(mut guard) = GENDER.clone().borrow_mut().try_lock() {
+    if let Ok(mut guard) = self::gender().try_lock() {
         *guard = gender;
     } else {
         red4ext_rs::error!("unable to reach player gender");
@@ -23,7 +29,7 @@ pub fn update_gender(gender: PlayerGender) {
 
 pub fn update_locales(voice: CName, subtitle: CName) {
     if let Ok(voice) = Locale::try_from(voice.clone()) {
-        if let Ok(mut guard) = VOICE.clone().borrow_mut().try_lock() {
+        if let Ok(mut guard) = self::voice().try_lock() {
             if *guard != voice {
                 *guard = voice;
             }
@@ -37,7 +43,7 @@ pub fn update_locales(voice: CName, subtitle: CName) {
         );
     }
     if let Ok(subtitle) = Locale::try_from(subtitle.clone()) {
-        if let Ok(mut guard) = SUBTITLES.clone().borrow_mut().try_lock() {
+        if let Ok(mut guard) = self::subtitles().try_lock() {
             if *guard != subtitle {
                 *guard = subtitle;
             }
@@ -52,22 +58,22 @@ pub fn update_locales(voice: CName, subtitle: CName) {
     }
 }
 
-pub fn gender() -> anyhow::Result<PlayerGender> {
-    if let Ok(guard) = GENDER.clone().try_lock() {
+pub fn maybe_gender() -> anyhow::Result<PlayerGender> {
+    if let Ok(guard) = self::gender().try_lock() {
         return Ok(*guard);
     }
     anyhow::bail!("unable to reach player gender");
 }
 
-pub fn voice() -> anyhow::Result<Locale> {
-    if let Ok(guard) = VOICE.clone().try_lock() {
+pub fn maybe_voice() -> anyhow::Result<Locale> {
+    if let Ok(guard) = self::voice().try_lock() {
         return Ok(*guard);
     }
     anyhow::bail!("unable to reach voice language");
 }
 
-pub fn subtitles() -> anyhow::Result<Locale> {
-    if let Ok(guard) = SUBTITLES.clone().try_lock() {
+pub fn maybe_subtitles() -> anyhow::Result<Locale> {
+    if let Ok(guard) = self::subtitles().try_lock() {
         return Ok(*guard);
     }
     anyhow::bail!("unable to reach subtitles language");

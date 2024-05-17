@@ -8,8 +8,8 @@ rust-version.workspace = true
 
 [dependencies]
 cxx.workspace = true
-lazy_static.workspace = true
+once_cell.workspace = true
 red4ext-rs.workspace = true
-retour = "0.3.1"
-widestring = "1.0.2"
+retour.workspace = true
+widestring = "1.1.0"
 winapi = { version = "0.3.9", features = ["libloaderapi"] }
