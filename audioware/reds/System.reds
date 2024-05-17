@@ -83,7 +83,7 @@ public class Audioware extends ScriptableSystem {
         board = boards.Get(defs.AudiowareSettings);
         board.UnregisterListenerFloat(defs.AudiowareSettings.PlayerReverb, this.m_playerReverbListener);
         board.UnregisterListenerInt(defs.AudiowareSettings.PlayerPreset, this.m_playerPresetListener);
-        this.m_playerPresetListener = null;
+        this.m_playerReverbListener = null;
         this.m_playerPresetListener = null;
         if NotEquals(GetInvalidDelayID(), this.m_positionDelayID) {
             GameInstance
