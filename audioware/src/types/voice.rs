@@ -20,6 +20,21 @@ pub struct Voices {
     pub voices: HashMap<VoiceId, Voice>,
 }
 
+pub trait GetRaw {
+    fn get_raw(&self, raw: &CName) -> Option<&Voice>;
+}
+
+impl GetRaw for HashMap<VoiceId, Voice> {
+    fn get_raw(&self, raw: &CName) -> Option<&Voice> {
+        for (k, v) in self.iter() {
+            if k.as_ref() == raw {
+                return Some(v);
+            }
+        }
+        None
+    }
+}
+
 impl Voices {
     pub fn subtitles(&self, locale: Locale) -> Vec<Subtitle<'_>> {
         self.voices

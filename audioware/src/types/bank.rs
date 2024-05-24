@@ -8,9 +8,9 @@ use red4ext_rs::types::CName;
 use crate::types::voice::{validate_static_sound_data, AudioSubtitle};
 
 use super::{
-    id::VoiceId,
+    id::Id,
     redmod::{Mod, ModName},
-    voice::{DualVoice, Voices},
+    voice::{DualVoice, GetRaw, Voices},
 };
 
 #[derive(Debug, Clone)]
@@ -53,10 +53,10 @@ impl Bank {
                 }
             });
     }
-    pub fn retain_unique_ids(&mut self, ids: &Mutex<HashSet<VoiceId>>) {
+    pub fn retain_unique_ids(&mut self, ids: &Mutex<HashSet<Id>>) {
         self.voices.voices.retain(|id, _| {
             if let Ok(mut guard) = ids.try_lock() {
-                let inserted = guard.insert(id.clone());
+                let inserted = guard.insert(Id::Voice(id.clone()));
                 if !inserted {
                     red4ext_rs::error!("duplicate sound id ({id})");
                 }
@@ -73,7 +73,7 @@ impl Bank {
         language: Locale,
         id: &CName,
     ) -> Option<StaticSoundData> {
-        if let Some(voice) = self.voices.voices.get(&id.clone().into()) {
+        if let Some(voice) = self.voices.voices.get_raw(id) {
             let audios = voice.audios(&gender);
             if let Some(AudioSubtitle {
                 file: Some(file), ..

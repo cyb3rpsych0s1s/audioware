@@ -11,19 +11,66 @@ impl std::hash::Hash for SoundEntityId {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Id {
+    /// voice related id
+    Voice(VoiceId),
+    /// any id
+    Any(AnyId),
+}
+
+/// only type which can be constructed from a CName
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AnyId(CName);
+impl From<CName> for AnyId {
+    fn from(value: CName) -> Self {
+        AnyId(value)
+    }
+}
+impl std::fmt::Display for AnyId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} (untyped)", &self.0)
+    }
+}
+
+impl std::hash::Hash for Id {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        if let Self::Voice(VoiceId(id)) = self {
+            u64::from(id.clone()).hash(state);
+        }
+    }
+}
+
+impl PartialEq<VoiceId> for Id {
+    fn eq(&self, other: &VoiceId) -> bool {
+        match self {
+            Id::Voice(id) => id == other,
+            Id::Any(AnyId(id)) => id == other,
+        }
+    }
+}
+
+impl PartialEq<Id> for VoiceId {
+    fn eq(&self, other: &Id) -> bool {
+        match other {
+            Id::Voice(id) => id == self,
+            Id::Any(AnyId(id)) => id == self,
+        }
+    }
+}
+
 macro_rules! id {
     ($target:ident, $visitor:ident) => {
-
         #[derive(Debug, Clone, PartialEq, Eq)]
         #[repr(transparent)]
         pub struct $target(CName);
-        
+
         impl std::hash::Hash for $target {
             fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
                 u64::from(self.0.clone()).hash(state);
             }
         }
-        
+
         impl AsRef<CName> for $target {
             fn as_ref(&self) -> &CName {
                 &self.0
@@ -94,12 +141,6 @@ macro_rules! id {
         impl PartialEq<$target> for CName {
             fn eq(&self, other: &$target) -> bool {
                 self.eq(&other.0)
-            }
-        }
-
-        impl From<CName> for $target {
-            fn from(value: CName) -> Self {
-                Self(value)
             }
         }
     };

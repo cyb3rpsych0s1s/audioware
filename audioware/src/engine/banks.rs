@@ -15,7 +15,7 @@ use crate::{
     language::Supports,
     types::{
         bank::Bank,
-        id::VoiceId,
+        id::{AnyId, Id},
         redmod::{ModName, R6Audioware, REDmod},
         voice::Subtitle,
     },
@@ -23,8 +23,8 @@ use crate::{
 
 static BANKS: OnceCell<HashMap<ModName, Bank>> = OnceCell::new();
 
-fn ids() -> &'static Mutex<HashSet<VoiceId>> {
-    static INSTANCE: OnceCell<Mutex<HashSet<VoiceId>>> = OnceCell::new();
+fn ids() -> &'static Mutex<HashSet<Id>> {
+    static INSTANCE: OnceCell<Mutex<HashSet<Id>>> = OnceCell::new();
     INSTANCE.get_or_init(Default::default)
 }
 
@@ -61,7 +61,16 @@ pub fn setup() -> anyhow::Result<()> {
 
 pub fn exists(id: CName) -> anyhow::Result<bool> {
     if let Ok(guard) = self::ids().try_lock() {
-        return Ok(guard.contains(&id.into()));
+        for i in guard.iter() {
+            match i {
+                Id::Voice(x) => {
+                    if x == &id {
+                        return Ok(true);
+                    }
+                }
+                Id::Any(x) => anyhow::bail!("invalid id in set ({x})"),
+            }
+        }
     }
     anyhow::bail!("unable to reach sound ids");
 }
@@ -69,7 +78,7 @@ pub fn exists(id: CName) -> anyhow::Result<bool> {
 pub fn exist(ids: &[CName]) -> anyhow::Result<bool> {
     if let Ok(guard) = self::ids().try_lock() {
         for id in ids {
-            if !guard.contains(&VoiceId::from(id.clone())) {
+            if !guard.contains(&Id::Any(AnyId::from(id.clone()))) {
                 return Ok(false);
             }
         }
@@ -80,7 +89,7 @@ pub fn exist(ids: &[CName]) -> anyhow::Result<bool> {
 
 pub fn exists_event(event: &Ref<Event>) -> anyhow::Result<bool> {
     if let Ok(guard) = self::ids().try_lock() {
-        return Ok(guard.contains(&event.sound_name().into()));
+        return Ok(guard.contains(&Id::Any(AnyId::from(event.sound_name()))));
     }
     anyhow::bail!("unable to reach sound ids");
 }
