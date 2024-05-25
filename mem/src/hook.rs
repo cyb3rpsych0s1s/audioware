@@ -1,3 +1,5 @@
+//! deprecated: only kept around for learning purpose
+
 #[macro_export]
 macro_rules! hook {
     ($name:ident, $address:ident, $fn_ty:ty, $hook:ident, $storage:ident) => {
