@@ -40,7 +40,10 @@ impl SupportsBy<PlayerGender> for Voices {
 
 impl Supports for Bank {
     fn supports(&self, locale: Locale) -> bool {
-        self.voices().supports_by(locale, PlayerGender::Female)
-            || self.voices().supports_by(locale, PlayerGender::Male)
+        if let Some(voices) = self.voices() {
+            return voices.supports_by(locale, PlayerGender::Female)
+                || voices.supports_by(locale, PlayerGender::Male);
+        }
+        false
     }
 }

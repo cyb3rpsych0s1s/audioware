@@ -123,8 +123,10 @@ pub fn subtitles<'a>(locale: Locale) -> Vec<Subtitle<'a>> {
     let mut subtitles: Vec<Subtitle<'_>> = vec![];
     if let Some(banks) = BANKS.get() {
         for bank in banks.values() {
-            for subtitle in bank.voices().subtitles(locale) {
-                subtitles.push(subtitle);
+            if let Some(voices) = bank.voices() {
+                for subtitle in voices.subtitles(locale) {
+                    subtitles.push(subtitle);
+                }
             }
         }
     }

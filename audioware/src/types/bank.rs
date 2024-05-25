@@ -16,7 +16,7 @@ use super::{
 #[derive(Debug, Clone)]
 pub struct Bank {
     r#mod: ModName,
-    voices: Voices,
+    voices: Option<Voices>,
     folder: std::path::PathBuf,
 }
 
@@ -29,10 +29,8 @@ impl Bank {
     }
     pub fn retain_valid_audio(&mut self) {
         let folder = self.folder();
-        self.voices
-            .voices
-            .values_mut()
-            .for_each(|voice| match voice {
+        if let Some(voices) = &mut self.voices {
+            voices.voices.values_mut().for_each(|voice| match voice {
                 super::voice::Voice::Dual(DualVoice { female, male }) => {
                     for audio in female.values_mut().chain(male.values_mut()) {
                         if let Some(file) = audio.file.clone() {
@@ -52,20 +50,23 @@ impl Bank {
                     }
                 }
             });
+        }
     }
     pub fn retain_unique_ids(&mut self, ids: &Mutex<HashSet<Id>>) {
-        self.voices.voices.retain(|id, _| {
-            if let Ok(mut guard) = ids.try_lock() {
-                let inserted = guard.insert(Id::Voice(id.clone()));
-                if !inserted {
-                    red4ext_rs::error!("duplicate sound id ({id})");
+        if let Some(voices) = &mut self.voices {
+            voices.voices.retain(|id, _| {
+                if let Ok(mut guard) = ids.try_lock() {
+                    let inserted = guard.insert(Id::Voice(id.clone()));
+                    if !inserted {
+                        red4ext_rs::error!("duplicate sound id ({id})");
+                    }
+                    return inserted;
+                } else {
+                    red4ext_rs::error!("unable to reach sound ids");
                 }
-                return inserted;
-            } else {
-                red4ext_rs::error!("unable to reach sound ids");
-            }
-            false
-        });
+                false
+            });
+        }
     }
     pub fn data(
         &self,
@@ -73,7 +74,7 @@ impl Bank {
         language: Locale,
         id: &CName,
     ) -> Option<StaticSoundData> {
-        if let Some(voice) = self.voices.voices.get_raw(id) {
+        if let Some(voice) = self.voices.as_ref().and_then(|x| x.voices.get_raw(id)) {
             let audios = voice.audios(&gender);
             if let Some(AudioSubtitle {
                 file: Some(file), ..
@@ -84,8 +85,8 @@ impl Bank {
         }
         None
     }
-    pub fn voices(&self) -> &Voices {
-        &self.voices
+    pub fn voices(&self) -> Option<&Voices> {
+        self.voices.as_ref()
     }
 }
 
@@ -105,7 +106,7 @@ impl TryFrom<&Mod> for Bank {
 
                 return Ok(Self {
                     r#mod: value.name(),
-                    voices,
+                    voices: Some(voices),
                     folder: value.as_ref().to_owned(),
                 });
             }
