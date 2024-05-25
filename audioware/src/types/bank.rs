@@ -48,10 +48,20 @@ impl Bank {
                         if let Some(file) = audio.file.clone() {
                             if validate_static_sound_data(&file, &folder).is_err() {
                                 audio.file = None;
+                                red4ext_rs::error!("invalid voice audio file ({})", file.display());
                             }
                         }
                     }
                 }
+            });
+        }
+        if let Some(sfx) = &mut self.sfx {
+            sfx.sfx.retain(|_, v| {
+                let valid = validate_static_sound_data(&v.0, &folder).is_ok();
+                if valid {
+                    red4ext_rs::error!("invalid sfx audio file ({})", v.0.display());
+                }
+                valid
             });
         }
     }
@@ -60,6 +70,20 @@ impl Bank {
             voices.voices.retain(|id, _| {
                 if let Ok(mut guard) = ids.try_lock() {
                     let inserted = guard.insert(Id::Voice(id.clone()));
+                    if !inserted {
+                        red4ext_rs::error!("duplicate sound id ({id})");
+                    }
+                    return inserted;
+                } else {
+                    red4ext_rs::error!("unable to reach sound ids");
+                }
+                false
+            });
+        }
+        if let Some(sfx) = &mut self.sfx {
+            sfx.sfx.retain(|id, _| {
+                if let Ok(mut guard) = ids.try_lock() {
+                    let inserted = guard.insert(Id::Sfx(id.clone()));
                     if !inserted {
                         red4ext_rs::error!("duplicate sound id ({id})");
                     }

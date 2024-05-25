@@ -15,6 +15,8 @@ impl std::hash::Hash for SoundEntityId {
 pub enum Id {
     /// voice related id
     Voice(VoiceId),
+    /// sfx related id
+    Sfx(SfxId),
     /// any id
     Any(AnyId),
 }
@@ -45,6 +47,7 @@ impl PartialEq<VoiceId> for Id {
     fn eq(&self, other: &VoiceId) -> bool {
         match self {
             Id::Voice(id) => id == other,
+            Id::Sfx(_) => false,
             Id::Any(AnyId(id)) => id == other,
         }
     }
@@ -54,6 +57,7 @@ impl PartialEq<Id> for VoiceId {
     fn eq(&self, other: &Id) -> bool {
         match other {
             Id::Voice(id) => id == self,
+            Id::Sfx(_) => false,
             Id::Any(AnyId(id)) => id == self,
         }
     }

@@ -14,7 +14,7 @@ pub struct Sfxs {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct Sfx(std::path::PathBuf);
+pub struct Sfx(pub std::path::PathBuf);
 
 impl GetRaw for HashMap<SfxId, Sfx> {
     type Output = Sfx;

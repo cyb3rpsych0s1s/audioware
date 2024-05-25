@@ -68,6 +68,11 @@ pub fn exists(id: CName) -> anyhow::Result<bool> {
                         return Ok(true);
                     }
                 }
+                Id::Sfx(x) => {
+                    if x == &id {
+                        return Ok(true);
+                    }
+                }
                 Id::Any(x) => anyhow::bail!("invalid id in set ({x})"),
             }
         }
