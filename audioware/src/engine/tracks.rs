@@ -18,7 +18,7 @@ use kira::{
 use once_cell::sync::OnceCell;
 use red4ext_rs::types::{CName, EntityId};
 
-use crate::types::error::TracksError;
+use crate::types::error::{SceneError, TracksError};
 use crate::types::{error::Error, id::SoundEntityId};
 
 use super::{
@@ -76,7 +76,7 @@ struct Scene {
     entities: Mutex<HashMap<SoundEntityId, EmitterHandle>>,
 }
 
-pub fn setup() -> anyhow::Result<()> {
+pub fn setup() -> Result<(), Error> {
     let mut manager = audio_manager().lock().unwrap();
     let reverb = manager.add_sub_track({
         let mut builder = TrackBuilder::new();
@@ -143,14 +143,14 @@ pub fn setup() -> anyhow::Result<()> {
                 }),
             },
         })
-        .map_err(|_| anyhow::anyhow!("error setting audio engine tracks"))?;
+        .map_err(|_| Error::from(TracksError::Set))?;
     SCENE
         .set(Scene {
             scene: Mutex::new(scene),
             v: Mutex::new(v),
             entities: Mutex::new(HashMap::new()),
         })
-        .map_err(|_| anyhow::anyhow!("error setting audio engine spatial scene"))?;
+        .map_err(|_| Error::from(SceneError::Set))?;
     Ok(())
 }
 

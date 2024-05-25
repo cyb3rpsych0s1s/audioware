@@ -17,6 +17,7 @@ memoffset.workspace = true
 mint.workspace = true
 red4ext-rs.workspace = true
 serde.workspace = true
+snafu.workspace = true
 strum.workspace = true
 strum_macros.workspace = true
 

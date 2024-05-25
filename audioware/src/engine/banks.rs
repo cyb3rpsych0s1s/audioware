@@ -58,7 +58,7 @@ pub fn typed_id(sound_name: &CName) -> Result<Id, Error> {
     .into())
 }
 
-pub fn setup() -> anyhow::Result<()> {
+pub fn setup() -> Result<(), Error> {
     let mut mods = Vec::with_capacity(10);
     let mut redmod_exists = false;
     if let Ok(redmod) = REDmod::try_new() {

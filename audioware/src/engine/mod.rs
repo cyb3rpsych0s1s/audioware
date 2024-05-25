@@ -23,7 +23,7 @@ use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId};
 use sounds::macros::maybe_sounds;
 
-pub fn setup() -> anyhow::Result<()> {
+pub fn setup() -> Result<(), Error> {
     banks::setup()?;
     tracks::setup()?;
     Ok(())

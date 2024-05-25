@@ -1,3 +1,4 @@
+use audioware_sys::error::ConversionError;
 use red4ext_rs::types::CName;
 use snafu::prelude::*;
 
@@ -35,20 +36,42 @@ pub enum RegistryError {
 
 #[derive(Debug, Snafu)]
 pub enum TracksError {
-    #[snafu(display("uninitialized banks"), context(suffix(TracksSnafu)))]
+    #[snafu(display("uninitialized tracks"), context(suffix(TracksSnafu)))]
     Uninitialized,
+    #[snafu(
+        display("error setting audio engine tracks"),
+        context(suffix(TracksSnafu))
+    )]
+    Set,
 }
 
 #[derive(Debug, Snafu)]
 pub enum SceneError {
     #[snafu(display("uninitialized scene"), context(suffix(SceneSnafu)))]
     Uninitialized,
+    #[snafu(
+        display("error setting audio engine spatial scene"),
+        context(suffix(SceneSnafu))
+    )]
+    Set,
 }
 
 #[derive(Debug, Snafu)]
 pub enum InternalError {
     #[snafu(display("{origin} contention"))]
-    Contention { origin: &'static str },
+    Contention {
+        origin: &'static str,
+    },
+    Conversion {
+        origin: ConversionError,
+    },
+    #[snafu(display("missing {at}"), visibility(pub(crate)))]
+    FileSystem {
+        at: &'static str,
+    },
+    ResourceLimitReached {
+        origin: kira::ResourceLimitReached,
+    },
 }
 
 impl From<InternalError> for Error {
@@ -81,6 +104,14 @@ impl From<SceneError> for Error {
     fn from(source: SceneError) -> Self {
         Self::Engine {
             source: EngineError::Scene { source },
+        }
+    }
+}
+
+impl From<kira::ResourceLimitReached> for Error {
+    fn from(origin: kira::ResourceLimitReached) -> Self {
+        Self::Internal {
+            source: InternalError::ResourceLimitReached { origin },
         }
     }
 }
