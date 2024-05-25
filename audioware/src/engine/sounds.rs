@@ -1,9 +1,11 @@
 use std::{collections::HashMap, sync::Mutex};
 
+use crate::types::error::{Error, InternalError};
 use kira::{
     sound::{static_sound::StaticSoundHandle, PlaybackState},
     tween::Tween,
 };
+use macros::maybe_sounds;
 use once_cell::sync::OnceCell;
 use red4ext_rs::types::{CName, EntityId};
 use ulid::Ulid;
@@ -45,25 +47,28 @@ pub fn store(
     entity_id: Option<EntityId>,
     emitter_name: Option<CName>,
 ) {
-    if let Ok(mut pool) = self::sounds_pool().try_lock() {
-        let infos = SoundInfos {
-            handle,
-            sound_name,
-            entity_id,
-            emitter_name,
-        };
-        if let Some(reuse) = pool.values_mut().find(|x| x.finished()) {
-            *reuse = infos;
-        } else {
-            pool.insert(Ulid::new(), infos);
+    match maybe_sounds!() {
+        Ok(mut pool) => {
+            let infos = SoundInfos {
+                handle,
+                sound_name,
+                entity_id,
+                emitter_name,
+            };
+            if let Some(reuse) = pool.values_mut().find(|x| x.finished()) {
+                *reuse = infos;
+            } else {
+                pool.insert(Ulid::new(), infos);
+            }
         }
-    } else {
-        red4ext_rs::error!("unable to reach sounds pool");
+        Err(e) => {
+            red4ext_rs::error!("{e}");
+        }
     }
 }
 
 pub fn pause() {
-    if let Ok(mut pool) = self::sounds_pool().try_lock() {
+    if let Ok(mut pool) = maybe_sounds!() {
         pool.values_mut().for_each(|SoundInfos { handle, .. }| {
             handle.pause(Tween::default());
         });
@@ -71,7 +76,7 @@ pub fn pause() {
 }
 
 pub fn resume() {
-    if let Ok(mut pool) = self::sounds_pool().try_lock() {
+    if let Ok(mut pool) = maybe_sounds!() {
         pool.values_mut().for_each(|SoundInfos { handle, .. }| {
             handle.resume(Tween::default());
         });
