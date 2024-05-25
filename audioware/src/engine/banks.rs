@@ -15,7 +15,7 @@ use crate::{
     language::Supports,
     types::{
         bank::Bank,
-        error::BankError,
+        error::{BankError, Error, InternalError},
         id::{AnyId, Id},
         redmod::{ModName, R6Audioware, REDmod},
         voice::Subtitle,
@@ -29,20 +29,21 @@ fn ids() -> &'static Mutex<HashSet<Id>> {
     INSTANCE.get_or_init(Default::default)
 }
 
-pub fn typed_id(sound_name: &CName) -> Result<Id, BankError> {
-    if let Ok(ids) = ids().try_lock() {
-        for id in ids.iter() {
-            match id {
-                Id::Voice(inner) if inner.as_ref() == sound_name => return Ok(id.clone()),
-                Id::Sfx(inner) if inner.as_ref() == sound_name => return Ok(id.clone()),
-                _ => continue,
-            }
+pub fn typed_id(sound_name: &CName) -> Result<Id, Error> {
+    let ids = ids()
+        .try_lock()
+        .map_err(|_| InternalError::Contention { origin: "banks" })?;
+    for id in ids.iter() {
+        match id {
+            Id::Voice(inner) if inner.as_ref() == sound_name => return Ok(id.clone()),
+            Id::Sfx(inner) if inner.as_ref() == sound_name => return Ok(id.clone()),
+            _ => continue,
         }
-        return Err(BankError::Unknown {
-            id: sound_name.clone(),
-        });
     }
-    Err(BankError::Contention)
+    Err(BankError::Unknown {
+        id: sound_name.clone(),
+    }
+    .into())
 }
 
 pub fn setup() -> anyhow::Result<()> {
