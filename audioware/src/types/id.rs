@@ -147,3 +147,4 @@ macro_rules! id {
 }
 
 id!(VoiceId, VoiceIdVisitor);
+id!(SfxId, SfxIdVisitor);

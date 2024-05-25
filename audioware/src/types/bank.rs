@@ -10,6 +10,7 @@ use crate::types::voice::{validate_static_sound_data, AudioSubtitle};
 use super::{
     id::Id,
     redmod::{Mod, ModName},
+    sfx::Sfxs,
     voice::{DualVoice, GetRaw, Voices},
 };
 
@@ -17,6 +18,7 @@ use super::{
 pub struct Bank {
     r#mod: ModName,
     voices: Option<Voices>,
+    sfx: Option<Sfxs>,
     folder: std::path::PathBuf,
 }
 
@@ -96,34 +98,53 @@ impl TryFrom<&Mod> for Bank {
     fn try_from(value: &Mod) -> Result<Self, Self::Error> {
         // safety: dir already checked
         if let Ok(entry) = std::fs::read_dir(value) {
-            if let Some(manifest) = entry
+            let files = entry
                 .filter_map(std::result::Result::ok)
                 .filter(|x| x.path().is_file())
-                .find(|x| is_manifest(&x.path()))
-            {
-                let content = std::fs::read(manifest.path())?;
-                let voices = serde_yaml::from_slice::<Voices>(content.as_slice())?;
-
-                return Ok(Self {
-                    r#mod: value.name(),
-                    voices: Some(voices),
-                    folder: value.as_ref().to_owned(),
-                });
+                .map(|x| x.path())
+                .collect::<Vec<_>>();
+            let mut voices = None;
+            let mut sfx = None;
+            if let Some(manifest) = files.iter().find(|x| is_voices_manifest(x)) {
+                let content = std::fs::read(manifest)?;
+                let entries = serde_yaml::from_slice::<Voices>(content.as_slice())?;
+                voices = Some(entries);
             }
+            if let Some(manifest) = files.iter().find(|x| is_sfx_manifest(x)) {
+                let content = std::fs::read(manifest)?;
+                let entries = serde_yaml::from_slice::<Sfxs>(content.as_slice())?;
+                sfx = Some(entries);
+            }
+            return Ok(Self {
+                r#mod: value.name(),
+                voices,
+                sfx,
+                folder: value.as_ref().to_owned(),
+            });
         }
         anyhow::bail!("unable to retrieve mod's bank");
     }
 }
 
-/// check if path is valid file named "voices" with YAML extension
-fn is_manifest(file: &std::path::Path) -> bool {
+#[inline]
+fn is_manifest(file: &std::path::Path, stem: &str) -> bool {
     file.file_stem()
         .and_then(std::ffi::OsStr::to_str)
-        .map(|x| x == "voices")
+        .map(|x| x == stem)
         .unwrap_or(false)
         && file
             .extension()
             .and_then(std::ffi::OsStr::to_str)
             .map(|x| x == "yml" || x == "yaml")
             .unwrap_or(false)
+}
+
+/// check if path is valid file named "voices" with YAML extension
+fn is_voices_manifest(file: &std::path::Path) -> bool {
+    is_manifest(file, "voices")
+}
+
+/// check if path is valid file named "sfx" with YAML extension
+fn is_sfx_manifest(file: &std::path::Path) -> bool {
+    is_manifest(file, "sfx")
 }
