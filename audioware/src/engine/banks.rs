@@ -15,7 +15,7 @@ use crate::{
     language::Supports,
     types::{
         bank::Bank,
-        error::{BankError, Error, InternalError},
+        error::{BankError, Error, InternalError, RegistryError},
         id::{AnyId, Id},
         redmod::{ModName, R6Audioware, REDmod},
         voice::Subtitle,
@@ -77,25 +77,21 @@ pub fn setup() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn exists(id: CName) -> anyhow::Result<bool> {
-    if let Ok(guard) = self::ids().try_lock() {
-        for i in guard.iter() {
-            match i {
-                Id::Voice(x) => {
-                    if x == &id {
-                        return Ok(true);
-                    }
-                }
-                Id::Sfx(x) => {
-                    if x == &id {
-                        return Ok(true);
-                    }
-                }
-                Id::Any(x) => anyhow::bail!("invalid id in set ({x})"),
+pub fn exists(id: CName) -> Result<bool, Error> {
+    let guard = self::ids()
+        .try_lock()
+        .map_err(|_| InternalError::Contention { origin: "ids" })?;
+    for i in guard.iter() {
+        match i {
+            Id::Voice(x) if x == &id => return Ok(true),
+            Id::Sfx(x) if x == &id => return Ok(true),
+            Id::Any(x) if x.as_ref() == &id => {
+                return Err(RegistryError::Corrupted { id: x.clone() }.into())
             }
+            _ => continue,
         }
     }
-    anyhow::bail!("unable to reach sound ids");
+    Err(RegistryError::NotFound { id }.into())
 }
 
 pub fn exist(ids: &[CName]) -> anyhow::Result<bool> {

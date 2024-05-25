@@ -21,10 +21,11 @@ pub fn get_typed_id(params: &(CName, EntityId, CName)) -> Option<Id> {
 
 pub fn is_audioware(params: &(CName, EntityId, CName)) -> bool {
     let (event_name, ..) = params;
-    if let Ok(exists) = crate::engine::banks::exists(event_name.clone()) {
-        return exists;
-    } else {
-        red4ext_rs::error!("unable to find sound {event_name} existence in banks");
+    match crate::engine::banks::exists(event_name.clone()) {
+        Ok(exists) => return exists,
+        Err(e) => {
+            red4ext_rs::error!("{e}");
+        },
     }
     false
 }

@@ -21,14 +21,23 @@ pub enum Id {
     Any(AnyId),
 }
 
-/// only type which can be constructed from a CName
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AnyId(CName);
+impl std::fmt::Display for Id {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Id::Voice(x) => write!(f, "{} |voice id|", x),
+            Id::Sfx(x) => write!(f, "{} |sfx id|", x),
+            Id::Any(x) => write!(f, "{} |any id|", x),
+        }
+    }
+}
+
+/// only AnyId should be constructed from CName
 impl From<CName> for AnyId {
     fn from(value: CName) -> Self {
         AnyId(value)
     }
 }
+
 impl std::fmt::Display for AnyId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} (untyped)", &self.0)
@@ -43,28 +52,22 @@ impl std::hash::Hash for Id {
     }
 }
 
-impl PartialEq<VoiceId> for Id {
+// used inside macro
+
+impl PartialEq<VoiceId> for AnyId {
     fn eq(&self, other: &VoiceId) -> bool {
-        match self {
-            Id::Voice(id) => id == other,
-            Id::Sfx(_) => false,
-            Id::Any(AnyId(id)) => id == other,
-        }
+        self.0.eq(&other.0)
     }
 }
 
-impl PartialEq<Id> for VoiceId {
-    fn eq(&self, other: &Id) -> bool {
-        match other {
-            Id::Voice(id) => id == self,
-            Id::Sfx(_) => false,
-            Id::Any(AnyId(id)) => id == self,
-        }
+impl PartialEq<SfxId> for AnyId {
+    fn eq(&self, other: &SfxId) -> bool {
+        self.0.eq(&other.0)
     }
 }
 
 macro_rules! id {
-    ($target:ident, $visitor:ident) => {
+    ($target:ident) => {
         #[derive(Debug, Clone, PartialEq, Eq)]
         #[repr(transparent)]
         pub struct $target(CName);
@@ -80,6 +83,51 @@ macro_rules! id {
                 &self.0
             }
         }
+
+        impl PartialEq<CName> for $target {
+            fn eq(&self, other: &CName) -> bool {
+                self.0.eq(other)
+            }
+        }
+
+        impl PartialEq<$target> for CName {
+            fn eq(&self, other: &$target) -> bool {
+                self.eq(&other.0)
+            }
+        }
+    };
+    ($target:ident, display) => {
+        impl std::fmt::Display for $target {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", &self.0)
+            }
+        }
+    };
+    ($target:ident, $variant:ident, equality) => {
+        impl PartialEq<$target> for Id {
+            fn eq(&self, other: &$target) -> bool {
+                match self {
+                    Id::$variant(id) => id == other,
+                    Id::Any(id) => id == other,
+                    _ => false,
+                }
+            }
+        }
+
+        impl PartialEq<Id> for $target {
+            fn eq(&self, other: &Id) -> bool {
+                match other {
+                    Id::$variant(id) => id == self,
+                    Id::Any(id) => id == self,
+                    _ => false,
+                }
+            }
+        }
+    };
+    ($target:ident, $visitor:ident, $variant:ident) => {
+        id!($target);
+        id!($target, display);
+        id!($target, $variant, equality);
 
         struct $visitor;
 
@@ -129,26 +177,9 @@ macro_rules! id {
                 deserializer.deserialize_str($visitor)
             }
         }
-
-        impl std::fmt::Display for $target {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{}", &self.0)
-            }
-        }
-
-        impl PartialEq<CName> for $target {
-            fn eq(&self, other: &CName) -> bool {
-                self.0.eq(other)
-            }
-        }
-
-        impl PartialEq<$target> for CName {
-            fn eq(&self, other: &$target) -> bool {
-                self.eq(&other.0)
-            }
-        }
     };
 }
 
-id!(VoiceId, VoiceIdVisitor);
-id!(SfxId, SfxIdVisitor);
+id!(VoiceId, VoiceIdVisitor, Voice);
+id!(SfxId, SfxIdVisitor, Sfx);
+id!(AnyId);
