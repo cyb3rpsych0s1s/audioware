@@ -27,6 +27,7 @@ mint = "0.5.9"
 red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", rev = "8e938fa", features = ["macros"] }
 retour = "0.3.1"
 serde = { version = "1.0", features = ["derive"] }
+snafu = "0.8.3"
 static_assertions = "1.1.0"
 strum = "0.26"
 strum_macros = "0.26"

@@ -1,6 +1,7 @@
 use red4ext_rs::types::CName;
 
 pub mod bank;
+pub mod error;
 pub mod id;
 pub mod redmod;
 pub mod sfx;
