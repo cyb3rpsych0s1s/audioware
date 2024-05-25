@@ -6,6 +6,8 @@ use crate::{
     types::{error::Error, id::Id},
 };
 
+// switch play method to fully typed ?
+#[allow(dead_code)]
 pub fn get_typed_id(params: &(CName, EntityId, CName)) -> Option<Id> {
     let (sound_name, ..) = params;
     match crate::engine::banks::typed_id(sound_name) {
@@ -25,7 +27,7 @@ pub fn is_audioware(params: &(CName, EntityId, CName)) -> bool {
         Ok(exists) => return exists,
         Err(e) => {
             red4ext_rs::error!("{e}");
-        },
+        }
     }
     false
 }

@@ -18,7 +18,8 @@ use kira::{
 use once_cell::sync::OnceCell;
 use red4ext_rs::types::{CName, EntityId};
 
-use crate::types::id::SoundEntityId;
+use crate::types::error::TracksError;
+use crate::types::{error::Error, id::SoundEntityId};
 
 use super::{
     effects::{
@@ -30,6 +31,22 @@ use super::{
 
 static TRACKS: OnceCell<Tracks> = OnceCell::new();
 static SCENE: OnceCell<Scene> = OnceCell::new();
+
+macro_rules! maybe_tracks {
+    () => {
+        TRACKS.get().ok_or(Error::from(TracksError::Uninitialized))
+    };
+}
+
+macro_rules! maybe_eq {
+    ($tracks:expr) => {
+        $tracks
+            .v
+            .eq
+            .try_lock()
+            .map_err(|_| Error::from(TracksError::Uninitialized))
+    };
+}
 
 #[allow(dead_code)]
 struct Tracks {
@@ -281,14 +298,10 @@ pub fn update_player_reverb(value: f32) -> bool {
     false
 }
 
-pub fn update_player_preset(value: Preset) -> anyhow::Result<()> {
-    if let Some(tracks) = TRACKS.get() {
-        if let Ok(mut guard) = tracks.v.eq.try_lock() {
-            guard.preset(value);
-            red4ext_rs::info!("successfully updated player preset to {value}");
-            return Ok(());
-        }
-        anyhow::bail!("lock contention")
-    }
-    anyhow::bail!("unable to reach tracks")
+pub fn update_player_preset(value: Preset) -> Result<(), Error> {
+    let tracks = maybe_tracks!()?;
+    let mut guard = maybe_eq!(tracks)?;
+    guard.preset(value);
+    red4ext_rs::info!("successfully updated player preset to {value}");
+    Ok(())
 }

@@ -29,10 +29,22 @@ fn ids() -> &'static Mutex<HashSet<Id>> {
     INSTANCE.get_or_init(Default::default)
 }
 
+macro_rules! maybe_ids {
+    () => {
+        ids()
+            .try_lock()
+            .map_err(|_| InternalError::Contention { origin: "ids" })
+    };
+}
+
+macro_rules! maybe_banks {
+    () => {
+        BANKS.get().ok_or(Error::from(BankError::Uninitialized))
+    };
+}
+
 pub fn typed_id(sound_name: &CName) -> Result<Id, Error> {
-    let ids = ids()
-        .try_lock()
-        .map_err(|_| InternalError::Contention { origin: "banks" })?;
+    let ids = maybe_ids!()?;
     for id in ids.iter() {
         match id {
             Id::Voice(inner) if inner.as_ref() == sound_name => return Ok(id.clone()),
@@ -40,7 +52,7 @@ pub fn typed_id(sound_name: &CName) -> Result<Id, Error> {
             _ => continue,
         }
     }
-    Err(BankError::Unknown {
+    Err(BankError::NotFound {
         id: sound_name.clone(),
     }
     .into())
@@ -78,9 +90,7 @@ pub fn setup() -> anyhow::Result<()> {
 }
 
 pub fn exists(id: CName) -> Result<bool, Error> {
-    let guard = self::ids()
-        .try_lock()
-        .map_err(|_| InternalError::Contention { origin: "ids" })?;
+    let guard = maybe_ids!()?;
     for i in guard.iter() {
         match i {
             Id::Voice(x) if x == &id => return Ok(true),
@@ -94,45 +104,44 @@ pub fn exists(id: CName) -> Result<bool, Error> {
     Err(RegistryError::NotFound { id }.into())
 }
 
-pub fn exist(ids: &[CName]) -> anyhow::Result<bool> {
-    if let Ok(guard) = self::ids().try_lock() {
-        for id in ids {
-            if !guard.contains(&Id::Any(AnyId::from(id.clone()))) {
-                return Ok(false);
-            }
+pub fn exist(ids: &[CName]) -> Result<bool, Error> {
+    let guard = maybe_ids!()?;
+    for id in ids {
+        if !guard.contains(&Id::Any(AnyId::from(id.clone()))) {
+            return Ok(false);
         }
-        return Ok(true);
     }
-    anyhow::bail!("unable to reach sound ids");
+    Ok(true)
 }
 
-pub fn exists_event(event: &Ref<Event>) -> anyhow::Result<bool> {
-    if let Ok(guard) = self::ids().try_lock() {
-        return Ok(guard.contains(&Id::Any(AnyId::from(event.sound_name()))));
-    }
-    anyhow::bail!("unable to reach sound ids");
+pub fn exists_event(event: &Ref<Event>) -> Result<bool, Error> {
+    Ok(maybe_ids!()?.contains(&Id::Any(AnyId::from(event.sound_name()))))
 }
 
-pub fn data(id: &CName) -> anyhow::Result<StaticSoundData> {
+pub fn data(id: &CName) -> Result<StaticSoundData, Error> {
     let gender = engine::localization::maybe_gender()?;
     let language = engine::localization::maybe_voice()?;
-    if let Some(banks) = BANKS.get() {
-        for bank in banks.values() {
-            if let Some(data) = bank.data(gender, language, id) {
-                return Ok(data);
-            }
+    let banks = maybe_banks!()?;
+    for bank in banks.values() {
+        if let Some(data) = bank.data(gender, language, id) {
+            return Ok(data);
         }
     }
-    anyhow::bail!("unable to retrieve static sound data from sound id");
+    Err(BankError::NotFound { id: id.clone() }.into())
 }
 
 pub fn languages() -> Set<Locale> {
     let mut set: Set<Locale> = Set::new();
-    if let Some(banks) = BANKS.get() {
-        for locale in Locale::iter() {
-            if banks.values().any(|x| x.supports(locale)) {
-                set.insert(locale);
+    match maybe_banks!() {
+        Ok(banks) => {
+            for locale in Locale::iter() {
+                if banks.values().any(|x| x.supports(locale)) {
+                    set.insert(locale);
+                }
             }
+        }
+        Err(e) => {
+            red4ext_rs::error!("{e}");
         }
     }
     set
@@ -140,24 +149,34 @@ pub fn languages() -> Set<Locale> {
 
 pub fn subtitles<'a>(locale: Locale) -> Vec<Subtitle<'a>> {
     let mut subtitles: Vec<Subtitle<'_>> = vec![];
-    if let Some(banks) = BANKS.get() {
-        for bank in banks.values() {
-            if let Some(voices) = bank.voices() {
-                for subtitle in voices.subtitles(locale) {
-                    subtitles.push(subtitle);
+    match maybe_banks!() {
+        Ok(banks) => {
+            for bank in banks.values() {
+                if let Some(voices) = bank.voices() {
+                    for subtitle in voices.subtitles(locale) {
+                        subtitles.push(subtitle);
+                    }
                 }
             }
+        }
+        Err(e) => {
+            red4ext_rs::error!("{e}");
         }
     }
     subtitles
 }
 
 pub fn reaction_duration(sound: CName, gender: PlayerGender, locale: Locale) -> Option<f32> {
-    if let Some(banks) = BANKS.get() {
-        for bank in banks.values() {
-            if let Some(data) = bank.data(gender, locale, &sound) {
-                return Some(data.duration().as_secs_f32());
+    match maybe_banks!() {
+        Ok(banks) => {
+            for bank in banks.values() {
+                if let Some(data) = bank.data(gender, locale, &sound) {
+                    return Some(data.duration().as_secs_f32());
+                }
             }
+        }
+        Err(e) => {
+            red4ext_rs::error!("{e}");
         }
     }
     None

@@ -26,6 +26,19 @@ pub(super) fn sounds_pool() -> &'static Mutex<HashMap<Ulid, SoundInfos>> {
     INSTANCE.get_or_init(Default::default)
 }
 
+pub(crate) mod macros {
+    macro_rules! maybe_sounds {
+        () => {
+            sounds_pool().try_lock().map_err(|_| {
+                Error::from(InternalError::Contention {
+                    origin: "sounds pool",
+                })
+            })
+        };
+    }
+    pub(crate) use maybe_sounds;
+}
+
 pub fn store(
     handle: StaticSoundHandle,
     sound_name: CName,

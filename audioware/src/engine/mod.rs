@@ -1,4 +1,7 @@
-use crate::natives::propagate_subtitle;
+use crate::{
+    natives::propagate_subtitle,
+    types::error::{Error, InternalError},
+};
 
 pub use self::state::State;
 use self::{
@@ -18,6 +21,7 @@ pub mod tracks;
 use audioware_sys::interop::{audio::ScnDialogLineType, quaternion::Quaternion, vector4::Vector4};
 use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId};
+use sounds::macros::maybe_sounds;
 
 pub fn setup() -> anyhow::Result<()> {
     banks::setup()?;
@@ -109,24 +113,18 @@ pub fn stop(sound_name: CName, entity_id: Option<EntityId>, emitter_name: Option
     }
 }
 
-pub fn pause() -> anyhow::Result<()> {
-    if let Ok(mut map) = sounds_pool().try_lock() {
-        for SoundInfos { handle, .. } in map.values_mut() {
-            handle.pause(Tween::default());
-        }
-    } else {
-        red4ext_rs::error!("unable to reach sound handle");
+pub fn pause() -> Result<(), Error> {
+    let mut map = maybe_sounds!()?;
+    for SoundInfos { handle, .. } in map.values_mut() {
+        handle.pause(Tween::default());
     }
     Ok(())
 }
 
-pub fn resume() -> anyhow::Result<()> {
-    if let Ok(mut map) = sounds_pool().try_lock() {
-        for SoundInfos { handle, .. } in map.values_mut() {
-            handle.resume(Tween::default());
-        }
-    } else {
-        red4ext_rs::error!("unable to reach sound handle");
+pub fn resume() -> Result<(), Error> {
+    let mut map = maybe_sounds!()?;
+    for SoundInfos { handle, .. } in map.values_mut() {
+        handle.resume(Tween::default());
     }
     Ok(())
 }
@@ -145,9 +143,8 @@ pub fn update_actor_location(id: EntityId, position: Vector4, orientation: Quate
     }
 }
 
-pub fn update_player_preset(preset: Preset) -> anyhow::Result<()> {
-    if let Ok(()) = crate::engine::state::update_player_preset(preset) {
-        crate::engine::tracks::update_player_preset(preset)?;
-    }
-    anyhow::bail!("unable to update player preset")
+pub fn update_player_preset(preset: Preset) -> Result<(), Error> {
+    crate::engine::state::update_player_preset(preset)?;
+    crate::engine::tracks::update_player_preset(preset)?;
+    Ok(())
 }
