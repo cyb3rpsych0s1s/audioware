@@ -11,7 +11,8 @@ use super::{
     id::Id,
     redmod::{Mod, ModName},
     sfx::Sfxs,
-    voice::{DualVoice, GetRaw, Voices},
+    voice::{DualVoice, Voices},
+    GetRaw,
 };
 
 #[derive(Debug, Clone)]

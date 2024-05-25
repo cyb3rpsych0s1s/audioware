@@ -12,6 +12,7 @@ use validator::{ValidateArgs, ValidationErrors};
 use audioware_sys::interop::locale::Locale;
 
 use super::id::VoiceId;
+use super::GetRaw;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Voices {
@@ -20,12 +21,9 @@ pub struct Voices {
     pub voices: HashMap<VoiceId, Voice>,
 }
 
-pub trait GetRaw {
-    fn get_raw(&self, raw: &CName) -> Option<&Voice>;
-}
-
 impl GetRaw for HashMap<VoiceId, Voice> {
-    fn get_raw(&self, raw: &CName) -> Option<&Voice> {
+    type Output = Voice;
+    fn get_raw(&self, raw: &CName) -> Option<&Self::Output> {
         for (k, v) in self.iter() {
             if k.as_ref() == raw {
                 return Some(v);
