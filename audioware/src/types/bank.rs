@@ -1,4 +1,7 @@
-use std::{collections::HashSet, sync::Mutex};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Mutex,
+};
 
 use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use kira::sound::static_sound::StaticSoundData;
@@ -15,7 +18,7 @@ use super::{
     error::{Error, UnableToReadDirSnafu},
     id::{Id, SfxId, VoiceId},
     redmod::{Mod, ModName},
-    sfx::Sfxs,
+    sfx::{InMemorySfxs, Sfxs},
     voice::{DualVoice, Voices},
 };
 
@@ -23,7 +26,7 @@ use super::{
 pub struct Bank {
     r#mod: ModName,
     voices: Option<Voices>,
-    sfx: Option<Sfxs>,
+    sfx: Option<InMemorySfxs>,
     folder: std::path::PathBuf,
 }
 
@@ -59,15 +62,6 @@ impl Bank {
                 }
             });
         }
-        if let Some(sfx) = &mut self.sfx {
-            sfx.sfx.retain(|_, v| {
-                let valid = validate_static_sound_data(&v.0, &folder).is_ok();
-                if valid {
-                    red4ext_rs::error!("invalid sfx audio file ({})", v.0.display());
-                }
-                valid
-            });
-        }
     }
     pub fn retain_unique_ids(&mut self, ids: &Mutex<HashSet<Id>>) {
         if let Some(voices) = &mut self.voices {
@@ -101,7 +95,7 @@ impl Bank {
     }
     pub fn data_from_sfx_id(&self, id: &SfxId) -> Option<StaticSoundData> {
         if let Some(sfx) = self.sfx.as_ref().and_then(|x| x.sfx.get(id)) {
-            return StaticSoundData::from_file(self.folder().join(sfx.0.as_path())).ok();
+            return Some(sfx.clone());
         }
         None
     }
@@ -150,7 +144,7 @@ impl TryFrom<&Mod> for Bank {
                 .map(|x| x.path())
                 .collect::<Vec<_>>();
             let mut voices = None;
-            let mut sfx = None;
+            let mut sfx: Option<InMemorySfxs> = None;
             if let Some(manifest) = files.iter().find(|x| is_voices_manifest(x)) {
                 let content = std::fs::read(manifest).context(UnableToReadManifestSnafu {
                     path: manifest.as_path().display().to_string(),
@@ -173,7 +167,25 @@ impl TryFrom<&Mod> for Bank {
                         kind: "sfx",
                     },
                 )?;
-                sfx = Some(entries);
+                let mut in_memory: HashMap<SfxId, StaticSoundData> =
+                    HashMap::with_capacity(entries.sfx.len());
+                for (k, v) in entries.sfx.into_iter() {
+                    match StaticSoundData::from_file(v.as_ref()) {
+                        Ok(data) => {
+                            in_memory.insert(k, data);
+                        }
+                        Err(_) => {
+                            red4ext_rs::error!(
+                                "unable to load audio in memory, skipping... ({})",
+                                v.as_ref().display()
+                            );
+                        }
+                    }
+                }
+                sfx = Some(InMemorySfxs {
+                    version: entries.version,
+                    sfx: in_memory,
+                });
             }
             return Ok(Self {
                 r#mod: value.name(),
