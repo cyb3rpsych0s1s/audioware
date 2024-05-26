@@ -12,25 +12,12 @@ use validator::{ValidateArgs, ValidationErrors};
 use audioware_sys::interop::locale::Locale;
 
 use super::id::VoiceId;
-use super::GetByCName;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Voices {
     #[allow(dead_code)]
     pub version: Version,
     pub voices: HashMap<VoiceId, Voice>,
-}
-
-impl GetByCName for HashMap<VoiceId, Voice> {
-    type Output = Voice;
-    fn get_by_cname(&self, cname: &CName) -> Option<&Self::Output> {
-        for (k, v) in self.iter() {
-            if k.as_ref() == cname {
-                return Some(v);
-            }
-        }
-        None
-    }
 }
 
 impl Voices {

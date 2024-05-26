@@ -43,6 +43,7 @@ macro_rules! maybe_banks {
     };
 }
 
+/// return either a fully typed ID, or an error
 pub fn typed_id(sound_name: &CName) -> Result<Id, Error> {
     let ids = maybe_ids!()?;
     for id in ids.iter() {
