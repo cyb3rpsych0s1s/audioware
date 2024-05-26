@@ -4,7 +4,7 @@ use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use kira::sound::static_sound::StaticSoundData;
 
 use red4ext_rs::types::CName;
-use snafu::ResultExt;
+use snafu::{OptionExt, ResultExt};
 
 use crate::types::{
     error::{UnableToDeserializeSnafu, UnableToReadManifestSnafu},
@@ -12,12 +12,11 @@ use crate::types::{
 };
 
 use super::{
-    error::{Error, UnableToReadDirSnafu},
-    id::Id,
+    error::{Error, InternalError, RegistryError, UnableToReadDirSnafu},
+    id::{Id, VoiceId},
     redmod::{Mod, ModName},
     sfx::Sfxs,
     voice::{DualVoice, Voices},
-    GetByCName,
 };
 
 #[derive(Debug, Clone)]
@@ -100,13 +99,13 @@ impl Bank {
             });
         }
     }
-    pub fn data(
+    pub fn data_from_voice_id(
         &self,
         gender: PlayerGender,
         language: Locale,
-        id: &CName,
+        id: &VoiceId,
     ) -> Option<StaticSoundData> {
-        if let Some(voice) = self.voices.as_ref().and_then(|x| x.voices.get_by_cname(id)) {
+        if let Some(voice) = self.voices.as_ref().and_then(|x| x.voices.get(id)) {
             let audios = voice.audios(&gender);
             if let Some(AudioSubtitle {
                 file: Some(file), ..
@@ -116,6 +115,19 @@ impl Bank {
             }
         }
         None
+    }
+    pub fn data_from_any_id(
+        &self,
+        gender: PlayerGender,
+        language: Locale,
+        id: &CName,
+    ) -> Result<StaticSoundData, Error> {
+        let id = crate::engine::banks::typed_id(id)?;
+        match id {
+            Id::Voice(id) => Ok(self.data_from_voice_id(gender, language, &id).unwrap()),
+            Id::Sfx(_) => Err(InternalError::Unimplemented.into()),
+            Id::Any(id) => Err(RegistryError::Corrupted { id }.into()),
+        }
     }
     pub fn voices(&self) -> Option<&Voices> {
         self.voices.as_ref()

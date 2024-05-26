@@ -114,6 +114,8 @@ pub enum InternalError {
     NoFolder {
         folder: &'static str,
     },
+    #[snafu(display("unimplemented"))]
+    Unimplemented,
 }
 
 impl From<InternalError> for Error {

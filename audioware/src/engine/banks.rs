@@ -123,7 +123,7 @@ pub fn data(id: &CName) -> Result<StaticSoundData, Error> {
     let language = engine::localization::maybe_voice()?;
     let banks = maybe_banks!()?;
     for bank in banks.values() {
-        if let Some(data) = bank.data(gender, language, id) {
+        if let Ok(data) = bank.data_from_any_id(gender, language, id) {
             return Ok(data);
         }
     }
@@ -170,7 +170,7 @@ pub fn reaction_duration(sound: CName, gender: PlayerGender, locale: Locale) -> 
     match maybe_banks!() {
         Ok(banks) => {
             for bank in banks.values() {
-                if let Some(data) = bank.data(gender, locale, &sound) {
+                if let Ok(data) = bank.data_from_any_id(gender, locale, &sound) {
                     return Some(data.duration().as_secs_f32());
                 }
             }
