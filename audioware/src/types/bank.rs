@@ -12,7 +12,7 @@ use super::{
     redmod::{Mod, ModName},
     sfx::Sfxs,
     voice::{DualVoice, Voices},
-    GetRaw,
+    GetByCName,
 };
 
 #[derive(Debug, Clone)]
@@ -101,7 +101,7 @@ impl Bank {
         language: Locale,
         id: &CName,
     ) -> Option<StaticSoundData> {
-        if let Some(voice) = self.voices.as_ref().and_then(|x| x.voices.get_raw(id)) {
+        if let Some(voice) = self.voices.as_ref().and_then(|x| x.voices.get_by_cname(id)) {
             let audios = voice.audios(&gender);
             if let Some(AudioSubtitle {
                 file: Some(file), ..

@@ -134,7 +134,7 @@ pub trait NativeFunc: DetourFunc {
 }
 
 /// define `native event handler` detouring.
-/// 
+///
 /// only works for types that inherit [red::Event](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/red/Event.hpp)
 /// (see also in [NativeDB](https://nativedb.red4ext.com/c/3352609018084022)).
 pub trait NativeHandler: DetourHandler {

@@ -7,7 +7,7 @@ pub mod redmod;
 pub mod sfx;
 pub mod voice;
 
-pub trait GetRaw {
+pub trait GetByCName {
     type Output;
-    fn get_raw(&self, raw: &CName) -> Option<&Self::Output>;
+    fn get_by_cname(&self, raw: &CName) -> Option<&Self::Output>;
 }
