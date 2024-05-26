@@ -13,7 +13,6 @@ strip = true
 codegen-units = 1
 
 [workspace.dependencies]
-anyhow = "1"
 audioware-macros = { path = "macros" }
 audioware-mem = { path = "mem" }
 audioware-sys = { path = "sys" }

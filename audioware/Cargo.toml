@@ -14,7 +14,6 @@ crate-type = ["cdylib"]
 audioware-macros.workspace = true
 audioware-mem.workspace = true
 audioware-sys.workspace = true
-anyhow.workspace = true
 fixed-map.workspace = true
 glam.workspace = true
 kira.workspace = true
