@@ -103,6 +103,17 @@ pub enum InternalError {
     ResourceLimitReached {
         origin: kira::ResourceLimitReached,
     },
+    #[snafu(display("unable to read binary location"), visibility(pub(crate)))]
+    BinaryLocation {
+        source: std::io::Error,
+    },
+    #[snafu(
+        display("unable to locate parent folder (expected '{folder}')"),
+        visibility(pub(crate))
+    )]
+    NoFolder {
+        folder: &'static str,
+    },
 }
 
 impl From<InternalError> for Error {

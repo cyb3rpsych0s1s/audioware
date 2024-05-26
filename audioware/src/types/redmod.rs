@@ -1,4 +1,8 @@
-use anyhow::Context;
+use snafu::{OptionExt, ResultExt};
+
+use crate::types::error::{BinaryLocationSnafu, NoFolderSnafu};
+
+use super::error::Error;
 
 /// REDmod folder
 #[derive(Debug)]
@@ -10,20 +14,24 @@ impl AsRef<std::path::Path> for REDmod {
     }
 }
 
+fn try_get_folder(folder: impl AsRef<std::path::Path>) -> Result<std::path::PathBuf, Error> {
+    let current_folder = std::env::current_exe().context(BinaryLocationSnafu)?;
+    Ok(current_folder
+        .parent()
+        .context(NoFolderSnafu { folder: "plugins" })?
+        .parent()
+        .context(NoFolderSnafu { folder: "red4ext" })?
+        .parent()
+        .context(NoFolderSnafu {
+            folder: "Cyberpunk 2077",
+        })?
+        .join(folder))
+}
+
 impl REDmod {
     /// try getting REDmod folder, if it exists
-    pub fn try_new() -> anyhow::Result<Self> {
-        let current_folder = std::env::current_exe()?;
-        Ok(Self(
-            current_folder
-                .parent()
-                .context("plugins folder")?
-                .parent()
-                .context("red4ext folder")?
-                .parent()
-                .context("Cyberpunk 2077 folder")?
-                .join("mods"),
-        ))
+    pub fn try_new() -> Result<Self, Error> {
+        Ok(Self(try_get_folder("mods")?))
     }
     /// retrieve mods subfolders
     pub fn mods(&self) -> Vec<Mod> {
@@ -52,19 +60,10 @@ impl AsRef<std::path::Path> for R6Audioware {
 
 impl R6Audioware {
     /// try getting r6\audioware folder, if it exists
-    pub fn try_new() -> anyhow::Result<Self> {
-        let current_folder = std::env::current_exe()?;
-        Ok(Self(
-            current_folder
-                .parent()
-                .context("plugins folder")?
-                .parent()
-                .context("red4ext folder")?
-                .parent()
-                .context("Cyberpunk 2077 folder")?
-                .join("r6")
-                .join("audioware"),
-        ))
+    pub fn try_new() -> Result<Self, Error> {
+        Ok(Self(try_get_folder(
+            std::path::PathBuf::from("r6").join("audioware"),
+        )?))
     }
     /// retrieve mods subfolders
     pub fn mods(&self) -> Vec<Mod> {
