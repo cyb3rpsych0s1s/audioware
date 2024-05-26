@@ -30,6 +30,16 @@ pub trait Hook {
         Self: Sized;
 }
 
+// intercept event handler lifecycle
+pub trait Intercept {
+    fn load()
+    where
+        Self: Sized;
+    fn unload()
+    where
+        Self: Sized;
+}
+
 pub type ExternFnRedRegisteredFunc = unsafe extern "C" fn(
     ctx: *mut red4ext_rs::ffi::IScriptable,
     frame: *mut red4ext_rs::ffi::CStackFrame,
@@ -44,12 +54,15 @@ pub type LocalFnRustRegisteredFunc = unsafe fn(
     a4: i64,
 ) -> ();
 
+pub type ExternFnRedRegisteredHandler = unsafe extern "C" fn(target: usize, event: usize) -> ();
+pub type LocalFnRustRegisteredHandler = unsafe fn(target: usize, event: usize) -> ();
+
 /// define function requirements for detouring.
 ///
 /// # Safety
 /// - `offset` must point to valid function in binary
 /// - `Inputs` must list function's parameters with correct type in the right order
-pub unsafe trait Detour {
+pub unsafe trait DetourFunc {
     const OFFSET: usize;
     type Inputs;
     /// read function parameters from `C` stack frame.
@@ -61,12 +74,28 @@ pub unsafe trait Detour {
     unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs;
 }
 
+/// define handler requirements for detouring.
+///
+/// # Safety
+/// - `offset` must point to valid function in binary
+/// - `Event` must point to the correct event type
+pub unsafe trait DetourHandler {
+    const OFFSET: usize;
+    type Event;
+    /// read function event parameter from pointer.
+    ///
+    /// # Safety
+    /// - event representation must be valid and correctly defined
+    /// - extra care must be taken if mutating the original event (untested)
+    unsafe fn from_ptr(ptr: usize) -> Self::Event;
+}
+
 pub type Trampoline = fn(Box<dyn Fn(&RawDetour)>);
 
 /// define `native function` detouring.
 ///
 /// e.g. [AudioSystem::Play](https://jac3km4.github.io/cyberdoc/#33326)
-pub trait NativeFunc: Detour {
+pub trait NativeFunc: DetourFunc {
     const HOOK: fn(Self::Inputs) -> ();
     const CONDITION: fn(&Self::Inputs) -> bool;
     const STORE: fn(Option<RawDetour>);
@@ -104,6 +133,32 @@ pub trait NativeFunc: Detour {
     }
 }
 
+/// define `native event handler` detouring.
+pub trait NativeHandler: DetourHandler {
+    const HOOK: fn(Self::Event) -> ();
+    const STORE: fn(Option<RawDetour>);
+    const TRAMPOLINE: Trampoline;
+    /// runtime hook.
+    ///
+    /// # Safety
+    /// This function is safe as long as safety invariants for [`crate::Detour`] are upheld.
+    ///
+    /// Extra care must be taken if you manipulate the event pointed at (untested).
+    unsafe fn hook(target_ptr: usize, event_ptr: usize) {
+        // read event in memory from pointer and call hook
+        let event: Self::Event = unsafe { Self::from_ptr(event_ptr) };
+        Self::HOOK(event);
+
+        // call original function
+        let trampoline = move |detour: &RawDetour| {
+            let original: ExternFnRedRegisteredHandler =
+                unsafe { ::std::mem::transmute(detour.trampoline()) };
+            unsafe { original(target_ptr, event_ptr) };
+        };
+        Self::TRAMPOLINE(Box::new(trampoline));
+    }
+}
+
 impl<T> Hook for T
 where
     T: NativeFunc,
@@ -118,11 +173,42 @@ where
                     Self::STORE(Some(detour));
                 }
                 Err(e) => {
-                    ::red4ext_rs::error!("could not enable detour ({e})");
+                    ::red4ext_rs::error!("could not enable native function detour ({e})");
                 }
             },
             Err(e) => {
-                ::red4ext_rs::error!("could not initialize detour ({e})");
+                ::red4ext_rs::error!("could not initialize native function detour ({e})");
+            }
+        }
+    }
+
+    fn unload()
+    where
+        Self: Sized,
+    {
+        Self::STORE(None);
+    }
+}
+
+impl<T> Intercept for T
+where
+    T: NativeHandler,
+{
+    fn load()
+    where
+        Self: Sized,
+    {
+        match unsafe { load_native_event_handler(Self::OFFSET, Self::hook) } {
+            Ok(detour) => match unsafe { detour.enable() } {
+                Ok(_) => {
+                    Self::STORE(Some(detour));
+                }
+                Err(e) => {
+                    ::red4ext_rs::error!("could not enable native event handler detour ({e})");
+                }
+            },
+            Err(e) => {
+                ::red4ext_rs::error!("could not initialize native event handler detour ({e})");
             }
         }
     }

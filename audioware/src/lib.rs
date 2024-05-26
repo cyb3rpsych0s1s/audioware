@@ -50,6 +50,7 @@ use red4ext_rs::{define_trait_plugin, plugin::Plugin};
 mod addresses;
 pub mod engine;
 mod hook;
+mod intercept;
 mod language;
 pub mod natives;
 mod types;
@@ -131,6 +132,12 @@ impl Plugin for Audioware {
         HookAudioSystemPlay::load();
         HookAudioSystemStop::load();
         HookAudioSystemSwitch::load();
+
+        #[cfg(debug_assertions)]
+        {
+            use audioware_mem::Intercept;
+            intercept::HookentAudioEvent::load();
+        }
     }
 
     fn unload() {
@@ -138,6 +145,12 @@ impl Plugin for Audioware {
         HookAudioSystemPlay::unload();
         HookAudioSystemStop::unload();
         HookAudioSystemSwitch::unload();
+
+        #[cfg(debug_assertions)]
+        {
+            use audioware_mem::Intercept;
+            intercept::HookentAudioEvent::unload();
+        }
     }
 
     fn is_version_independent() -> bool {
