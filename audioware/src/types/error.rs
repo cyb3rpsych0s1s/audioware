@@ -2,8 +2,6 @@ use audioware_sys::error::ConversionError;
 use red4ext_rs::types::CName;
 use snafu::prelude::*;
 
-use super::id::AnyId;
-
 #[derive(Debug, Snafu)]
 pub enum Error {
     Bank { source: BankError },
@@ -58,8 +56,6 @@ pub enum BankError {
 
 #[derive(Debug, Snafu)]
 pub enum RegistryError {
-    #[snafu(display("ids contain an AnyId when it should not: {id}"))]
-    Corrupted { id: AnyId },
     #[snafu(display("id not found in ids: {id}"), context(suffix(RegistrySnafu)))]
     NotFound { id: CName },
 }

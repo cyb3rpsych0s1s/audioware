@@ -29,38 +29,11 @@ impl std::fmt::Display for Id {
     }
 }
 
-/// only AnyId should be constructed from CName
-impl From<CName> for AnyId {
-    fn from(value: CName) -> Self {
-        AnyId(value)
-    }
-}
-
-impl std::fmt::Display for AnyId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} (untyped)", &self.0)
-    }
-}
-
 impl std::hash::Hash for Id {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         if let Self::Voice(VoiceId(id)) = self {
             u64::from(id.clone()).hash(state);
         }
-    }
-}
-
-// used inside macro
-
-impl PartialEq<VoiceId> for AnyId {
-    fn eq(&self, other: &VoiceId) -> bool {
-        self.0.eq(&other.0)
-    }
-}
-
-impl PartialEq<SfxId> for AnyId {
-    fn eq(&self, other: &SfxId) -> bool {
-        self.0.eq(&other.0)
     }
 }
 
@@ -184,4 +157,3 @@ macro_rules! id {
 
 id!(VoiceId, VoiceIdVisitor, Voice);
 id!(SfxId, SfxIdVisitor, Sfx);
-id!(AnyId);
