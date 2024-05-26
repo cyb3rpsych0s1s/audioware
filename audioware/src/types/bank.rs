@@ -19,7 +19,7 @@ use super::{
     voice::{DualVoice, Voices},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Bank {
     r#mod: ModName,
     voices: Option<Voices>,
@@ -73,7 +73,7 @@ impl Bank {
         if let Some(voices) = &mut self.voices {
             voices.voices.retain(|id, _| {
                 if let Ok(mut guard) = ids.try_lock() {
-                    let inserted = guard.insert(Id::Voice(id.clone()));
+                    let inserted = guard.insert(Id::from(id));
                     if !inserted {
                         red4ext_rs::error!("duplicate sound id ({id})");
                     }
@@ -87,7 +87,7 @@ impl Bank {
         if let Some(sfx) = &mut self.sfx {
             sfx.sfx.retain(|id, _| {
                 if let Ok(mut guard) = ids.try_lock() {
-                    let inserted = guard.insert(Id::Sfx(id.clone()));
+                    let inserted = guard.insert(Id::from(id));
                     if !inserted {
                         red4ext_rs::error!("duplicate sound id ({id})");
                     }
@@ -131,7 +131,6 @@ impl Bank {
         match crate::engine::banks::typed_id(id)? {
             Id::Voice(id) => Ok(self.data_from_voice_id(gender, language, &id).unwrap()),
             Id::Sfx(id) => Ok(self.data_from_sfx_id(&id).unwrap()),
-            Id::Any(_) => unreachable!("method typed_id should only return valid and typed ID"),
         }
     }
     pub fn voices(&self) -> Option<&Voices> {

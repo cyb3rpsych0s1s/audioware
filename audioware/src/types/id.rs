@@ -11,14 +11,13 @@ impl std::hash::Hash for SoundEntityId {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// special kind of id guaranteed to be unique and to exist in banks
+#[derive(Debug, PartialEq, Eq)]
 pub enum Id {
     /// voice related id
     Voice(VoiceId),
     /// sfx related id
     Sfx(SfxId),
-    /// any id
-    Any(AnyId),
 }
 
 impl std::fmt::Display for Id {
@@ -26,7 +25,6 @@ impl std::fmt::Display for Id {
         match self {
             Id::Voice(x) => write!(f, "{} |voice id|", x),
             Id::Sfx(x) => write!(f, "{} |sfx id|", x),
-            Id::Any(x) => write!(f, "{} |any id|", x),
         }
     }
 }
@@ -108,7 +106,6 @@ macro_rules! id {
             fn eq(&self, other: &$target) -> bool {
                 match self {
                     Id::$variant(id) => id == other,
-                    Id::Any(id) => id == other,
                     _ => false,
                 }
             }
@@ -118,7 +115,6 @@ macro_rules! id {
             fn eq(&self, other: &Id) -> bool {
                 match other {
                     Id::$variant(id) => id == self,
-                    Id::Any(id) => id == self,
                     _ => false,
                 }
             }
@@ -175,6 +171,12 @@ macro_rules! id {
                 D: serde::Deserializer<'de>,
             {
                 deserializer.deserialize_str($visitor)
+            }
+        }
+
+        impl From<&$target> for Id {
+            fn from(value: &$target) -> Self {
+                Self::$variant(value.clone())
             }
         }
     };

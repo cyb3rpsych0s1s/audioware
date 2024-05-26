@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 use super::id::SfxId;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Sfxs {
     #[allow(dead_code)]
     pub version: Version,

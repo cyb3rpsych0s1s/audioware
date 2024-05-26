@@ -16,11 +16,28 @@ use crate::{
     types::{
         bank::Bank,
         error::{BankError, Error, InternalError, RegistryError},
-        id::{AnyId, Id},
+        id::Id,
         redmod::{ModName, R6Audioware, REDmod},
         voice::Subtitle,
     },
 };
+
+pub(crate) trait ContainsCName {
+    fn contains_cname(&self, any: &CName) -> bool;
+}
+
+impl ContainsCName for HashSet<Id> {
+    fn contains_cname(&self, any: &CName) -> bool {
+        for key in self.iter() {
+            match key {
+                Id::Voice(id) if id.as_ref() == any => return true,
+                Id::Sfx(id) if id.as_ref() == any => return true,
+                _ => continue,
+            }
+        }
+        false
+    }
+}
 
 static BANKS: OnceCell<HashMap<ModName, Bank>> = OnceCell::new();
 
@@ -48,8 +65,8 @@ pub fn typed_id(sound_name: &CName) -> Result<Id, Error> {
     let ids = maybe_ids!()?;
     for id in ids.iter() {
         match id {
-            Id::Voice(inner) if inner.as_ref() == sound_name => return Ok(id.clone()),
-            Id::Sfx(inner) if inner.as_ref() == sound_name => return Ok(id.clone()),
+            Id::Voice(inner) if inner.as_ref() == sound_name => return Ok(Id::from(inner)),
+            Id::Sfx(inner) if inner.as_ref() == sound_name => return Ok(Id::from(inner)),
             _ => continue,
         }
     }
@@ -96,9 +113,6 @@ pub fn exists(id: CName) -> Result<bool, Error> {
         match i {
             Id::Voice(x) if x == &id => return Ok(true),
             Id::Sfx(x) if x == &id => return Ok(true),
-            Id::Any(x) if x.as_ref() == &id => {
-                return Err(RegistryError::Corrupted { id: x.clone() }.into())
-            }
             _ => continue,
         }
     }
@@ -108,7 +122,7 @@ pub fn exists(id: CName) -> Result<bool, Error> {
 pub fn exist(ids: &[CName]) -> Result<bool, Error> {
     let guard = maybe_ids!()?;
     for id in ids {
-        if !guard.contains(&Id::Any(AnyId::from(id.clone()))) {
+        if !guard.contains_cname(id) {
             return Ok(false);
         }
     }
@@ -116,7 +130,7 @@ pub fn exist(ids: &[CName]) -> Result<bool, Error> {
 }
 
 pub fn exists_event(event: &Ref<Event>) -> Result<bool, Error> {
-    Ok(maybe_ids!()?.contains(&Id::Any(AnyId::from(event.sound_name()))))
+    Ok(maybe_ids!()?.contains_cname(&event.sound_name()))
 }
 
 pub fn data(id: &CName) -> Result<StaticSoundData, Error> {

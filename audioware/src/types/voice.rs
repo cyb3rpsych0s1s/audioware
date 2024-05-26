@@ -13,7 +13,7 @@ use audioware_sys::interop::locale::Locale;
 
 use super::id::VoiceId;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Voices {
     #[allow(dead_code)]
     pub version: Version,
