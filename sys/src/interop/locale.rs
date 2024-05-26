@@ -83,7 +83,7 @@ impl From<Locale> for CName {
     }
 }
 
-impl<'a> TryFrom<CName> for Locale {
+impl TryFrom<CName> for Locale {
     type Error = ConversionError;
 
     fn try_from(value: CName) -> Result<Self, Self::Error> {
