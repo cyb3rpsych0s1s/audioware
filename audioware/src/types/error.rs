@@ -14,8 +14,16 @@ pub enum Error {
 
 #[derive(Debug, Snafu)]
 pub enum EngineError {
-    Tracks { source: TracksError },
-    Scene { source: SceneError },
+    Tracks {
+        source: TracksError,
+    },
+    Scene {
+        source: SceneError,
+    },
+    #[snafu(display("invalid game state {value}"))]
+    InvalidState {
+        value: u8,
+    },
 }
 
 #[derive(Debug, Snafu)]
@@ -24,6 +32,28 @@ pub enum BankError {
     NotFound { id: CName },
     #[snafu(display("uninitialized banks"), context(suffix(BankSnafu)))]
     Uninitialized,
+    #[snafu(
+        display("unable to read audioware dir: {path}"),
+        visibility(pub(crate))
+    )]
+    UnableToReadDir { path: String },
+    #[snafu(
+        display("unable to read bank manifest: {path}"),
+        visibility(pub(crate))
+    )]
+    UnableToReadManifest {
+        path: String,
+        source: std::io::Error,
+    },
+    #[snafu(
+        display("invalid bank manifest: {path} ({kind})"),
+        visibility(pub(crate))
+    )]
+    UnableToDeserialize {
+        path: String,
+        kind: &'static str,
+        source: serde_yaml::Error,
+    },
 }
 
 #[derive(Debug, Snafu)]
@@ -69,6 +99,7 @@ pub enum InternalError {
     FileSystem {
         at: &'static str,
     },
+    #[snafu(display("audio engine resource limit reached"))]
     ResourceLimitReached {
         origin: kira::ResourceLimitReached,
     },
@@ -89,6 +120,12 @@ impl From<BankError> for Error {
 impl From<RegistryError> for Error {
     fn from(source: RegistryError) -> Self {
         Self::Registry { source }
+    }
+}
+
+impl From<EngineError> for Error {
+    fn from(source: EngineError) -> Self {
+        Self::Engine { source }
     }
 }
 

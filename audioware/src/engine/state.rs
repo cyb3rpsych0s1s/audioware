@@ -3,7 +3,7 @@ use std::sync::{atomic::AtomicU8, Mutex};
 use once_cell::sync::OnceCell;
 use red4ext_rs::conv::NativeRepr;
 
-use crate::types::error::{Error, InternalError};
+use crate::types::error::{EngineError, Error, InternalError};
 
 use super::effects::Preset;
 
@@ -69,7 +69,7 @@ unsafe impl NativeRepr for State {
 }
 
 impl TryFrom<u8> for State {
-    type Error = anyhow::Error;
+    type Error = Error;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
@@ -81,7 +81,7 @@ impl TryFrom<u8> for State {
             v if State::InPause as u8 == v => Ok(State::InPause),
             v if State::End as u8 == v => Ok(State::End),
             v if State::Unload as u8 == v => Ok(State::Unload),
-            _ => anyhow::bail!(format!("invalid State ({})", value)),
+            _ => Err(Error::from(EngineError::InvalidState { value })),
         }
     }
 }

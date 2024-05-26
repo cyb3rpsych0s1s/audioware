@@ -4,10 +4,15 @@ use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use kira::sound::static_sound::StaticSoundData;
 
 use red4ext_rs::types::CName;
+use snafu::ResultExt;
 
-use crate::types::voice::{validate_static_sound_data, AudioSubtitle};
+use crate::types::{
+    error::{UnableToDeserializeSnafu, UnableToReadManifestSnafu},
+    voice::{validate_static_sound_data, AudioSubtitle},
+};
 
 use super::{
+    error::{Error, UnableToReadDirSnafu},
     id::Id,
     redmod::{Mod, ModName},
     sfx::Sfxs,
@@ -118,7 +123,7 @@ impl Bank {
 }
 
 impl TryFrom<&Mod> for Bank {
-    type Error = anyhow::Error;
+    type Error = Error;
 
     fn try_from(value: &Mod) -> Result<Self, Self::Error> {
         // safety: dir already checked
@@ -131,13 +136,27 @@ impl TryFrom<&Mod> for Bank {
             let mut voices = None;
             let mut sfx = None;
             if let Some(manifest) = files.iter().find(|x| is_voices_manifest(x)) {
-                let content = std::fs::read(manifest)?;
-                let entries = serde_yaml::from_slice::<Voices>(content.as_slice())?;
+                let content = std::fs::read(manifest).context(UnableToReadManifestSnafu {
+                    path: manifest.as_path().display().to_string(),
+                })?;
+                let entries = serde_yaml::from_slice::<Voices>(content.as_slice()).context(
+                    UnableToDeserializeSnafu {
+                        path: manifest.as_path().display().to_string(),
+                        kind: "voices",
+                    },
+                )?;
                 voices = Some(entries);
             }
             if let Some(manifest) = files.iter().find(|x| is_sfx_manifest(x)) {
-                let content = std::fs::read(manifest)?;
-                let entries = serde_yaml::from_slice::<Sfxs>(content.as_slice())?;
+                let content = std::fs::read(manifest).context(UnableToReadManifestSnafu {
+                    path: manifest.as_path().display().to_string(),
+                })?;
+                let entries = serde_yaml::from_slice::<Sfxs>(content.as_slice()).context(
+                    UnableToDeserializeSnafu {
+                        path: manifest.as_path().display().to_string(),
+                        kind: "sfx",
+                    },
+                )?;
                 sfx = Some(entries);
             }
             return Ok(Self {
@@ -147,7 +166,11 @@ impl TryFrom<&Mod> for Bank {
                 folder: value.as_ref().to_owned(),
             });
         }
-        anyhow::bail!("unable to retrieve mod's bank");
+        Err(UnableToReadDirSnafu {
+            path: value.as_ref().display().to_string(),
+        }
+        .build()
+        .into())
     }
 }
 
