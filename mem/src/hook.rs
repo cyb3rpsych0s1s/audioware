@@ -1,4 +1,4 @@
-//! deprecated: only kept around for learning purpose
+//! deprecated, only kept around for learning purpose
 
 #[macro_export]
 macro_rules! hook {

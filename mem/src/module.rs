@@ -2,7 +2,10 @@ use retour::RawDetour;
 use widestring::U16CString;
 use winapi::{shared::minwindef::HMODULE, um::libloaderapi::GetModuleHandleW};
 
-use crate::{ExternFnRedRegisteredFunc, LocalFnRustRegisteredFunc};
+use crate::{
+    ExternFnRedRegisteredFunc, ExternFnRedRegisteredHandler, LocalFnRustRegisteredFunc,
+    LocalFnRustRegisteredHandler,
+};
 
 /// get a Windows module address in memory.
 ///
@@ -36,10 +39,10 @@ unsafe fn locate(offset: usize) -> usize {
 /// memory offset must be for a valid native event handler function.
 pub unsafe fn load_native_event_handler(
     offset: usize,
-    hook: fn(usize, usize) -> (),
+    hook: LocalFnRustRegisteredHandler,
 ) -> Result<RawDetour, ::retour::Error> {
     let address = unsafe { self::locate(offset) };
-    let vanilla: extern "C" fn(usize, usize) -> () = unsafe { ::std::mem::transmute(address) };
+    let vanilla: ExternFnRedRegisteredHandler = unsafe { ::std::mem::transmute(address) };
     unsafe { ::retour::RawDetour::new(vanilla as *const (), hook as *const ()) }
 }
 

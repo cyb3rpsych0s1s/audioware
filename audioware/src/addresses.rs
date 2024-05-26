@@ -6,3 +6,6 @@ pub const ON_AUDIOSYSTEM_PLAY: usize = 0x140974F58 - IMAGE_BASE;
 pub const ON_AUDIOSYSTEM_STOP: usize = 0x1424503C8 - IMAGE_BASE;
 /// memory address for [AudioSystem::Switch](https://codeberg.org/adamsmasher/cyberpunk/src/branch/master/core/systems/audioSystem.swift#L14)
 pub const ON_AUDIOSYSTEM_SWITCH: usize = 0x140291688 - IMAGE_BASE;
+
+/// memory address for [AudioEvent](https://codeberg.org/adamsmasher/cyberpunk/src/branch/master/orphans.swift#18091)
+pub const ON_ENTAUDIOEVENT: usize = 0x140816DF4 - IMAGE_BASE;
