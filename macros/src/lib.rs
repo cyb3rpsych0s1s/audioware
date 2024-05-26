@@ -13,6 +13,7 @@ const HINT_OFFSET: &str = r#"= hint: offset = 0x140975FE4 - 0x140000000
 = hint: offset = SOME_CONSTANT
 "#;
 const HINT_INPUTS: &str = "= hint: inputs = (CName, EntityId, CName)";
+const HINT_EVENT: &str = "= hint: event = AudioEvent";
 
 /// automatically derive [`audioware_mem::FromMemory`] for any struct
 /// with named fields which correctly upholds its invariants.
@@ -80,7 +81,7 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
     let struc = parse_macro_input!(input2 as syn::ItemStruct);
     let private = Ident::new(
         &format!(
-            "__internals_{}",
+            "__internals_func_{}",
             struc.ident.to_string().to_lowercase().as_str()
         ),
         Span::call_site(),
@@ -186,18 +187,18 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
                 if let Ok(mut guard) = self::storage().try_lock() {
                     *guard = detour;
                 } else {
-                    ::red4ext_rs::error!("lock contention (store)");
+                    ::red4ext_rs::error!("lock contention (store {})", stringify!(#name));
                 }
             }
             pub(super) fn trampoline(closure: ::std::boxed::Box<dyn ::std::ops::Fn(&::retour::RawDetour)>) {
                 if let Ok(Some(guard)) = self::storage().try_lock().as_deref() {
                     closure(guard);
                 } else {
-                    ::red4ext_rs::error!("lock contention (trampoline)");
+                    ::red4ext_rs::error!("lock contention (trampoline {})", stringify!(#name));
                 }
             }
         }
-        unsafe impl ::audioware_mem::Detour for #name {
+        unsafe impl ::audioware_mem::DetourFunc for #name {
             const OFFSET: usize = #offset;
             type Inputs = #inputs;
             unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs {
@@ -317,8 +318,147 @@ fn get_inputs(lit: &LitStr) -> Result<(Type, Vec<proc_macro2::TokenStream>), syn
     ))
 }
 
+fn get_event(lit: &LitStr) -> Result<(Type, proc_macro2::TokenStream), syn::Error> {
+    let event: Type;
+    let event_impl: proc_macro2::TokenStream;
+    if let Ok(value) = parse_str::<syn::Type>(lit.value().as_str()) {
+        event = value.clone();
+        match value {
+            Type::Path(path) => {
+                let path = path.path;
+                event_impl = quote! {
+                    let event: #path = <#path>::from_memory(event);
+                    event
+                };
+                return Ok((event, event_impl));
+            }
+            _ => {
+                return Err(syn::Error::new(
+                    value.span(),
+                    format!("event attribute only supports explicit type\n{HINT_EVENT}"),
+                ))
+            }
+        }
+    }
+    Err(syn::Error::new(
+        lit.span(),
+        format!("event attribute only supports explicit type\n{HINT_EVENT}"),
+    ))
+}
+
 fn format_hex(lit: usize) -> Result<proc_macro2::Literal, syn::Error> {
     format!("{:#X}", lit)
         .parse::<proc_macro2::Literal>()
         .map_err(|_| syn::Error::new(lit.span(), "invalid hexadecimal"))
+}
+
+#[proc_macro_derive(NativeHandler, attributes(hook))]
+pub fn derive_native_handler(input: TokenStream) -> TokenStream {
+    let input2 = input.clone();
+    let derive = parse_macro_input!(input as syn::DeriveInput);
+    let struc = parse_macro_input!(input2 as syn::ItemStruct);
+    let private = Ident::new(
+        &format!(
+            "__internals_handler_{}",
+            struc.ident.to_string().to_lowercase().as_str()
+        ),
+        Span::call_site(),
+    );
+    let name = struc.ident;
+    let mut offset: Option<proc_macro2::TokenStream> = None;
+    let mut event: Option<Type> = None;
+    let mut event_impl: Option<proc_macro2::TokenStream> = None;
+    let mut detour: Option<String> = None;
+    for ref attr in derive.attrs {
+        let meta = &attr.meta;
+        match meta {
+            Meta::List(list) if list.path.is_ident("hook") => {
+                if let Ok(list) =
+                    list.parse_args_with(Punctuated::<MetaNameValue, Token![,]>::parse_terminated)
+                {
+                    for arg in list {
+                        match arg {
+                            MetaNameValue { path, value, .. } if path.is_ident("offset") => {
+                                match get_offset(&value) {
+                                    Ok(x) => {
+                                        offset = Some(x);
+                                    }
+                                    Err(e) => return e.to_compile_error().into(),
+                                }
+                            }
+                            MetaNameValue {
+                                path,
+                                value:
+                                    Expr::Lit(ExprLit {
+                                        lit: Lit::Str(lit), ..
+                                    }),
+                                ..
+                            } if path.is_ident("event") => match get_event(&lit) {
+                                Ok((ty, imp)) => {
+                                    event = Some(ty);
+                                    event_impl = Some(imp);
+                                }
+                                Err(e) => return e.to_compile_error().into(),
+                            },
+                            MetaNameValue {
+                                path,
+                                value:
+                                    Expr::Lit(ExprLit {
+                                        lit: Lit::Str(lit), ..
+                                    }),
+                                ..
+                            } if path.is_ident("detour") => {
+                                detour = Some(lit.value());
+                            }
+                            _ => {
+                                return syn::Error::new(arg.span(), "unknown or invalid attribute")
+                                    .to_compile_error()
+                                    .into()
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    let detour = Ident::new(detour.unwrap().as_str(), Span::call_site());
+    let storage = quote! {
+        mod #private {
+            fn storage() -> &'static ::std::sync::Mutex<::std::option::Option<::retour::RawDetour>> {
+                static INSTANCE: ::once_cell::sync::OnceCell<::std::sync::Mutex<::std::option::Option<::retour::RawDetour>>> = ::once_cell::sync::OnceCell::new();
+                return INSTANCE.get_or_init(::std::default::Default::default)
+            }
+            pub(super) fn store(detour: ::std::option::Option<::retour::RawDetour>) {
+                if let Ok(mut guard) = self::storage().try_lock() {
+                    *guard = detour;
+                } else {
+                    ::red4ext_rs::error!("lock contention (store {})", stringify!(#name));
+                }
+            }
+            pub(super) fn trampoline(closure: ::std::boxed::Box<dyn ::std::ops::Fn(&::retour::RawDetour)>) {
+                if let Ok(Some(guard)) = self::storage().try_lock().as_deref() {
+                    closure(guard);
+                } else {
+                    ::red4ext_rs::error!("lock contention (trampoline {})", stringify!(#name));
+                }
+            }
+        }
+        unsafe impl ::audioware_mem::DetourHandler for #name {
+            const OFFSET: usize = #offset;
+            type Event = #event;
+            unsafe fn from_ptr(event: usize) -> Self::Event {
+                #event_impl
+            }
+        }
+        impl ::audioware_mem::NativeHandler for #name {
+            const HOOK: fn(Self::Event) -> () = #detour;
+            const TRAMPOLINE: fn(Box<dyn Fn(&::retour::RawDetour)>) = #private::trampoline;
+            const STORE: fn(Option<::retour::RawDetour>) = #private::store;
+        }
+    };
+    quote! {
+        #storage
+    }
+    .into()
 }

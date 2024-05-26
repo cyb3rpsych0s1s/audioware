@@ -1,7 +1,10 @@
 use audioware_macros::FromMemory;
-use red4ext_rs::{conv::NativeRepr, types::CName};
+use red4ext_rs::{
+    conv::{ClassType, NativeRepr},
+    types::CName,
+};
 
-use super::iscriptable::ISCRIPTABLE_SIZE;
+use super::{event::Event, iscriptable::ISCRIPTABLE_SIZE};
 
 /// see [RED4ext::audio::EventActionType](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/audio/EventActionType.hpp).
 #[derive(Debug, Clone, Copy, strum_macros::Display, strum_macros::FromRepr, PartialEq)]
@@ -49,6 +52,20 @@ pub struct AudioEvent {
     pub event_type: AudioEventActionType,
     pub event_flags: AudioAudioEventFlags,
     unk64: i32,
+}
+
+impl ClassType for AudioEvent {
+    type BaseClass = Event;
+    const NAME: &'static str = "AudioEvent";
+    const NATIVE_NAME: &'static str = "entAudioEvent";
+}
+
+#[cfg(test)]
+mod memory {
+    #[test]
+    fn size() {
+        static_assertions::const_assert_eq!(std::mem::size_of::<super::AudioEvent>(), 0x68);
+    }
 }
 
 /// see [RED4ext::scn::DialogLineType](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/scn/DialogLineType.hpp).

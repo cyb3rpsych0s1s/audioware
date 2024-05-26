@@ -13,6 +13,7 @@ env:
   CARGO_TERM_COLOR: always
   IS_DRAFT: ${{ startsWith(github.ref_name, 'beta') || startsWith(github.ref_name, 'alpha') }}
   IS_PRERELEASE: ${{ startsWith(github.ref_name, 'rc') }}
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
 
 jobs:
   bundle:

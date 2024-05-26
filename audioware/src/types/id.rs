@@ -13,17 +13,16 @@ impl std::hash::Hash for SoundEntityId {
 
 macro_rules! id {
     ($target:ident, $visitor:ident) => {
-
         #[derive(Debug, Clone, PartialEq, Eq)]
         #[repr(transparent)]
         pub struct $target(CName);
-        
+
         impl std::hash::Hash for $target {
             fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
                 u64::from(self.0.clone()).hash(state);
             }
         }
-        
+
         impl AsRef<CName> for $target {
             fn as_ref(&self) -> &CName {
                 &self.0
