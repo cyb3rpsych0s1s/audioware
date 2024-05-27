@@ -65,7 +65,7 @@ pub(crate) fn maybe_banks<'cell>() -> Result<&'cell HashMap<ModName, Bank>, Bank
 pub fn typed_id(sound_name: &CName) -> Result<Id, Error> {
     let ids = maybe_ids()?;
     ids.get_by_cname(sound_name).ok_or(
-        BankError::NotFound {
+        RegistryError::NotFound {
             id: sound_name.clone(),
         }
         .into(),
