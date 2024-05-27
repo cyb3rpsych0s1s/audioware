@@ -5,9 +5,6 @@ use serde::Deserialize;
 
 use super::id::SfxId;
 
-#[derive(Debug)]
-pub struct InMemorySfxs(HashMap<SfxId, StaticSoundData>);
-
 #[derive(Debug, Clone, Deserialize)]
 pub struct Sfx(std::path::PathBuf);
 
