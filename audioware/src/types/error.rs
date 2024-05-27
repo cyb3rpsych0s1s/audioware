@@ -49,10 +49,7 @@ pub enum BankError {
         path: String,
         source: std::io::Error,
     },
-    #[snafu(
-        display("invalid bank manifest: {path}"),
-        visibility(pub(crate))
-    )]
+    #[snafu(display("invalid bank manifest: {path}"), visibility(pub(crate)))]
     InvalidManifest {
         path: String,
         source: serde_yaml::Error,

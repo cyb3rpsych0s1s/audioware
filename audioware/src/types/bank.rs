@@ -7,6 +7,7 @@ use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use kira::sound::static_sound::StaticSoundData;
 
 use red4ext_rs::types::CName;
+use semver::Version;
 use snafu::ResultExt;
 
 use crate::types::{
@@ -19,15 +20,20 @@ use super::{
     id::{Id, SfxId, VoiceId},
     manifest::Manifest,
     redmod::{Mod, ModName},
+    sfx::InMemorySfx,
     voice::{DualVoice, Voice},
 };
 
 #[derive(Debug)]
 pub struct Bank {
     r#mod: ModName,
+    #[allow(dead_code)]
+    version: Version,
     voices: Option<HashMap<VoiceId, Voice>>,
-    sfx: Option<HashMap<SfxId, StaticSoundData>>,
+    sfx: Option<HashMap<SfxId, InMemorySfx>>,
     folder: std::path::PathBuf,
+    #[allow(dead_code)]
+    filename: String,
 }
 
 impl Bank {
@@ -95,7 +101,7 @@ impl Bank {
     }
     pub fn data_from_sfx_id(&self, id: &SfxId) -> Option<StaticSoundData> {
         if let Some(sfx) = self.sfx.as_ref().and_then(|x| x.get(id)) {
-            return Some(sfx.clone());
+            return Some(sfx.as_ref().clone());
         }
         None
     }
@@ -144,34 +150,34 @@ impl TryFrom<&Mod> for Vec<Bank> {
                 .map(|x| x.path())
                 .collect::<Vec<_>>();
             let mut voices: Option<HashMap<VoiceId, Voice>> = None;
-            let mut sfx: Option<HashMap<SfxId, StaticSoundData>> = None;
+            let mut sfx: Option<HashMap<SfxId, InMemorySfx>> = None;
             let mut banks = Vec::with_capacity(files.len());
             for file in files {
                 if is_manifest(&file) {
                     let content = std::fs::read(&file).context(UnableToReadManifestSnafu {
                         path: file.as_path().display().to_string(),
                     })?;
-                    let entries = serde_yaml::from_slice::<Manifest>(content.as_slice()).context(
+                    let manifest = serde_yaml::from_slice::<Manifest>(content.as_slice()).context(
                         InvalidManifestSnafu {
                             path: file.as_path().display().to_string(),
                         },
                     )?;
-                    if entries.voices.is_none() && entries.sfx.is_none() {
+                    if manifest.voices.is_none() && manifest.sfx.is_none() {
                         return Err(BankError::Empty {
                             filename: file.display().to_string(),
                         }
                         .into());
                     }
-                    if let Some(found) = entries.voices {
+                    if let Some(found) = manifest.voices {
                         voices = Some(found);
                     }
-                    if let Some(found) = entries.sfx {
-                        let mut in_memory: HashMap<SfxId, StaticSoundData> =
+                    if let Some(found) = manifest.sfx {
+                        let mut in_memory: HashMap<SfxId, InMemorySfx> =
                             HashMap::with_capacity(found.len());
                         for (k, v) in found.into_iter() {
                             match StaticSoundData::from_file(v.as_ref()) {
                                 Ok(data) => {
-                                    in_memory.insert(k, data);
+                                    in_memory.insert(k, data.into());
                                 }
                                 Err(_) => {
                                     red4ext_rs::error!(
@@ -185,9 +191,15 @@ impl TryFrom<&Mod> for Vec<Bank> {
                     }
                     banks.push(Bank {
                         r#mod: value.name(),
+                        version: manifest.version,
                         voices: voices.to_owned(),
                         sfx: sfx.to_owned(),
                         folder: value.as_ref().to_owned(),
+                        filename: file
+                            .file_name()
+                            .expect("yaml file has already been read")
+                            .to_string_lossy()
+                            .to_string(),
                     });
                 }
             }
