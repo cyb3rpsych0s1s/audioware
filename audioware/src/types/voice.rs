@@ -4,7 +4,6 @@ use audioware_sys::interop::gender::PlayerGender;
 use fixed_map::Map;
 use kira::sound::static_sound::StaticSoundData;
 use red4ext_rs::types::CName;
-use semver::Version;
 use serde::Deserialize;
 use validator::{Validate, ValidationError};
 use validator::{ValidateArgs, ValidationErrors};
@@ -12,18 +11,11 @@ use validator::{ValidateArgs, ValidationErrors};
 use audioware_sys::interop::locale::Locale;
 
 use super::id::VoiceId;
+use super::Subtitles;
 
-#[derive(Debug, Deserialize)]
-pub struct Voices {
-    #[allow(dead_code)]
-    pub version: Version,
-    pub voices: HashMap<VoiceId, Voice>,
-}
-
-impl Voices {
-    pub fn subtitles(&self, locale: Locale) -> Vec<Subtitle<'_>> {
-        self.voices
-            .iter()
+impl Subtitles for HashMap<VoiceId, Voice> {
+    fn subtitles(&self, locale: Locale) -> Vec<Subtitle<'_>> {
+        self.iter()
             .map(|(id, voice)| {
                 let (female, male) = voice.subtitle(locale);
                 Subtitle {
@@ -152,14 +144,14 @@ pub fn validate_static_sound_data(
 mod tests {
     use validator::ValidateArgs;
 
-    use crate::types::voice::{AudioSubtitle, Voices};
+    use crate::types::{manifest::Manifest, voice::AudioSubtitle};
 
     #[test]
     pub fn deserialize() {
         let filepath = std::path::PathBuf::from("./tests/voices.yml");
         let yaml = std::fs::read(filepath).unwrap();
-        let voices = serde_yaml::from_slice::<Voices>(yaml.as_slice());
-        assert!(voices.is_ok());
+        let manifest = serde_yaml::from_slice::<Manifest>(yaml.as_slice());
+        assert!(manifest.is_ok());
     }
 
     #[test]

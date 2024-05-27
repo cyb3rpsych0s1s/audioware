@@ -32,6 +32,8 @@ pub enum EngineError {
 pub enum BankError {
     #[snafu(display("id not found in banks: {id}"), context(suffix(BankSnafu)))]
     NotFound { id: CName },
+    #[snafu(display("empty bank: {filename}"))]
+    Empty { filename: String },
     #[snafu(display("uninitialized banks"), context(suffix(BankSnafu)))]
     Uninitialized,
     #[snafu(
@@ -48,12 +50,11 @@ pub enum BankError {
         source: std::io::Error,
     },
     #[snafu(
-        display("invalid bank manifest: {path} ({kind})"),
+        display("invalid bank manifest: {path}"),
         visibility(pub(crate))
     )]
-    UnableToDeserialize {
+    InvalidManifest {
         path: String,
-        kind: &'static str,
         source: serde_yaml::Error,
     },
 }

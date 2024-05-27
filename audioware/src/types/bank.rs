@@ -10,23 +10,23 @@ use red4ext_rs::types::CName;
 use snafu::ResultExt;
 
 use crate::types::{
-    error::{UnableToDeserializeSnafu, UnableToReadManifestSnafu},
+    error::{InvalidManifestSnafu, UnableToReadManifestSnafu},
     voice::{validate_static_sound_data, AudioSubtitle},
 };
 
 use super::{
-    error::{Error, UnableToReadDirSnafu},
+    error::{BankError, Error, UnableToReadDirSnafu},
     id::{Id, SfxId, VoiceId},
+    manifest::Manifest,
     redmod::{Mod, ModName},
-    sfx::{InMemorySfxs, Sfxs},
-    voice::{DualVoice, Voices},
+    voice::{DualVoice, Voice},
 };
 
 #[derive(Debug)]
 pub struct Bank {
     r#mod: ModName,
-    voices: Option<Voices>,
-    sfx: Option<InMemorySfxs>,
+    voices: Option<HashMap<VoiceId, Voice>>,
+    sfx: Option<HashMap<SfxId, StaticSoundData>>,
     folder: std::path::PathBuf,
 }
 
@@ -40,7 +40,7 @@ impl Bank {
     pub fn retain_valid_audio(&mut self) {
         let folder = self.folder();
         if let Some(voices) = &mut self.voices {
-            voices.voices.values_mut().for_each(|voice| match voice {
+            voices.values_mut().for_each(|voice| match voice {
                 super::voice::Voice::Dual(DualVoice { female, male }) => {
                     for audio in female.values_mut().chain(male.values_mut()) {
                         if let Some(file) = audio.file.clone() {
@@ -65,7 +65,7 @@ impl Bank {
     }
     pub fn retain_unique_ids(&mut self, ids: &Mutex<HashSet<Id>>) {
         if let Some(voices) = &mut self.voices {
-            voices.voices.retain(|id, _| {
+            voices.retain(|id, _| {
                 if let Ok(mut guard) = ids.try_lock() {
                     let inserted = guard.insert(Id::from(id));
                     if !inserted {
@@ -79,7 +79,7 @@ impl Bank {
             });
         }
         if let Some(sfx) = &mut self.sfx {
-            sfx.sfx.retain(|id, _| {
+            sfx.retain(|id, _| {
                 if let Ok(mut guard) = ids.try_lock() {
                     let inserted = guard.insert(Id::from(id));
                     if !inserted {
@@ -94,7 +94,7 @@ impl Bank {
         }
     }
     pub fn data_from_sfx_id(&self, id: &SfxId) -> Option<StaticSoundData> {
-        if let Some(sfx) = self.sfx.as_ref().and_then(|x| x.sfx.get(id)) {
+        if let Some(sfx) = self.sfx.as_ref().and_then(|x| x.get(id)) {
             return Some(sfx.clone());
         }
         None
@@ -105,7 +105,7 @@ impl Bank {
         language: Locale,
         id: &VoiceId,
     ) -> Option<StaticSoundData> {
-        if let Some(voice) = self.voices.as_ref().and_then(|x| x.voices.get(id)) {
+        if let Some(voice) = self.voices.as_ref().and_then(|x| x.get(id)) {
             let audios = voice.audios(&gender);
             if let Some(AudioSubtitle {
                 file: Some(file), ..
@@ -127,12 +127,12 @@ impl Bank {
             Id::Sfx(id) => Ok(self.data_from_sfx_id(&id).unwrap()),
         }
     }
-    pub fn voices(&self) -> Option<&Voices> {
+    pub fn voices(&self) -> Option<&HashMap<VoiceId, Voice>> {
         self.voices.as_ref()
     }
 }
 
-impl TryFrom<&Mod> for Bank {
+impl TryFrom<&Mod> for Vec<Bank> {
     type Error = Error;
 
     fn try_from(value: &Mod) -> Result<Self, Self::Error> {
@@ -143,56 +143,54 @@ impl TryFrom<&Mod> for Bank {
                 .filter(|x| x.path().is_file())
                 .map(|x| x.path())
                 .collect::<Vec<_>>();
-            let mut voices = None;
-            let mut sfx: Option<InMemorySfxs> = None;
-            if let Some(manifest) = files.iter().find(|x| is_voices_manifest(x)) {
-                let content = std::fs::read(manifest).context(UnableToReadManifestSnafu {
-                    path: manifest.as_path().display().to_string(),
-                })?;
-                let entries = serde_yaml::from_slice::<Voices>(content.as_slice()).context(
-                    UnableToDeserializeSnafu {
-                        path: manifest.as_path().display().to_string(),
-                        kind: "voices",
-                    },
-                )?;
-                voices = Some(entries);
-            }
-            if let Some(manifest) = files.iter().find(|x| is_sfx_manifest(x)) {
-                let content = std::fs::read(manifest).context(UnableToReadManifestSnafu {
-                    path: manifest.as_path().display().to_string(),
-                })?;
-                let entries = serde_yaml::from_slice::<Sfxs>(content.as_slice()).context(
-                    UnableToDeserializeSnafu {
-                        path: manifest.as_path().display().to_string(),
-                        kind: "sfx",
-                    },
-                )?;
-                let mut in_memory: HashMap<SfxId, StaticSoundData> =
-                    HashMap::with_capacity(entries.sfx.len());
-                for (k, v) in entries.sfx.into_iter() {
-                    match StaticSoundData::from_file(v.as_ref()) {
-                        Ok(data) => {
-                            in_memory.insert(k, data);
+            let mut voices: Option<HashMap<VoiceId, Voice>> = None;
+            let mut sfx: Option<HashMap<SfxId, StaticSoundData>> = None;
+            let mut banks = Vec::with_capacity(files.len());
+            for file in files {
+                if is_manifest(&file) {
+                    let content = std::fs::read(&file).context(UnableToReadManifestSnafu {
+                        path: file.as_path().display().to_string(),
+                    })?;
+                    let entries = serde_yaml::from_slice::<Manifest>(content.as_slice()).context(
+                        InvalidManifestSnafu {
+                            path: file.as_path().display().to_string(),
+                        },
+                    )?;
+                    if entries.voices.is_none() && entries.sfx.is_none() {
+                        return Err(BankError::Empty {
+                            filename: file.display().to_string(),
                         }
-                        Err(_) => {
-                            red4ext_rs::error!(
-                                "unable to load audio in memory, skipping... ({})",
-                                v.as_ref().display()
-                            );
-                        }
+                        .into());
                     }
+                    if let Some(found) = entries.voices {
+                        voices = Some(found);
+                    }
+                    if let Some(found) = entries.sfx {
+                        let mut in_memory: HashMap<SfxId, StaticSoundData> =
+                            HashMap::with_capacity(found.len());
+                        for (k, v) in found.into_iter() {
+                            match StaticSoundData::from_file(v.as_ref()) {
+                                Ok(data) => {
+                                    in_memory.insert(k, data);
+                                }
+                                Err(_) => {
+                                    red4ext_rs::error!(
+                                        "unable to load audio in memory, skipping... ({})",
+                                        v.as_ref().display()
+                                    );
+                                }
+                            }
+                        }
+                        sfx = Some(in_memory);
+                    }
+                    banks.push(Bank {
+                        r#mod: value.name(),
+                        voices: voices.to_owned(),
+                        sfx: sfx.to_owned(),
+                        folder: value.as_ref().to_owned(),
+                    });
                 }
-                sfx = Some(InMemorySfxs {
-                    version: entries.version,
-                    sfx: in_memory,
-                });
             }
-            return Ok(Self {
-                r#mod: value.name(),
-                voices,
-                sfx,
-                folder: value.as_ref().to_owned(),
-            });
         }
         Err(UnableToReadDirSnafu {
             path: value.as_ref().display().to_string(),
@@ -203,24 +201,9 @@ impl TryFrom<&Mod> for Bank {
 }
 
 #[inline]
-fn is_manifest(file: &std::path::Path, stem: &str) -> bool {
-    file.file_stem()
+fn is_manifest(file: &std::path::Path) -> bool {
+    file.extension()
         .and_then(std::ffi::OsStr::to_str)
-        .map(|x| x == stem)
+        .map(|x| x == "yml" || x == "yaml")
         .unwrap_or(false)
-        && file
-            .extension()
-            .and_then(std::ffi::OsStr::to_str)
-            .map(|x| x == "yml" || x == "yaml")
-            .unwrap_or(false)
-}
-
-/// check if path is valid file named "voices" with YAML extension
-fn is_voices_manifest(file: &std::path::Path) -> bool {
-    is_manifest(file, "voices")
-}
-
-/// check if path is valid file named "sfx" with YAML extension
-fn is_sfx_manifest(file: &std::path::Path) -> bool {
-    is_manifest(file, "sfx")
 }

@@ -1,9 +1,12 @@
+use std::collections::HashMap;
+
 use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use fixed_map::Map;
 
 use crate::types::{
     bank::Bank,
-    voice::{AudioSubtitle, DualVoice, Voice, Voices},
+    id::VoiceId,
+    voice::{AudioSubtitle, DualVoice, Voice},
 };
 
 pub trait Supports {
@@ -32,9 +35,9 @@ impl SupportsBy<PlayerGender> for Voice {
     }
 }
 
-impl SupportsBy<PlayerGender> for Voices {
+impl<'a> SupportsBy<PlayerGender> for &'a HashMap<VoiceId, Voice> {
     fn supports_by(&self, locale: Locale, gender: PlayerGender) -> bool {
-        self.voices.values().any(|x| x.supports_by(locale, gender))
+        self.values().any(|x| x.supports_by(locale, gender))
     }
 }
 

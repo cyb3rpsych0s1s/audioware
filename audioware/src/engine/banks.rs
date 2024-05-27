@@ -19,6 +19,7 @@ use crate::{
         id::Id,
         redmod::{ModName, R6Audioware, REDmod},
         voice::Subtitle,
+        Subtitles,
     },
 };
 
@@ -91,10 +92,12 @@ pub fn setup() -> Result<(), Error> {
     }
     let mut banks = HashMap::with_capacity(mods.len());
     for ref m in mods {
-        if let Ok(mut bank) = Bank::try_from(m) {
-            bank.retain_valid_audio();
-            bank.retain_unique_ids(self::ids());
-            banks.insert(bank.name().clone(), bank);
+        if let Ok(found) = Vec::<Bank>::try_from(m) {
+            for mut bank in found.into_iter() {
+                bank.retain_valid_audio();
+                bank.retain_unique_ids(self::ids());
+                banks.insert(bank.name().clone(), bank);
+            }
         }
     }
     banks.shrink_to_fit();
