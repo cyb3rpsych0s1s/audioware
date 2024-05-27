@@ -1,11 +1,13 @@
-use std::{collections::HashMap, sync::Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Mutex, MutexGuard},
+};
 
 use crate::types::error::{Error, InternalError};
 use kira::{
     sound::{static_sound::StaticSoundHandle, PlaybackState},
     tween::Tween,
 };
-use macros::maybe_sounds;
 use once_cell::sync::OnceCell;
 use red4ext_rs::types::{CName, EntityId};
 use ulid::Ulid;
@@ -28,17 +30,14 @@ pub(super) fn sounds_pool() -> &'static Mutex<HashMap<Ulid, SoundInfos>> {
     INSTANCE.get_or_init(Default::default)
 }
 
-pub(crate) mod macros {
-    macro_rules! maybe_sounds {
-        () => {
-            sounds_pool().try_lock().map_err(|_| {
-                Error::from(InternalError::Contention {
-                    origin: "sounds pool",
-                })
-            })
-        };
-    }
-    pub(crate) use maybe_sounds;
+#[inline(always)]
+pub(crate) fn maybe_sounds<'guard>() -> Result<MutexGuard<'guard, HashMap<Ulid, SoundInfos>>, Error>
+{
+    sounds_pool().try_lock().map_err(|_| {
+        Error::from(InternalError::Contention {
+            origin: "sounds pool",
+        })
+    })
 }
 
 pub fn store(
@@ -47,7 +46,7 @@ pub fn store(
     entity_id: Option<EntityId>,
     emitter_name: Option<CName>,
 ) -> Result<(), Error> {
-    let mut pool = maybe_sounds!()?;
+    let mut pool = maybe_sounds()?;
     let infos = SoundInfos {
         handle,
         sound_name,
@@ -63,7 +62,7 @@ pub fn store(
 }
 
 pub fn pause() {
-    if let Ok(mut pool) = maybe_sounds!() {
+    if let Ok(mut pool) = maybe_sounds() {
         pool.values_mut().for_each(|SoundInfos { handle, .. }| {
             handle.pause(Tween::default());
         });
@@ -71,7 +70,7 @@ pub fn pause() {
 }
 
 pub fn resume() {
-    if let Ok(mut pool) = maybe_sounds!() {
+    if let Ok(mut pool) = maybe_sounds() {
         pool.values_mut().for_each(|SoundInfos { handle, .. }| {
             handle.resume(Tween::default());
         });

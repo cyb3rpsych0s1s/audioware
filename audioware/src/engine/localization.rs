@@ -1,37 +1,36 @@
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 
 use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use once_cell::sync::OnceCell;
 use red4ext_rs::types::CName;
 
-use crate::types::error::{Error, InternalError};
+use crate::types::error::InternalError;
 
-macro_rules! maybe_gender {
-    () => {
-        self::gender()
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: "player gender",
-            })
-    };
+#[inline(always)]
+pub(crate) fn maybe_gender<'guard>() -> Result<MutexGuard<'guard, PlayerGender>, InternalError> {
+    self::gender()
+        .try_lock()
+        .map_err(|_| InternalError::Contention {
+            origin: "player gender",
+        })
 }
-macro_rules! maybe_voice {
-    () => {
-        self::voice()
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: "player voice locale",
-            })
-    };
+
+#[inline(always)]
+pub(crate) fn maybe_voice<'guard>() -> Result<MutexGuard<'guard, Locale>, InternalError> {
+    self::voice()
+        .try_lock()
+        .map_err(|_| InternalError::Contention {
+            origin: "player voice locale",
+        })
 }
-macro_rules! maybe_subtitles {
-    () => {
-        self::subtitles()
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: "player written locale",
-            })
-    };
+
+#[inline(always)]
+pub(crate) fn maybe_subtitles<'guard>() -> Result<MutexGuard<'guard, Locale>, InternalError> {
+    self::subtitles()
+        .try_lock()
+        .map_err(|_| InternalError::Contention {
+            origin: "player written locale",
+        })
 }
 
 fn gender() -> &'static Mutex<PlayerGender> {
@@ -59,7 +58,7 @@ pub fn update_gender(gender: PlayerGender) {
 
 pub fn update_locales(voice: CName, subtitle: CName) {
     if let Ok(voice) = Locale::try_from(voice.clone()) {
-        match maybe_voice!() {
+        match maybe_voice() {
             Ok(mut guard) if *guard != voice => {
                 *guard = voice;
             }
@@ -75,7 +74,7 @@ pub fn update_locales(voice: CName, subtitle: CName) {
         );
     }
     if let Ok(subtitle) = Locale::try_from(subtitle.clone()) {
-        match maybe_subtitles!() {
+        match maybe_subtitles() {
             Ok(mut guard) if *guard != subtitle => {
                 *guard = subtitle;
             }
@@ -90,16 +89,4 @@ pub fn update_locales(voice: CName, subtitle: CName) {
             red4ext_rs::ffi::resolve_cname(&subtitle)
         );
     }
-}
-
-pub fn maybe_gender() -> Result<PlayerGender, Error> {
-    Ok(*maybe_gender!()?)
-}
-
-pub fn maybe_voice() -> Result<Locale, Error> {
-    Ok(*maybe_voice!()?)
-}
-
-pub fn maybe_subtitles() -> Result<Locale, Error> {
-    Ok(*maybe_subtitles!()?)
 }

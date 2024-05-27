@@ -1,4 +1,4 @@
-use std::sync::{atomic::AtomicU8, Mutex};
+use std::sync::{atomic::AtomicU8, Mutex, MutexGuard};
 
 use once_cell::sync::OnceCell;
 use red4ext_rs::conv::NativeRepr;
@@ -17,14 +17,13 @@ fn preset() -> &'static Mutex<Preset> {
     INSTANCE.get_or_init(Default::default)
 }
 
-macro_rules! maybe_preset {
-    () => {
-        self::preset()
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: "player preset",
-            })
-    };
+#[inline(always)]
+pub(crate) fn maybe_preset<'guard>() -> Result<MutexGuard<'guard, Preset>, InternalError> {
+    self::preset()
+        .try_lock()
+        .map_err(|_| InternalError::Contention {
+            origin: "player preset",
+        })
 }
 
 pub fn update(state: State) -> State {
@@ -87,7 +86,7 @@ impl TryFrom<u8> for State {
 }
 
 pub fn update_player_preset(value: Preset) -> Result<(), Error> {
-    let mut guard = maybe_preset!()?;
+    let mut guard = maybe_preset()?;
     *guard = value;
     Ok(())
 }

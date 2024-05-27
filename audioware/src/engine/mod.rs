@@ -21,7 +21,7 @@ pub mod tracks;
 use audioware_sys::interop::{audio::ScnDialogLineType, quaternion::Quaternion, vector4::Vector4};
 use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId};
-use sounds::macros::maybe_sounds;
+use sounds::maybe_sounds;
 
 pub fn setup() -> Result<(), Error> {
     banks::setup()?;
@@ -131,7 +131,7 @@ pub fn stop(sound_name: CName, entity_id: Option<EntityId>, emitter_name: Option
 }
 
 pub fn pause() -> Result<(), Error> {
-    let mut map = maybe_sounds!()?;
+    let mut map = maybe_sounds()?;
     for SoundInfos { handle, .. } in map.values_mut() {
         handle.pause(Tween::default());
     }
@@ -139,7 +139,7 @@ pub fn pause() -> Result<(), Error> {
 }
 
 pub fn resume() -> Result<(), Error> {
-    let mut map = maybe_sounds!()?;
+    let mut map = maybe_sounds()?;
     for SoundInfos { handle, .. } in map.values_mut() {
         handle.resume(Tween::default());
     }

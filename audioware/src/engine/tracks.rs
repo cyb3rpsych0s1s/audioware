@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Mutex, MutexGuard},
+};
 
 use audioware_sys::interop::{game::get_game_instance, quaternion::Quaternion, vector4::Vector4};
 use glam::{Quat, Vec3};
@@ -32,20 +35,18 @@ use super::{
 static TRACKS: OnceCell<Tracks> = OnceCell::new();
 static SCENE: OnceCell<Scene> = OnceCell::new();
 
-macro_rules! maybe_tracks {
-    () => {
-        TRACKS.get().ok_or(Error::from(TracksError::Uninitialized))
-    };
+#[inline(always)]
+fn maybe_tracks<'cell>() -> Result<&'cell Tracks, TracksError> {
+    TRACKS.get().ok_or(TracksError::Uninitialized)
 }
 
-macro_rules! maybe_eq {
-    ($tracks:expr) => {
-        $tracks
-            .v
-            .eq
-            .try_lock()
-            .map_err(|_| Error::from(TracksError::Uninitialized))
-    };
+#[inline(always)]
+fn maybe_equalizer<'guard>() -> Result<MutexGuard<'guard, EQ>, TracksError> {
+    maybe_tracks()?
+        .v
+        .eq
+        .try_lock()
+        .map_err(|_| TracksError::Uninitialized)
 }
 
 #[allow(dead_code)]
@@ -299,8 +300,7 @@ pub fn update_player_reverb(value: f32) -> bool {
 }
 
 pub fn update_player_preset(value: Preset) -> Result<(), Error> {
-    let tracks = maybe_tracks!()?;
-    let mut guard = maybe_eq!(tracks)?;
+    let mut guard = maybe_equalizer()?;
     guard.preset(value);
     red4ext_rs::info!("successfully updated player preset to {value}");
     Ok(())

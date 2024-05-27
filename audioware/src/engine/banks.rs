@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
-    sync::Mutex,
+    sync::{Mutex, MutexGuard},
 };
 
 use audioware_sys::interop::{event::Event, gender::PlayerGender, locale::Locale};
@@ -50,23 +50,21 @@ fn ids() -> &'static Mutex<HashSet<Id>> {
     INSTANCE.get_or_init(Default::default)
 }
 
-macro_rules! maybe_ids {
-    () => {
-        ids()
-            .try_lock()
-            .map_err(|_| InternalError::Contention { origin: "ids" })
-    };
+#[inline(always)]
+pub(crate) fn maybe_ids<'guard>() -> Result<MutexGuard<'guard, HashSet<Id>>, InternalError> {
+    ids()
+        .try_lock()
+        .map_err(|_| InternalError::Contention { origin: "ids" })
 }
 
-macro_rules! maybe_banks {
-    () => {
-        BANKS.get().ok_or(Error::from(BankError::Uninitialized))
-    };
+#[inline(always)]
+pub(crate) fn maybe_banks<'cell>() -> Result<&'cell HashMap<ModName, Bank>, BankError> {
+    BANKS.get().ok_or(BankError::Uninitialized)
 }
 
 /// return either a fully typed ID, or an error
 pub fn typed_id(sound_name: &CName) -> Result<Id, Error> {
-    let ids = maybe_ids!()?;
+    let ids = maybe_ids()?;
     ids.get_by_cname(sound_name).ok_or(
         BankError::NotFound {
             id: sound_name.clone(),
@@ -107,7 +105,7 @@ pub fn setup() -> Result<(), Error> {
 }
 
 pub fn exists(id: CName) -> Result<bool, Error> {
-    let guard = maybe_ids!()?;
+    let guard = maybe_ids()?;
     for i in guard.iter() {
         match i {
             Id::Voice(x) if x == &id => return Ok(true),
@@ -119,7 +117,7 @@ pub fn exists(id: CName) -> Result<bool, Error> {
 }
 
 pub fn exist(ids: &[CName]) -> Result<bool, Error> {
-    let guard = maybe_ids!()?;
+    let guard = maybe_ids()?;
     for id in ids {
         if !guard.contains_cname(id) {
             return Ok(false);
@@ -129,13 +127,13 @@ pub fn exist(ids: &[CName]) -> Result<bool, Error> {
 }
 
 pub fn exists_event(event: &Ref<Event>) -> Result<bool, Error> {
-    Ok(maybe_ids!()?.contains_cname(&event.sound_name()))
+    Ok(maybe_ids()?.contains_cname(&event.sound_name()))
 }
 
 pub fn data(id: &CName) -> Result<StaticSoundData, Error> {
-    let gender = engine::localization::maybe_gender()?;
-    let language = engine::localization::maybe_voice()?;
-    let banks = maybe_banks!()?;
+    let gender = *engine::localization::maybe_gender()?;
+    let language = *engine::localization::maybe_voice()?;
+    let banks = maybe_banks()?;
     for bank in banks.values() {
         match bank.data_from_any_id(gender, language, id) {
             Err(_) => continue,
@@ -147,7 +145,7 @@ pub fn data(id: &CName) -> Result<StaticSoundData, Error> {
 
 pub fn languages() -> Set<Locale> {
     let mut set: Set<Locale> = Set::new();
-    match maybe_banks!() {
+    match maybe_banks() {
         Ok(banks) => {
             for locale in Locale::iter() {
                 if banks.values().any(|x| x.supports(locale)) {
@@ -164,7 +162,7 @@ pub fn languages() -> Set<Locale> {
 
 pub fn subtitles<'a>(locale: Locale) -> Vec<Subtitle<'a>> {
     let mut subtitles: Vec<Subtitle<'_>> = vec![];
-    match maybe_banks!() {
+    match maybe_banks() {
         Ok(banks) => {
             for bank in banks.values() {
                 if let Some(voices) = bank.voices() {
@@ -182,7 +180,7 @@ pub fn subtitles<'a>(locale: Locale) -> Vec<Subtitle<'a>> {
 }
 
 pub fn reaction_duration(sound: CName, gender: PlayerGender, locale: Locale) -> Option<f32> {
-    match maybe_banks!() {
+    match maybe_banks() {
         Ok(banks) => {
             for bank in banks.values() {
                 if let Ok(data) = bank.data_from_any_id(gender, locale, &sound) {
