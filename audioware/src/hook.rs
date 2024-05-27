@@ -1,25 +1,7 @@
 use audioware_macros::NativeFunc;
 use red4ext_rs::types::{CName, EntityId};
 
-use crate::{
-    addresses::{ON_AUDIOSYSTEM_PLAY, ON_AUDIOSYSTEM_STOP, ON_AUDIOSYSTEM_SWITCH},
-    types::{error::Error, id::Id},
-};
-
-// switch play method to fully typed ?
-#[allow(dead_code)]
-pub fn get_typed_id(params: &(CName, EntityId, CName)) -> Option<Id> {
-    let (sound_name, ..) = params;
-    match crate::engine::banks::typed_id(sound_name) {
-        Ok(id) => Some(id),
-        Err(e) => {
-            if let Error::Internal { source } = e {
-                red4ext_rs::error!("{source}");
-            }
-            None
-        }
-    }
-}
+use crate::addresses::{ON_AUDIOSYSTEM_PLAY, ON_AUDIOSYSTEM_STOP, ON_AUDIOSYSTEM_SWITCH};
 
 pub fn is_audioware(params: &(CName, EntityId, CName)) -> bool {
     let (event_name, ..) = params;
