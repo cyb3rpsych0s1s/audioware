@@ -2,6 +2,8 @@ use fixed_map::Key;
 use red4ext_rs::types::CName;
 use serde::{Deserialize, Serialize};
 
+use crate::error::ConversionError;
+
 #[derive(
     Debug,
     Default,
@@ -82,7 +84,7 @@ impl From<Locale> for CName {
 }
 
 impl TryFrom<CName> for Locale {
-    type Error = anyhow::Error;
+    type Error = ConversionError;
 
     fn try_from(value: CName) -> Result<Self, Self::Error> {
         match red4ext_rs::ffi::resolve_cname(&value) {
@@ -104,7 +106,9 @@ impl TryFrom<CName> for Locale {
             "hu-hu" => Ok(Self::Hungarian),
             "tr-tr" => Ok(Self::Turkish),
             "th-th" => Ok(Self::Thai),
-            v => anyhow::bail!(format!("invalid Locale ({})", v)),
+            v => Err(ConversionError::InvalidLocale {
+                value: v.to_string(),
+            }),
         }
     }
 }

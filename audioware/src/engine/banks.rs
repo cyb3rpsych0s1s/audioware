@@ -15,20 +15,67 @@ use crate::{
     language::Supports,
     types::{
         bank::Bank,
-        id::VoiceId,
+        error::{BankError, Error, InternalError, RegistryError},
+        id::Id,
         redmod::{ModName, R6Audioware, REDmod},
         voice::Subtitle,
     },
 };
 
+pub(crate) trait ContainsCName {
+    fn contains_cname(&self, any: &CName) -> bool {
+        self.get_by_cname(any).is_some()
+    }
+    /// return an optional owned [`Id`] to uphold **non**-[`Clone`] invariant
+    fn get_by_cname(&self, any: &CName) -> Option<Id>;
+}
+
+impl ContainsCName for HashSet<Id> {
+    fn get_by_cname(&self, any: &CName) -> Option<Id> {
+        for key in self.iter() {
+            match key {
+                Id::Voice(id) if id.as_ref() == any => return Some(Id::from(id)),
+                Id::Sfx(id) if id.as_ref() == any => return Some(Id::from(id)),
+                _ => continue,
+            }
+        }
+        None
+    }
+}
+
 static BANKS: OnceCell<HashMap<ModName, Bank>> = OnceCell::new();
 
-fn ids() -> &'static Mutex<HashSet<VoiceId>> {
-    static INSTANCE: OnceCell<Mutex<HashSet<VoiceId>>> = OnceCell::new();
+fn ids() -> &'static Mutex<HashSet<Id>> {
+    static INSTANCE: OnceCell<Mutex<HashSet<Id>>> = OnceCell::new();
     INSTANCE.get_or_init(Default::default)
 }
 
-pub fn setup() -> anyhow::Result<()> {
+macro_rules! maybe_ids {
+    () => {
+        ids()
+            .try_lock()
+            .map_err(|_| InternalError::Contention { origin: "ids" })
+    };
+}
+
+macro_rules! maybe_banks {
+    () => {
+        BANKS.get().ok_or(Error::from(BankError::Uninitialized))
+    };
+}
+
+/// return either a fully typed ID, or an error
+pub fn typed_id(sound_name: &CName) -> Result<Id, Error> {
+    let ids = maybe_ids!()?;
+    ids.get_by_cname(sound_name).ok_or(
+        BankError::NotFound {
+            id: sound_name.clone(),
+        }
+        .into(),
+    )
+}
+
+pub fn setup() -> Result<(), Error> {
     let mut mods = Vec::with_capacity(10);
     let mut redmod_exists = false;
     if let Ok(redmod) = REDmod::try_new() {
@@ -59,52 +106,57 @@ pub fn setup() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn exists(id: CName) -> anyhow::Result<bool> {
-    if let Ok(guard) = self::ids().try_lock() {
-        return Ok(guard.contains(&id.into()));
-    }
-    anyhow::bail!("unable to reach sound ids");
-}
-
-pub fn exist(ids: &[CName]) -> anyhow::Result<bool> {
-    if let Ok(guard) = self::ids().try_lock() {
-        for id in ids {
-            if !guard.contains(&VoiceId::from(id.clone())) {
-                return Ok(false);
-            }
+pub fn exists(id: CName) -> Result<bool, Error> {
+    let guard = maybe_ids!()?;
+    for i in guard.iter() {
+        match i {
+            Id::Voice(x) if x == &id => return Ok(true),
+            Id::Sfx(x) if x == &id => return Ok(true),
+            _ => continue,
         }
-        return Ok(true);
     }
-    anyhow::bail!("unable to reach sound ids");
+    Err(RegistryError::NotFound { id }.into())
 }
 
-pub fn exists_event(event: &Ref<Event>) -> anyhow::Result<bool> {
-    if let Ok(guard) = self::ids().try_lock() {
-        return Ok(guard.contains(&event.sound_name().into()));
+pub fn exist(ids: &[CName]) -> Result<bool, Error> {
+    let guard = maybe_ids!()?;
+    for id in ids {
+        if !guard.contains_cname(id) {
+            return Ok(false);
+        }
     }
-    anyhow::bail!("unable to reach sound ids");
+    Ok(true)
 }
 
-pub fn data(id: &CName) -> anyhow::Result<StaticSoundData> {
+pub fn exists_event(event: &Ref<Event>) -> Result<bool, Error> {
+    Ok(maybe_ids!()?.contains_cname(&event.sound_name()))
+}
+
+pub fn data(id: &CName) -> Result<StaticSoundData, Error> {
     let gender = engine::localization::maybe_gender()?;
     let language = engine::localization::maybe_voice()?;
-    if let Some(banks) = BANKS.get() {
-        for bank in banks.values() {
-            if let Some(data) = bank.data(gender, language, id) {
-                return Ok(data);
-            }
+    let banks = maybe_banks!()?;
+    for bank in banks.values() {
+        match bank.data_from_any_id(gender, language, id) {
+            Err(_) => continue,
+            ok => return ok,
         }
     }
-    anyhow::bail!("unable to retrieve static sound data from sound id");
+    Err(BankError::NotFound { id: id.clone() }.into())
 }
 
 pub fn languages() -> Set<Locale> {
     let mut set: Set<Locale> = Set::new();
-    if let Some(banks) = BANKS.get() {
-        for locale in Locale::iter() {
-            if banks.values().any(|x| x.supports(locale)) {
-                set.insert(locale);
+    match maybe_banks!() {
+        Ok(banks) => {
+            for locale in Locale::iter() {
+                if banks.values().any(|x| x.supports(locale)) {
+                    set.insert(locale);
+                }
             }
+        }
+        Err(e) => {
+            red4ext_rs::error!("{e}");
         }
     }
     set
@@ -112,22 +164,34 @@ pub fn languages() -> Set<Locale> {
 
 pub fn subtitles<'a>(locale: Locale) -> Vec<Subtitle<'a>> {
     let mut subtitles: Vec<Subtitle<'_>> = vec![];
-    if let Some(banks) = BANKS.get() {
-        for bank in banks.values() {
-            for subtitle in bank.voices().subtitles(locale) {
-                subtitles.push(subtitle);
+    match maybe_banks!() {
+        Ok(banks) => {
+            for bank in banks.values() {
+                if let Some(voices) = bank.voices() {
+                    for subtitle in voices.subtitles(locale) {
+                        subtitles.push(subtitle);
+                    }
+                }
             }
+        }
+        Err(e) => {
+            red4ext_rs::error!("{e}");
         }
     }
     subtitles
 }
 
 pub fn reaction_duration(sound: CName, gender: PlayerGender, locale: Locale) -> Option<f32> {
-    if let Some(banks) = BANKS.get() {
-        for bank in banks.values() {
-            if let Some(data) = bank.data(gender, locale, &sound) {
-                return Some(data.duration().as_secs_f32());
+    match maybe_banks!() {
+        Ok(banks) => {
+            for bank in banks.values() {
+                if let Ok(data) = bank.data_from_any_id(gender, locale, &sound) {
+                    return Some(data.duration().as_secs_f32());
+                }
             }
+        }
+        Err(e) => {
+            red4ext_rs::error!("{e}");
         }
     }
     None

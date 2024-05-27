@@ -4,6 +4,36 @@ use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use once_cell::sync::OnceCell;
 use red4ext_rs::types::CName;
 
+use crate::types::error::{Error, InternalError};
+
+macro_rules! maybe_gender {
+    () => {
+        self::gender()
+            .try_lock()
+            .map_err(|_| InternalError::Contention {
+                origin: "player gender",
+            })
+    };
+}
+macro_rules! maybe_voice {
+    () => {
+        self::voice()
+            .try_lock()
+            .map_err(|_| InternalError::Contention {
+                origin: "player voice locale",
+            })
+    };
+}
+macro_rules! maybe_subtitles {
+    () => {
+        self::subtitles()
+            .try_lock()
+            .map_err(|_| InternalError::Contention {
+                origin: "player written locale",
+            })
+    };
+}
+
 fn gender() -> &'static Mutex<PlayerGender> {
     static INSTANCE: OnceCell<Mutex<PlayerGender>> = OnceCell::new();
     INSTANCE.get_or_init(Default::default)
@@ -29,12 +59,14 @@ pub fn update_gender(gender: PlayerGender) {
 
 pub fn update_locales(voice: CName, subtitle: CName) {
     if let Ok(voice) = Locale::try_from(voice.clone()) {
-        if let Ok(mut guard) = self::voice().try_lock() {
-            if *guard != voice {
+        match maybe_voice!() {
+            Ok(mut guard) if *guard != voice => {
                 *guard = voice;
             }
-        } else {
-            red4ext_rs::error!("unable to reach voice language");
+            Err(e) => {
+                red4ext_rs::error!("{e}");
+            }
+            _ => {}
         }
     } else {
         red4ext_rs::error!(
@@ -43,12 +75,14 @@ pub fn update_locales(voice: CName, subtitle: CName) {
         );
     }
     if let Ok(subtitle) = Locale::try_from(subtitle.clone()) {
-        if let Ok(mut guard) = self::subtitles().try_lock() {
-            if *guard != subtitle {
+        match maybe_subtitles!() {
+            Ok(mut guard) if *guard != subtitle => {
                 *guard = subtitle;
             }
-        } else {
-            red4ext_rs::error!("unable to reach subtitles language");
+            Err(e) => {
+                red4ext_rs::error!("{e}");
+            }
+            _ => {}
         }
     } else {
         red4ext_rs::error!(
@@ -58,23 +92,14 @@ pub fn update_locales(voice: CName, subtitle: CName) {
     }
 }
 
-pub fn maybe_gender() -> anyhow::Result<PlayerGender> {
-    if let Ok(guard) = self::gender().try_lock() {
-        return Ok(*guard);
-    }
-    anyhow::bail!("unable to reach player gender");
+pub fn maybe_gender() -> Result<PlayerGender, Error> {
+    Ok(*maybe_gender!()?)
 }
 
-pub fn maybe_voice() -> anyhow::Result<Locale> {
-    if let Ok(guard) = self::voice().try_lock() {
-        return Ok(*guard);
-    }
-    anyhow::bail!("unable to reach voice language");
+pub fn maybe_voice() -> Result<Locale, Error> {
+    Ok(*maybe_voice!()?)
 }
 
-pub fn maybe_subtitles() -> anyhow::Result<Locale> {
-    if let Ok(guard) = self::subtitles().try_lock() {
-        return Ok(*guard);
-    }
-    anyhow::bail!("unable to reach subtitles language");
+pub fn maybe_subtitles() -> Result<Locale, Error> {
+    Ok(*maybe_subtitles!()?)
 }

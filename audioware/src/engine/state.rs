@@ -3,6 +3,8 @@ use std::sync::{atomic::AtomicU8, Mutex};
 use once_cell::sync::OnceCell;
 use red4ext_rs::conv::NativeRepr;
 
+use crate::types::error::{EngineError, Error, InternalError};
+
 use super::effects::Preset;
 
 fn state() -> &'static AtomicU8 {
@@ -13,6 +15,16 @@ fn state() -> &'static AtomicU8 {
 fn preset() -> &'static Mutex<Preset> {
     static INSTANCE: OnceCell<Mutex<Preset>> = OnceCell::new();
     INSTANCE.get_or_init(Default::default)
+}
+
+macro_rules! maybe_preset {
+    () => {
+        self::preset()
+            .try_lock()
+            .map_err(|_| InternalError::Contention {
+                origin: "player preset",
+            })
+    };
 }
 
 pub fn update(state: State) -> State {
@@ -57,7 +69,7 @@ unsafe impl NativeRepr for State {
 }
 
 impl TryFrom<u8> for State {
-    type Error = anyhow::Error;
+    type Error = Error;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
@@ -69,16 +81,13 @@ impl TryFrom<u8> for State {
             v if State::InPause as u8 == v => Ok(State::InPause),
             v if State::End as u8 == v => Ok(State::End),
             v if State::Unload as u8 == v => Ok(State::Unload),
-            _ => anyhow::bail!(format!("invalid State ({})", value)),
+            _ => Err(Error::from(EngineError::InvalidState { value })),
         }
     }
 }
 
-pub fn update_player_preset(value: Preset) -> anyhow::Result<()> {
-    if let Ok(mut guard) = self::preset().try_lock() {
-        *guard = value;
-        return Ok(());
-    }
-    red4ext_rs::error!("lock contention");
-    anyhow::bail!("lock contention")
+pub fn update_player_preset(value: Preset) -> Result<(), Error> {
+    let mut guard = maybe_preset!()?;
+    *guard = value;
+    Ok(())
 }

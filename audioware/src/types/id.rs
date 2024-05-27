@@ -11,8 +11,34 @@ impl std::hash::Hash for SoundEntityId {
     }
 }
 
+/// special kind of id guaranteed to be unique and to exist in banks
+#[derive(Debug, PartialEq, Eq)]
+pub enum Id {
+    /// voice related id
+    Voice(VoiceId),
+    /// sfx related id
+    Sfx(SfxId),
+}
+
+impl std::fmt::Display for Id {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Id::Voice(x) => write!(f, "{} |voice id|", x),
+            Id::Sfx(x) => write!(f, "{} |sfx id|", x),
+        }
+    }
+}
+
+impl std::hash::Hash for Id {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        if let Self::Voice(VoiceId(id)) = self {
+            u64::from(id.clone()).hash(state);
+        }
+    }
+}
+
 macro_rules! id {
-    ($target:ident, $visitor:ident) => {
+    ($target:ident) => {
         #[derive(Debug, Clone, PartialEq, Eq)]
         #[repr(transparent)]
         pub struct $target(CName);
@@ -28,6 +54,49 @@ macro_rules! id {
                 &self.0
             }
         }
+
+        impl PartialEq<CName> for $target {
+            fn eq(&self, other: &CName) -> bool {
+                self.0.eq(other)
+            }
+        }
+
+        impl PartialEq<$target> for CName {
+            fn eq(&self, other: &$target) -> bool {
+                self.eq(&other.0)
+            }
+        }
+    };
+    ($target:ident, display) => {
+        impl std::fmt::Display for $target {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", &self.0)
+            }
+        }
+    };
+    ($target:ident, $variant:ident, equality) => {
+        impl PartialEq<$target> for Id {
+            fn eq(&self, other: &$target) -> bool {
+                match self {
+                    Id::$variant(id) => id == other,
+                    _ => false,
+                }
+            }
+        }
+
+        impl PartialEq<Id> for $target {
+            fn eq(&self, other: &Id) -> bool {
+                match other {
+                    Id::$variant(id) => id == self,
+                    _ => false,
+                }
+            }
+        }
+    };
+    ($target:ident, $visitor:ident, $variant:ident) => {
+        id!($target);
+        id!($target, display);
+        id!($target, $variant, equality);
 
         struct $visitor;
 
@@ -78,30 +147,13 @@ macro_rules! id {
             }
         }
 
-        impl std::fmt::Display for $target {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{}", &self.0)
-            }
-        }
-
-        impl PartialEq<CName> for $target {
-            fn eq(&self, other: &CName) -> bool {
-                self.0.eq(other)
-            }
-        }
-
-        impl PartialEq<$target> for CName {
-            fn eq(&self, other: &$target) -> bool {
-                self.eq(&other.0)
-            }
-        }
-
-        impl From<CName> for $target {
-            fn from(value: CName) -> Self {
-                Self(value)
+        impl From<&$target> for Id {
+            fn from(value: &$target) -> Self {
+                Self::$variant(value.clone())
             }
         }
     };
 }
 
-id!(VoiceId, VoiceIdVisitor);
+id!(VoiceId, VoiceIdVisitor, Voice);
+id!(SfxId, SfxIdVisitor, Sfx);
