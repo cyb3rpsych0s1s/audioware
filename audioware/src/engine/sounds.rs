@@ -3,7 +3,7 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
-use crate::types::error::{Error, InternalError};
+use crate::types::error::{Error, InternalError, CONTENTION_SOUNDS_POOL};
 use kira::{
     sound::{static_sound::StaticSoundHandle, PlaybackState},
     tween::Tween,
@@ -31,13 +31,9 @@ pub(super) fn sounds_pool() -> &'static Mutex<HashMap<Ulid, SoundInfos>> {
 }
 
 #[inline(always)]
-pub(crate) fn maybe_sounds<'guard>() -> Result<MutexGuard<'guard, HashMap<Ulid, SoundInfos>>, Error>
-{
-    sounds_pool().try_lock().map_err(|_| {
-        Error::from(InternalError::Contention {
-            origin: "sounds pool",
-        })
-    })
+pub(crate) fn maybe_sounds<'guard>(
+) -> Result<MutexGuard<'guard, HashMap<Ulid, SoundInfos>>, InternalError> {
+    sounds_pool().try_lock().map_err(|_| CONTENTION_SOUNDS_POOL)
 }
 
 pub fn store(

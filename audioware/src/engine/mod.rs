@@ -1,6 +1,6 @@
 use crate::{
     natives::propagate_subtitle,
-    types::error::{EngineError, Error, InternalError, RegistryError, TracksError},
+    types::error::{EngineError, Error, RegistryError, TracksError, CONTENTION_AUDIO_MANAGER},
 };
 
 pub use self::state::State;
@@ -53,8 +53,7 @@ pub fn play(
     let mut manager = match audio_manager().try_lock() {
         Ok(manager) => manager,
         Err(_) => {
-            #[rustfmt::skip]
-            red4ext_rs::error!("{}", InternalError::Contention { origin: "audio manager" });
+            red4ext_rs::error!("{CONTENTION_AUDIO_MANAGER}");
             return;
         }
     };

@@ -2,6 +2,8 @@ use audioware_sys::error::ConversionError;
 use red4ext_rs::types::CName;
 use snafu::prelude::*;
 
+use super::id::Id;
+
 #[derive(Debug, Snafu)]
 pub enum Error {
     Bank { source: BankError },
@@ -52,8 +54,15 @@ pub enum BankError {
 
 #[derive(Debug, Snafu)]
 pub enum RegistryError {
-    #[snafu(display("id not found in ids: {id}"), context(suffix(RegistrySnafu)))]
+    #[snafu(
+        display("id not found in sound ids: {id}"),
+        context(suffix(RegistrySnafu))
+    )]
     NotFound { id: CName },
+    #[snafu(display("non-unique CName: {id}"))]
+    NonUniqueID { id: CName },
+    #[snafu(display("duplicate sound id: {id}"))]
+    DuplicateID { id: Id },
 }
 
 #[derive(Debug, Snafu)]
@@ -111,6 +120,28 @@ pub enum InternalError {
     #[snafu(display("unimplemented"))]
     Unimplemented,
 }
+
+pub const CONTENTION_REGISTRY: InternalError = InternalError::Contention {
+    origin: "sound ids",
+};
+pub const CONTENTION_SOUNDS_POOL: InternalError = InternalError::Contention {
+    origin: "sounds pool",
+};
+pub const CONTENTION_AUDIO_MANAGER: InternalError = InternalError::Contention {
+    origin: "audio manager",
+};
+pub const CONTENTION_PLAYER_PRESET: InternalError = InternalError::Contention {
+    origin: "player preset",
+};
+pub const CONTENTION_PLAYER_GENDER: InternalError = InternalError::Contention {
+    origin: "player gender",
+};
+pub const CONTENTION_PLAYER_SPOKEN_LOCALE: InternalError = InternalError::Contention {
+    origin: "player spoken locale",
+};
+pub const CONTENTION_PLAYER_WRITTEN_LOCALE: InternalError = InternalError::Contention {
+    origin: "player written locale",
+};
 
 impl From<InternalError> for Error {
     fn from(source: InternalError) -> Self {

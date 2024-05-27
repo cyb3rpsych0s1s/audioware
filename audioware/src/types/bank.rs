@@ -10,6 +10,8 @@ use red4ext_rs::types::CName;
 use semver::Version;
 use snafu::ResultExt;
 
+use crate::types::error::{RegistryError, CONTENTION_REGISTRY};
+
 use super::{
     error::{BankError, CannotReadDirSnafu, CannotReadManifestSnafu, Error, InvalidManifestSnafu},
     id::{Id, SfxId, VoiceId},
@@ -70,11 +72,11 @@ impl Bank {
                 if let Ok(mut guard) = ids.try_lock() {
                     let inserted = guard.insert(Id::from(id));
                     if !inserted {
-                        red4ext_rs::error!("duplicate sound id ({id})");
+                        red4ext_rs::error!("{}", RegistryError::DuplicateID { id: Id::from(id) });
                     }
                     return inserted;
                 } else {
-                    red4ext_rs::error!("unable to reach sound ids");
+                    red4ext_rs::error!("{CONTENTION_REGISTRY}");
                 }
                 false
             });
@@ -84,11 +86,11 @@ impl Bank {
                 if let Ok(mut guard) = ids.try_lock() {
                     let inserted = guard.insert(Id::from(id));
                     if !inserted {
-                        red4ext_rs::error!("duplicate sound id ({id})");
+                        red4ext_rs::error!("{}", RegistryError::DuplicateID { id: Id::from(id) });
                     }
                     return inserted;
                 } else {
-                    red4ext_rs::error!("unable to reach sound ids");
+                    red4ext_rs::error!("{CONTENTION_REGISTRY}");
                 }
                 false
             });

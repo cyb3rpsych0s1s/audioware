@@ -3,7 +3,7 @@ use std::sync::{atomic::AtomicU8, Mutex, MutexGuard};
 use once_cell::sync::OnceCell;
 use red4ext_rs::conv::NativeRepr;
 
-use crate::types::error::{EngineError, Error, InternalError};
+use crate::types::error::{EngineError, Error, InternalError, CONTENTION_PLAYER_PRESET};
 
 use super::effects::Preset;
 
@@ -21,9 +21,7 @@ fn preset() -> &'static Mutex<Preset> {
 pub(crate) fn maybe_preset<'guard>() -> Result<MutexGuard<'guard, Preset>, InternalError> {
     self::preset()
         .try_lock()
-        .map_err(|_| InternalError::Contention {
-            origin: "player preset",
-        })
+        .map_err(|_| CONTENTION_PLAYER_PRESET)
 }
 
 pub fn update(state: State) -> State {

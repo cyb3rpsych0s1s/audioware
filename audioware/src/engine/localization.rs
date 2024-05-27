@@ -4,33 +4,30 @@ use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use once_cell::sync::OnceCell;
 use red4ext_rs::types::CName;
 
-use crate::types::error::InternalError;
+use crate::types::error::{
+    InternalError, CONTENTION_PLAYER_GENDER, CONTENTION_PLAYER_SPOKEN_LOCALE,
+    CONTENTION_PLAYER_WRITTEN_LOCALE,
+};
 
 #[inline(always)]
 pub(crate) fn maybe_gender<'guard>() -> Result<MutexGuard<'guard, PlayerGender>, InternalError> {
     self::gender()
         .try_lock()
-        .map_err(|_| InternalError::Contention {
-            origin: "player gender",
-        })
+        .map_err(|_| CONTENTION_PLAYER_GENDER)
 }
 
 #[inline(always)]
 pub(crate) fn maybe_voice<'guard>() -> Result<MutexGuard<'guard, Locale>, InternalError> {
     self::voice()
         .try_lock()
-        .map_err(|_| InternalError::Contention {
-            origin: "player voice locale",
-        })
+        .map_err(|_| CONTENTION_PLAYER_SPOKEN_LOCALE)
 }
 
 #[inline(always)]
 pub(crate) fn maybe_subtitles<'guard>() -> Result<MutexGuard<'guard, Locale>, InternalError> {
     self::subtitles()
         .try_lock()
-        .map_err(|_| InternalError::Contention {
-            origin: "player written locale",
-        })
+        .map_err(|_| CONTENTION_PLAYER_WRITTEN_LOCALE)
 }
 
 fn gender() -> &'static Mutex<PlayerGender> {

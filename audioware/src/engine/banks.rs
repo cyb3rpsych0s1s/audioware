@@ -15,7 +15,7 @@ use crate::{
     language::Supports,
     types::{
         bank::Bank,
-        error::{BankError, Error, InternalError, RegistryError},
+        error::{BankError, Error, InternalError, RegistryError, CONTENTION_REGISTRY},
         id::Id,
         redmod::{ModName, R6Audioware, REDmod},
         voice::Subtitle,
@@ -53,9 +53,7 @@ fn ids() -> &'static Mutex<HashSet<Id>> {
 
 #[inline(always)]
 pub(crate) fn maybe_ids<'guard>() -> Result<MutexGuard<'guard, HashSet<Id>>, InternalError> {
-    ids()
-        .try_lock()
-        .map_err(|_| InternalError::Contention { origin: "ids" })
+    ids().try_lock().map_err(|_| CONTENTION_REGISTRY)
 }
 
 #[inline(always)]
