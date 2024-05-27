@@ -22,6 +22,10 @@ pub enum EngineError {
     InvalidState {
         value: u8,
     },
+    #[snafu(display("unable to play sound"))]
+    UnableToPlay {
+        id: CName,
+    },
 }
 
 #[derive(Debug, Snafu)]
@@ -69,6 +73,8 @@ pub enum TracksError {
         context(suffix(TracksSnafu))
     )]
     Set,
+    #[snafu(display("unknown track output destination"))]
+    UnknownOutputDestination,
 }
 
 #[derive(Debug, Snafu)]

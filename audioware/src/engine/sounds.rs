@@ -46,25 +46,20 @@ pub fn store(
     sound_name: CName,
     entity_id: Option<EntityId>,
     emitter_name: Option<CName>,
-) {
-    match maybe_sounds!() {
-        Ok(mut pool) => {
-            let infos = SoundInfos {
-                handle,
-                sound_name,
-                entity_id,
-                emitter_name,
-            };
-            if let Some(reuse) = pool.values_mut().find(|x| x.finished()) {
-                *reuse = infos;
-            } else {
-                pool.insert(Ulid::new(), infos);
-            }
-        }
-        Err(e) => {
-            red4ext_rs::error!("{e}");
-        }
+) -> Result<(), Error> {
+    let mut pool = maybe_sounds!()?;
+    let infos = SoundInfos {
+        handle,
+        sound_name,
+        entity_id,
+        emitter_name,
+    };
+    if let Some(reuse) = pool.values_mut().find(|x| x.finished()) {
+        *reuse = infos;
+    } else {
+        pool.insert(Ulid::new(), infos);
     }
+    Ok(())
 }
 
 pub fn pause() {
