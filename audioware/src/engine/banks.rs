@@ -23,19 +23,23 @@ use crate::{
 };
 
 pub(crate) trait ContainsCName {
-    fn contains_cname(&self, any: &CName) -> bool;
+    fn contains_cname(&self, any: &CName) -> bool {
+        self.get_by_cname(any).is_some()
+    }
+    /// return an optional owned [`Id`] to uphold **non**-[`Clone`] invariant
+    fn get_by_cname(&self, any: &CName) -> Option<Id>;
 }
 
 impl ContainsCName for HashSet<Id> {
-    fn contains_cname(&self, any: &CName) -> bool {
+    fn get_by_cname(&self, any: &CName) -> Option<Id> {
         for key in self.iter() {
             match key {
-                Id::Voice(id) if id.as_ref() == any => return true,
-                Id::Sfx(id) if id.as_ref() == any => return true,
+                Id::Voice(id) if id.as_ref() == any => return Some(Id::from(id)),
+                Id::Sfx(id) if id.as_ref() == any => return Some(Id::from(id)),
                 _ => continue,
             }
         }
-        false
+        None
     }
 }
 
@@ -63,17 +67,12 @@ macro_rules! maybe_banks {
 /// return either a fully typed ID, or an error
 pub fn typed_id(sound_name: &CName) -> Result<Id, Error> {
     let ids = maybe_ids!()?;
-    for id in ids.iter() {
-        match id {
-            Id::Voice(inner) if inner.as_ref() == sound_name => return Ok(Id::from(inner)),
-            Id::Sfx(inner) if inner.as_ref() == sound_name => return Ok(Id::from(inner)),
-            _ => continue,
+    ids.get_by_cname(sound_name).ok_or(
+        BankError::NotFound {
+            id: sound_name.clone(),
         }
-    }
-    Err(BankError::NotFound {
-        id: sound_name.clone(),
-    }
-    .into())
+        .into(),
+    )
 }
 
 pub fn setup() -> Result<(), Error> {
@@ -138,8 +137,9 @@ pub fn data(id: &CName) -> Result<StaticSoundData, Error> {
     let language = engine::localization::maybe_voice()?;
     let banks = maybe_banks!()?;
     for bank in banks.values() {
-        if let Ok(data) = bank.data_from_any_id(gender, language, id) {
-            return Ok(data);
+        match bank.data_from_any_id(gender, language, id) {
+            Err(_) => continue,
+            ok => return ok,
         }
     }
     Err(BankError::NotFound { id: id.clone() }.into())
