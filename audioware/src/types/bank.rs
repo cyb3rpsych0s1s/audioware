@@ -10,18 +10,13 @@ use red4ext_rs::types::CName;
 use semver::Version;
 use snafu::ResultExt;
 
-use crate::types::{
-    error::{InvalidManifestSnafu, UnableToReadManifestSnafu},
-    voice::{validate_static_sound_data, AudioSubtitle},
-};
-
 use super::{
-    error::{BankError, Error, UnableToReadDirSnafu},
+    error::{BankError, CannotReadDirSnafu, CannotReadManifestSnafu, Error, InvalidManifestSnafu},
     id::{Id, SfxId, VoiceId},
     manifest::Manifest,
     redmod::{Mod, ModName},
     sfx::InMemorySfx,
-    voice::{DualVoice, Voice},
+    voice::{validate_static_sound_data, AudioSubtitle, DualVoice, Voice},
 };
 
 #[derive(Debug)]
@@ -154,7 +149,7 @@ impl TryFrom<&Mod> for Vec<Bank> {
             let mut banks = Vec::with_capacity(files.len());
             for file in files {
                 if is_manifest(&file) {
-                    let content = std::fs::read(&file).context(UnableToReadManifestSnafu {
+                    let content = std::fs::read(&file).context(CannotReadManifestSnafu {
                         path: file.as_path().display().to_string(),
                     })?;
                     let manifest = serde_yaml::from_slice::<Manifest>(content.as_slice()).context(
@@ -204,7 +199,7 @@ impl TryFrom<&Mod> for Vec<Bank> {
                 }
             }
         }
-        Err(UnableToReadDirSnafu {
+        Err(CannotReadDirSnafu {
             path: value.as_ref().display().to_string(),
         }
         .build()

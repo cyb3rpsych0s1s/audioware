@@ -36,16 +36,10 @@ pub enum BankError {
     Empty { filename: String },
     #[snafu(display("uninitialized banks"), context(suffix(BankSnafu)))]
     Uninitialized,
-    #[snafu(
-        display("unable to read audioware dir: {path}"),
-        visibility(pub(crate))
-    )]
-    UnableToReadDir { path: String },
-    #[snafu(
-        display("unable to read bank manifest: {path}"),
-        visibility(pub(crate))
-    )]
-    UnableToReadManifest {
+    #[snafu(display("cannot read audioware dir: {path}"), visibility(pub(crate)))]
+    CannotReadDir { path: String },
+    #[snafu(display("cannot read bank manifest: {path}"), visibility(pub(crate)))]
+    CannotReadManifest {
         path: String,
         source: std::io::Error,
     },
