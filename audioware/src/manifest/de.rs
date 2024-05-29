@@ -1,15 +1,16 @@
-use std::{collections::HashMap, hash::Hash, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf};
 
 use audioware_sys::interop::{audio::ScnDialogLineType, gender::PlayerGender, locale::Locale};
-use either::Either;
-use kira::sound::{static_sound::StaticSoundSettings, streaming::StreamingSoundSettings};
 use semver::Version;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Manifest {
-    version: Version,
-    sfx: Option<HashMap<String, Sfx>>
+    pub version: Version,
+    pub sfx: Option<HashMap<String, Sfx>>,
+    pub onos: Option<HashMap<String, Ono>>,
+    pub voices: Option<HashMap<String, Voice>>,
+    pub music: Option<HashMap<String, Music>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -17,16 +18,16 @@ pub struct Manifest {
 pub enum Sfx {
     Inline(PathBuf),
     Multi {
-        #[serde(flatten)] 
-        props: Base
-    }
+        #[serde(flatten)]
+        props: Base,
+    },
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Ono {
     #[serde(flatten)]
-    genders: HashMap<PlayerGender, PathBuf>,
-    usage: Option<Usage>
+    pub genders: HashMap<PlayerGender, PathBuf>,
+    pub usage: Option<Usage>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -58,32 +59,32 @@ pub enum Voice {
 
 #[derive(Debug, Deserialize)]
 pub struct Playlist {
-    name: String,
-    songs: HashMap<String, PathBuf>,
+    pub name: String,
+    pub songs: HashMap<String, PathBuf>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(transparent)]
-pub struct Music(PathBuf);
+pub struct Music(pub PathBuf);
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum Jingle {
     Inline(PathBuf),
     Multi {
-        path: PathBuf,
+        file: PathBuf,
         captions: Vec<Caption>,
         line: Option<ScnDialogLineType>,
-    }
+    },
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Base {
-    path: PathBuf,
-    usage: Usage,
+    pub file: PathBuf,
+    pub usage: Usage,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Usage {
     OnDemand,
@@ -93,8 +94,8 @@ pub enum Usage {
 
 #[derive(Debug, Deserialize)]
 pub struct Dialog {
-    path: PathBuf,
-    subtitle: Subtitle,
+    pub file: PathBuf,
+    pub subtitle: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -108,23 +109,37 @@ pub enum Dialogs {
         #[serde(flatten)]
         paths: HashMap<PlayerGender, PathBuf>,
         subtitle: String,
-    }
+    },
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum Subtitle {
     Inline(String),
-    Multi{
-        msg: String,
-        line: ScnDialogLineType,
-    }
+    Multi(DialogLine),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct DialogLine {
+    pub msg: String,
+    pub line: ScnDialogLineType,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Caption {
-    starts: f32,
-    msg: String,
+    pub starts: f32,
+    pub msg: String,
+}
+
+impl From<&Sfx> for Usage {
+    fn from(value: &Sfx) -> Self {
+        match value {
+            Sfx::Inline(_) => Usage::InMemory,
+            Sfx::Multi {
+                props: Base { usage, .. },
+            } => *usage,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -132,15 +147,15 @@ mod tests {
     use std::collections::HashMap;
 
     use test_case::test_case;
-    
+
     use crate::manifest::de::{Jingle, Music, Ono, Playlist, Sfx, Subtitle};
 
     #[test_case(r##"id: ./somewhere/sfx.wav"## ; "implicit on-demand sfx")]
     #[test_case(r##"id:
-    path: ./somewhere/sfx.wav
+    file: ./somewhere/sfx.wav
     usage: on-demand"## ; "explicit on-demand sfx")]
     #[test_case(r##"id:
-    path: ./somewhere/sfx.wav
+    file: ./somewhere/sfx.wav
     usage: in-memory"## ; "explicit in-memory sfx")]
     fn sfx(yaml: &str) {
         let sfx = serde_yaml::from_str::<HashMap<String, Sfx>>(yaml);
@@ -180,11 +195,11 @@ mod tests {
         en-us: ./somewhere/sfx.wav"## ; "implicit on-demand unique dialog no subtitle")]
         #[test_case(r##"id:
         en-us:
-            path: ./somewhere/sfx.wav
+            file: ./somewhere/sfx.wav
             subtitle: "hello world""## ; "implicit on-demand unique dialog with subtitle")]
         #[test_case(r##"id:
         en-us:
-            path: ./somewhere/sfx.wav
+            file: ./somewhere/sfx.wav
             subtitle: "hello world"
         line: radio"## ; "implicit on-demand unique dialog with subtitle and line type")]
         #[test_case(r##"id:
@@ -192,10 +207,10 @@ mod tests {
         fr-fr: ./somewhere/sfx.wav"## ; "format must be consistent across locales when there's no subtitle")]
         #[test_case(r##"id:
         en-us:
-            path: ./somewhere/sfx.wav
+            file: ./somewhere/sfx.wav
             subtitle: "hello world"
         fr-fr:
-            path: ./somewhere/else/sfx.wav
+            file: ./somewhere/else/sfx.wav
             subtitle: "bonjour tout le monde"
         line: radio"## ; "format must be consistent across locales when there are subtitles")]
         fn basic_format(yaml: &str) {
@@ -206,7 +221,7 @@ mod tests {
 
         #[test_case(r##"id:
         en-us:
-            path: ./somewhere/sfx.wav
+            file: ./somewhere/sfx.wav
             subtitle: "hello world"
         fr-fr: ./somewhere/else/sfx.wav"## ; "format must be consistent")]
         fn incompatibility(yaml: &str) {
@@ -216,7 +231,7 @@ mod tests {
         }
     }
 
-    mod adaptive_dialog {
+    mod dual_dialog {
         use std::collections::HashMap;
 
         use crate::manifest::de::Voice;
@@ -228,11 +243,11 @@ mod tests {
             male: ./somewhere/else/sfx.wav
         fr-fr:
             fem: ./elsewhere/sfx.wav
-            male: ./elsewhere/else/sfx.wav"## ; "adaptive dialog without subtitle")]
+            male: ./elsewhere/else/sfx.wav"## ; "dual dialog without subtitle")]
         fn basic_format_without_subtitle(yaml: &str) {
-            let adaptive_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
-            dbg!("{}", &adaptive_dialog);
-            assert!(adaptive_dialog.is_ok());
+            let dual_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
+            dbg!("{}", &dual_dialog);
+            assert!(dual_dialog.is_ok());
         }
 
         #[test_case(r##"id:
@@ -240,20 +255,19 @@ mod tests {
             fem: ./somewhere/sfx.wav
             male: ./somewhere/else/sfx.wav
             subtitle: "hello world"
-        line: radio"## ; "adaptive dialog with shared subtitle")]
+        line: radio"## ; "dual dialog with shared subtitle")]
         #[test_case(r##"id:
         en-us:
             fem:
-                path: ./somewhere/sfx.wav
+                file: ./somewhere/sfx.wav
                 subtitle: "hello world"
             male:
-                path: ./somewhere/else/sfx.wav
-                subtitle: "hello world"
-        line: radio"## ; "adaptive dialog with different subtitles")]
+                file: ./somewhere/else/sfx.wav
+                subtitle: "hello world""## ; "dual dialog with different subtitles and default line")]
         fn basic_format_with_subtitles(yaml: &str) {
-            let adaptive_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
-            dbg!("{}", &adaptive_dialog);
-            assert!(adaptive_dialog.is_ok());
+            let dual_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
+            dbg!("{}", &dual_dialog);
+            assert!(dual_dialog.is_ok());
         }
 
         #[test_case(r##"id:
@@ -274,10 +288,17 @@ mod tests {
             male: ./somewhere/else/sfx.wav
         line: radio"## ; "format must be consistent, if there's no subtitle there shouldn't be any line")]
         fn incompatibility(yaml: &str) {
-            let adaptive_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
-            dbg!("{}", &adaptive_dialog);
-            assert!(adaptive_dialog.is_err());
+            let dual_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
+            dbg!("{}", &dual_dialog);
+            assert!(dual_dialog.is_err());
         }
+    }
+
+    #[test_case(r##"new_intro: ./somewhere/music.wav"## ; "simple music")]
+    fn music(yaml: &str) {
+        let playlist = serde_yaml::from_str::<HashMap<String, Music>>(yaml);
+        dbg!("{}", &playlist);
+        assert!(playlist.is_ok());
     }
 
     #[test_case(r##"summer_chill:
@@ -291,21 +312,14 @@ mod tests {
         assert!(playlist.is_ok());
     }
 
-    #[test_case(r##"new_intro: ./somewhere/music.wav"## ; "simple music")]
-    fn music(yaml: &str) {
-        let playlist = serde_yaml::from_str::<HashMap<String, Music>>(yaml);
-        dbg!("{}", &playlist);
-        assert!(playlist.is_ok());
-    }
-
     #[test_case(r##"new_jingle: ./somewhere/music.wav"## ; "simple jingle")]
     #[test_case(r##"subtitled_jingle:
-    path: ./somewhere/music.wav
+    file: ./somewhere/music.wav
     captions:
         - starts: 1.6
           msg: "hello world""## ; "jingle with timed localized captions")]
     #[test_case(r##"elaborated_jingle:
-    path: ./somewhere/music.wav
+    file: ./somewhere/music.wav
     captions:
         - starts: 1.6
           msg: "hello world"

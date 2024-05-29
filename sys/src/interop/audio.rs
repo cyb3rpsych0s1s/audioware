@@ -3,6 +3,7 @@ use red4ext_rs::{
     conv::{ClassType, NativeRepr},
     types::CName,
 };
+use serde::Deserialize;
 
 use super::{event::Event, iscriptable::ISCRIPTABLE_SIZE};
 
@@ -69,10 +70,21 @@ mod memory {
 }
 
 /// see [RED4ext::scn::DialogLineType](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Natives/Generated/scn/DialogLineType.hpp).
-#[derive(Debug, Clone, Copy, strum_macros::Display, strum_macros::FromRepr, PartialEq)]
+#[derive(
+    Debug,
+    Default,
+    Clone,
+    Copy,
+    Deserialize,
+    strum_macros::Display,
+    strum_macros::FromRepr,
+    PartialEq,
+)]
 #[repr(u32)]
+#[serde(rename_all = "kebab-case")]
 pub enum ScnDialogLineType {
     None = 0,
+    #[default]
     Regular = 1,
     Holocall = 2,
     SceneComment = 3,
@@ -85,6 +97,12 @@ pub enum ScnDialogLineType {
     AlwaysCinematicNoSpeaker = 11,
     GlobalTVAlwaysVisible = 12,
     Narrator = 13,
+}
+
+impl ScnDialogLineType {
+    pub fn dialog() -> Self {
+        Self::Regular
+    }
 }
 
 unsafe impl NativeRepr for ScnDialogLineType {

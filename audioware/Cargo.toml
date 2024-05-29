@@ -14,6 +14,7 @@ crate-type = ["cdylib"]
 audioware-macros.workspace = true
 audioware-mem.workspace = true
 audioware-sys.workspace = true
+either = "1.12.0"
 fixed-map.workspace = true
 glam.workspace = true
 kira.workspace = true
@@ -27,6 +28,7 @@ serde_yaml = "0.9"
 snafu.workspace = true
 strum.workspace = true
 strum_macros.workspace = true
+test-case = "3.3.1"
 ulid = "1.1.2"
 validator = { version = "0.18.1", features = ["derive"] }
 
