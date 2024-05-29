@@ -122,13 +122,9 @@ pub enum Subtitle {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(untagged)]
-pub enum Caption {
-    Inline(String),
-    Multi {
-        starts: f32,
-        msg: String,
-    }
+pub struct Caption {
+    starts: f32,
+    msg: String,
 }
 
 #[cfg(test)]
