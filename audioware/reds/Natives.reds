@@ -11,7 +11,7 @@ enum EngineState {
     Unload = 7,
 }
 
-private native func UpdateEngineState(state: EngineState) -> Void;
+private native func UpdateGameState(state: EngineState) -> Void;
 
 public static func FindEntityByID(gi: GameInstance, id: EntityID) -> ref<Entity> {
     return GameInstance.FindEntityByID(gi, id);

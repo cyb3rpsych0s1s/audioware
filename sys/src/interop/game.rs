@@ -1,12 +1,6 @@
 use std::ffi::c_void;
 
-use red4ext_rs::{
-    conv::NativeRepr,
-    macros::redscript_global,
-    types::{EntityId, MaybeUninitRef},
-};
-
-use super::entity::Entity;
+use red4ext_rs::{conv::NativeRepr, macros::redscript_global};
 
 /// public static native GetGameInstance(): GameInstance
 #[redscript_global(native)]
@@ -42,8 +36,3 @@ unsafe impl NativeRepr for GameInstance {
     const NAME: &'static str = "GameInstance";
     const NATIVE_NAME: &'static str = "ScriptGameInstance";
 }
-
-/// there's a weird bug when using `#[redscript_import]` or direct `call!`,
-/// so call it indirectly.
-#[redscript_global(name = "Audioware.FindEntityByID")]
-pub fn find_entity_by_id(gi: GameInstance, id: EntityId) -> MaybeUninitRef<Entity>;

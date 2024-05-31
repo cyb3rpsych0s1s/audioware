@@ -3,18 +3,22 @@ use std::{
     time::{Duration, Instant},
 };
 
+use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
+use either::Either;
 use error::ensure_no_duplicate_accross_depots;
-use kira::sound::static_sound::StaticSoundData;
+use kira::sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError};
 use once_cell::sync::OnceCell;
+use red4ext_rs::types::CName;
 use snafu::ResultExt;
 
 pub mod conflict;
-mod error;
+pub mod error;
 pub use error::Error;
 mod id;
 pub use id::*;
 
 use crate::{
+    bank::error::registry::Error as RegistryError,
     manifest::{
         conv::{ensure_music, ensure_ono, ensure_sfx, ensure_voice},
         de::{DialogLine, Manifest},
@@ -36,6 +40,120 @@ static KEYS: OnceCell<HashSet<Id>> = OnceCell::new();
 
 pub struct Banks;
 impl Banks {
+    pub fn exists(cname: &CName) -> bool {
+        if !cname.is_valid() {
+            return false;
+        }
+        KEYS.get()
+            .and_then(|x| x.iter().find(|x| AsRef::<CName>::as_ref(x) == cname))
+            .is_some()
+    }
+    pub fn exist<'a>(
+        name: &CName,
+        locale: &Locale,
+        gender: Option<&PlayerGender>,
+    ) -> Result<&'a Id, RegistryError> {
+        let mut maybe_missing_locale = false;
+        if let Some(ids) = KEYS.get() {
+            let mut key: &Key;
+            for id in ids {
+                key = id.as_ref();
+                if let Some(key) = key.as_unique() {
+                    if key.as_ref() == name {
+                        return Ok(id);
+                    }
+                }
+                if let Some(GenderKey(k, g)) = key.as_gender() {
+                    if k == name {
+                        if gender.is_none() {
+                            return Err(RegistryError::RequireGender {
+                                cname: name.clone(),
+                            });
+                        }
+                        if Some(g) == gender {
+                            return Ok(id);
+                        }
+                    }
+                }
+                if let Some(LocaleKey(k, l)) = key.as_locale() {
+                    if k == name {
+                        maybe_missing_locale = true;
+                        if l == locale {
+                            return Ok(id);
+                        }
+                    }
+                }
+                if let Some(BothKey(k, l, g)) = key.as_both() {
+                    if k == name {
+                        maybe_missing_locale = true;
+                        if l == locale {
+                            if gender.is_none() {
+                                return Err(RegistryError::RequireGender {
+                                    cname: name.clone(),
+                                });
+                            }
+                            if gender == Some(g) {
+                                return Ok(id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if maybe_missing_locale {
+            return Err(RegistryError::MissingLocale {
+                cname: name.clone(),
+                locale: *locale,
+            });
+        }
+        Err(RegistryError::NotFound {
+            cname: name.clone(),
+        })
+    }
+    pub fn data(id: &Id) -> Either<StaticSoundData, StreamingSoundData<FromFileError>> {
+        match id {
+            Id::OnDemand(Usage::Static(_, path)) => Either::Left(
+                StaticSoundData::from_file(path)
+                    .expect("static sound data has already been validated"),
+            ),
+            Id::OnDemand(Usage::Streaming(_, path)) => Either::Right(
+                StreamingSoundData::from_file(path)
+                    .expect("static sound data has already been validated"),
+            ),
+            Id::InMemory(Key::Unique(key)) => Either::Left(
+                UNIQUES
+                    .get()
+                    .expect("insertion guarantees")
+                    .get(key)
+                    .expect("insertion guarantees")
+                    .clone(),
+            ),
+            Id::InMemory(Key::Gender(key)) => Either::Left(
+                GENDERS
+                    .get()
+                    .expect("insertion guarantees")
+                    .get(key)
+                    .expect("insertion guarantees")
+                    .clone(),
+            ),
+            Id::InMemory(Key::Locale(key)) => Either::Left(
+                LOCALES
+                    .get()
+                    .expect("insertion guarantees")
+                    .get(key)
+                    .expect("insertion guarantees")
+                    .clone(),
+            ),
+            Id::InMemory(Key::Both(key)) => Either::Left(
+                MULTIS
+                    .get()
+                    .expect("insertion guarantees")
+                    .get(key)
+                    .expect("insertion guarantees")
+                    .clone(),
+            ),
+        }
+    }
     pub fn setup() -> Result<Initialization, Error> {
         let since = Instant::now();
 
@@ -58,7 +176,7 @@ impl Banks {
         }
 
         let mut file: Vec<u8>;
-        let mut entries: Manifest;
+        let mut manifest: Manifest;
         let mut ids: HashSet<Id> = HashSet::new();
         let mut uniques: HashMap<UniqueKey, StaticSoundData> = HashMap::new();
         let mut genders: HashMap<GenderKey, StaticSoundData> = HashMap::new();
@@ -66,18 +184,19 @@ impl Banks {
         let mut dual_voices: HashMap<BothKey, StaticSoundData> = HashMap::new();
         let mut single_subs: HashMap<LocaleKey, DialogLine> = HashMap::new();
         let mut dual_subs: HashMap<BothKey, DialogLine> = HashMap::new();
+
         for m in mods {
-            let manifests = m.load_manifests();
-            for ref manifest in manifests {
-                file = ok_or_continue!(std::fs::read(manifest).context(CannotReadManifestSnafu {
-                    manifest: manifest.display().to_string(),
+            let paths = m.manifests_paths();
+            for ref path in paths {
+                file = ok_or_continue!(std::fs::read(path).context(CannotReadManifestSnafu {
+                    manifest: path.display().to_string(),
                 }));
-                entries = ok_or_continue!(serde_yaml::from_slice::<Manifest>(file.as_slice())
+                manifest = ok_or_continue!(serde_yaml::from_slice::<Manifest>(file.as_slice())
                     .context(CannotParseManifestSnafu {
-                        manifest: manifest.display().to_string(),
+                        manifest: path.display().to_string(),
                     },));
-                ok_or_continue!(ensure_manifest_no_duplicates(&entries));
-                if let Some(sfx) = entries.sfx {
+                ok_or_continue!(ensure_manifest_no_duplicates(&manifest));
+                if let Some(sfx) = manifest.sfx {
                     for (key, value) in sfx {
                         ok_or_continue!(ensure_sfx(
                             key.as_str(),
@@ -88,7 +207,7 @@ impl Banks {
                         ));
                     }
                 }
-                if let Some(onos) = entries.onos {
+                if let Some(onos) = manifest.onos {
                     for (key, value) in onos {
                         ok_or_continue!(ensure_ono(
                             key.as_str(),
@@ -99,7 +218,7 @@ impl Banks {
                         ));
                     }
                 }
-                if let Some(voices) = entries.voices {
+                if let Some(voices) = manifest.voices {
                     for (key, value) in voices {
                         ok_or_continue!(ensure_voice(
                             key.as_str(),
@@ -113,7 +232,7 @@ impl Banks {
                         ));
                     }
                 }
-                if let Some(music) = entries.music {
+                if let Some(music) = manifest.music {
                     for (key, value) in music {
                         ok_or_continue!(ensure_music(key.as_str(), value, &m, &mut ids));
                     }

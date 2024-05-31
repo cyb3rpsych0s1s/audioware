@@ -1,3 +1,5 @@
+use std::hash::Hash;
+
 use fixed_map::Key;
 use red4ext_rs::types::CName;
 use serde::{Deserialize, Serialize};
@@ -13,7 +15,6 @@ use crate::error::ConversionError;
     Serialize,
     PartialEq,
     Eq,
-    Hash,
     Key,
     strum_macros::Display,
     strum_macros::EnumIter,
@@ -56,6 +57,32 @@ pub enum Locale {
     Turkish,
     #[serde(rename = "th-th")]
     Thai,
+}
+
+/// additional precaution to avoid key collisions
+impl Hash for Locale {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Polish => "Locale::Polish".hash(state),
+            Self::English => "Locale::English".hash(state),
+            Self::Spanish => "Locale::Spanish".hash(state),
+            Self::French => "Locale::French".hash(state),
+            Self::Italian => "Locale::Italian".hash(state),
+            Self::German => "Locale::German".hash(state),
+            Self::LatinAmericanSpanish => "Locale::LatinAmericanSpanish".hash(state),
+            Self::Korean => "Locale::Korean".hash(state),
+            Self::SimplifiedChinese => "Locale::SimplifiedChinese".hash(state),
+            Self::Russian => "Locale::Russian".hash(state),
+            Self::BrazilianPortuguese => "Locale::BrazilianPortuguese".hash(state),
+            Self::Japanese => "Locale::Japanese".hash(state),
+            Self::TraditionalChinese => "Locale::TraditionalChinese".hash(state),
+            Self::Arabic => "Locale::Arabic".hash(state),
+            Self::Czech => "Locale::Czech".hash(state),
+            Self::Hungarian => "Locale::Hungarian".hash(state),
+            Self::Turkish => "Locale::Turkish".hash(state),
+            Self::Thai => "Locale::Thai".hash(state),
+        }
+    }
 }
 
 impl From<Locale> for CName {

@@ -49,7 +49,7 @@ impl Mod {
         }
         false
     }
-    pub fn load_manifests(&self) -> Vec<std::path::PathBuf> {
+    pub fn manifests_paths(&self) -> Vec<std::path::PathBuf> {
         let readdir = ok_or_return!(std::fs::read_dir(self.as_ref()), Vec::new());
         let mut paths = readdir
             .into_iter()

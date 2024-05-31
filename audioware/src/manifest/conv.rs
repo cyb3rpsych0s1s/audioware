@@ -56,11 +56,11 @@ pub fn ensure_sfx<'a>(
         Usage::InMemory => Id::InMemory(crate::bank::Key::Unique(key.clone())),
         Usage::OnDemand => Id::OnDemand(crate::bank::Usage::Static(
             crate::bank::Key::Unique(key.clone()),
-            path.clone(),
+            m.as_ref().join(path.clone()),
         )),
         Usage::Streaming => Id::OnDemand(crate::bank::Usage::Streaming(
             crate::bank::Key::Unique(key.clone()),
-            path.clone(),
+            m.as_ref().join(path.clone()),
         )),
     };
     if usage == Usage::InMemory {
@@ -98,11 +98,11 @@ pub fn ensure_ono<'a>(
             Usage::InMemory => Id::InMemory(crate::bank::Key::Gender(key.clone())),
             Usage::OnDemand => Id::OnDemand(crate::bank::Usage::Static(
                 crate::bank::Key::Gender(key.clone()),
-                path.clone(),
+                m.as_ref().join(path.clone()),
             )),
             Usage::Streaming => Id::OnDemand(crate::bank::Usage::Streaming(
                 crate::bank::Key::Gender(key.clone()),
-                path.clone(),
+                m.as_ref().join(path.clone()),
             )),
         };
         if usage == Usage::InMemory {
@@ -263,11 +263,11 @@ pub fn ensure_voice<'a>(
                     Usage::InMemory => Id::InMemory(crate::bank::Key::Locale(simple_key.clone())),
                     Usage::OnDemand => Id::OnDemand(crate::bank::Usage::Static(
                         crate::bank::Key::Locale(simple_key.clone()),
-                        path.clone(),
+                        m.as_ref().join(path.clone()),
                     )),
                     Usage::Streaming => Id::OnDemand(crate::bank::Usage::Streaming(
                         crate::bank::Key::Locale(simple_key.clone()),
-                        path.clone(),
+                        m.as_ref().join(path.clone()),
                     )),
                 };
                 if usage == Usage::InMemory {
@@ -300,11 +300,11 @@ pub fn ensure_voice<'a>(
                         }
                         Usage::OnDemand => Id::OnDemand(crate::bank::Usage::Static(
                             crate::bank::Key::Both(complex_key.clone()),
-                            path.clone(),
+                            m.as_ref().join(path.clone()),
                         )),
                         Usage::Streaming => Id::OnDemand(crate::bank::Usage::Streaming(
                             crate::bank::Key::Both(complex_key.clone()),
-                            path.clone(),
+                            m.as_ref().join(path.clone()),
                         )),
                     };
                     if usage == Usage::InMemory {
@@ -350,7 +350,7 @@ pub fn ensure_music<'a>(
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = Id::OnDemand(crate::bank::Usage::Streaming(
         crate::bank::Key::Unique(key.clone()),
-        path.clone(),
+        m.as_ref().join(path),
     ));
     ensure_store_id(id, set)?;
     Ok(())
