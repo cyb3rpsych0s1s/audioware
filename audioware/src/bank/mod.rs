@@ -46,7 +46,7 @@ impl Banks {
             redmod_exists = true;
         }
         if let Ok(r6audioware) = R6Audioware::try_new() {
-            for m in r6audioware.mods().into_iter() {
+            for m in r6audioware.mods() {
                 if let Err(e) =
                     ensure_no_duplicate_accross_depots(redmod_exists, &m, mods.as_slice())
                 {
@@ -56,7 +56,6 @@ impl Banks {
                 mods.push(m);
             }
         }
-        mods.sort();
 
         let mut file: Vec<u8>;
         let mut entries: Manifest;
@@ -68,8 +67,7 @@ impl Banks {
         let mut single_subs: HashMap<LocaleKey, DialogLine> = HashMap::new();
         let mut dual_subs: HashMap<BothKey, DialogLine> = HashMap::new();
         for m in mods {
-            let mut manifests = m.load_manifests();
-            manifests.sort();
+            let manifests = m.load_manifests();
             for ref manifest in manifests {
                 file = ok_or_continue!(std::fs::read(manifest).context(CannotReadManifestSnafu {
                     manifest: manifest.display().to_string(),

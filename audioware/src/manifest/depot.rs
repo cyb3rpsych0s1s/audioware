@@ -2,6 +2,8 @@ use crate::{
     manifest::error::{BinaryLocationSnafu, NoFolderSnafu},
     utils::macros::ok_or_return,
 };
+use rayon::iter::ParallelIterator;
+use rayon::{iter::ParallelBridge, slice::ParallelSliceMut};
 use snafu::{OptionExt, ResultExt};
 
 use super::error::Error;
@@ -49,7 +51,9 @@ impl Mod {
     }
     pub fn load_manifests(&self) -> Vec<std::path::PathBuf> {
         let readdir = ok_or_return!(std::fs::read_dir(self.as_ref()), Vec::new());
-        readdir
+        let mut paths = readdir
+            .into_iter()
+            .par_bridge()
             .filter_map(std::result::Result::ok)
             .filter_map(|x| {
                 if is_yaml(x.path().as_path()) {
@@ -58,7 +62,9 @@ impl Mod {
                     None
                 }
             })
-            .collect::<Vec<_>>()
+            .collect::<Vec<std::path::PathBuf>>();
+        paths.as_mut_slice().par_sort();
+        paths
     }
 }
 
@@ -80,11 +86,15 @@ impl REDmod {
     pub fn mods(&self) -> Vec<Mod> {
         let depot = ok_or_return!(Self::try_new(), Vec::new());
         let readdir = ok_or_return!(std::fs::read_dir(depot.as_ref()), Vec::new());
-        readdir
+        let mut mods = readdir
+            .into_iter()
+            .par_bridge()
             .filter_map(std::result::Result::ok)
             .filter(|x| x.path().is_dir())
             .map(|x| Mod(x.path()))
-            .collect()
+            .collect::<Vec<Mod>>();
+        mods.as_mut_slice().par_sort();
+        mods
     }
 }
 
@@ -108,11 +118,15 @@ impl R6Audioware {
     pub fn mods(&self) -> Vec<Mod> {
         let depot = ok_or_return!(Self::try_new(), Vec::new());
         let readdir = ok_or_return!(std::fs::read_dir(depot.as_ref()), Vec::new());
-        readdir
+        let mut mods = readdir
+            .into_iter()
+            .par_bridge()
             .filter_map(std::result::Result::ok)
             .filter(|x| x.path().is_dir())
             .map(|x| Mod(x.path()))
-            .collect()
+            .collect::<Vec<Mod>>();
+        mods.as_mut_slice().par_sort();
+        mods
     }
 }
 

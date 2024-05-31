@@ -20,6 +20,7 @@ glam.workspace = true
 kira.workspace = true
 memoffset.workspace = true
 once_cell.workspace = true
+rayon = "1.10.0"
 red4ext-rs.workspace = true
 retour.workspace = true
 semver = { version = "1", features = ["serde"] }
