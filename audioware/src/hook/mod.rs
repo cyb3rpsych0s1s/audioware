@@ -3,7 +3,9 @@ use red4ext_rs::types::EntityId;
 
 mod address;
 mod audiosystem;
+mod event;
 pub(super) use audiosystem::*;
+pub(super) use event::*;
 
 pub trait Maybe
 where

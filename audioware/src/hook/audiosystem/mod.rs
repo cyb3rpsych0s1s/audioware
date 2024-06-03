@@ -1,6 +1,10 @@
+mod global_parameter;
+mod parameter;
 mod play;
 mod stop;
 
+pub use global_parameter::HookAudioSystemGlobalParameter;
+pub use parameter::HookAudioSystemParameter;
 pub use play::HookAudioSystemPlay;
 pub use stop::HookAudioSystemStop;
 

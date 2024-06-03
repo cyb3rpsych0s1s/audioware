@@ -5,7 +5,7 @@ use proc_macro2::{Ident, Span};
 use quote::{quote, ToTokens};
 use syn::{
     parse_macro_input, parse_str, punctuated::Punctuated, spanned::Spanned, BinOp, Expr,
-    ExprBinary, ExprLit, ExprPath, Lit, LitStr, Meta, MetaNameValue, Token, Type,
+    ExprBinary, ExprLit, ExprPath, Lit, LitStr, Meta, MetaNameValue, Path, Token, Type,
 };
 
 const HINT_OFFSET: &str = r#"= hint: offset = 0x140975FE4 - 0x140000000
@@ -14,6 +14,7 @@ const HINT_OFFSET: &str = r#"= hint: offset = 0x140975FE4 - 0x140000000
 "#;
 const HINT_INPUTS: &str = "= hint: inputs = (CName, EntityId, CName)";
 const HINT_EVENT: &str = "= hint: event = AudioEvent";
+const HINT_HANDLER: &str = "= hint: handler = my_function where fn(usize)->Self::Event";
 
 /// automatically derive [`audioware_mem::FromMemory`] for any struct
 /// with named fields which correctly upholds its invariants.
@@ -346,6 +347,26 @@ fn get_event(lit: &LitStr) -> Result<(Type, proc_macro2::TokenStream), syn::Erro
     ))
 }
 
+fn get_handler(lit: &LitStr) -> Result<syn::Path, syn::Error> {
+    if let Ok(value) = parse_str::<syn::Type>(lit.value().as_str()) {
+        match value {
+            Type::Path(path) => {
+                return Ok(path.path);
+            }
+            _ => {
+                return Err(syn::Error::new(
+                    value.span(),
+                    format!("handler attribute only supports explicit function\n{HINT_HANDLER}"),
+                ))
+            }
+        }
+    }
+    Err(syn::Error::new(
+        lit.span(),
+        format!("handler attribute only supports explicit function\n{HINT_EVENT}"),
+    ))
+}
+
 fn format_hex(lit: usize) -> Result<proc_macro2::Literal, syn::Error> {
     format!("{:#X}", lit)
         .parse::<proc_macro2::Literal>()
@@ -369,6 +390,7 @@ pub fn derive_native_handler(input: TokenStream) -> TokenStream {
     let mut event: Option<Type> = None;
     let mut event_impl: Option<proc_macro2::TokenStream> = None;
     let mut detour: Option<String> = None;
+    let mut handler: Option<Path> = None;
     for ref attr in derive.attrs {
         let meta = &attr.meta;
         match meta {
@@ -410,6 +432,19 @@ pub fn derive_native_handler(input: TokenStream) -> TokenStream {
                             } if path.is_ident("detour") => {
                                 detour = Some(lit.value());
                             }
+                            MetaNameValue {
+                                path,
+                                value:
+                                    Expr::Lit(ExprLit {
+                                        lit: Lit::Str(lit), ..
+                                    }),
+                                ..
+                            } if path.is_ident("handler") => match get_handler(&lit) {
+                                Ok(ty) => {
+                                    handler = Some(ty);
+                                }
+                                Err(e) => return e.to_compile_error().into(),
+                            },
                             _ => {
                                 return syn::Error::new(arg.span(), "unknown or invalid attribute")
                                     .to_compile_error()
@@ -422,6 +457,11 @@ pub fn derive_native_handler(input: TokenStream) -> TokenStream {
             _ => {}
         }
     }
+    let handler = if let Some(handler) = handler {
+        quote! { #handler(event) }
+    } else {
+        quote! { #event_impl }
+    };
     let detour = Ident::new(detour.unwrap().as_str(), Span::call_site());
     let storage = quote! {
         mod #private {
@@ -448,7 +488,7 @@ pub fn derive_native_handler(input: TokenStream) -> TokenStream {
             const OFFSET: usize = #offset;
             type Event = #event;
             unsafe fn from_ptr(event: usize) -> Self::Event {
-                #event_impl
+                #handler
             }
         }
         impl ::audioware_mem::NativeHandler for #name {

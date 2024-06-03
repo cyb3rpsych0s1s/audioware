@@ -1,8 +1,11 @@
 #![feature(arbitrary_self_types)]
 
-use audioware_mem::Hook;
+use audioware_mem::{Hook, Intercept};
 use bank::Banks;
-use hook::{HookAudioSystemPlay, HookAudioSystemStop};
+use hook::{
+    HookAudioSystemGlobalParameter, HookAudioSystemParameter, HookAudioSystemPlay,
+    HookAudioSystemStop,
+};
 use red4ext_rs::{
     define_trait_plugin,
     plugin::{Plugin, Version},
@@ -55,12 +58,44 @@ impl Plugin for Audioware {
         red4ext_rs::info!("on post register audioware");
         HookAudioSystemPlay::load();
         HookAudioSystemStop::load();
+        HookAudioSystemGlobalParameter::load();
+        HookAudioSystemParameter::load();
+        #[cfg(debug_assertions)]
+        {
+            use audioware_mem::Intercept;
+            hook::HookgameaudioeventsMusicEvent::load();
+            hook::HookgameaudioeventsVoiceEvent::load();
+            hook::HookgameaudioeventsDialogLine::load();
+            hook::HookgameaudioeventsDialogLineEnd::load();
+            hook::HookgameaudioeventsStopDialogLine::load();
+            hook::HookgameaudioeventsSound1::load();
+            hook::HookgameaudioeventsSound2::load();
+            hook::HookgameaudioeventsSound3::load();
+            hook::HookgameaudioeventsSound4::load();
+            hook::HookgameaudioeventsSound5::load();
+        }
     }
 
     fn unload() {
         red4ext_rs::info!("on unload audioware");
         HookAudioSystemPlay::unload();
         HookAudioSystemStop::unload();
+        HookAudioSystemGlobalParameter::unload();
+        HookAudioSystemParameter::unload();
+        #[cfg(debug_assertions)]
+        {
+            use audioware_mem::Intercept;
+            hook::HookgameaudioeventsMusicEvent::unload();
+            hook::HookgameaudioeventsVoiceEvent::unload();
+            hook::HookgameaudioeventsDialogLine::unload();
+            hook::HookgameaudioeventsDialogLineEnd::unload();
+            hook::HookgameaudioeventsStopDialogLine::unload();
+            hook::HookgameaudioeventsSound1::unload();
+            hook::HookgameaudioeventsSound2::unload();
+            hook::HookgameaudioeventsSound3::unload();
+            hook::HookgameaudioeventsSound4::unload();
+            hook::HookgameaudioeventsSound5::unload();
+        }
     }
 
     fn is_version_independent() -> bool {

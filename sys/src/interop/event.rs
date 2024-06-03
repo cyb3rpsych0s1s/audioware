@@ -1,27 +1,29 @@
+use audioware_macros::FromMemory;
 use red4ext_rs::types::Ref;
 use red4ext_rs::{conv::ClassType, types::CName};
 
-use super::iscriptable::IScriptable;
+use super::iscriptable::{IScriptable, ISCRIPTABLE_SIZE};
 
-#[derive(Debug)]
-pub struct Event;
+#[derive(Debug, Clone, FromMemory)]
+#[repr(C)]
+pub struct Event {
+    pub iscriptable: [u8; ISCRIPTABLE_SIZE],
+}
 
 impl ClassType for Event {
     type BaseClass = IScriptable;
-    const NAME: &'static str = "redEvent";
-}
-
-impl Event {
-    pub fn get_class_name(self: &Ref<Self>) -> CName {
-        red4ext_rs::prelude::Ref::<Self>::upcast(self.clone()).get_class_name()
-    }
-    pub fn is_exactly_a(self: &Ref<Self>, class_name: CName) -> bool {
-        red4ext_rs::prelude::Ref::<Self>::upcast(self.clone()).is_exactly_a(class_name)
-    }
+    const NAME: &'static str = "Event";
+    const NATIVE_NAME: &'static str = "redEvent";
 }
 
 impl Event {
     pub fn sound_name(self: &Ref<Self>) -> CName {
         CName::new("None")
+    }
+}
+
+impl std::fmt::Display for Event {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} ({})", Self::NAME, Self::NATIVE_NAME)
     }
 }
