@@ -18,9 +18,11 @@ use snafu::{OptionExt, ResultExt};
 use crate::bank::{Banks, Id};
 use crate::state::player::{gender, spoken_language};
 
+mod effect;
 pub mod error;
 mod id;
 mod manager;
+mod track;
 pub use manager::Manage;
 
 pub struct Engine;

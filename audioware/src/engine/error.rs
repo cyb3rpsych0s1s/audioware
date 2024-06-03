@@ -1,5 +1,5 @@
 use audioware_sys::interop::entity::Display;
-use kira::{manager::error::PlaySoundError, sound::FromFileError};
+use kira::{manager::error::PlaySoundError, sound::FromFileError, ResourceLimitReached};
 use red4ext_rs::types::EntityId;
 use snafu::Snafu;
 
@@ -9,18 +9,27 @@ pub enum Error {
         display("cannot find entity: {}", Display::from(entity_id)),
         visibility(pub(crate))
     )]
-    CannotFindEntity { entity_id: EntityId },
+    CannotFindEntity {
+        entity_id: EntityId,
+    },
     #[snafu(visibility(pub(crate)))]
-    CannotPlayStatic { source: PlaySoundError<()> },
+    CannotPlayStatic {
+        source: PlaySoundError<()>,
+    },
     #[snafu(visibility(pub(crate)))]
     CannotPlayStream {
         source: PlaySoundError<FromFileError>,
     },
     #[snafu(visibility(pub(crate)))]
-    Internal { source: crate::error::Error },
+    Internal {
+        source: crate::error::Error,
+    },
     #[snafu(visibility(pub(crate)))]
     BankRegistry {
         source: crate::bank::error::registry::Error,
+    },
+    ResourceLimitReached {
+        source: kira::ResourceLimitReached,
     },
 }
 
@@ -39,5 +48,11 @@ impl From<PlaySoundError<()>> for Error {
 impl From<PlaySoundError<FromFileError>> for Error {
     fn from(source: PlaySoundError<FromFileError>) -> Self {
         Self::CannotPlayStream { source }
+    }
+}
+
+impl From<ResourceLimitReached> for Error {
+    fn from(source: ResourceLimitReached) -> Self {
+        Self::ResourceLimitReached { source }
     }
 }

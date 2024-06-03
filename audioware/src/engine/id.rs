@@ -5,6 +5,10 @@ use snowflake::ProcessUniqueId;
 
 use crate::bank::{Id, Key};
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct SoundEntityId(pub EntityId);
+
 #[derive(Debug, Clone, Eq)]
 pub struct HandleId {
     pub id: ProcessUniqueId,
