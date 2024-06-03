@@ -14,14 +14,6 @@ pub struct GameInstance {
     unk10: i64,
 }
 
-#[cfg(test)]
-mod memory {
-    #[test]
-    fn size() {
-        static_assertions::const_assert_eq!(std::mem::size_of::<super::GameInstance>(), 0x18);
-    }
-}
-
 impl Default for GameInstance {
     fn default() -> Self {
         Self {
@@ -35,4 +27,12 @@ impl Default for GameInstance {
 unsafe impl NativeRepr for GameInstance {
     const NAME: &'static str = "GameInstance";
     const NATIVE_NAME: &'static str = "ScriptGameInstance";
+}
+
+#[cfg(test)]
+mod memory {
+    #[test]
+    fn size() {
+        static_assertions::const_assert_eq!(std::mem::size_of::<super::GameInstance>(), 0x18);
+    }
 }
