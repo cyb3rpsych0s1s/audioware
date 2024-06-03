@@ -30,18 +30,23 @@ use super::{
     manager::audio_manager,
 };
 
-static TRACKS: OnceCell<Tracks> = OnceCell::new();
-static SCENE: OnceCell<Scene> = OnceCell::new();
+pub static TRACKS: OnceCell<Tracks> = OnceCell::new();
+pub static SCENE: OnceCell<Scene> = OnceCell::new();
 
 #[inline(always)]
-fn maybe_tracks<'cell>() -> Result<&'cell Tracks, Error> {
+pub fn maybe_tracks<'cell>() -> Result<&'cell Tracks, Error> {
     Ok(TRACKS
         .get()
         .context(UninitializedSnafu { which: "tracks" })?)
 }
 
 #[inline(always)]
-fn maybe_equalizer<'guard>() -> Result<MutexGuard<'guard, EQ>, Error> {
+pub fn maybe_scene<'cell>() -> Result<&'cell Scene, Error> {
+    Ok(SCENE.get().context(UninitializedSnafu { which: "scene" })?)
+}
+
+#[inline(always)]
+pub fn maybe_equalizer<'guard>() -> Result<MutexGuard<'guard, EQ>, Error> {
     maybe_tracks()?
         .v
         .eq
@@ -49,29 +54,29 @@ fn maybe_equalizer<'guard>() -> Result<MutexGuard<'guard, EQ>, Error> {
         .map_err(|e| crate::error::Error::from(e).into())
 }
 
-struct Tracks {
-    reverb: TrackHandle,
-    v: V,
-    holocall: Holocall,
+pub struct Tracks {
+    pub reverb: TrackHandle,
+    pub v: V,
+    pub holocall: Holocall,
 }
 
-struct V {
-    main: TrackHandle,
-    vocal: TrackHandle,
-    mental: TrackHandle,
-    emissive: TrackHandle,
-    eq: Mutex<EQ>,
+pub struct V {
+    pub main: TrackHandle,
+    pub vocal: TrackHandle,
+    pub mental: TrackHandle,
+    pub emissive: TrackHandle,
+    pub eq: Mutex<EQ>,
 }
 
-struct Holocall {
-    main: TrackHandle,
-    eq: Mutex<EQ>,
+pub struct Holocall {
+    pub main: TrackHandle,
+    pub eq: Mutex<EQ>,
 }
 
-struct Scene {
-    scene: Arc<Mutex<SpatialSceneHandle>>,
-    v: Arc<Mutex<ListenerHandle>>,
-    entities: Arc<Mutex<HashMap<SoundEntityId, EmitterHandle>>>,
+pub struct Scene {
+    pub scene: Arc<Mutex<SpatialSceneHandle>>,
+    pub v: Arc<Mutex<ListenerHandle>>,
+    pub entities: Arc<Mutex<HashMap<SoundEntityId, EmitterHandle>>>,
 }
 
 impl Tracks {

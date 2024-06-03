@@ -9,6 +9,12 @@ use crate::bank::{Id, Key};
 #[repr(transparent)]
 pub struct SoundEntityId(pub EntityId);
 
+impl Hash for SoundEntityId {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        u64::from(self.0.clone()).hash(state);
+    }
+}
+
 #[derive(Debug, Clone, Eq)]
 pub struct HandleId {
     pub id: ProcessUniqueId,

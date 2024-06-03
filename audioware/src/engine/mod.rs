@@ -18,6 +18,7 @@ use snafu::{OptionExt, ResultExt};
 use crate::bank::{Banks, Id};
 use crate::state::player::{gender, spoken_language};
 
+mod destination;
 mod effect;
 pub mod error;
 mod id;
