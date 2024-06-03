@@ -15,7 +15,9 @@ pub mod conflict;
 pub mod error;
 pub use error::Error;
 mod id;
+mod key;
 pub use id::*;
+pub use key::*;
 
 use crate::{
     bank::error::registry::Error as RegistryError,
