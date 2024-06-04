@@ -26,7 +26,7 @@ pub const ON_VOICEPLAYED_EVENT: usize = 0x1409C12B0 - IMAGE_BASE;
 /// - gameaudioeventsSoundParameter:    0x141D1FBA4 / 0x141D1FBBC
 #[rustfmt::skip]
 pub const ON_PLAYSOUND_EVENT: usize         = 0x141D1FB8C - IMAGE_BASE;
-#[rustfmt::skip]
+#[rustfmt::skip] #[allow(dead_code)]
 pub const ON_STOPSOUND_EVENT: usize         = 0x141D1FB98 - IMAGE_BASE;
 #[rustfmt::skip]
 pub const ON_SOUNDSWITCH_EVENT: usize       = 0x141D1FBB0 - IMAGE_BASE;

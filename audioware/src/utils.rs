@@ -1,3 +1,7 @@
+use audioware_sys::interop::codeware::mod_log;
+use once_cell::sync::Lazy;
+use red4ext_rs::types::CName;
+
 pub mod macros {
     #[macro_export]
     macro_rules! ok_or_return {
@@ -24,4 +28,27 @@ pub mod macros {
         };
     }
     pub use ok_or_return;
+}
+
+static AUDIOWARE: Lazy<CName> = Lazy::new(|| CName::new_pooled("Audioware"));
+pub fn info(msg: impl AsRef<str>) {
+    red4ext_rs::info!("{}", msg.as_ref());
+    mod_log(AUDIOWARE.clone(), msg);
+}
+pub fn error(msg: impl AsRef<str>) {
+    red4ext_rs::error!("{}", msg.as_ref());
+    mod_log(AUDIOWARE.clone(), format!("[ERROR] {}", msg.as_ref()));
+}
+pub fn warn(msg: impl AsRef<str>) {
+    if cfg!(debug_assertions) {
+        red4ext_rs::warn!("{}", msg.as_ref());
+        mod_log(AUDIOWARE.clone(), format!("[WARN] {}", msg.as_ref()));
+    }
+}
+#[inline]
+pub fn dbg(msg: impl AsRef<str>) {
+    if cfg!(debug_assertions) {
+        red4ext_rs::debug!("{}", msg.as_ref());
+        mod_log(AUDIOWARE.clone(), msg.as_ref());
+    }
 }

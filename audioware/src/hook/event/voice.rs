@@ -12,7 +12,7 @@ pub fn print_event(event: VoiceEvent) {
         is_v,
         ..
     } = event;
-    red4ext_rs::info!(
+    crate::utils::info(format!(
         "intercepted {} ({}): {}, {}, {}, {}",
         VoiceEvent::NAME,
         VoiceEvent::NATIVE_NAME,
@@ -20,7 +20,7 @@ pub fn print_event(event: VoiceEvent) {
         grunt_type,
         grunt_interrupt_mode,
         is_v
-    );
+    ));
 }
 
 pub fn print_event_played(event: VoicePlayedEvent) {
@@ -30,14 +30,14 @@ pub fn print_event_played(event: VoicePlayedEvent) {
         is_v,
         ..
     } = event;
-    red4ext_rs::info!(
+    crate::utils::info(format!(
         "intercepted {} ({}): {}, {}, {}",
         VoicePlayedEvent::NAME,
         VoicePlayedEvent::NATIVE_NAME,
         event_name,
         grunt_type,
         is_v
-    );
+    ));
 }
 
 #[derive(NativeHandler)]

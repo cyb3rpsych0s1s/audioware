@@ -33,25 +33,26 @@ impl std::fmt::Display for AnyEvent {
     }
 }
 
-/// 0x141D1FB8C
+/// 0x141D1FB8C ✅
 pub fn print_1(event: AnyEvent) {
-    red4ext_rs::info!("from 0x141D1FB8C:\n{}", event);
+    crate::utils::info(format!("from 0x141D1FB8C:\n{}", event));
 }
 /// 0x141D1FB98
+#[allow(dead_code)]
 pub fn print_2(event: AnyEvent) {
-    red4ext_rs::info!("from 0x141D1FB98:\n{}", event);
+    crate::utils::info(format!("from 0x141D1FB98:\n{}", event));
 }
-/// 0x141D1FBB0
+/// 0x141D1FBB0 ✅
 pub fn print_3(event: AnyEvent) {
-    red4ext_rs::info!("from 0x141D1FBB0:\n{}", event);
+    crate::utils::info(format!("from 0x141D1FBB0:\n{}", event));
 }
-/// 0x141D1FBA4
+/// 0x141D1FBA4 ✅
 pub fn print_4(event: AnyEvent) {
-    red4ext_rs::info!("from 0x141D1FBA4:\n{}", event);
+    crate::utils::info(format!("from 0x141D1FBA4:\n{}", event));
 }
-/// 0x141D1FBBC
+/// 0x141D1FBBC ✅
 pub fn print_5(event: AnyEvent) {
-    red4ext_rs::info!("from 0x141D1FBBC:\n{}", event);
+    crate::utils::info(format!("from 0x141D1FBBC:\n{}", event));
 }
 
 #[derive(NativeHandler)]
@@ -62,14 +63,14 @@ pub fn print_5(event: AnyEvent) {
     handler = "self::from_ptr"
 )]
 pub struct HookgameaudioeventsSound1;
-#[derive(NativeHandler)]
-#[hook(
-    offset = ON_STOPSOUND_EVENT,
-    event = "self::AnyEvent",
-    detour = "print_2",
-    handler = "self::from_ptr"
-)]
-pub struct HookgameaudioeventsSound2;
+// #[derive(NativeHandler)]
+// #[hook(
+//     offset = ON_STOPSOUND_EVENT,
+//     event = "self::AnyEvent",
+//     detour = "print_2",
+//     handler = "self::from_ptr"
+// )]
+// pub struct HookgameaudioeventsSound2;
 #[derive(NativeHandler)]
 #[hook(
     offset = ON_SOUNDSWITCH_EVENT,

@@ -6,12 +6,12 @@ use red4ext_rs::conv::ClassType;
 
 pub fn print_music_event(event: MusicEvent) {
     let MusicEvent { event_name, .. } = event;
-    red4ext_rs::info!(
+    crate::utils::info(format!(
         "intercepted {} ({}): {}",
         MusicEvent::NAME,
         MusicEvent::NATIVE_NAME,
         event_name
-    );
+    ));
 }
 
 #[derive(NativeHandler)]

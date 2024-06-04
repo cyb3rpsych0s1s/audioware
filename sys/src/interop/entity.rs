@@ -9,7 +9,7 @@ use snafu::OptionExt;
 use crate::{
     error::{FromVariantSnafu, ReflectionError, UnknownClassSnafu, UnknownStaticFuncSnafu},
     impl_safe_downcast,
-    interop::reflection::Reflection,
+    interop::codeware::reflection::Reflection,
 };
 
 use super::{

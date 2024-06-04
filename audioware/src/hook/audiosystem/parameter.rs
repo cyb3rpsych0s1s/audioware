@@ -3,13 +3,10 @@ use audioware_mem::ExternFnRedRegisteredFunc;
 use red4ext_rs::types::{CName, EntityId};
 
 pub fn audioware_parameter(params: (CName, f32, EntityId, CName)) {
-    // red4ext_rs::info!(
-    //     "AudioSystem::Parameter({}, {}, {:?}, {})",
-    //     params.0,
-    //     params.1,
-    //     params.2,
-    //     params.3
-    // );
+    crate::utils::info(format!(
+        "AudioSystem::Parameter({}, {}, {:?}, {})",
+        params.0, params.1, params.2, params.3
+    ));
 }
 
 pub fn audioware_always_allow(_: &(CName, f32, EntityId, CName)) -> bool {

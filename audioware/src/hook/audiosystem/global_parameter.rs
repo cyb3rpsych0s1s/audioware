@@ -3,7 +3,10 @@ use audioware_mem::ExternFnRedRegisteredFunc;
 use red4ext_rs::types::CName;
 
 pub fn audioware_global_parameter(params: (CName, f32)) {
-    // red4ext_rs::info!("AudioSystem::GlobalParameter({}, {})", params.0, params.1);
+    crate::utils::info(format!(
+        "AudioSystem::GlobalParameter({}, {})",
+        params.0, params.1
+    ));
 }
 
 pub fn audioware_always_allow(_: &(CName, f32)) -> bool {

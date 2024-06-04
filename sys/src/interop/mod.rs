@@ -5,6 +5,9 @@ use red4ext_rs::{
 
 use crate::error::{DowncastError, UpcastError};
 
+#[cfg(feature = "codeware")]
+pub mod codeware;
+
 pub mod angles;
 pub mod audio;
 pub mod cruid;
@@ -16,9 +19,7 @@ pub mod hash;
 pub mod icomponent;
 pub mod iscriptable;
 pub mod locale;
-pub mod localization;
 pub mod quaternion;
-pub mod reflection;
 pub mod vector4;
 
 pub enum Frame {

@@ -20,7 +20,7 @@ pub fn print_event(event: DialogLineEvent) {
         playback_speed_parameter,
         ..
     } = dialog_line;
-    red4ext_rs::info!(
+    crate::utils::info(format!(
         "intercepted {} ({}): {:?}, {}, {}, {}, {}, {}, {}, {}, {}",
         DialogLineEvent::NAME,
         DialogLineEvent::NATIVE_NAME,
@@ -33,7 +33,7 @@ pub fn print_event(event: DialogLineEvent) {
         custom_vo_event,
         seek_time,
         playback_speed_parameter
-    );
+    ));
 }
 
 pub fn print_stop_event(event: StopDialogLine) {
@@ -42,21 +42,21 @@ pub fn print_stop_event(event: StopDialogLine) {
         fade_out,
         ..
     } = event;
-    red4ext_rs::info!(
+    crate::utils::info(format!(
         "intercepted {} ({}): {:?}, {}",
         StopDialogLine::NAME,
         StopDialogLine::NATIVE_NAME,
         string_id,
         fade_out
-    );
+    ));
 }
 
 pub fn print_event_end(_: DialogLineEndEvent) {
-    red4ext_rs::info!(
+    crate::utils::info(format!(
         "intercepted {} ({})",
         DialogLineEndEvent::NAME,
         DialogLineEndEvent::NATIVE_NAME
-    );
+    ));
 }
 
 #[derive(NativeHandler)]

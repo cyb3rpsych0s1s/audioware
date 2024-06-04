@@ -65,14 +65,15 @@ impl Plugin for Audioware {
             use audioware_mem::Intercept;
             hook::HookgameaudioeventsMusicEvent::load();
             hook::HookgameaudioeventsVoiceEvent::load();
-            hook::HookgameaudioeventsDialogLine::load();
-            hook::HookgameaudioeventsDialogLineEnd::load();
-            hook::HookgameaudioeventsStopDialogLine::load();
-            hook::HookgameaudioeventsSound1::load();
-            hook::HookgameaudioeventsSound2::load();
-            hook::HookgameaudioeventsSound3::load();
-            hook::HookgameaudioeventsSound4::load();
-            hook::HookgameaudioeventsSound5::load();
+            hook::HookgameaudioeventsVoicePlayedEvent::load();
+            // hook::HookgameaudioeventsDialogLine::load();
+            // hook::HookgameaudioeventsDialogLineEnd::load();
+            // hook::HookgameaudioeventsStopDialogLine::load();
+            // hook::HookgameaudioeventsSound1::load();
+            // hook::HookgameaudioeventsSound2::load();
+            // hook::HookgameaudioeventsSound3::load();
+            // hook::HookgameaudioeventsSound4::load();
+            // hook::HookgameaudioeventsSound5::load();
         }
     }
 
@@ -87,14 +88,15 @@ impl Plugin for Audioware {
             use audioware_mem::Intercept;
             hook::HookgameaudioeventsMusicEvent::unload();
             hook::HookgameaudioeventsVoiceEvent::unload();
-            hook::HookgameaudioeventsDialogLine::unload();
-            hook::HookgameaudioeventsDialogLineEnd::unload();
-            hook::HookgameaudioeventsStopDialogLine::unload();
-            hook::HookgameaudioeventsSound1::unload();
-            hook::HookgameaudioeventsSound2::unload();
-            hook::HookgameaudioeventsSound3::unload();
-            hook::HookgameaudioeventsSound4::unload();
-            hook::HookgameaudioeventsSound5::unload();
+            hook::HookgameaudioeventsVoicePlayedEvent::unload();
+            // hook::HookgameaudioeventsDialogLine::unload();
+            // hook::HookgameaudioeventsDialogLineEnd::unload();
+            // hook::HookgameaudioeventsStopDialogLine::unload();
+            // hook::HookgameaudioeventsSound1::unload();
+            // hook::HookgameaudioeventsSound2::unload();
+            // hook::HookgameaudioeventsSound3::unload();
+            // hook::HookgameaudioeventsSound4::unload();
+            // hook::HookgameaudioeventsSound5::unload();
         }
     }
 
