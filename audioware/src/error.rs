@@ -1,4 +1,4 @@
-use std::sync::{MutexGuard, RwLockReadGuard, RwLockWriteGuard, TryLockError};
+use std::sync::{MutexGuard, PoisonError, RwLockReadGuard, RwLockWriteGuard, TryLockError};
 
 use audioware_sys::error::ConversionError;
 use snafu::Snafu;
@@ -37,6 +37,14 @@ impl<'a, T> From<TryLockError<RwLockReadGuard<'a, T>>> for Error {
 
 impl<'a, T> From<TryLockError<MutexGuard<'a, T>>> for Error {
     fn from(_: TryLockError<MutexGuard<'a, T>>) -> Self {
+        Self::Contention {
+            which: std::any::type_name::<T>(),
+        }
+    }
+}
+
+impl<'a, T> From<PoisonError<MutexGuard<'a, T>>> for Error {
+    fn from(_: PoisonError<MutexGuard<'a, T>>) -> Self {
         Self::Contention {
             which: std::any::type_name::<T>(),
         }

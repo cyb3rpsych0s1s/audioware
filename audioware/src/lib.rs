@@ -2,10 +2,8 @@
 
 use audioware_mem::{Hook, Intercept};
 use bank::Banks;
-use hook::{
-    HookAudioSystemGlobalParameter, HookAudioSystemParameter, HookAudioSystemPlay,
-    HookAudioSystemStop,
-};
+use engine::Engine;
+use hook::*;
 use red4ext_rs::{
     define_trait_plugin,
     plugin::{Plugin, Version},
@@ -28,9 +26,17 @@ impl Plugin for Audioware {
 
     fn register() {
         red4ext_rs::info!("on register audioware");
+        match Engine::setup() {
+            Ok(()) => {
+                red4ext_rs::info!("engine successfully initialized");
+            }
+            Err(e) => {
+                red4ext_rs::error!("{e}");
+            }
+        };
         match Banks::setup() {
             Ok(report) => {
-                red4ext_rs::info!("successfully initialized:\n{report}");
+                red4ext_rs::info!("banks successfully initialized:\n{report}");
             }
             Err(e) => {
                 red4ext_rs::error!("{e}");

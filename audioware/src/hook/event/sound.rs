@@ -63,14 +63,14 @@ pub fn print_5(event: AnyEvent) {
     handler = "self::from_ptr"
 )]
 pub struct HookgameaudioeventsSound1;
-// #[derive(NativeHandler)]
-// #[hook(
-//     offset = ON_STOPSOUND_EVENT,
-//     event = "self::AnyEvent",
-//     detour = "print_2",
-//     handler = "self::from_ptr"
-// )]
-// pub struct HookgameaudioeventsSound2;
+#[derive(NativeHandler)]
+#[hook(
+    offset = ON_STOPSOUND_EVENT,
+    event = "self::AnyEvent",
+    detour = "print_2",
+    handler = "self::from_ptr"
+)]
+pub struct HookgameaudioeventsSound2;
 #[derive(NativeHandler)]
 #[hook(
     offset = ON_SOUNDSWITCH_EVENT,

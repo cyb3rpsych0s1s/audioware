@@ -4,7 +4,7 @@ use kira::OutputDestination;
 use red4ext_rs::types::{CName, EntityId};
 use snafu::OptionExt;
 
-use crate::engine::{error::CannotFindEntitySnafu, id::SoundEntityId, track::maybe_scene};
+use crate::engine::{error::CannotFindEntitySnafu, id::SoundEntityId, scene::maybe_scene_entities};
 
 use super::{error::Error, track::maybe_tracks};
 
@@ -29,10 +29,7 @@ pub fn output_destination(
                 "retrieving entity id from scene ({})",
                 u64::from(id.clone())
             );
-            maybe_scene()?
-                .entities
-                .try_lock()
-                .map_err(crate::error::Error::from)?
+            maybe_scene_entities()?
                 .get(&SoundEntityId(id.clone()))
                 .map(OutputDestination::from)
                 .context(CannotFindEntitySnafu {

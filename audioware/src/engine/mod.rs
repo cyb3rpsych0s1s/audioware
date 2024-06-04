@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use audioware_sys::interop::entity::{Entity, ScriptedPuppet};
 use audioware_sys::interop::game::get_game_instance;
 use audioware_sys::interop::SafeDowncast;
@@ -13,7 +15,9 @@ use kira::sound::{
 use kira::tween::Tween;
 use manager::{audio_manager, maybe_statics, maybe_streams};
 use red4ext_rs::types::{CName, EntityId, Ref};
+use scene::Scene;
 use snafu::{OptionExt, ResultExt};
+use track::Tracks;
 
 use crate::bank::{Banks, Id};
 use crate::state::player::{gender, spoken_language};
@@ -23,11 +27,18 @@ mod effect;
 pub mod error;
 mod id;
 mod manager;
+mod scene;
 mod track;
 pub use manager::Manage;
 
 pub struct Engine;
 impl Engine {
+    pub(crate) fn setup() -> Result<(), Error> {
+        // SAFETY: initialization order matters
+        Tracks::setup()?;
+        Scene::setup()?;
+        Ok(())
+    }
     pub fn play(
         sound_name: &CName,
         entity_id: Option<&EntityId>,
