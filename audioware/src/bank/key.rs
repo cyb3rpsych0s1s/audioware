@@ -103,6 +103,11 @@ impl PartialEq<(&CName, &Locale, &PlayerGender)> for UniqueKey {
         &self.0 == other.0
     }
 }
+impl From<UniqueKey> for Key {
+    fn from(value: UniqueKey) -> Self {
+        Self::Unique(value)
+    }
+}
 
 /// Any audio defined by both a [`CName`] and a [`PlayerGender`].
 ///
@@ -122,6 +127,11 @@ impl std::fmt::Display for GenderKey {
 impl PartialEq<(&CName, &Locale, &PlayerGender)> for GenderKey {
     fn eq(&self, other: &(&CName, &Locale, &PlayerGender)) -> bool {
         &self.0 == other.0 && &self.1 == other.2
+    }
+}
+impl From<GenderKey> for Key {
+    fn from(value: GenderKey) -> Self {
+        Self::Gender(value)
     }
 }
 
@@ -145,6 +155,11 @@ impl PartialEq<(&CName, &Locale, &PlayerGender)> for LocaleKey {
         &self.0 == other.0 && &self.1 == other.1
     }
 }
+impl From<LocaleKey> for Key {
+    fn from(value: LocaleKey) -> Self {
+        Self::Locale(value)
+    }
+}
 
 /// Any audio defined all by a [`CName`], [`Locale`] and [`PlayerGender`].
 ///
@@ -164,6 +179,11 @@ impl std::fmt::Display for BothKey {
 impl PartialEq<(&CName, &Locale, &PlayerGender)> for BothKey {
     fn eq(&self, other: &(&CName, &Locale, &PlayerGender)) -> bool {
         &self.0 == other.0 && &self.1 == other.1 && &self.2 == other.2
+    }
+}
+impl From<BothKey> for Key {
+    fn from(value: BothKey) -> Self {
+        Self::Both(value)
     }
 }
 

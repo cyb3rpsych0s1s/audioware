@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use audioware_sys::interop::entity::{Entity, ScriptedPuppet};
 use audioware_sys::interop::game::get_game_instance;
 use audioware_sys::interop::SafeDowncast;

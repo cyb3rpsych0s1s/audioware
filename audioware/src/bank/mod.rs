@@ -23,7 +23,7 @@ use crate::{
     bank::error::registry::Error as RegistryError,
     manifest::{
         conv::{ensure_music, ensure_ono, ensure_sfx, ensure_voice},
-        de::{DialogLine, Manifest},
+        de::{DialogLine, Manifest, Settings},
         depot::{R6Audioware, REDmod},
         error::{ensure_manifest_no_duplicates, CannotParseManifestSnafu, CannotReadManifestSnafu},
     },
@@ -37,6 +37,11 @@ static MULTIS: OnceCell<HashMap<BothKey, StaticSoundData>> = OnceCell::new();
 
 static LOC_SUB: OnceCell<HashMap<LocaleKey, DialogLine>> = OnceCell::new();
 static MUL_SUB: OnceCell<HashMap<BothKey, DialogLine>> = OnceCell::new();
+
+static UNI_SET: OnceCell<HashMap<UniqueKey, Settings>> = OnceCell::new();
+static GEN_SET: OnceCell<HashMap<GenderKey, Settings>> = OnceCell::new();
+static LOC_SET: OnceCell<HashMap<LocaleKey, Settings>> = OnceCell::new();
+static MUL_SET: OnceCell<HashMap<BothKey, Settings>> = OnceCell::new();
 
 static KEYS: OnceCell<HashSet<Id>> = OnceCell::new();
 
@@ -186,6 +191,10 @@ impl Banks {
         let mut dual_voices: HashMap<BothKey, StaticSoundData> = HashMap::new();
         let mut single_subs: HashMap<LocaleKey, DialogLine> = HashMap::new();
         let mut dual_subs: HashMap<BothKey, DialogLine> = HashMap::new();
+        let mut unique_settings: HashMap<UniqueKey, Settings> = HashMap::new();
+        let mut gender_settings: HashMap<GenderKey, Settings> = HashMap::new();
+        let mut single_settings: HashMap<LocaleKey, Settings> = HashMap::new();
+        let mut dual_settings: HashMap<BothKey, Settings> = HashMap::new();
 
         for m in mods {
             let paths = m.manifests_paths();
@@ -205,7 +214,8 @@ impl Banks {
                             value,
                             &m,
                             &mut ids,
-                            &mut uniques
+                            &mut uniques,
+                            &mut unique_settings,
                         ));
                     }
                 }
@@ -216,7 +226,8 @@ impl Banks {
                             value,
                             &m,
                             &mut ids,
-                            &mut genders
+                            &mut genders,
+                            &mut gender_settings,
                         ));
                     }
                 }
@@ -230,13 +241,21 @@ impl Banks {
                             &mut single_voices,
                             &mut dual_voices,
                             &mut single_subs,
-                            &mut dual_subs
+                            &mut dual_subs,
+                            &mut single_settings,
+                            &mut dual_settings
                         ));
                     }
                 }
                 if let Some(music) = manifest.music {
                     for (key, value) in music {
-                        ok_or_continue!(ensure_music(key.as_str(), value, &m, &mut ids));
+                        ok_or_continue!(ensure_music(
+                            key.as_str(),
+                            value,
+                            &m,
+                            &mut ids,
+                            &mut unique_settings
+                        ));
                     }
                 }
             }
@@ -271,6 +290,10 @@ impl Banks {
         let _ = MULTIS.set(dual_voices);
         let _ = LOC_SUB.set(single_subs);
         let _ = MUL_SUB.set(dual_subs);
+        let _ = UNI_SET.set(unique_settings);
+        let _ = GEN_SET.set(gender_settings);
+        let _ = LOC_SET.set(single_settings);
+        let _ = MUL_SET.set(dual_settings);
 
         Ok(report)
     }

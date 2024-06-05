@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    hash::Hash,
+};
 
 use either::Either;
 use kira::sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError};
@@ -7,11 +10,11 @@ use snafu::{ensure, Snafu};
 
 use crate::bank::{
     conflict::{Conflict, Conflictual},
-    BothKey, GenderKey, Id, LocaleKey, UniqueKey,
+    Id, Key,
 };
 
 use super::{
-    de::{DialogLine, Manifest, Usage},
+    de::{DialogLine, Manifest, Settings, Usage},
     depot::Mod,
 };
 
@@ -55,6 +58,8 @@ pub enum Error {
     CannotStoreData { id: Id, path: String },
     #[snafu(display("cannot store subtitle"), visibility(pub(crate)))]
     CannotStoreSubtitle,
+    #[snafu(display("cannot store audio settings"), visibility(pub(crate)))]
+    CannotStoreSettings,
     #[snafu(display("cannot store id: {id}"), visibility(pub(crate)))]
     CannotStoreAgnosticId { id: Id },
 }
@@ -151,103 +156,52 @@ pub fn ensure_valid_audio(
     }
 }
 
-/// ensure [`Sfx`](crate::manifest::de::Sfx) is properly stored in appropriate bank
-#[inline]
-pub fn ensure_store_unique_data(
-    key: UniqueKey,
-    value: StaticSoundData,
-    path: &impl AsRef<std::path::Path>,
-    store: &mut HashMap<UniqueKey, StaticSoundData>,
+pub fn ensure_valid_audio_settings<T>(
+    audio: Either<StaticSoundData, StreamingSoundData<FromFileError>>,
+    settings: Option<Settings>,
 ) -> Result<(), Error> {
+    todo!()
+}
+
+pub fn ensure_store_data<'a, T: PartialEq + Eq + Hash + Clone + Into<Key>>(
+    key: T,
+    value: StaticSoundData,
+    settings: Option<Settings>,
+    path: &impl AsRef<std::path::Path>,
+    store: &mut HashMap<T, StaticSoundData>,
+) -> Result<(), Error> {
+    let value = match settings {
+        Some(settings) => value.with_settings(settings.into()),
+        None => value,
+    };
     ensure!(
         store.insert(key.clone(), value).is_none(),
         CannotStoreDataSnafu {
-            id: Id::InMemory(crate::bank::Key::Unique(key)),
+            id: Id::InMemory(key.into()),
             path: path.as_ref().display().to_string()
         }
     );
     Ok(())
 }
 
-/// ensure [`Ono`](crate::manifest::de::Ono) audio data is properly stored in appropriate bank
-#[inline]
-pub fn ensure_store_gender_data(
-    key: GenderKey,
-    value: StaticSoundData,
-    path: &impl AsRef<std::path::Path>,
-    store: &mut HashMap<GenderKey, StaticSoundData>,
-) -> Result<(), Error> {
-    ensure!(
-        store.insert(key.clone(), value).is_none(),
-        CannotStoreDataSnafu {
-            id: Id::InMemory(crate::bank::Key::Gender(key)),
-            path: path.as_ref().display().to_string()
-        }
-    );
-    Ok(())
-}
-
-/// ensure _single_ [`Voice`](crate::manifest::de::Voice) audio data is properly stored in appropriate bank
-#[inline]
-pub fn ensure_store_locale_data(
-    key: LocaleKey,
-    value: StaticSoundData,
-    path: &impl AsRef<std::path::Path>,
-    store: &mut HashMap<LocaleKey, StaticSoundData>,
-) -> Result<(), Error> {
-    ensure!(
-        store.insert(key.clone(), value).is_none(),
-        CannotStoreDataSnafu {
-            id: Id::OnDemand(crate::bank::Usage::Static(
-                crate::bank::Key::Locale(key),
-                path.as_ref().to_path_buf()
-            )),
-            path: path.as_ref().display().to_string()
-        }
-    );
-    Ok(())
-}
-
-/// ensure _dual_ [`Voice`](crate::manifest::de::Voice) audio data is properly stored in appropriate bank
-#[inline]
-pub fn ensure_store_both_key(
-    key: BothKey,
-    value: StaticSoundData,
-    path: &impl AsRef<std::path::Path>,
-    store: &mut HashMap<BothKey, StaticSoundData>,
-) -> Result<(), Error> {
-    ensure!(
-        store.insert(key.clone(), value).is_none(),
-        CannotStoreDataSnafu {
-            id: Id::OnDemand(crate::bank::Usage::Static(
-                crate::bank::Key::Both(key),
-                path.as_ref().to_path_buf()
-            )),
-            path: path.as_ref().display().to_string()
-        }
-    );
-    Ok(())
-}
-
-/// ensure _single_ [`Voice`](crate::manifest::de::Voice) subtitle is properly stored in appropriate bank
-#[inline]
-pub fn ensure_store_subtitle(
-    key: LocaleKey,
+pub fn ensure_store_subtitle<'a, T: PartialEq + Eq + Hash + Clone + Into<Key>>(
+    key: T,
     value: DialogLine,
-    store: &mut HashMap<LocaleKey, DialogLine>,
+    store: &mut HashMap<T, DialogLine>,
 ) -> Result<(), Error> {
     ensure!(store.insert(key, value).is_none(), CannotStoreSubtitleSnafu);
     Ok(())
 }
 
-/// ensure _dual_ [`Voice`](crate::manifest::de::Voice) subtitle is properly stored in appropriate bank
-#[inline]
-pub fn ensure_store_gender_subtitle(
-    key: BothKey,
-    value: DialogLine,
-    store: &mut HashMap<BothKey, DialogLine>,
+pub fn ensure_store_settings<'a, T: PartialEq + Eq + Hash + Clone>(
+    key: &'a T,
+    value: Settings,
+    store: &'a mut HashMap<T, Settings>,
 ) -> Result<(), Error> {
-    ensure!(store.insert(key, value).is_none(), CannotStoreSubtitleSnafu);
+    ensure!(
+        store.insert(key.clone(), value.clone()).is_none(),
+        CannotStoreSettingsSnafu
+    );
     Ok(())
 }
 
