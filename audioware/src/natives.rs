@@ -2,9 +2,14 @@ use std::time::Duration;
 
 use audioware_sys::interop::gender::PlayerGender;
 use kira::tween::Tween;
-use red4ext_rs::types::CName;
+use red4ext_rs::types::{CName, EntityId};
 
-use crate::{engine::Manage, state::game};
+use crate::{
+    engine::Manage,
+    manifest::types::{ElasticTween, LinearTween},
+    state::game,
+    Maybe,
+};
 
 pub fn update_game_state(state: game::State) {
     crate::state::game::State::set(state);
@@ -29,4 +34,30 @@ pub fn audioware_stop_engine() {
         easing: kira::tween::Easing::Linear,
     };
     crate::engine::Engine.stop(Some(immediately));
+}
+
+pub fn stop_linear(
+    sound_name: CName,
+    entity_id: EntityId,
+    _emitter_name: CName,
+    tween: LinearTween,
+) {
+    let tween: kira::tween::Tween = tween.into();
+    match (&sound_name, entity_id.maybe()) {
+        (n, None) => crate::engine::Engine.stop_by_cname(n, Some(tween)),
+        (n, Some(e)) => crate::engine::Engine.stop_by_cname_for_entity(n, e, Some(tween)),
+    }
+}
+
+pub fn stop_elastic(
+    sound_name: CName,
+    entity_id: EntityId,
+    _emitter_name: CName,
+    tween: ElasticTween,
+) {
+    let tween: kira::tween::Tween = tween.into();
+    match (&sound_name, entity_id.maybe()) {
+        (n, None) => crate::engine::Engine.stop_by_cname(n, Some(tween)),
+        (n, Some(e)) => crate::engine::Engine.stop_by_cname_for_entity(n, e, Some(tween)),
+    }
 }

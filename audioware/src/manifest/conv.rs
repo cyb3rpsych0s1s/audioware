@@ -43,7 +43,7 @@ fn ensure<'a, K: PartialEq + Eq + Hash + Clone + Into<Key> + Conflictual>(
 where
     HashSet<Id>: Conflict<K>,
 {
-    let data = ensure_valid_audio(&path, m, usage)?;
+    let data = ensure_valid_audio(&path, m, usage, settings.as_ref())?;
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = match usage {
         Usage::InMemory => Id::InMemory(key.clone().into()),
@@ -182,14 +182,14 @@ pub fn ensure_music<'a>(
     smap: &'a mut HashMap<UniqueKey, Settings>,
 ) -> Result<(), Error> {
     ensure_key_unique(k)?;
-    let (path, settings) = v.into();
-    ensure_valid_audio(&path, m, Usage::Streaming)?;
+    let Audio { file, settings } = v.into();
+    ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref())?;
     let cname = CName::new_pooled(k);
     let key = UniqueKey(cname);
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = Id::OnDemand(crate::bank::Usage::Streaming(
         crate::bank::Key::Unique(key.clone()),
-        m.as_ref().join(path),
+        m.as_ref().join(file),
     ));
     if let Some(settings) = settings {
         ensure_store_settings::<UniqueKey>(&key, settings, smap)?;

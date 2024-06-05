@@ -1,25 +1,14 @@
-use std::path::PathBuf;
-
 use serde::Deserialize;
 
-use super::Settings;
+use super::{AnyAudio, Audio};
 
 #[derive(Debug, Deserialize)]
-#[serde(untagged)]
-pub enum Music {
-    Inline(PathBuf),
-    Multi {
-        file: PathBuf,
-        settings: Option<Settings>,
-    },
-}
+#[serde(transparent)]
+pub struct Music(AnyAudio);
 
-impl From<Music> for (PathBuf, Option<Settings>) {
+impl From<Music> for Audio {
     fn from(value: Music) -> Self {
-        match value {
-            Music::Inline(file) => (file, None),
-            Music::Multi { file, settings } => (file, settings),
-        }
+        value.0.into()
     }
 }
 

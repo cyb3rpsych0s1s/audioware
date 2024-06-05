@@ -1,7 +1,5 @@
 module Audioware
 
-private native func StopEngine() -> Void;
-
 public class Audioware extends ScriptableSystem {
 
     private func OnAttach() {

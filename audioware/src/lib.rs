@@ -1,6 +1,9 @@
 #![feature(arbitrary_self_types)]
 
-use audioware_mem::{Hook, Intercept};
+use audioware_mem::Hook;
+#[allow(unused_imports)]
+use audioware_mem::Intercept;
+
 use bank::Banks;
 use engine::Engine;
 use hook::*;
@@ -58,6 +61,8 @@ impl Plugin for Audioware {
             "Audioware.StopEngine",
             crate::natives::audioware_stop_engine
         );
+        register_function!("Audioware.StopLinear", crate::natives::stop_linear);
+        register_function!("Audioware.StopElastic", crate::natives::stop_elastic);
     }
 
     fn post_register() {

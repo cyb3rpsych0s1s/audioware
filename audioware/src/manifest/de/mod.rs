@@ -46,7 +46,7 @@ pub struct Audio {
     pub settings: Option<Settings>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum AnyAudio {
     Inline(PathBuf),

@@ -37,7 +37,7 @@ pub enum Voice {
     },
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize)]
 pub struct Dialog {
     #[serde(flatten)]
     pub basic: Audio,

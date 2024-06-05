@@ -6,7 +6,11 @@ use std::{
 use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use either::Either;
 use error::ensure_no_duplicate_accross_depots;
-use kira::sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError};
+use kira::sound::{
+    static_sound::{StaticSoundData, StaticSoundSettings},
+    streaming::{StreamingSoundData, StreamingSoundSettings},
+    FromFileError,
+};
 use once_cell::sync::OnceCell;
 use red4ext_rs::types::CName;
 use snafu::ResultExt;
@@ -118,15 +122,29 @@ impl Banks {
         })
     }
     pub fn data(id: &Id) -> Either<StaticSoundData, StreamingSoundData<FromFileError>> {
+        let settings = Self::settings(id);
         match id {
-            Id::OnDemand(Usage::Static(_, path)) => Either::Left(
-                StaticSoundData::from_file(path)
-                    .expect("static sound data has already been validated"),
-            ),
-            Id::OnDemand(Usage::Streaming(_, path)) => Either::Right(
-                StreamingSoundData::from_file(path)
-                    .expect("static sound data has already been validated"),
-            ),
+            Id::OnDemand(Usage::Static(_, path)) => {
+                let data = StaticSoundData::from_file(path)
+                    .expect("static sound data has already been validated");
+                if let Some(settings) = settings {
+                    let settings = settings.left().expect("static sound settings should match");
+                    return Either::Left(data.with_settings(settings));
+                }
+                Either::Left(data)
+            }
+            Id::OnDemand(Usage::Streaming(_, path)) => {
+                let data = StreamingSoundData::from_file(path)
+                    .expect("streaming sound data has already been validated");
+                if let Some(settings) = settings {
+                    let settings = settings
+                        .right()
+                        .expect("streaming sound settings should match");
+                    return Either::Right(data.with_settings(settings));
+                }
+                Either::Right(data)
+            }
+            // in-memory sound data already embed settings
             Id::InMemory(Key::Unique(key)) => Either::Left(
                 UNIQUES
                     .get()
@@ -159,6 +177,64 @@ impl Banks {
                     .expect("insertion guarantees")
                     .clone(),
             ),
+        }
+    }
+    fn settings(id: &Id) -> Option<Either<StaticSoundSettings, StreamingSoundSettings>> {
+        match id {
+            Id::OnDemand(Usage::Static(key, _)) => match key {
+                Key::Unique(key) => UNI_SET.get().and_then(|x| {
+                    x.get(key)
+                        .cloned()
+                        .map(StaticSoundSettings::from)
+                        .map(Either::Left)
+                }),
+                Key::Gender(key) => GEN_SET.get().and_then(|x| {
+                    x.get(key)
+                        .cloned()
+                        .map(StaticSoundSettings::from)
+                        .map(Either::Left)
+                }),
+                Key::Locale(key) => LOC_SET.get().and_then(|x| {
+                    x.get(key)
+                        .cloned()
+                        .map(StaticSoundSettings::from)
+                        .map(Either::Left)
+                }),
+                Key::Both(key) => MUL_SET.get().and_then(|x| {
+                    x.get(key)
+                        .cloned()
+                        .map(StaticSoundSettings::from)
+                        .map(Either::Left)
+                }),
+            },
+            Id::OnDemand(Usage::Streaming(key, _)) => match key {
+                Key::Unique(key) => UNI_SET.get().and_then(|x| {
+                    x.get(key)
+                        .cloned()
+                        .map(StreamingSoundSettings::from)
+                        .map(Either::Right)
+                }),
+                Key::Gender(key) => GEN_SET.get().and_then(|x| {
+                    x.get(key)
+                        .cloned()
+                        .map(StreamingSoundSettings::from)
+                        .map(Either::Right)
+                }),
+                Key::Locale(key) => LOC_SET.get().and_then(|x| {
+                    x.get(key)
+                        .cloned()
+                        .map(StreamingSoundSettings::from)
+                        .map(Either::Right)
+                }),
+                Key::Both(key) => MUL_SET.get().and_then(|x| {
+                    x.get(key)
+                        .cloned()
+                        .map(StreamingSoundSettings::from)
+                        .map(Either::Right)
+                }),
+            },
+            // settings are already stored in-memory
+            Id::InMemory(_) => None,
         }
     }
     pub fn setup() -> Result<Initialization, Error> {

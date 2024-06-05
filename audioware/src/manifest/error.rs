@@ -4,7 +4,11 @@ use std::{
 };
 
 use either::Either;
-use kira::sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError};
+use kira::sound::{
+    static_sound::{StaticSoundData, StaticSoundSettings},
+    streaming::{StreamingSoundData, StreamingSoundSettings},
+    FromFileError,
+};
 use red4ext_rs::types::CName;
 use snafu::{ensure, Snafu};
 
@@ -139,20 +143,29 @@ pub fn ensure_valid_audio(
     path: &impl AsRef<std::path::Path>,
     m: &Mod,
     usage: Usage,
+    settings: Option<&Settings>,
 ) -> Result<Either<StaticSoundData, StreamingSoundData<FromFileError>>, Error> {
     use snafu::ResultExt;
     let filepath = m.as_ref().join(path.as_ref());
     match usage {
-        Usage::OnDemand | Usage::InMemory => Ok(StaticSoundData::from_file(filepath)
-            .map(Either::Left)
-            .context(InvalidAudioSnafu {
+        Usage::OnDemand | Usage::InMemory => {
+            let data = StaticSoundData::from_file(filepath).context(InvalidAudioSnafu {
                 path: path.as_ref().display().to_string(),
-            })?),
-        Usage::Streaming => Ok(StreamingSoundData::from_file(filepath)
-            .map(Either::Right)
-            .context(InvalidAudioSnafu {
+            })?;
+            if let Some(settings) = settings.map(|x| StaticSoundSettings::from(x.clone())) {
+                return Ok(Either::Left(data.with_settings(settings)));
+            }
+            Ok(Either::Left(data))
+        }
+        Usage::Streaming => {
+            let data = StreamingSoundData::from_file(filepath).context(InvalidAudioSnafu {
                 path: path.as_ref().display().to_string(),
-            })?),
+            })?;
+            if let Some(settings) = settings.map(|x| StreamingSoundSettings::from(x.clone())) {
+                return Ok(Either::Right(data.with_settings(settings)));
+            }
+            Ok(Either::Right(data))
+        }
     }
 }
 
