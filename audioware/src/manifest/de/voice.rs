@@ -4,7 +4,7 @@ use audioware_sys::interop::{audio::ScnDialogLineType, gender::PlayerGender, loc
 use either::Either;
 use serde::Deserialize;
 
-use super::{Audio, DialogLine, Settings, Usage};
+use super::{paths_into_audios, Audio, DialogLine, Settings, Usage};
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -42,6 +42,22 @@ pub struct Dialog {
     #[serde(flatten)]
     pub basic: Audio,
     pub subtitle: String,
+}
+
+impl From<&Dialog> for Audio {
+    fn from(value: &Dialog) -> Self {
+        value.basic.clone()
+    }
+}
+
+impl From<(&Dialog, Option<&Settings>)> for Audio {
+    fn from(value: (&Dialog, Option<&Settings>)) -> Self {
+        let mut audio: Audio = value.into();
+        if let Some(settings) = value.1 {
+            audio.merge_settings(settings.clone());
+        }
+        audio
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -86,18 +102,7 @@ impl From<Voice> for AnyVoice {
                 usage,
                 settings,
             } => {
-                let dialogs = dialogs
-                    .into_iter()
-                    .map(|(k, v)| {
-                        (
-                            k,
-                            Audio {
-                                file: v,
-                                settings: settings.clone(),
-                            },
-                        )
-                    })
-                    .collect();
+                let dialogs = paths_into_audios(dialogs, settings);
                 Either::Left((dialogs, usage.unwrap_or(default_usage), None))
             }
             Voice::SingleMulti {
@@ -108,21 +113,13 @@ impl From<Voice> for AnyVoice {
             } => {
                 let mut aud: HashMap<Locale, Audio> = HashMap::with_capacity(dialogs.len());
                 let mut sub: HashMap<Locale, DialogLine> = HashMap::with_capacity(dialogs.len());
-                for (k, mut v) in dialogs.into_iter() {
-                    if let Some(settings) = settings.clone() {
-                        v.basic.merge_settings(settings);
-                    }
-                    aud.insert(
-                        k,
-                        Audio {
-                            file: v.basic.file,
-                            settings: v.basic.settings,
-                        },
-                    );
+                for (k, ref v) in dialogs.into_iter() {
+                    let audio: Audio = (v, settings.as_ref()).into();
+                    aud.insert(k, audio);
                     sub.insert(
                         k,
                         DialogLine {
-                            msg: v.subtitle,
+                            msg: v.subtitle.clone(),
                             line: line.unwrap_or(default_line),
                         },
                     );
@@ -140,15 +137,7 @@ impl From<Voice> for AnyVoice {
                         (
                             k,
                             v.into_iter()
-                                .map(|(k, v)| {
-                                    (
-                                        k,
-                                        Audio {
-                                            file: v,
-                                            settings: settings.clone(),
-                                        },
-                                    )
-                                })
+                                .map(|(k, v)| (k, (v, settings.as_ref()).into()))
                                 .collect(),
                         )
                     })

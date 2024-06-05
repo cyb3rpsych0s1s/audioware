@@ -28,6 +28,7 @@ use super::{
     },
 };
 
+#[allow(clippy::too_many_arguments)]
 fn ensure<'a, K: PartialEq + Eq + Hash + Clone + Into<Key> + Conflictual>(
     k: &'a str,
     key: K,

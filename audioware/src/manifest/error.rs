@@ -163,7 +163,7 @@ pub fn ensure_valid_audio_settings<T>(
     todo!()
 }
 
-pub fn ensure_store_data<'a, T: PartialEq + Eq + Hash + Clone + Into<Key>>(
+pub fn ensure_store_data<T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     key: T,
     value: StaticSoundData,
     settings: Option<Settings>,
@@ -184,7 +184,7 @@ pub fn ensure_store_data<'a, T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     Ok(())
 }
 
-pub fn ensure_store_subtitle<'a, T: PartialEq + Eq + Hash + Clone + Into<Key>>(
+pub fn ensure_store_subtitle<T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     key: T,
     value: DialogLine,
     store: &mut HashMap<T, DialogLine>,
@@ -193,10 +193,10 @@ pub fn ensure_store_subtitle<'a, T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     Ok(())
 }
 
-pub fn ensure_store_settings<'a, T: PartialEq + Eq + Hash + Clone>(
-    key: &'a T,
+pub fn ensure_store_settings<T: PartialEq + Eq + Hash + Clone>(
+    key: &T,
     value: Settings,
-    store: &'a mut HashMap<T, Settings>,
+    store: &mut HashMap<T, Settings>,
 ) -> Result<(), Error> {
     ensure!(
         store.insert(key.clone(), value.clone()).is_none(),

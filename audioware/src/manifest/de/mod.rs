@@ -65,7 +65,49 @@ impl From<AnyAudio> for Audio {
     }
 }
 
-pub fn into_audios<K: PartialEq + Eq + Hash>(
+impl From<(AnyAudio, Option<&Settings>)> for Audio {
+    fn from(value: (AnyAudio, Option<&Settings>)) -> Self {
+        let mut audio: Audio = value.0.into();
+        if let Some(settings) = value.1 {
+            audio.merge_settings(settings.clone());
+        }
+        audio
+    }
+}
+
+impl From<(PathBuf, Option<&Settings>)> for Audio {
+    fn from(value: (PathBuf, Option<&Settings>)) -> Self {
+        let mut audio: Audio = Audio {
+            file: value.0,
+            settings: None,
+        };
+        if let Some(settings) = value.1 {
+            audio.merge_settings(settings.clone());
+        }
+        audio
+    }
+}
+
+pub fn paths_into_audios<K: PartialEq + Eq + Hash>(
+    value: HashMap<K, PathBuf>,
+    settings: Option<Settings>,
+) -> HashMap<K, Audio> {
+    value
+        .into_iter()
+        .map(|(k, v)| {
+            let mut v: Audio = Audio {
+                file: v,
+                settings: None,
+            };
+            if let Some(ref settings) = settings {
+                v.merge_settings(settings.clone());
+            }
+            (k, v)
+        })
+        .collect()
+}
+
+pub fn any_audios_into_audios<K: PartialEq + Eq + Hash>(
     value: HashMap<K, AnyAudio>,
     settings: Option<Settings>,
 ) -> HashMap<K, Audio> {

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use audioware_sys::interop::gender::PlayerGender;
 use serde::Deserialize;
 
-use super::{into_audios, AnyAudio, Audio, Settings, Usage};
+use super::{any_audios_into_audios, AnyAudio, Audio, Settings, Usage};
 
 #[derive(Debug, Deserialize)]
 pub struct Ono {
@@ -17,7 +17,7 @@ impl From<Ono> for (Usage, HashMap<PlayerGender, Audio>) {
     fn from(value: Ono) -> Self {
         (
             value.usage.unwrap_or(Usage::InMemory),
-            into_audios(value.genders, value.settings),
+            any_audios_into_audios(value.genders, value.settings),
         )
     }
 }
