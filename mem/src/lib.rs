@@ -148,9 +148,12 @@ pub trait NativeHandler: DetourHandler {
     ///
     /// Extra care must be taken if you manipulate the event pointed at (untested).
     unsafe fn hook(target_ptr: usize, event_ptr: usize) {
-        // read event in memory from pointer and call hook
-        let event: Self::Event = unsafe { Self::from_ptr(event_ptr) };
-        Self::HOOK(event);
+        // check for null pointer
+        if event_ptr != 0 {
+            // read event in memory from pointer and call hook
+            let event: Self::Event = unsafe { Self::from_ptr(event_ptr) };
+            Self::HOOK(event);
+        }
 
         // call original function
         let trampoline = move |detour: &RawDetour| {
