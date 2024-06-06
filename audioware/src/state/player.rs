@@ -1,3 +1,5 @@
+//! player state
+
 use std::sync::RwLock;
 
 use crate::error::{Error, InvalidLocaleSnafu};

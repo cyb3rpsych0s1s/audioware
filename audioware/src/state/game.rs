@@ -1,20 +1,17 @@
+//! game state
+
 use std::{convert::Infallible, sync::atomic::AtomicU8};
 
 use once_cell::sync::OnceCell;
 use red4ext_rs::conv::NativeRepr;
 
+/// retrieve [`State`]
 fn state() -> &'static AtomicU8 {
     static INSTANCE: OnceCell<AtomicU8> = OnceCell::new();
     INSTANCE.get_or_init(|| AtomicU8::new(State::default() as u8))
 }
 
 impl State {
-    pub fn get() -> Self {
-        self::state()
-            .load(std::sync::atomic::Ordering::Relaxed)
-            .try_into()
-            .expect("game state is always initialized")
-    }
     pub fn set(state: State) -> Self {
         self::state()
             .swap(state as u8, std::sync::atomic::Ordering::SeqCst)
@@ -23,6 +20,7 @@ impl State {
     }
 }
 
+/// game lifecycle state
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 #[repr(i64)]
 pub enum State {
@@ -46,6 +44,7 @@ pub enum State {
 }
 
 unsafe impl NativeRepr for State {
+    /// SAFETY: must match `Natives.reds`
     const NAME: &'static str = "Audioware.EngineState";
 }
 

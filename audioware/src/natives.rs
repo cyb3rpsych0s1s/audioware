@@ -14,7 +14,8 @@ use crate::{
 };
 
 pub fn update_game_state(state: game::State) {
-    crate::state::game::State::set(state);
+    let previous = crate::state::game::State::set(state);
+    crate::engine::Engine.on_game_state_change(previous, state);
 }
 
 pub fn update_player_gender(gender: PlayerGender) {

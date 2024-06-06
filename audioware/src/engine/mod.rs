@@ -18,6 +18,7 @@ use snafu::{OptionExt, ResultExt};
 use track::Tracks;
 
 use crate::bank::{Banks, Id};
+use crate::state::game::State;
 use crate::state::player::{gender, spoken_language};
 
 mod destination;
@@ -108,6 +109,24 @@ impl Engine {
             }
         }
         Ok(())
+    }
+    /// on specific state changes sounds will be paused, resumed or stopped.
+    pub fn on_game_state_change(mut self, previous: State, now: State) {
+        if previous == now {
+            return;
+        }
+        match (previous, now) {
+            (State::InGame, State::InMenu | State::InPause) => {
+                self.pause(None);
+            }
+            (State::InMenu | State::InPause, State::InGame) => {
+                self.resume(None);
+            }
+            (_, State::Unload | State::End) => {
+                self.stop(None);
+            }
+            _ => {}
+        }
     }
 }
 
