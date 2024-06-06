@@ -58,6 +58,11 @@ pub enum Error {
         path: String,
         source: kira::sound::FromFileError,
     },
+    #[snafu(display("invalid audio setting"), visibility(pub(crate)))]
+    InvalidAudioSetting {
+        which: &'static str,
+        why: &'static str,
+    },
     #[snafu(display("cannot store data: {id}"), visibility(pub(crate)))]
     CannotStoreData { id: Id, path: String },
     #[snafu(display("cannot store subtitle"), visibility(pub(crate)))]
@@ -147,33 +152,35 @@ pub fn ensure_valid_audio(
 ) -> Result<Either<StaticSoundData, StreamingSoundData<FromFileError>>, Error> {
     use snafu::ResultExt;
     let filepath = m.as_ref().join(path.as_ref());
-    match usage {
+    let data = match usage {
         Usage::OnDemand | Usage::InMemory => {
             let data = StaticSoundData::from_file(filepath).context(InvalidAudioSnafu {
                 path: path.as_ref().display().to_string(),
             })?;
-            if let Some(settings) = settings.map(|x| StaticSoundSettings::from(x.clone())) {
-                return Ok(Either::Left(data.with_settings(settings)));
+            match settings.map(|x| StaticSoundSettings::from(x.clone())) {
+                Some(settings) => Either::Left(data.with_settings(settings)),
+                None => Either::Left(data),
             }
-            Ok(Either::Left(data))
         }
         Usage::Streaming => {
             let data = StreamingSoundData::from_file(filepath).context(InvalidAudioSnafu {
                 path: path.as_ref().display().to_string(),
             })?;
-            if let Some(settings) = settings.map(|x| StreamingSoundSettings::from(x.clone())) {
-                return Ok(Either::Right(data.with_settings(settings)));
+            match settings.map(|x| StreamingSoundSettings::from(x.clone())) {
+                Some(settings) => Either::Right(data.with_settings(settings)),
+                None => Either::Right(data),
             }
-            Ok(Either::Right(data))
         }
-    }
+    };
+    ensure_valid_audio_settings(&data, settings)?;
+    Ok(data)
 }
 
-pub fn ensure_valid_audio_settings<T>(
-    audio: Either<StaticSoundData, StreamingSoundData<FromFileError>>,
-    settings: Option<Settings>,
+pub fn ensure_valid_audio_settings(
+    _audio: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
+    _settings: Option<&Settings>,
 ) -> Result<(), Error> {
-    todo!()
+    Ok(())
 }
 
 pub fn ensure_store_data<T: PartialEq + Eq + Hash + Clone + Into<Key>>(
