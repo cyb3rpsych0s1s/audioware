@@ -4,8 +4,7 @@ use red4ext_rs::types::{CName, EntityId};
 use crate::hook::address::ON_AUDIOSYSTEM_PLAY_ON_EMITTER;
 
 fn audioware_exists(params: &(CName, EntityId, CName)) -> bool {
-    #[cfg(debug_assertions)]
-    crate::utils::info(format!(
+    crate::utils::dbg(format!(
         "AudioSystem::PlayOnEmitter({}, {:?}, {})",
         params.0, params.1, params.2
     ));

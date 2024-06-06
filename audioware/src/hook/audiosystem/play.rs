@@ -6,7 +6,10 @@ use super::audioware_exists;
 use crate::{engine::Engine, hook::Maybe};
 
 pub fn audioware_play(params: (CName, EntityId, CName)) {
-    #[rustfmt::skip] #[cfg(debug_assertions)] red4ext_rs::info!("hooked AudioSystem::Play");
+    crate::utils::dbg(format!(
+        "AudioSystem::Play({}, {:?}, {})",
+        params.0, params.1, params.2
+    ));
     let (sound_name, entity_id, emitter_name) = params;
     if let Err(ref e) = Engine::play(&sound_name, entity_id.maybe(), emitter_name.maybe()) {
         match e {

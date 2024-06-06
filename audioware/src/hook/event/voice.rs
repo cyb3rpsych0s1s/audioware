@@ -12,7 +12,7 @@ pub fn print_event(event: VoiceEvent) {
         is_v,
         ..
     } = event;
-    crate::utils::info(format!(
+    crate::utils::dbg(format!(
         "intercepted {} ({}): {}, {}, {}, {}",
         VoiceEvent::NAME,
         VoiceEvent::NATIVE_NAME,
@@ -30,7 +30,7 @@ pub fn print_event_played(event: VoicePlayedEvent) {
         is_v,
         ..
     } = event;
-    crate::utils::info(format!(
+    crate::utils::dbg(format!(
         "intercepted {} ({}): {}, {}, {}",
         VoicePlayedEvent::NAME,
         VoicePlayedEvent::NATIVE_NAME,

@@ -74,6 +74,8 @@ impl Plugin for Audioware {
         HookAudioSystemStop::load();
         HookAudioSystemGlobalParameter::load();
         HookAudioSystemParameter::load();
+        HookAudioSystemAddTriggerEffect::load();
+        HookAudioSystemState::load();
         #[cfg(debug_assertions)]
         {
             use audioware_mem::Intercept;
@@ -100,6 +102,8 @@ impl Plugin for Audioware {
         HookAudioSystemStop::unload();
         HookAudioSystemGlobalParameter::unload();
         HookAudioSystemParameter::unload();
+        HookAudioSystemAddTriggerEffect::unload();
+        HookAudioSystemState::unload();
         #[cfg(debug_assertions)]
         {
             use audioware_mem::Intercept;

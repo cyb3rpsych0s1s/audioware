@@ -36,24 +36,18 @@ pub mod macros {
 static AUDIOWARE: Lazy<CName> = Lazy::new(|| CName::new_pooled("Audioware"));
 pub fn info(msg: impl AsRef<str>) {
     red4ext_rs::info!("{}", msg.as_ref());
-    mod_log(AUDIOWARE.clone(), msg);
+    mod_log(AUDIOWARE.clone(), msg.as_ref());
 }
 pub fn error(msg: impl AsRef<str>) {
     red4ext_rs::error!("{}", msg.as_ref());
     mod_log(AUDIOWARE.clone(), format!("[ERROR] {}", msg.as_ref()));
 }
 pub fn warn(msg: impl AsRef<str>) {
+    red4ext_rs::warn!("{}", msg.as_ref());
     #[cfg(debug_assertions)]
-    {
-        red4ext_rs::warn!("{}", msg.as_ref());
-        mod_log(AUDIOWARE.clone(), format!("[WARN] {}", msg.as_ref()));
-    }
+    mod_log(AUDIOWARE.clone(), format!("[WARN] {}", msg.as_ref()));
 }
-#[inline]
 pub fn dbg(msg: impl AsRef<str>) {
     #[cfg(debug_assertions)]
-    {
-        red4ext_rs::debug!("{}", msg.as_ref());
-        mod_log(AUDIOWARE.clone(), msg.as_ref());
-    }
+    red4ext_rs::info!("{}", msg.as_ref());
 }

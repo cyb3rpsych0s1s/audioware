@@ -3,8 +3,8 @@ use audioware_macros::NativeFunc;
 use red4ext_rs::types::CName;
 
 fn audioware_exists(params: &(CName, f32)) -> bool {
-    #[cfg(debug_assertions)]
-    crate::utils::info(format!(
+    // SAFETY: logging to CET tends to crash the game
+    crate::utils::dbg(format!(
         "AudioSystem::GlobalParameter({}, {})",
         params.0, params.1
     ));

@@ -9,7 +9,10 @@ use super::audioware_exists;
 use crate::engine::Manage;
 
 pub fn audioware_stop(params: (CName, EntityId, CName)) {
-    #[rustfmt::skip] #[cfg(debug_assertions)] red4ext_rs::info!("hooked AudioSystem::Stop");
+    crate::utils::dbg(format!(
+        "AudioSystem::Stop({}, {:?}, {})",
+        params.0, params.1, params.2
+    ));
     let (sound_name, entity_id, _) = params;
     if let Some(entity_id) = entity_id.maybe() {
         Engine.stop_by_cname_for_entity(&sound_name, entity_id, None)
