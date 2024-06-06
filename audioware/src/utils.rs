@@ -43,14 +43,16 @@ pub fn error(msg: impl AsRef<str>) {
     mod_log(AUDIOWARE.clone(), format!("[ERROR] {}", msg.as_ref()));
 }
 pub fn warn(msg: impl AsRef<str>) {
-    if cfg!(debug_assertions) {
+    #[cfg(debug_assertions)]
+    {
         red4ext_rs::warn!("{}", msg.as_ref());
         mod_log(AUDIOWARE.clone(), format!("[WARN] {}", msg.as_ref()));
     }
 }
 #[inline]
 pub fn dbg(msg: impl AsRef<str>) {
-    if cfg!(debug_assertions) {
+    #[cfg(debug_assertions)]
+    {
         red4ext_rs::debug!("{}", msg.as_ref());
         mod_log(AUDIOWARE.clone(), msg.as_ref());
     }
