@@ -2,11 +2,11 @@ use std::time::Duration;
 
 use audioware_sys::interop::gender::PlayerGender;
 use kira::tween::Tween;
-use red4ext_rs::types::{CName, EntityId};
+use red4ext_rs::types::{CName, EntityId, MaybeUninitRef};
 
 use crate::{
     engine::Manage,
-    manifest::types::{ElasticTween, LinearTween},
+    manifest::types::{AsChildTween, AudiowareTween, IntoTween},
     state::game,
     Maybe,
 };
@@ -36,28 +36,30 @@ pub fn audioware_stop_engine() {
     crate::engine::Engine.stop(Some(immediately));
 }
 
-pub fn stop_linear(
+pub fn smooth_stop(
     sound_name: CName,
     entity_id: EntityId,
     _emitter_name: CName,
-    tween: LinearTween,
+    tween: MaybeUninitRef<AudiowareTween>,
 ) {
-    let tween: kira::tween::Tween = tween.into();
-    match (&sound_name, entity_id.maybe()) {
-        (n, None) => crate::engine::Engine.stop_by_cname(n, Some(tween)),
-        (n, Some(e)) => crate::engine::Engine.stop_by_cname_for_entity(n, e, Some(tween)),
-    }
-}
-
-pub fn stop_elastic(
-    sound_name: CName,
-    entity_id: EntityId,
-    _emitter_name: CName,
-    tween: ElasticTween,
-) {
-    let tween: kira::tween::Tween = tween.into();
-    match (&sound_name, entity_id.maybe()) {
-        (n, None) => crate::engine::Engine.stop_by_cname(n, Some(tween)),
-        (n, Some(e)) => crate::engine::Engine.stop_by_cname_for_entity(n, e, Some(tween)),
+    if let Some(tween) = tween.into_ref() {
+        let tween = match (tween.linear(), tween.elastic()) {
+            (None, None) => {
+                red4ext_rs::error!("unknown tween");
+                return;
+            }
+            (None, Some(x)) => x.into_tween(),
+            (Some(x), None) => x.into_tween(),
+            (Some(_), Some(_)) => {
+                red4ext_rs::error!("ambiguous tween");
+                return;
+            }
+        };
+        match (&sound_name, entity_id.maybe()) {
+            (n, None) => crate::engine::Engine.stop_by_cname(n, Some(tween)),
+            (n, Some(e)) => crate::engine::Engine.stop_by_cname_for_entity(n, e, Some(tween)),
+        }
+    } else {
+        red4ext_rs::error!("uninit tween");
     }
 }

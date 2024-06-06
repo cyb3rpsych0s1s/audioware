@@ -1,71 +1,134 @@
 use std::time::Duration;
 
+use audioware_sys::interop::AsParent;
 use kira::StartTime;
-use red4ext_rs::conv::NativeRepr;
+use red4ext_rs::{
+    conv::{ClassType, NativeRepr},
+    macros::redscript_import,
+    types::{CName, IScriptable, Ref},
+};
 
-#[derive(Debug, Default)]
-#[repr(C)]
-pub struct LinearTween {
-    pub start_time: u32, // in milliseconds
-    pub duration: u32,   // in milliseconds
+#[derive(Debug)]
+pub struct AudiowareTween;
+
+impl ClassType for AudiowareTween {
+    type BaseClass = IScriptable;
+    const NAME: &'static str = "AudiowareTween";
 }
 
-unsafe impl NativeRepr for LinearTween {
-    const NAME: &'static str = "Audioware.LinearTween";
+#[derive(Debug)]
+pub struct AudiowareLinearTween;
+
+impl ClassType for AudiowareLinearTween {
+    type BaseClass = AudiowareTween;
+    const NAME: &'static str = "AudiowareLinearTween";
 }
 
-impl From<LinearTween> for kira::tween::Tween {
-    fn from(value: LinearTween) -> Self {
-        let start_time = match value.start_time {
-            0 => StartTime::Immediate,
-            v => StartTime::Delayed(Duration::from_millis(v as u64)),
-        };
-        Self {
-            start_time,
-            duration: Duration::from_millis(value.duration as u64),
-            easing: kira::tween::Easing::Linear,
-        }
-    }
+#[redscript_import]
+impl AudiowareLinearTween {
+    pub fn start_time(self: &Ref<Self>) -> u32;
+    pub fn duration(self: &Ref<Self>) -> u32;
+}
+
+#[derive(Debug)]
+pub struct AudiowareElasticTween;
+
+impl ClassType for AudiowareElasticTween {
+    type BaseClass = AudiowareTween;
+    const NAME: &'static str = "AudiowareElasticTween";
+}
+
+#[redscript_import]
+impl AudiowareElasticTween {
+    pub fn start_time(self: &Ref<Self>) -> u32;
+    pub fn duration(self: &Ref<Self>) -> u32;
+    pub fn easing(self: &Ref<Self>) -> AudiowareEasing;
+    pub fn value(self: &Ref<Self>) -> i32;
 }
 
 #[derive(Debug, Default)]
 #[repr(i64)]
-pub enum Easing {
+pub enum AudiowareEasing {
     #[default]
     InPowi = 0,
     OutPowi = 1,
     InOutPowi = 2,
 }
 
-#[derive(Debug, Default)]
-#[repr(C)]
-pub struct ElasticTween {
-    pub start_time: u32, // in milliseconds
-    pub duration: u32,   // in milliseconds
-    pub easing: Easing,
-    /// easing intensity
-    pub intensity: u32,
+unsafe impl NativeRepr for AudiowareEasing {
+    const NAME: &'static str = "AudiowareEasing";
 }
 
-unsafe impl NativeRepr for ElasticTween {
-    const NAME: &'static str = "Audioware.ElasticTween";
+pub trait IntoTween {
+    fn into_tween(self) -> kira::tween::Tween;
 }
 
-impl From<ElasticTween> for kira::tween::Tween {
-    fn from(value: ElasticTween) -> Self {
-        let start_time = match value.start_time {
+impl IntoTween for Ref<AudiowareLinearTween> {
+    fn into_tween(self) -> kira::tween::Tween {
+        let start_time = match self.start_time() {
             0 => StartTime::Immediate,
-            v => StartTime::Delayed(Duration::from_millis(v as u64)),
+            x => StartTime::Delayed(Duration::from_millis(x as u64)),
         };
-        let easing = match value.easing {
-            Easing::InPowi => kira::tween::Easing::InPowi(value.intensity as i32),
-            Easing::OutPowi => kira::tween::Easing::OutPowi(value.intensity as i32),
-            Easing::InOutPowi => kira::tween::Easing::InOutPowi(value.intensity as i32),
-        };
-        Self {
+        let duration = Duration::from_millis(self.duration() as u64);
+        kira::tween::Tween {
             start_time,
-            duration: Duration::from_millis(value.duration as u64),
+            duration,
+            easing: kira::tween::Easing::Linear,
+        }
+    }
+}
+
+impl IntoTween for Ref<AudiowareElasticTween> {
+    fn into_tween(self) -> kira::tween::Tween {
+        let start_time = match self.start_time() {
+            0 => StartTime::Immediate,
+            x => StartTime::Delayed(Duration::from_millis(x as u64)),
+        };
+        let duration = Duration::from_millis(self.duration() as u64);
+        let easing = match self.easing() {
+            AudiowareEasing::InPowi => kira::tween::Easing::InPowi(self.value()),
+            AudiowareEasing::OutPowi => kira::tween::Easing::OutPowi(self.value()),
+            AudiowareEasing::InOutPowi => kira::tween::Easing::InOutPowi(self.value()),
+        };
+        kira::tween::Tween {
+            start_time,
+            duration,
             easing,
         }
+    }
+}
+
+pub trait AsChildTween {
+    fn linear(&self) -> Option<Ref<AudiowareLinearTween>>;
+    fn elastic(&self) -> Option<Ref<AudiowareElasticTween>>;
+}
+
+impl AsChildTween for Ref<AudiowareTween> {
+    fn linear(&self) -> Option<Ref<AudiowareLinearTween>> {
+        let base = self
+            .as_parent()
+            .expect("AudiowareTween extends IScriptable");
+        if red4ext_rs::prelude::Ref::<red4ext_rs::prelude::IScriptable>::is_a(
+            base,
+            CName::new(AudiowareLinearTween::NATIVE_NAME),
+        ) {
+            let child = unsafe { std::mem::transmute(self.clone()) };
+            return Some(child);
+        }
+        None
+    }
+
+    fn elastic(&self) -> Option<Ref<AudiowareElasticTween>> {
+        let base = self
+            .as_parent()
+            .expect("AudiowareTween extends IScriptable");
+        if red4ext_rs::prelude::Ref::<red4ext_rs::prelude::IScriptable>::is_a(
+            base,
+            CName::new(AudiowareElasticTween::NATIVE_NAME),
+        ) {
+            let child = unsafe { std::mem::transmute(self.clone()) };
+            return Some(child);
+        }
+        None
     }
 }

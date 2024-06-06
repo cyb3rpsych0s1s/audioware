@@ -10,12 +10,12 @@ use red4ext_rs::types::CName;
 
 /// Key which can be either `Unique`, `Locale`, `Gender`
 /// or `Both` (`Locale` and `Gender` at the same time).
-/// 
+///
 /// Internally these keys must uphold invariants:
 /// - no conflict with any existing CName in game pool
 ///   > including external mods which add their own
 /// - no conflict across audioware manifests
-/// 
+///
 /// Additionally, all except [`UniqueKey`]:
 /// - have unique combination variants
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
