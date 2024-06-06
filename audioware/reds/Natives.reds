@@ -2,7 +2,7 @@ module Audioware
 
 private native func StopEngine() -> Void;
 
-private native func SmoothStop(eventName: CName, entityID: EntityID, emitterName: CName, tween: ref<AudiowareTween>) -> Void;
+private native func AudiowareTrackStop(eventName: CName, entityID: EntityID, emitterName: CName, tween: ref<AudiowareTween>) -> Void;
 
 enum EngineState {
     Load = 0,
