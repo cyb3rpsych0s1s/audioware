@@ -8,6 +8,8 @@ pub const ON_AUDIOSYSTEM_STOP: usize = 0x1424503F8 - IMAGE_BASE;
 pub const ON_AUDIOSYSTEM_GLOBAL_PARAMETER: usize = 0x140E43ABC - IMAGE_BASE;
 /// TODO: hex pattern
 pub const ON_AUDIOSYSTEM_PARAMETER: usize = 0x14244FE90 - IMAGE_BASE;
+/// TODO: hex pattern
+pub const ON_AUDIOSYSTEM_PLAY_ON_EMITTER: usize = 0x141C01EF0 - IMAGE_BASE;
 
 /// TODO: hex pattern
 pub const ON_MUSIC_EVENT: usize = 0x1424B63C8 - IMAGE_BASE;

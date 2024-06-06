@@ -70,6 +70,7 @@ impl Plugin for Audioware {
     fn post_register() {
         red4ext_rs::info!("on post register audioware");
         HookAudioSystemPlay::load();
+        HookAudioSystemPlayOnEmitter::load();
         HookAudioSystemStop::load();
         HookAudioSystemGlobalParameter::load();
         HookAudioSystemParameter::load();
@@ -95,6 +96,7 @@ impl Plugin for Audioware {
         crate::engine::Engine.update_game_state(state::game::State::Unload);
 
         HookAudioSystemPlay::unload();
+        HookAudioSystemPlayOnEmitter::unload();
         HookAudioSystemStop::unload();
         HookAudioSystemGlobalParameter::unload();
         HookAudioSystemParameter::unload();

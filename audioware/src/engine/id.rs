@@ -9,9 +9,21 @@ use crate::bank::{Id, Key};
 #[repr(transparent)]
 pub struct SoundEntityId(pub EntityId);
 
+impl From<&EntityId> for SoundEntityId {
+    fn from(value: &EntityId) -> Self {
+        Self(value.clone())
+    }
+}
+
 impl Hash for SoundEntityId {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         u64::from(self.0.clone()).hash(state);
+    }
+}
+
+impl PartialEq<EntityId> for SoundEntityId {
+    fn eq(&self, other: &EntityId) -> bool {
+        self.0.eq(other)
     }
 }
 

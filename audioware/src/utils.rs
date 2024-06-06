@@ -29,6 +29,7 @@ pub mod macros {
             }
         };
     }
+    pub use ok_or_continue;
     pub use ok_or_return;
 }
 

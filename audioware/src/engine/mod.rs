@@ -13,7 +13,7 @@ use kira::sound::{
 use kira::tween::Tween;
 use manager::{audio_manager, maybe_statics, maybe_streams};
 use red4ext_rs::types::{CName, EntityId, Ref};
-use scene::Scene;
+use scene::{maybe_scene_entities, Scene};
 use snafu::{OptionExt, ResultExt};
 use track::Tracks;
 
@@ -83,6 +83,56 @@ impl Engine {
         Ok(())
     }
 
+    pub fn play_on_emitter(
+        sound_name: &CName,
+        entity_id: &EntityId,
+        _emitter_name: &CName,
+    ) -> Result<(), Error> {
+        let locale = *spoken_language()
+            .try_read()
+            .map_err(crate::error::Error::from)?;
+        let entity: Ref<Entity> = find_entity_by_id(get_game_instance(), entity_id.clone())
+            .into_ref()
+            .context(CannotFindEntitySnafu {
+                entity_id: entity_id.clone(),
+            })?;
+        let gender: Option<PlayerGender> = if entity.is_player() {
+            Some(*gender().try_read().map_err(crate::error::Error::from)?)
+        } else {
+            red4ext_rs::warn!("before entering safe downcast");
+            match SafeDowncast::<ScriptedPuppet>::maybe_downcast(&entity) {
+                Some(puppet) if puppet.get_gender() == CName::new("female") => {
+                    Some(PlayerGender::Female)
+                }
+                Some(puppet) if puppet.get_gender() == CName::new("male") => {
+                    Some(PlayerGender::Male)
+                }
+                _ => None,
+            }
+        };
+
+        let id = Banks::exist(sound_name, &locale, gender.as_ref()).context(BankRegistrySnafu)?;
+        let data = Banks::data(id);
+        let emitters = maybe_scene_entities()?;
+        if let Some(emitter) = emitters.get(&entity_id.into()) {
+            let mut manager = audio_manager()
+                .try_lock()
+                .map_err(|e| Error::Internal { source: e.into() })?;
+            let handle = match data {
+                Either::Left(x) => {
+                    let handle = manager.play(x.output_destination(emitter))?;
+                    Either::Left(handle)
+                }
+                Either::Right(x) => {
+                    let handle = manager.play(x.output_destination(emitter))?;
+                    Either::Right(handle)
+                }
+            };
+            Self::store_either(id, Some(entity_id), handle)?;
+        }
+        Ok(())
+    }
+
     fn play_either(
         data: Either<StaticSoundData, StreamingSoundData<FromFileError>>,
     ) -> Result<Either<StaticSoundHandle, StreamingSoundHandle<FromFileError>>, Error> {
@@ -111,6 +161,7 @@ impl Engine {
         }
         Ok(())
     }
+
     /// on specific state changes sounds will also be paused, resumed or stopped.
     pub fn update_game_state(mut self, state: State) {
         let previous = crate::state::game::State::set(state);
