@@ -75,9 +75,12 @@ impl PartialEq<(&CName, &Locale, Option<&PlayerGender>)> for Id {
     }
 }
 
+/// specify [on-demand](`Id::OnDemand`) usage
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Usage {
+    /// used with [kira static sounds](https://docs.rs/kira/latest/kira/sound/static_sound/index.html)
     Static(Key, PathBuf),
+    /// used with [kira streaming](https://docs.rs/kira/latest/kira/sound/streaming/index.html)
     Streaming(Key, PathBuf),
 }
 
