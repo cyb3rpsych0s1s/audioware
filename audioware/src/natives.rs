@@ -36,6 +36,14 @@ pub fn audioware_stop_engine() {
     crate::engine::Engine.stop(Some(immediately));
 }
 
+/// stop sound playing on track
+///
+/// used in conjunction with [AudioSystem::Play](https://nativedb.red4ext.com/gameGameAudioSystem#Play).
+///
+/// SAFETY:
+/// * `entity_id`    - `opt`ional in Redscript.
+/// * `emitter_name` - `opt`ional in Redscript.
+/// * `tween`        - `ref<T>` can always be `null` in Redscript.
 pub fn audioware_track_stop(
     sound_name: CName,
     entity_id: EntityId,
