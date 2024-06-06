@@ -1,3 +1,5 @@
+//! shortcut methods and log utils
+
 use audioware_sys::interop::codeware::mod_log;
 use once_cell::sync::Lazy;
 use red4ext_rs::types::CName;

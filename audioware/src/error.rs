@@ -1,3 +1,5 @@
+//! generic errors
+
 use std::sync::{MutexGuard, PoisonError, RwLockReadGuard, RwLockWriteGuard, TryLockError};
 
 use audioware_sys::error::ConversionError;

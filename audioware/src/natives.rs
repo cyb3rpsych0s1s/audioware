@@ -1,3 +1,5 @@
+//! natives used across Redscript ↔️ Rust bridge
+
 use std::time::Duration;
 
 use audioware_sys::interop::gender::PlayerGender;
