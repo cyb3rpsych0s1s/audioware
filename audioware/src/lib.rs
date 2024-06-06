@@ -78,8 +78,8 @@ impl Plugin for Audioware {
         {
             use audioware_mem::Intercept;
             hook::HookgameaudioeventsMusicEvent::load();
-            hook::HookgameaudioeventsVoiceEvent::load();
-            hook::HookgameaudioeventsVoicePlayedEvent::load();
+            // hook::HookgameaudioeventsVoiceEvent::load();
+            // hook::HookgameaudioeventsVoicePlayedEvent::load();
             // hook::HookgameaudioeventsDialogLine::load();
             // hook::HookgameaudioeventsDialogLineEnd::load();
             // hook::HookgameaudioeventsStopDialogLine::load();
@@ -104,8 +104,8 @@ impl Plugin for Audioware {
         {
             use audioware_mem::Intercept;
             hook::HookgameaudioeventsMusicEvent::unload();
-            hook::HookgameaudioeventsVoiceEvent::unload();
-            hook::HookgameaudioeventsVoicePlayedEvent::unload();
+            // hook::HookgameaudioeventsVoiceEvent::unload();
+            // hook::HookgameaudioeventsVoicePlayedEvent::unload();
             // hook::HookgameaudioeventsDialogLine::unload();
             // hook::HookgameaudioeventsDialogLineEnd::unload();
             // hook::HookgameaudioeventsStopDialogLine::unload();
