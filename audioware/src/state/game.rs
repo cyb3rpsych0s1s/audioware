@@ -65,3 +65,18 @@ impl TryFrom<u8> for State {
         }
     }
 }
+
+impl std::fmt::Display for State {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            State::Load => write!(f, "plugin load"),
+            State::Menu => write!(f, "main menu"),
+            State::Start => write!(f, "game session start"),
+            State::InGame => write!(f, "in-game"),
+            State::InMenu => write!(f, "in-game menu"),
+            State::InPause => write!(f, "in-game pause"),
+            State::End => write!(f, "game session end"),
+            State::Unload => write!(f, "plugin unload"),
+        }
+    }
+}

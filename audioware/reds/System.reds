@@ -1,14 +1,29 @@
 module Audioware
 
 public class Audioware extends ScriptableSystem {
+    private let menuListener: ref<CallbackHandle>;
+    protected cb func OnInMenu(value: Bool) -> Bool {
+        UpdateGameState(value ? EngineState.InMenu : EngineState.InGame);
+    }
 
     private func OnAttach() {
         UpdateGameState(EngineState.Start);
+        let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
+        let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
+        let ui: ref<IBlackboard> = system.Get(definitions.UI_System);
+        this.menuListener = ui.RegisterListenerBool(definitions.UI_System.IsInMenu, this, n"OnInMenu");
     }
 
     private func OnDetach() {
         UpdateGameState(EngineState.End);
         StopEngine();
+        if IsDefined(this.menuListener) {
+            let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
+            let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
+            let ui: ref<IBlackboard> = system.Get(definitions.UI_System);
+            ui.UnregisterListenerBool(definitions.UI_System.IsInMenu, this.menuListener);
+            this.menuListener = null;
+        }
     }
 
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {

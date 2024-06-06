@@ -36,6 +36,7 @@ impl Engine {
         // SAFETY: initialization order matters
         Tracks::setup()?;
         Scene::setup()?;
+        Self::update_game_state(Self, crate::state::game::State::Load);
         Ok(())
     }
     pub fn play(
@@ -110,12 +111,11 @@ impl Engine {
         }
         Ok(())
     }
-    /// on specific state changes sounds will be paused, resumed or stopped.
-    pub fn on_game_state_change(mut self, previous: State, now: State) {
-        if previous == now {
-            return;
-        }
-        match (previous, now) {
+    /// on specific state changes sounds will also be paused, resumed or stopped.
+    pub fn update_game_state(mut self, state: State) {
+        let previous = crate::state::game::State::set(state);
+        red4ext_rs::info!("updated game state from {previous} to {state}");
+        match (previous, state) {
             (State::InGame, State::InMenu | State::InPause) => {
                 self.pause(None);
             }
