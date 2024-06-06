@@ -165,7 +165,10 @@ impl Engine {
     /// on specific state changes sounds will also be paused, resumed or stopped.
     pub fn update_game_state(mut self, state: State) {
         let previous = crate::state::game::State::set(state);
-        red4ext_rs::info!("updated game state from {previous} to {state}");
+        #[cfg(debug_assertions)]
+        if previous != state {
+            red4ext_rs::info!("updated game state from {previous} to {state}");
+        }
         match (previous, state) {
             (State::InGame, State::InMenu | State::InPause) => {
                 self.pause(None);
