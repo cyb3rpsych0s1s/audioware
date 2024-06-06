@@ -119,7 +119,7 @@ macro_rules! impl_manage {
                 self.values_mut()
                     .par_bridge()
                     .filter(|v| v.state() == PlaybackState::Playing)
-                    .for_each(|v| v.stop(tween.unwrap_or_default()));
+                    .for_each(|v| v.pause(tween.unwrap_or_default()));
             }
 
             fn pause_by_cname(&mut self, cname: &CName, tween: Option<Tween>) {
@@ -152,7 +152,7 @@ macro_rules! impl_manage {
                     .filter(|v| {
                         v.state() == PlaybackState::Paused || v.state() == PlaybackState::Pausing
                     })
-                    .for_each(|v| v.stop(tween.unwrap_or_default()));
+                    .for_each(|v| v.resume(tween.unwrap_or_default()));
             }
 
             fn resume_by_cname(&mut self, cname: &CName, tween: Option<Tween>) {
