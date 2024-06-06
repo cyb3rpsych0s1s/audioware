@@ -61,7 +61,10 @@ impl Plugin for Audioware {
             "Audioware.StopEngine",
             crate::natives::audioware_stop_engine
         );
-        register_function!("Audioware.AudiowareTrackStop", crate::natives::smooth_stop);
+        register_function!(
+            "Audioware.AudiowareTrackStop",
+            crate::natives::audioware_track_stop
+        );
     }
 
     fn post_register() {

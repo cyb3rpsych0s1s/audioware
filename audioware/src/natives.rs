@@ -36,7 +36,7 @@ pub fn audioware_stop_engine() {
     crate::engine::Engine.stop(Some(immediately));
 }
 
-pub fn smooth_stop(
+pub fn audioware_track_stop(
     sound_name: CName,
     entity_id: EntityId,
     _emitter_name: CName,
