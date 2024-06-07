@@ -1,10 +1,11 @@
-use audioware_sys::interop::entity::{Entity, ScriptedPuppet};
-use audioware_sys::interop::game::get_game_instance;
+use audioware_sys::interop::entity::Entity;
+use audioware_sys::interop::game::ScriptedPuppet;
+use audioware_sys::interop::gender::PlayerGender;
+use audioware_sys::interop::locale::Locale;
 use audioware_sys::interop::SafeDowncast;
-use audioware_sys::interop::{entity::find_entity_by_id, gender::PlayerGender};
 use either::Either;
-use error::{BankRegistrySnafu, CannotFindEntitySnafu, Error};
-use id::HandleId;
+use error::{BankRegistrySnafu, Error};
+use id::{HandleId, SoundEntityId};
 use kira::sound::{
     static_sound::{StaticSoundData, StaticSoundHandle},
     streaming::{StreamingSoundData, StreamingSoundHandle},
@@ -19,7 +20,7 @@ use track::Tracks;
 
 use crate::bank::{Banks, Id};
 use crate::state::game::State;
-use crate::state::player::{gender, spoken_language};
+use crate::state::player::{gender, spoken_language, written_language};
 
 mod destination;
 mod effect;
@@ -44,39 +45,7 @@ impl Engine {
         entity_id: Option<&EntityId>,
         _emitter_name: Option<&CName>,
     ) -> Result<(), Error> {
-        let locale = *spoken_language()
-            .try_read()
-            .map_err(crate::error::Error::from)?;
-        let entity: Option<Ref<Entity>> = match entity_id {
-            Some(entity_id) => Some(
-                find_entity_by_id(get_game_instance(), entity_id.clone())
-                    .into_ref()
-                    .context(CannotFindEntitySnafu {
-                        entity_id: entity_id.clone(),
-                    })?,
-            ),
-            None => None,
-        };
-        let gender: Option<PlayerGender> = match entity {
-            Some(ref entity) => {
-                if entity.is_player() {
-                    Some(*gender().try_read().map_err(crate::error::Error::from)?)
-                } else {
-                    red4ext_rs::warn!("before entering safe downcast");
-                    match SafeDowncast::<ScriptedPuppet>::maybe_downcast(entity) {
-                        Some(puppet) if puppet.get_gender() == CName::new("female") => {
-                            Some(PlayerGender::Female)
-                        }
-                        Some(puppet) if puppet.get_gender() == CName::new("male") => {
-                            Some(PlayerGender::Male)
-                        }
-                        _ => None,
-                    }
-                }
-            }
-            None => None,
-        };
-
+        let (gender, locale, _) = Self::get_player_states(entity_id)?;
         let id = Banks::exist(sound_name, &locale, gender.as_ref()).context(BankRegistrySnafu)?;
         let handle = Self::play_either(Banks::data(id))?;
         Self::store_either(id, entity_id, handle)?;
@@ -88,29 +57,7 @@ impl Engine {
         entity_id: &EntityId,
         _emitter_name: &CName,
     ) -> Result<(), Error> {
-        let locale = *spoken_language()
-            .try_read()
-            .map_err(crate::error::Error::from)?;
-        let entity: Ref<Entity> = find_entity_by_id(get_game_instance(), entity_id.clone())
-            .into_ref()
-            .context(CannotFindEntitySnafu {
-                entity_id: entity_id.clone(),
-            })?;
-        let gender: Option<PlayerGender> = if entity.is_player() {
-            Some(*gender().try_read().map_err(crate::error::Error::from)?)
-        } else {
-            red4ext_rs::warn!("before entering safe downcast");
-            match SafeDowncast::<ScriptedPuppet>::maybe_downcast(&entity) {
-                Some(puppet) if puppet.get_gender() == CName::new("female") => {
-                    Some(PlayerGender::Female)
-                }
-                Some(puppet) if puppet.get_gender() == CName::new("male") => {
-                    Some(PlayerGender::Male)
-                }
-                _ => None,
-            }
-        };
-
+        let (gender, locale, _) = Self::get_player_states(Some(entity_id))?;
         let id = Banks::exist(sound_name, &locale, gender.as_ref()).context(BankRegistrySnafu)?;
         let data = Banks::data(id);
         let emitters = maybe_scene_entities()?;
@@ -181,6 +128,41 @@ impl Engine {
             }
             _ => {}
         }
+    }
+
+    fn get_player_states(
+        entity_id: Option<&EntityId>,
+    ) -> Result<(Option<PlayerGender>, Locale, Locale), Error> {
+        let spoken = *spoken_language()
+            .try_read()
+            .map_err(crate::error::Error::from)?;
+        let written = *written_language()
+            .try_read()
+            .map_err(crate::error::Error::from)?;
+        let entity: Option<Ref<Entity>> = match entity_id {
+            Some(entity_id) => Some((&SoundEntityId::from(entity_id)).try_into()?),
+            None => None,
+        };
+        let gender: Option<PlayerGender> = match entity {
+            Some(ref entity) => {
+                if entity.is_player() {
+                    Some(*gender().try_read().map_err(crate::error::Error::from)?)
+                } else {
+                    red4ext_rs::warn!("before entering safe downcast");
+                    match SafeDowncast::<ScriptedPuppet>::maybe_downcast(entity) {
+                        Some(puppet) if puppet.get_gender() == CName::new("female") => {
+                            Some(PlayerGender::Female)
+                        }
+                        Some(puppet) if puppet.get_gender() == CName::new("male") => {
+                            Some(PlayerGender::Male)
+                        }
+                        _ => None,
+                    }
+                }
+            }
+            None => None,
+        };
+        Ok((gender, spoken, written))
     }
 }
 

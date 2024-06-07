@@ -1,9 +1,16 @@
 use std::hash::Hash;
 
-use red4ext_rs::types::EntityId;
+use audioware_sys::interop::{
+    entity::{find_entity_by_id, Entity},
+    game::get_game_instance,
+};
+use red4ext_rs::types::{EntityId, Ref};
+use snafu::OptionExt;
 use snowflake::ProcessUniqueId;
 
 use crate::bank::{Id, Key};
+
+use super::error::CannotFindEntitySnafu;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(transparent)]
@@ -24,6 +31,18 @@ impl Hash for SoundEntityId {
 impl PartialEq<EntityId> for SoundEntityId {
     fn eq(&self, other: &EntityId) -> bool {
         self.0.eq(other)
+    }
+}
+
+impl TryFrom<&SoundEntityId> for Ref<Entity> {
+    type Error = crate::engine::Error;
+
+    fn try_from(value: &SoundEntityId) -> Result<Self, Self::Error> {
+        find_entity_by_id(get_game_instance(), value.0.clone())
+            .into_ref()
+            .context(CannotFindEntitySnafu {
+                entity_id: value.0.clone(),
+            })
     }
 }
 
