@@ -7,14 +7,13 @@ use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId, MaybeUninitRef};
 
 use crate::{
-    engine::Manage,
     manifest::types::{AsChildTween, AudiowareTween, IntoTween},
     state::game,
     Maybe,
 };
 
 pub fn update_game_state(state: game::State) {
-    crate::engine::Engine.update_game_state(state);
+    crate::engine::Engine::update_game_state(state);
 }
 
 pub fn update_player_gender(gender: PlayerGender) {
@@ -35,7 +34,7 @@ pub fn audioware_stop_engine() {
         duration: Duration::from_millis(1),
         easing: kira::tween::Easing::Linear,
     };
-    crate::engine::Engine.stop(Some(immediately));
+    crate::engine::Engine::stop(Some(immediately));
 }
 
 /// stop sound playing on track
@@ -66,8 +65,8 @@ pub fn audioware_track_stop(
             }
         };
         match (&sound_name, entity_id.maybe()) {
-            (n, None) => crate::engine::Engine.stop_by_cname(n, Some(tween)),
-            (n, Some(e)) => crate::engine::Engine.stop_by_cname_for_entity(n, e, Some(tween)),
+            (n, None) => crate::engine::Engine::stop_by_cname(n, Some(tween)),
+            (n, Some(e)) => crate::engine::Engine::stop_by_cname_for_entity(n, e, Some(tween)),
         }
     } else {
         red4ext_rs::error!("uninit tween");

@@ -11,7 +11,11 @@ pub fn audioware_play(params: (CName, EntityId, CName)) {
         params.0, params.1, params.2
     ));
     let (sound_name, entity_id, emitter_name) = params;
-    safe_call!(Engine::play(&sound_name, entity_id.maybe(), emitter_name.maybe()));
+    safe_call!(Engine::play(
+        &sound_name,
+        entity_id.maybe(),
+        emitter_name.maybe()
+    ));
 }
 
 #[derive(NativeFunc)]

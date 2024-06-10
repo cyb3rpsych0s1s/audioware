@@ -34,8 +34,8 @@ pub mod macros {
         ($expression:expr) => {
             if let Err(ref e) = $expression {
                 match e {
-                    crate::engine::error::Error::BankRegistry { source } => match source {
-                        crate::bank::error::registry::Error::MissingLocale { .. }
+                    $crate::engine::error::Error::BankRegistry { source } => match source {
+                        $crate::bank::error::registry::Error::MissingLocale { .. }
                         | crate::bank::error::registry::Error::RequireGender { .. } => {
                             red4ext_rs::warn!("{e}")
                         }

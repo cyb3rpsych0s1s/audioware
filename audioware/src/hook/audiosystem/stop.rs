@@ -6,7 +6,6 @@ use crate::hook::Maybe;
 
 use super::super::address::ON_AUDIOSYSTEM_STOP;
 use super::audioware_exists;
-use crate::engine::Manage;
 
 pub fn audioware_stop(params: (CName, EntityId, CName)) {
     crate::utils::dbg(format!(
@@ -15,9 +14,9 @@ pub fn audioware_stop(params: (CName, EntityId, CName)) {
     ));
     let (sound_name, entity_id, _) = params;
     if let Some(entity_id) = entity_id.maybe() {
-        Engine.stop_by_cname_for_entity(&sound_name, entity_id, None)
+        Engine::stop_by_cname_for_entity(&sound_name, entity_id, None)
     } else {
-        Engine.stop_by_cname(&sound_name, None)
+        Engine::stop_by_cname(&sound_name, None)
     }
 }
 

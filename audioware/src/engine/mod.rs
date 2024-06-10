@@ -37,7 +37,7 @@ impl Engine {
         // SAFETY: initialization order matters
         Tracks::setup()?;
         Scene::setup()?;
-        Self::update_game_state(Self, crate::state::game::State::Load);
+        Self::update_game_state(crate::state::game::State::Load);
         Ok(())
     }
     pub fn play(
@@ -110,7 +110,7 @@ impl Engine {
     }
 
     /// on specific state changes sounds will also be paused, resumed or stopped.
-    pub fn update_game_state(mut self, state: State) {
+    pub fn update_game_state(state: State) {
         let previous = crate::state::game::State::set(state);
         #[cfg(debug_assertions)]
         if previous != state {
@@ -118,13 +118,13 @@ impl Engine {
         }
         match (previous, state) {
             (State::InGame, State::InMenu | State::InPause) => {
-                self.pause(None);
+                Self::pause(None);
             }
             (State::InMenu | State::InPause, State::InGame) => {
-                self.resume(None);
+                Self::resume(None);
             }
             (_, State::Unload | State::End) => {
-                self.stop(None);
+                Self::stop(None);
             }
             _ => {}
         }
@@ -177,23 +177,18 @@ macro_rules! delegate_impl_manage {
     };
 }
 
-impl Manage for Engine {
-    fn stop(&mut self, tween: Option<Tween>) {
+impl Engine {
+    pub fn stop(tween: Option<Tween>) {
         delegate_impl_manage!(maybe_statics, stop(tween));
         delegate_impl_manage!(maybe_streams, stop(tween));
     }
 
-    fn stop_by_cname(&mut self, cname: &CName, tween: Option<Tween>) {
+    pub fn stop_by_cname(cname: &CName, tween: Option<Tween>) {
         delegate_impl_manage!(maybe_statics, stop_by_cname(cname, tween));
         delegate_impl_manage!(maybe_streams, stop_by_cname(cname, tween));
     }
 
-    fn stop_by_cname_for_entity(
-        &mut self,
-        cname: &CName,
-        entity_id: &EntityId,
-        tween: Option<Tween>,
-    ) {
+    pub fn stop_by_cname_for_entity(cname: &CName, entity_id: &EntityId, tween: Option<Tween>) {
         delegate_impl_manage!(
             maybe_statics,
             stop_by_cname_for_entity(cname, entity_id, tween)
@@ -204,22 +199,17 @@ impl Manage for Engine {
         );
     }
 
-    fn pause(&mut self, tween: Option<Tween>) {
+    pub fn pause(tween: Option<Tween>) {
         delegate_impl_manage!(maybe_statics, pause(tween));
         delegate_impl_manage!(maybe_streams, pause(tween));
     }
 
-    fn pause_by_cname(&mut self, cname: &CName, tween: Option<Tween>) {
+    pub fn pause_by_cname(cname: &CName, tween: Option<Tween>) {
         delegate_impl_manage!(maybe_statics, pause_by_cname(cname, tween));
         delegate_impl_manage!(maybe_streams, pause_by_cname(cname, tween));
     }
 
-    fn pause_by_cname_for_entity(
-        &mut self,
-        cname: &CName,
-        entity_id: &EntityId,
-        tween: Option<Tween>,
-    ) {
+    pub fn pause_by_cname_for_entity(cname: &CName, entity_id: &EntityId, tween: Option<Tween>) {
         delegate_impl_manage!(
             maybe_statics,
             pause_by_cname_for_entity(cname, entity_id, tween)
@@ -230,22 +220,17 @@ impl Manage for Engine {
         );
     }
 
-    fn resume(&mut self, tween: Option<Tween>) {
+    pub fn resume(tween: Option<Tween>) {
         delegate_impl_manage!(maybe_statics, resume(tween));
         delegate_impl_manage!(maybe_streams, resume(tween));
     }
 
-    fn resume_by_cname(&mut self, cname: &CName, tween: Option<Tween>) {
+    pub fn resume_by_cname(cname: &CName, tween: Option<Tween>) {
         delegate_impl_manage!(maybe_statics, resume_by_cname(cname, tween));
         delegate_impl_manage!(maybe_streams, resume_by_cname(cname, tween));
     }
 
-    fn resume_by_cname_for_entity(
-        &mut self,
-        cname: &CName,
-        entity_id: &EntityId,
-        tween: Option<Tween>,
-    ) {
+    pub fn resume_by_cname_for_entity(cname: &CName, entity_id: &EntityId, tween: Option<Tween>) {
         delegate_impl_manage!(
             maybe_statics,
             resume_by_cname_for_entity(cname, entity_id, tween)
