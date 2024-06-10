@@ -185,10 +185,18 @@ pub fn derive_native_func(input: TokenStream) -> TokenStream {
                 return INSTANCE.get_or_init(::std::default::Default::default)
             }
             pub(super) fn store(detour: ::std::option::Option<::retour::RawDetour>) {
-                if let Ok(mut guard) = self::storage().try_write() {
-                    *guard = detour;
+                if detour.is_some() {
+                    if let Ok(mut guard) = self::storage().try_write() {
+                        *guard = detour;
+                    } else {
+                        ::red4ext_rs::error!("lock contention (store {})", stringify!(#name));
+                    }
                 } else {
-                    ::red4ext_rs::error!("lock contention (store {})", stringify!(#name));
+                    if let Ok(mut guard) = self::storage().try_write() {
+                        let _ = guard.take();
+                    } else {
+                        ::red4ext_rs::error!("lock contention (store {})", stringify!(#name));
+                    }
                 }
             }
             pub(super) fn trampoline(closure: ::std::boxed::Box<dyn ::std::ops::Fn(&::retour::RawDetour)>) {
@@ -470,10 +478,18 @@ pub fn derive_native_handler(input: TokenStream) -> TokenStream {
                 return INSTANCE.get_or_init(::std::default::Default::default)
             }
             pub(super) fn store(detour: ::std::option::Option<::retour::RawDetour>) {
-                if let Ok(mut guard) = self::storage().try_write() {
-                    *guard = detour;
+                if detour.is_some() {
+                    if let Ok(mut guard) = self::storage().try_write() {
+                        *guard = detour;
+                    } else {
+                        ::red4ext_rs::error!("lock contention (store {})", stringify!(#name));
+                    }
                 } else {
-                    ::red4ext_rs::error!("lock contention (store {})", stringify!(#name));
+                    if let Ok(mut guard) = self::storage().try_write() {
+                        let _ = guard.take();
+                    } else {
+                        ::red4ext_rs::error!("lock contention (store {})", stringify!(#name));
+                    }
                 }
             }
             pub(super) fn trampoline(closure: ::std::boxed::Box<dyn ::std::ops::Fn(&::retour::RawDetour)>) {
