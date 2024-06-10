@@ -97,6 +97,7 @@ impl Plugin for Audioware {
     fn unload() {
         red4ext_rs::info!("on unload audioware");
         crate::engine::Engine::update_game_state(state::game::State::Unload);
+        crate::engine::Engine::stop(None);
 
         HookAudioSystemPlay::unload();
         HookAudioSystemPlayOnEmitter::unload();
