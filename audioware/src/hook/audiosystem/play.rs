@@ -3,7 +3,7 @@ use red4ext_rs::types::{CName, EntityId};
 
 use super::super::address::ON_AUDIOSYSTEM_PLAY;
 use super::audioware_exists;
-use crate::{engine::Engine, hook::Maybe};
+use crate::{engine::Engine, hook::Maybe, safe_call};
 
 pub fn audioware_play(params: (CName, EntityId, CName)) {
     crate::utils::dbg(format!(
@@ -11,20 +11,7 @@ pub fn audioware_play(params: (CName, EntityId, CName)) {
         params.0, params.1, params.2
     ));
     let (sound_name, entity_id, emitter_name) = params;
-    if let Err(ref e) = Engine::play(&sound_name, entity_id.maybe(), emitter_name.maybe()) {
-        match e {
-            crate::engine::error::Error::BankRegistry { source } => match source {
-                crate::bank::error::registry::Error::MissingLocale { .. }
-                | crate::bank::error::registry::Error::RequireGender { .. } => {
-                    red4ext_rs::warn!("{e}")
-                }
-                crate::bank::error::registry::Error::NotFound { .. } => {
-                    red4ext_rs::error!("{e}")
-                }
-            },
-            e => red4ext_rs::error!("{e}"),
-        }
-    }
+    safe_call!(Engine::play(&sound_name, entity_id.maybe(), emitter_name.maybe()));
 }
 
 #[derive(NativeFunc)]
