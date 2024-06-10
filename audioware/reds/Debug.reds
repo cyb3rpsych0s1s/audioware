@@ -18,6 +18,7 @@ public static exec func TestAudioSystemStop(game: GameInstance, name: String) ->
     GameInstance.GetAudioSystem(game).Stop(sound, player.GetEntityID(), n"V");
 }
 
+// Game.TestAudioSystemExtStop("god_love_us");
 public static exec func TestAudioSystemExtStop(game: GameInstance, name: String) -> Void {
     let player = GetPlayer(game);
     let sound: CName = StringToName(name);
