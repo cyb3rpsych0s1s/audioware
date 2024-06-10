@@ -36,10 +36,10 @@ pub mod macros {
                 match e {
                     $crate::engine::error::Error::BankRegistry { source } => match source {
                         $crate::bank::error::registry::Error::MissingLocale { .. }
-                        | crate::bank::error::registry::Error::RequireGender { .. } => {
+                        | $crate::bank::error::registry::Error::RequireGender { .. } => {
                             red4ext_rs::warn!("{e}")
                         }
-                        crate::bank::error::registry::Error::NotFound { .. } => {
+                        $crate::bank::error::registry::Error::NotFound { .. } => {
                             red4ext_rs::error!("{e}")
                         }
                     },
