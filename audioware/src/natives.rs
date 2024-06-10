@@ -72,3 +72,9 @@ pub fn audioware_track_stop(
         red4ext_rs::error!("uninit tween");
     }
 }
+
+#[red4ext_rs::macros::redscript_global(name = "Audioware.DelegatePlay")]
+pub fn delegate_play(sound_name: CName, entity_id: EntityId, emitter_name: CName) -> ();
+
+#[red4ext_rs::macros::redscript_global(name = "Audioware.DelegateStop")]
+pub fn delegate_stop(sound_name: CName, entity_id: EntityId, emitter_name: CName) -> ();

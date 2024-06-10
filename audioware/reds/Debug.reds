@@ -29,3 +29,11 @@ public static exec func TestAudioSystemExtStop(game: GameInstance, name: String)
     tween.value = 2;
     GameInstance.GetAudioSystem(game).Stop(sound, player.GetEntityID(), n"V", tween);
 }
+
+// Game.TestAudioSystemSwitch("god_love_us", "nah_everything_is_all_good");
+public static exec func TestAudioSystemSwitch(game: GameInstance, previous: String, next: String) -> Void {
+    let player = GetPlayer(game);
+    let previousSound: CName = StringToName(previous);
+    let nextSound: CName = StringToName(next);
+    GameInstance.GetAudioSystem(game).Switch(previousSound, nextSound, player.GetEntityID(), n"V");
+}

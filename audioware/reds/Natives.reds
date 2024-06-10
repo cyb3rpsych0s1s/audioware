@@ -20,3 +20,10 @@ private native func UpdateGameState(state: EngineState) -> Void;
 public static func FindEntityByID(gi: GameInstance, id: EntityID) -> ref<Entity> {
     return GameInstance.FindEntityByID(gi, id);
 }
+
+public static func DelegatePlay(eventName: CName, opt entityID: EntityID, opt emitterName: CName) -> Void {
+    GameInstance.GetAudioSystem(GetGameInstance()).Play(eventName, entityID, emitterName);
+}
+public static func DelegateStop(eventName: CName, opt entityID: EntityID, opt emitterName: CName) -> Void {
+    GameInstance.GetAudioSystem(GetGameInstance()).Stop(eventName, entityID, emitterName);
+}

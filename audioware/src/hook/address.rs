@@ -14,6 +14,8 @@ pub const ON_AUDIOSYSTEM_PLAY_ON_EMITTER: usize = 0x141C01EF0 - IMAGE_BASE;
 pub const ON_AUDIOSYSTEM_STATE: usize = 0x1424502D4 - IMAGE_BASE;
 /// TODO: hex pattern
 pub const ON_AUDIOSYSTEM_ADD_TRIGGER_EFFECT: usize = 0x14089C434 - IMAGE_BASE;
+/// TODO: hex pattern
+pub const ON_AUDIOSYSTEM_SWITCH: usize = 0x140291688 - IMAGE_BASE;
 
 /// TODO: hex pattern
 pub const ON_MUSIC_EVENT: usize = 0x1424B63C8 - IMAGE_BASE;

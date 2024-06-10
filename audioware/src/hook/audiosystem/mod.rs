@@ -5,6 +5,7 @@ mod play;
 mod play_on_emitter;
 mod state;
 mod stop;
+mod switch;
 
 pub use add_trigger_effect::HookAudioSystemAddTriggerEffect;
 pub use global_parameter::HookAudioSystemGlobalParameter;
@@ -13,6 +14,7 @@ pub use play::HookAudioSystemPlay;
 pub use play_on_emitter::HookAudioSystemPlayOnEmitter;
 pub use state::HookAudioSystemState;
 pub use stop::HookAudioSystemStop;
+pub use switch::HookAudioSystemSwitch;
 
 use red4ext_rs::types::{CName, EntityId};
 

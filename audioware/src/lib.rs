@@ -72,6 +72,7 @@ impl Plugin for Audioware {
         HookAudioSystemPlay::load();
         HookAudioSystemPlayOnEmitter::load();
         HookAudioSystemStop::load();
+        HookAudioSystemSwitch::load();
         HookAudioSystemGlobalParameter::load();
         HookAudioSystemParameter::load();
         HookAudioSystemAddTriggerEffect::load();
@@ -100,6 +101,7 @@ impl Plugin for Audioware {
         HookAudioSystemPlay::unload();
         HookAudioSystemPlayOnEmitter::unload();
         HookAudioSystemStop::unload();
+        HookAudioSystemSwitch::unload();
         HookAudioSystemGlobalParameter::unload();
         HookAudioSystemParameter::unload();
         HookAudioSystemAddTriggerEffect::unload();
