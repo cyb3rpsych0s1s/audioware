@@ -3,6 +3,7 @@ use audioware_sys::interop::game::ScriptedPuppet;
 use audioware_sys::interop::gender::PlayerGender;
 use audioware_sys::interop::locale::Locale;
 use audioware_sys::interop::SafeDowncast;
+use destination::output_destination;
 use effect::IMMEDIATELY;
 use either::Either;
 use error::{BankRegistrySnafu, Error};
@@ -44,15 +45,14 @@ impl Engine {
     pub fn play(
         sound_name: &CName,
         entity_id: Option<&EntityId>,
-        _emitter_name: Option<&CName>,
+        emitter_name: Option<&CName>,
     ) -> Result<(), Error> {
         let (gender, locale, _) = Self::get_player_states(entity_id)?;
         let id = Banks::exist(sound_name, &locale, gender.as_ref()).context(BankRegistrySnafu)?;
-        let data = Banks::data(id);
-        let main = &maybe_tracks()?.v.main;
-        let data = data.map_either(
-            |x| x.output_destination(main),
-            |x| x.output_destination(main),
+        let destination = output_destination(entity_id, emitter_name, false)?;
+        let data = Banks::data(id).map_either(
+            |x| x.output_destination(destination),
+            |x| x.output_destination(destination),
         );
         let handle = Self::play_either(data)?;
         Self::store_either(id, entity_id, handle)?;

@@ -9,34 +9,22 @@ use crate::engine::{error::CannotFindEntitySnafu, id::SoundEntityId, scene::mayb
 use super::{error::Error, track::maybe_tracks};
 
 pub fn output_destination(
-    entity_id: Option<EntityId>,
-    emitter_name: Option<CName>,
+    entity_id: Option<&EntityId>,
+    emitter_name: Option<&CName>,
     over_the_phone: bool,
 ) -> Result<OutputDestination, Error> {
     let is_player = entity_id
         .clone()
         .and_then(|x| {
             let gi = get_game_instance();
-            let entity = find_entity_by_id(gi, x);
+            let entity = find_entity_by_id(gi, x.clone());
             entity.into_ref().map(|entity| entity.is_player())
         })
         .unwrap_or(false);
     match (entity_id, emitter_name, is_player, over_the_phone) {
-        (Some(_), Some(_), true, _) => Ok(OutputDestination::from(&maybe_tracks()?.v.vocal)),
-        (Some(_), None, true, _) => Ok(OutputDestination::from(&maybe_tracks()?.v.environmental)),
-        (Some(id), _, false, _) => {
-            red4ext_rs::info!(
-                "retrieving entity id from scene ({})",
-                u64::from(id.clone())
-            );
-            maybe_scene_entities()?
-                .get(&SoundEntityId(id.clone()))
-                .map(OutputDestination::from)
-                .context(CannotFindEntitySnafu {
-                    entity_id: id.clone(),
-                })
-        }
-        (None, Some(_), false, true) => Ok(OutputDestination::from(&maybe_tracks()?.holocall.main)),
-        (None, _, _, _) => Ok(OutputDestination::from(&maybe_tracks()?.v.main)),
+        (Some(_), _, true, _) => Ok(OutputDestination::from(&maybe_tracks()?.v.vocal)),
+        (Some(_), _, false, false) => Ok(OutputDestination::from(&maybe_tracks()?.v.environmental)),
+        (None, _, false, true) => Ok(OutputDestination::from(&maybe_tracks()?.holocall.main)),
+        _ => Ok(OutputDestination::from(&maybe_tracks()?.v.main)),
     }
 }
