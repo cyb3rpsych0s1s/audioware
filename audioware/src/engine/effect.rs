@@ -1,5 +1,15 @@
-use kira::effect::filter::FilterHandle;
+use std::time::Duration;
+
+use kira::{effect::filter::FilterHandle, tween::Tween};
 use red4ext_rs::conv::NativeRepr;
+
+pub const MODULATOR_NAME: &str = "audioware_frequencies";
+
+pub const IMMEDIATELY: Tween = Tween {
+    start_time: kira::StartTime::Immediate,
+    duration: Duration::ZERO,
+    easing: kira::tween::Easing::Linear,
+};
 
 /// suppress high frequences (from 20k to x)
 pub const EQ_LOW_PASS_DEFAULT_FREQUENCES: f64 = 20_000.;

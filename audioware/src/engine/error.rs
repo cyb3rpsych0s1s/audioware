@@ -12,6 +12,14 @@ pub enum Error {
     CannotFindEntity {
         entity_id: EntityId,
     },
+    #[snafu(
+        display("invalid modulator value: {reason} ({value})"),
+        visibility(pub(crate))
+    )]
+    InvalidModulatorValue {
+        value: f32,
+        reason: &'static str,
+    },
     #[snafu(visibility(pub(crate)))]
     CannotPlayStatic {
         source: PlaySoundError<()>,

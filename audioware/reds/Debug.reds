@@ -37,3 +37,9 @@ public static exec func TestAudioSystemSwitch(game: GameInstance, previous: Stri
     let nextSound: CName = StringToName(next);
     GameInstance.GetAudioSystem(game).Switch(previousSound, nextSound, player.GetEntityID(), n"V");
 }
+
+// Game.TestModulator(100.0);
+public static exec func TestModulator(game: GameInstance, value: Float) -> Void {
+    GameInstance.GetAudioSystem(game)
+    .GlobalParameter(n"audioware_frequencies", value);
+}

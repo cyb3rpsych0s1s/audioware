@@ -5,12 +5,11 @@ use super::super::address::ON_AUDIOSYSTEM_PLAY;
 use super::audioware_exists;
 use crate::{engine::Engine, hook::Maybe, safe_call};
 
-pub fn audioware_play(params: (CName, EntityId, CName)) {
+pub fn audioware_play((sound_name, entity_id, emitter_name): (CName, EntityId, CName)) {
     crate::utils::dbg(format!(
         "AudioSystem::Play({}, {:?}, {})",
-        params.0, params.1, params.2
+        sound_name, entity_id, emitter_name
     ));
-    let (sound_name, entity_id, emitter_name) = params;
     safe_call!(Engine::play(
         &sound_name,
         entity_id.maybe(),

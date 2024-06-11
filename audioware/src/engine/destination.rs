@@ -23,7 +23,7 @@ pub fn output_destination(
         .unwrap_or(false);
     match (entity_id, emitter_name, is_player, over_the_phone) {
         (Some(_), Some(_), true, _) => Ok(OutputDestination::from(&maybe_tracks()?.v.vocal)),
-        (Some(_), None, true, _) => Ok(OutputDestination::from(&maybe_tracks()?.v.emissive)),
+        (Some(_), None, true, _) => Ok(OutputDestination::from(&maybe_tracks()?.v.environmental)),
         (Some(id), _, false, _) => {
             red4ext_rs::info!(
                 "retrieving entity id from scene ({})",

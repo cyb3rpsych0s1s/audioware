@@ -5,6 +5,7 @@ use std::{
 
 use kira::{
     manager::{AudioManager, AudioManagerSettings, DefaultBackend},
+    modulator::tweener::{TweenerBuilder, TweenerHandle},
     sound::{
         static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError,
         PlaybackState,
@@ -17,8 +18,9 @@ use rayon::iter::ParallelBridge;
 use rayon::iter::ParallelIterator;
 use red4ext_rs::types::{CName, EntityId};
 
-use super::id::HandleId;
+use super::{effect::MODULATOR_NAME, id::HandleId};
 
+static MODULATOR: OnceCell<Mutex<TweenerHandle>> = OnceCell::new();
 static STATICS: OnceCell<Mutex<HashMap<HandleId, StaticSoundHandle>>> = OnceCell::new();
 static STREAMS: OnceCell<Mutex<HashMap<HandleId, StreamingSoundHandle<FromFileError>>>> =
     OnceCell::new();
@@ -26,10 +28,22 @@ static STREAMS: OnceCell<Mutex<HashMap<HandleId, StreamingSoundHandle<FromFileEr
 pub fn audio_manager() -> &'static Mutex<AudioManager<DefaultBackend>> {
     static INSTANCE: OnceCell<Mutex<AudioManager<DefaultBackend>>> = OnceCell::new();
     INSTANCE.get_or_init(|| {
-        Mutex::new(
-            AudioManager::new(AudioManagerSettings::default()).expect("instantiate audio manager"),
-        )
+        let mut manager =
+            AudioManager::new(AudioManagerSettings::default()).expect("instantiate audio manager");
+        let tweener = manager
+            .add_modulator(TweenerBuilder { initial_value: 0.0 })
+            .expect("instantiate tweener builder");
+        MODULATOR
+            .set(Mutex::new(tweener))
+            .expect("store tweener handle");
+        Mutex::new(manager)
     })
+}
+
+pub fn audio_modulator() -> &'static Mutex<TweenerHandle> {
+    let _ = audio_manager();
+    let _ = CName::new_pooled(MODULATOR_NAME);
+    MODULATOR.get().expect("initialized modulator")
 }
 
 pub fn maybe_statics(

@@ -2,6 +2,7 @@ module Audioware
 
 public class Audioware extends ScriptableSystem {
     private let menuListener: ref<CallbackHandle>;
+
     protected cb func OnInMenu(value: Bool) -> Bool {
         UpdateGameState(value ? EngineState.InMenu : EngineState.InGame);
     }
@@ -17,9 +18,10 @@ public class Audioware extends ScriptableSystem {
     private func OnDetach() {
         UpdateGameState(EngineState.End);
         StopEngine();
+
+        let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
+        let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
         if IsDefined(this.menuListener) {
-            let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
-            let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
             let ui: ref<IBlackboard> = system.Get(definitions.UI_System);
             ui.UnregisterListenerBool(definitions.UI_System.IsInMenu, this.menuListener);
             this.menuListener = null;

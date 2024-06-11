@@ -25,6 +25,7 @@ pub use key::*;
 
 use crate::{
     bank::error::registry::Error as RegistryError,
+    engine::track::{maybe_tracks, Tracks},
     manifest::{
         conv::{ensure_music, ensure_ono, ensure_sfx, ensure_voice},
         de::{DialogLine, Manifest, Settings},

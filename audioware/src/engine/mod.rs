@@ -3,6 +3,7 @@ use audioware_sys::interop::game::ScriptedPuppet;
 use audioware_sys::interop::gender::PlayerGender;
 use audioware_sys::interop::locale::Locale;
 use audioware_sys::interop::SafeDowncast;
+use effect::IMMEDIATELY;
 use either::Either;
 use error::{BankRegistrySnafu, Error};
 use id::{HandleId, SoundEntityId};
@@ -12,23 +13,23 @@ use kira::sound::{
     FromFileError,
 };
 use kira::tween::Tween;
-use manager::{audio_manager, maybe_statics, maybe_streams};
+use manager::{audio_manager, audio_modulator, maybe_statics, maybe_streams};
 use red4ext_rs::types::{CName, EntityId, Ref};
 use scene::{maybe_scene_entities, Scene};
 use snafu::{OptionExt, ResultExt};
-use track::Tracks;
+use track::{maybe_tracks, Tracks};
 
 use crate::bank::{Banks, Id};
 use crate::state::game::State;
 use crate::state::player::{gender, spoken_language, written_language};
 
 mod destination;
-mod effect;
+pub mod effect;
 pub mod error;
 mod id;
 mod manager;
 mod scene;
-mod track;
+pub mod track;
 pub use manager::Manage;
 
 pub struct Engine;
@@ -47,7 +48,13 @@ impl Engine {
     ) -> Result<(), Error> {
         let (gender, locale, _) = Self::get_player_states(entity_id)?;
         let id = Banks::exist(sound_name, &locale, gender.as_ref()).context(BankRegistrySnafu)?;
-        let handle = Self::play_either(Banks::data(id))?;
+        let data = Banks::data(id);
+        let main = &maybe_tracks()?.v.main;
+        let data = data.map_either(
+            |x| x.output_destination(main),
+            |x| x.output_destination(main),
+        );
+        let handle = Self::play_either(data)?;
         Self::store_either(id, entity_id, handle)?;
         Ok(())
     }
@@ -128,6 +135,27 @@ impl Engine {
             }
             _ => {}
         }
+    }
+
+    pub fn update_modulator(value: f32) -> Result<bool, Error> {
+        if value < 0. {
+            return Err(Error::InvalidModulatorValue {
+                value,
+                reason: "modulator value must be greater than 0.0",
+            });
+        }
+        if value > 100. {
+            return Err(Error::InvalidModulatorValue {
+                value,
+                reason: "modulator value must be lower or equals to 100.0",
+            });
+        }
+        let mut modulator = audio_modulator()
+            .try_lock()
+            .map_err(crate::error::Error::from)?;
+        modulator.set(value as f64, IMMEDIATELY);
+        red4ext_rs::info!("update frequencies modulator: {value}");
+        Ok(true)
     }
 
     fn get_player_states(

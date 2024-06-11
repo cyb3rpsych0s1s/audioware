@@ -20,7 +20,6 @@ use red4ext_rs::types::{CName, EntityId};
 
 use crate::bank::Banks;
 
-pub fn audioware_exists(params: &(CName, EntityId, CName)) -> bool {
-    let (sound_name, ..) = params;
+pub fn audioware_exists((sound_name, ..): &(CName, EntityId, CName)) -> bool {
     Banks::exists(sound_name)
 }

@@ -8,12 +8,17 @@ use red4ext_rs::types::{CName, EntityId, MaybeUninitRef};
 
 use crate::{
     manifest::types::{AsChildTween, AudiowareTween, IntoTween},
+    ok_or_return,
     state::game,
     Maybe,
 };
 
 pub fn update_game_state(state: game::State) {
     crate::engine::Engine::update_game_state(state);
+}
+
+pub fn update_modulator(value: f32) -> bool {
+    ok_or_return!(crate::engine::Engine::update_modulator(value), false)
 }
 
 pub fn update_player_gender(gender: PlayerGender) {
