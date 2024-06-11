@@ -1,4 +1,4 @@
-use audioware_sys::interop::entity::find_entity_by_id;
+use audioware_sys::interop::entity::{find_entity_by_id, Entity};
 use audioware_sys::interop::game::get_game_instance;
 use kira::OutputDestination;
 use red4ext_rs::types::{CName, EntityId};
@@ -14,11 +14,10 @@ pub fn output_destination(
     over_the_phone: bool,
 ) -> Result<OutputDestination, Error> {
     let is_player = entity_id
-        .clone()
         .and_then(|x| {
             let gi = get_game_instance();
             let entity = find_entity_by_id(gi, x.clone());
-            entity.into_ref().map(|entity| entity.is_player())
+            entity.into_ref().as_ref().map(Entity::is_player)
         })
         .unwrap_or(false);
     match (entity_id, emitter_name, is_player, over_the_phone) {
