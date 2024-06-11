@@ -1,3 +1,5 @@
+use std::sync::{MutexGuard, PoisonError};
+
 use audioware_sys::interop::entity::Display;
 use kira::{manager::error::PlaySoundError, sound::FromFileError, ResourceLimitReached};
 use red4ext_rs::types::EntityId;
@@ -62,5 +64,13 @@ impl From<PlaySoundError<FromFileError>> for Error {
 impl From<ResourceLimitReached> for Error {
     fn from(source: ResourceLimitReached) -> Self {
         Self::ResourceLimitReached { source }
+    }
+}
+
+impl<'a, T> From<PoisonError<MutexGuard<'a, T>>> for Error {
+    fn from(value: PoisonError<MutexGuard<'a, T>>) -> Self {
+        Error::Internal {
+            source: value.into(),
+        }
     }
 }

@@ -51,12 +51,8 @@ pub struct Holocall {
 
 impl Tracks {
     pub fn setup() -> Result<(), Error> {
-        let mut manager = audio_manager()
-            .lock()
-            .map_err(|e| Error::Internal { source: e.into() })?;
-        let modulator = audio_modulator()
-            .lock()
-            .map_err(|e| Error::Internal { source: e.into() })?;
+        let mut manager = audio_manager().lock()?;
+        let modulator = audio_modulator().lock()?;
         let reverb = manager.add_sub_track({
             let mut builder = TrackBuilder::new();
             builder.add_effect(ReverbBuilder::new().mix(1.0));
