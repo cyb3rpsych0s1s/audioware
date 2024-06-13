@@ -4,7 +4,7 @@ use audioware_mem::Hook;
 #[allow(unused_imports)]
 use audioware_mem::Intercept;
 
-use bank::Banks;
+use audioware_bank::Banks;
 use engine::Engine;
 use hook::*;
 use red4ext_rs::{
@@ -13,13 +13,12 @@ use red4ext_rs::{
     register_function,
 };
 
-mod bank;
 mod engine;
 mod error;
 mod hook;
 mod natives;
 mod state;
-pub mod utils;
+mod utils;
 
 struct Audioware;
 

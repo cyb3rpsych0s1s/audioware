@@ -4,7 +4,6 @@ mod de;
 mod depot;
 mod error;
 mod types;
-mod utils;
 pub use de::*;
 pub use depot::*;
 pub use error::*;

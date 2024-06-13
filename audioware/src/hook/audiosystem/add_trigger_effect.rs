@@ -3,7 +3,7 @@ use audioware_macros::NativeFunc;
 use red4ext_rs::types::CName;
 
 fn audioware_exists(params: &(CName, CName)) -> bool {
-    crate::utils::dbg(format!(
+    audioware_core::utils::dbg(format!(
         "AudioSystem::AddTriggerEffect({}, {})",
         params.0, params.1
     ));

@@ -20,9 +20,9 @@ use scene::{maybe_scene_entities, Scene};
 use snafu::{OptionExt, ResultExt};
 use track::Tracks;
 
-use crate::bank::{Banks, Id};
 use crate::state::game::State;
 use crate::state::player::{gender, spoken_language, written_language};
+use audioware_bank::{Banks, Id};
 
 mod destination;
 pub mod effect;

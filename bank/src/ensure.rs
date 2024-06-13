@@ -14,7 +14,7 @@ use kira::sound::{
 use red4ext_rs::types::CName;
 use snafu::ensure;
 
-use crate::bank::{error::validation::*, Id};
+use crate::{error::validation::*, Id};
 
 use super::{
     conflict::{Conflict, Conflictual},
@@ -49,7 +49,7 @@ pub fn ensure_key_unique(cname: &str) -> Result<(), Error> {
     Ok(())
 }
 
-/// ensure [`Key`](crate::bank::Key) variants do not [`Conflict`].
+/// ensure [`Key`](crate::Key) variants do not [`Conflict`].
 #[inline]
 pub fn ensure_key_no_conflict<T: Conflictual>(
     key: &T,
@@ -215,11 +215,11 @@ where
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = match usage {
         Usage::InMemory => Id::InMemory(key.clone().into()),
-        Usage::OnDemand => Id::OnDemand(crate::bank::Usage::Static(
+        Usage::OnDemand => Id::OnDemand(crate::Usage::Static(
             key.clone().into(),
             m.as_ref().join(path.clone()),
         )),
-        Usage::Streaming => Id::OnDemand(crate::bank::Usage::Streaming(
+        Usage::Streaming => Id::OnDemand(crate::Usage::Streaming(
             key.clone().into(),
             m.as_ref().join(path.clone()),
         )),
@@ -355,8 +355,8 @@ pub fn ensure_music<'a>(
     let cname = CName::new_pooled(k);
     let key = UniqueKey(cname);
     ensure_key_no_conflict(&key, k, set)?;
-    let id: Id = Id::OnDemand(crate::bank::Usage::Streaming(
-        crate::bank::Key::Unique(key.clone()),
+    let id: Id = Id::OnDemand(crate::Usage::Streaming(
+        crate::Key::Unique(key.clone()),
         m.as_ref().join(file),
     ));
     if let Some(settings) = settings {

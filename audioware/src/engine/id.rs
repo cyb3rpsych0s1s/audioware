@@ -8,7 +8,7 @@ use red4ext_rs::types::{EntityId, Ref};
 use snafu::OptionExt;
 use snowflake::ProcessUniqueId;
 
-use crate::bank::{Id, Key};
+use audioware_bank::{Id, Key};
 
 use super::error::CannotFindEntitySnafu;
 

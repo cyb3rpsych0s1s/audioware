@@ -1,7 +1,5 @@
-use crate::{
-    error::{BinaryLocationSnafu, NoFolderSnafu},
-    utils::macros::ok_or_return,
-};
+use crate::error::{BinaryLocationSnafu, NoFolderSnafu};
+use audioware_core::ok_or_return;
 use rayon::iter::ParallelIterator;
 use rayon::{iter::ParallelBridge, slice::ParallelSliceMut};
 use snafu::{OptionExt, ResultExt};

@@ -6,7 +6,7 @@ use red4ext_rs::types::CName;
 
 fn audioware_exists((parameter_name, parameter_value): &(CName, f32)) -> bool {
     // SAFETY: logging to CET tends to crash the game
-    crate::utils::dbg(format!(
+    audioware_core::utils::dbg(format!(
         "AudioSystem::GlobalParameter({}, {})",
         parameter_name, parameter_value
     ));

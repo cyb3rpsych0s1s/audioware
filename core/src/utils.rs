@@ -29,26 +29,7 @@ pub mod macros {
             }
         };
     }
-    #[macro_export]
-    macro_rules! safe_call {
-        ($expression:expr) => {
-            if let Err(ref e) = $expression {
-                match e {
-                    $crate::engine::error::Error::BankRegistry { source } => match source {
-                        $crate::bank::error::registry::Error::MissingLocale { .. }
-                        | $crate::bank::error::registry::Error::RequireGender { .. } => {
-                            red4ext_rs::warn!("{e}")
-                        }
-                        $crate::bank::error::registry::Error::NotFound { .. } => {
-                            red4ext_rs::error!("{e}")
-                        }
-                    },
-                    e => red4ext_rs::error!("{e}"),
-                }
-            }
-        };
-    }
-
+    pub use ok_or_continue;
     pub use ok_or_return;
 }
 

@@ -20,7 +20,7 @@ pub fn print_event(event: DialogLineEvent) {
         playback_speed_parameter,
         ..
     } = dialog_line;
-    crate::utils::dbg(format!(
+    audioware_core::utils::dbg(format!(
         "intercepted {} ({}): {:?}, {}, {}, {}, {}, {}, {}, {}, {}",
         DialogLineEvent::NAME,
         DialogLineEvent::NATIVE_NAME,
@@ -42,7 +42,7 @@ pub fn print_stop_event(event: StopDialogLine) {
         fade_out,
         ..
     } = event;
-    crate::utils::dbg(format!(
+    audioware_core::utils::dbg(format!(
         "intercepted {} ({}): {:?}, {}",
         StopDialogLine::NAME,
         StopDialogLine::NATIVE_NAME,
@@ -52,7 +52,7 @@ pub fn print_stop_event(event: StopDialogLine) {
 }
 
 pub fn print_event_end(_: DialogLineEndEvent) {
-    crate::utils::dbg(format!(
+    audioware_core::utils::dbg(format!(
         "intercepted {} ({})",
         DialogLineEndEvent::NAME,
         DialogLineEndEvent::NATIVE_NAME

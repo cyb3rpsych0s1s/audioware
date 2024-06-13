@@ -1,11 +1,11 @@
-use super::super::address::ON_AUDIOSYSTEM_SWITCH;
 use crate::{
-    bank::Banks,
     engine::Engine,
-    hook::Maybe,
     natives::{delegate_play, delegate_stop},
-    safe_call,
+    safe_call, Maybe,
 };
+
+use super::super::address::ON_AUDIOSYSTEM_SWITCH;
+use audioware_bank::Banks;
 use audioware_mem::{load_native_func, Hook};
 use red4ext_rs::types::{CName, EntityId};
 

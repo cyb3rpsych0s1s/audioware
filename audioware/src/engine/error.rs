@@ -36,7 +36,7 @@ pub enum Error {
     },
     #[snafu(visibility(pub(crate)))]
     BankRegistry {
-        source: crate::bank::error::registry::Error,
+        source: audioware_bank::error::registry::Error,
     },
     ResourceLimitReached {
         source: kira::ResourceLimitReached,

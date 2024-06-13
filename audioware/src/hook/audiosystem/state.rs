@@ -2,7 +2,7 @@ use super::super::address::ON_AUDIOSYSTEM_STATE;
 use audioware_macros::NativeFunc;
 
 fn audioware_exists(params: &(String, String)) -> bool {
-    crate::utils::dbg(format!(
+    audioware_core::utils::dbg(format!(
         "AudioSystem::State({:?}, {:?})",
         params.0, params.1
     ));

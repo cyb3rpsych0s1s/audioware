@@ -27,7 +27,7 @@ pub mod registry {
 pub mod validation {
     use snafu::Snafu;
 
-    use crate::bank::Id;
+    use crate::Id;
 
     #[derive(Debug, Snafu)]
     pub enum Error {

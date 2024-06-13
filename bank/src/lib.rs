@@ -3,6 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use audioware_core::ok_or_continue;
 use audioware_manifest::{
     CannotParseManifestSnafu, CannotReadManifestSnafu, DialogLine, Manifest, R6Audioware, REDmod,
     Settings,
@@ -28,7 +29,7 @@ mod key;
 pub use id::*;
 pub use key::*;
 
-use crate::{bank::error::registry::Error as RegistryError, ok_or_continue};
+use crate::error::registry::Error as RegistryError;
 
 static UNIQUES: OnceCell<HashMap<UniqueKey, StaticSoundData>> = OnceCell::new();
 static GENDERS: OnceCell<HashMap<GenderKey, StaticSoundData>> = OnceCell::new();
