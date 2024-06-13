@@ -8,7 +8,7 @@ use super::super::address::ON_AUDIOSYSTEM_PLAY;
 use super::audioware_exists;
 
 pub fn audioware_play((sound_name, entity_id, emitter_name): (CName, EntityId, CName)) {
-    audioware_core::utils::dbg(format!(
+    audioware_core::dbg(format!(
         "AudioSystem::Play({}, {:?}, {})",
         sound_name, entity_id, emitter_name
     ));

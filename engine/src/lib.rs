@@ -93,7 +93,7 @@ impl Engine {
     ) -> Result<Either<StaticSoundHandle, StreamingSoundHandle<FromFileError>>, Error> {
         let mut manager = audio_manager()
             .try_lock()
-            .map_err(audioware_core::error::Error::from)?;
+            .map_err(audioware_core::Error::from)?;
         match data {
             Either::Left(data) => Ok(Either::Left(manager.play(data)?)),
             Either::Right(data) => Ok(Either::Right(manager.play(data)?)),
@@ -153,7 +153,7 @@ impl Engine {
         }
         let mut modulator = audio_modulator()
             .try_lock()
-            .map_err(audioware_core::error::Error::from)?;
+            .map_err(audioware_core::Error::from)?;
         modulator.set(value as f64, IMMEDIATELY);
         red4ext_rs::info!("update frequencies modulator: {value}");
         Ok(true)
@@ -164,10 +164,10 @@ impl Engine {
     ) -> Result<(Option<PlayerGender>, Locale, Locale), Error> {
         let spoken = *spoken_language()
             .try_read()
-            .map_err(audioware_core::error::Error::from)?;
+            .map_err(audioware_core::Error::from)?;
         let written = *written_language()
             .try_read()
-            .map_err(audioware_core::error::Error::from)?;
+            .map_err(audioware_core::Error::from)?;
         let entity: Option<Ref<Entity>> = match entity_id {
             Some(entity_id) => Some((&SoundEntityId::from(entity_id)).try_into()?),
             None => None,
@@ -175,11 +175,7 @@ impl Engine {
         let gender: Option<PlayerGender> = match entity {
             Some(ref entity) => {
                 if entity.is_player() {
-                    Some(
-                        *gender()
-                            .try_read()
-                            .map_err(audioware_core::error::Error::from)?,
-                    )
+                    Some(*gender().try_read().map_err(audioware_core::Error::from)?)
                 } else {
                     red4ext_rs::warn!("before entering safe downcast");
                     match SafeDowncast::<ScriptedPuppet>::maybe_downcast(entity) {

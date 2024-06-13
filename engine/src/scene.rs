@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex, MutexGuard},
 };
 
-use audioware_core::error::UninitializedSnafu;
+use audioware_core::UninitializedSnafu;
 use glam::{Quat, Vec3};
 use kira::spatial::{
     emitter::EmitterHandle,
@@ -57,7 +57,7 @@ impl Scene {
                 entities: Arc::new(Mutex::new(HashMap::new())),
             })
             .map_err(|_| Error::Internal {
-                source: audioware_core::error::Error::CannotSet { which: "scene" },
+                source: audioware_core::Error::CannotSet { which: "scene" },
             })?;
         Ok(())
     }

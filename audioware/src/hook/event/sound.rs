@@ -35,24 +35,24 @@ impl std::fmt::Display for AnyEvent {
 
 /// 0x141D1FB8C ✅
 pub fn print_1(event: AnyEvent) {
-    audioware_core::utils::dbg(format!("from 0x141D1FB8C:\n{}", event));
+    audioware_core::dbg(format!("from 0x141D1FB8C:\n{}", event));
 }
 /// 0x141D1FB98
 #[allow(dead_code)]
 pub fn print_2(event: AnyEvent) {
-    audioware_core::utils::dbg(format!("from 0x141D1FB98:\n{}", event));
+    audioware_core::dbg(format!("from 0x141D1FB98:\n{}", event));
 }
 /// 0x141D1FBB0 ✅
 pub fn print_3(event: AnyEvent) {
-    audioware_core::utils::dbg(format!("from 0x141D1FBB0:\n{}", event));
+    audioware_core::dbg(format!("from 0x141D1FBB0:\n{}", event));
 }
 /// 0x141D1FBA4 ✅
 pub fn print_4(event: AnyEvent) {
-    audioware_core::utils::dbg(format!("from 0x141D1FBA4:\n{}", event));
+    audioware_core::dbg(format!("from 0x141D1FBA4:\n{}", event));
 }
 /// 0x141D1FBBC ✅
 pub fn print_5(event: AnyEvent) {
-    audioware_core::utils::dbg(format!("from 0x141D1FBBC:\n{}", event));
+    audioware_core::dbg(format!("from 0x141D1FBBC:\n{}", event));
 }
 
 #[derive(NativeHandler)]

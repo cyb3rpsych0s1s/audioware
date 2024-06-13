@@ -3,7 +3,7 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
-use audioware_core::error::Error;
+use audioware_core::Error;
 use kira::{
     manager::{AudioManager, AudioManagerSettings, DefaultBackend},
     modulator::tweener::{TweenerBuilder, TweenerHandle},

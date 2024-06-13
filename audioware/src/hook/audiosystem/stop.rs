@@ -8,7 +8,7 @@ use super::super::address::ON_AUDIOSYSTEM_STOP;
 use super::audioware_exists;
 
 pub fn audioware_stop(params: (CName, EntityId, CName)) {
-    audioware_core::utils::dbg(format!(
+    audioware_core::dbg(format!(
         "AudioSystem::Stop({}, {:?}, {})",
         params.0, params.1, params.2
     ));

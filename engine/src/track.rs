@@ -11,7 +11,7 @@ use kira::{
 use once_cell::sync::OnceCell;
 use snafu::OptionExt;
 
-use audioware_core::error::UninitializedSnafu;
+use audioware_core::UninitializedSnafu;
 
 use super::{
     effect::{
@@ -117,7 +117,7 @@ impl Tracks {
                 },
             })
             .map_err(|_| Error::Internal {
-                source: audioware_core::error::Error::CannotSet { which: "tracks" },
+                source: audioware_core::Error::CannotSet { which: "tracks" },
             })?;
         Ok(())
     }
