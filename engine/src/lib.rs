@@ -1,8 +1,6 @@
 use audioware_sys::interop::entity::Entity;
-use audioware_sys::interop::game::ScriptedPuppet;
 use audioware_sys::interop::gender::PlayerGender;
 use audioware_sys::interop::locale::Locale;
-use audioware_sys::interop::SafeDowncast;
 use destination::output_destination;
 use effect::IMMEDIATELY;
 use either::Either;
@@ -177,14 +175,10 @@ impl Engine {
                 if entity.is_player() {
                     Some(*gender().try_read().map_err(audioware_core::Error::from)?)
                 } else {
-                    audioware_core::audioware_warn!("before entering safe downcast");
-                    match SafeDowncast::<ScriptedPuppet>::maybe_downcast(entity) {
-                        Some(puppet) if puppet.get_gender() == CName::new("female") => {
-                            Some(PlayerGender::Female)
-                        }
-                        Some(puppet) if puppet.get_gender() == CName::new("male") => {
-                            Some(PlayerGender::Male)
-                        }
+                    let gender = entity.get_template_gender();
+                    match gender {
+                        x if x == CName::new("Female") => Some(PlayerGender::Female),
+                        x if x == CName::new("Male") => Some(PlayerGender::Male),
                         _ => None,
                     }
                 }

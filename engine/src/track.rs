@@ -22,7 +22,7 @@ use super::{
     manager::{audio_manager, audio_modulator},
 };
 
-pub static TRACKS: OnceCell<Tracks> = OnceCell::new();
+static TRACKS: OnceCell<Tracks> = OnceCell::new();
 
 #[inline(always)]
 pub fn maybe_tracks<'cell>() -> Result<&'cell Tracks, Error> {
