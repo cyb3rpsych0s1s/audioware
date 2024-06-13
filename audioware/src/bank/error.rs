@@ -2,39 +2,14 @@ use snafu::{ensure, Snafu};
 
 use audioware_manifest::Mod;
 
-use super::Id;
-
 #[derive(Debug, Snafu)]
 pub enum Error {
     #[snafu(display("duplicate folder across 'r6\\audioware' and 'mods' folders, skipping folder in 'r6\\audioware' ({folder})"), visibility(pub(crate)))]
     DuplicateAcrossDepots { folder: String },
     #[snafu(visibility(pub(crate)))]
     Registry { source: self::registry::Error },
-    #[snafu(display("CName already exists: {cname}"), visibility(pub(crate)))]
-    NonUniqueKey { cname: String },
-    #[snafu(
-        display("CName conflicts with existing id: {cname}"),
-        visibility(pub(crate))
-    )]
-    ConflictingKey { cname: String },
-    #[snafu(display("cannot load audio: {path}"), visibility(pub(crate)))]
-    InvalidAudio {
-        path: String,
-        source: kira::sound::FromFileError,
-    },
-    #[snafu(display("invalid audio setting"), visibility(pub(crate)))]
-    InvalidAudioSetting {
-        which: &'static str,
-        why: &'static str,
-    },
-    #[snafu(display("cannot store data: {id}"), visibility(pub(crate)))]
-    CannotStoreData { id: Id, path: String },
-    #[snafu(display("cannot store subtitle"), visibility(pub(crate)))]
-    CannotStoreSubtitle,
-    #[snafu(display("cannot store audio settings"), visibility(pub(crate)))]
-    CannotStoreSettings,
-    #[snafu(display("cannot store id: {id}"), visibility(pub(crate)))]
-    CannotStoreAgnosticId { id: Id },
+    #[snafu(visibility(pub(crate)))]
+    Validation { source: self::validation::Error },
 }
 
 pub mod registry {
@@ -53,9 +28,50 @@ pub mod registry {
     }
 }
 
+pub mod validation {
+    use snafu::Snafu;
+
+    use crate::bank::Id;
+
+    #[derive(Debug, Snafu)]
+    pub enum Error {
+        #[snafu(display("CName already exists: {cname}"), visibility(pub(crate)))]
+        NonUniqueKey { cname: String },
+        #[snafu(
+            display("CName conflicts with existing id: {cname}"),
+            visibility(pub(crate))
+        )]
+        ConflictingKey { cname: String },
+        #[snafu(display("cannot load audio: {path}"), visibility(pub(crate)))]
+        InvalidAudio {
+            path: String,
+            source: kira::sound::FromFileError,
+        },
+        #[snafu(display("invalid audio setting"), visibility(pub(crate)))]
+        InvalidAudioSetting {
+            which: &'static str,
+            why: &'static str,
+        },
+        #[snafu(display("cannot store data: {id}"), visibility(pub(crate)))]
+        CannotStoreData { id: Id, path: String },
+        #[snafu(display("cannot store subtitle"), visibility(pub(crate)))]
+        CannotStoreSubtitle,
+        #[snafu(display("cannot store audio settings"), visibility(pub(crate)))]
+        CannotStoreSettings,
+        #[snafu(display("cannot store id: {id}"), visibility(pub(crate)))]
+        CannotStoreAgnosticId { id: Id },
+    }
+}
+
 impl From<self::registry::Error> for self::Error {
     fn from(source: self::registry::Error) -> Self {
         Self::Registry { source }
+    }
+}
+
+impl From<self::validation::Error> for self::Error {
+    fn from(source: self::validation::Error) -> Self {
+        Self::Validation { source }
     }
 }
 
