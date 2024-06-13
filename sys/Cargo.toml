@@ -28,4 +28,4 @@ default = ["codeware"]
 codeware = []
 
 [package.metadata.cargo-machete]
-ignored = ["audioware-mem", "memoffset", "strum", "strum_macros"]
+ignored = ["audioware-mem", "memoffset", "strum"]
