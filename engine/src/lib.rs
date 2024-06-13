@@ -6,7 +6,6 @@ use audioware_sys::interop::SafeDowncast;
 use destination::output_destination;
 use effect::IMMEDIATELY;
 use either::Either;
-use error::{BankRegistrySnafu, Error};
 use id::{HandleId, SoundEntityId};
 use kira::sound::{
     static_sound::{StaticSoundData, StaticSoundHandle},
@@ -20,26 +19,28 @@ use scene::{maybe_scene_entities, Scene};
 use snafu::{OptionExt, ResultExt};
 use track::Tracks;
 
-use crate::state::game::State;
-use crate::state::player::{gender, spoken_language, written_language};
 use audioware_bank::{Banks, Id};
 
 mod destination;
 pub mod effect;
-pub mod error;
+mod error;
+pub use error::*;
 mod id;
 mod manager;
 mod scene;
 pub mod track;
 pub use manager::Manage;
+mod state;
+pub use state::game::*;
+pub use state::player::*;
 
 pub struct Engine;
 impl Engine {
-    pub(crate) fn setup() -> Result<(), Error> {
+    pub fn setup() -> Result<(), Error> {
         // SAFETY: initialization order matters
         Tracks::setup()?;
         Scene::setup()?;
-        Self::update_game_state(crate::state::game::State::Load);
+        Self::update_game_state(State::Load);
         Ok(())
     }
     pub fn play(
@@ -92,7 +93,7 @@ impl Engine {
     ) -> Result<Either<StaticSoundHandle, StreamingSoundHandle<FromFileError>>, Error> {
         let mut manager = audio_manager()
             .try_lock()
-            .map_err(crate::error::Error::from)?;
+            .map_err(audioware_core::error::Error::from)?;
         match data {
             Either::Left(data) => Ok(Either::Left(manager.play(data)?)),
             Either::Right(data) => Ok(Either::Right(manager.play(data)?)),
@@ -118,7 +119,7 @@ impl Engine {
 
     /// on specific state changes sounds will also be paused, resumed or stopped.
     pub fn update_game_state(state: State) {
-        let previous = crate::state::game::State::set(state);
+        let previous = State::set(state);
         #[cfg(debug_assertions)]
         if previous != state {
             red4ext_rs::info!("updated game state from {previous} to {state}");
@@ -152,7 +153,7 @@ impl Engine {
         }
         let mut modulator = audio_modulator()
             .try_lock()
-            .map_err(crate::error::Error::from)?;
+            .map_err(audioware_core::error::Error::from)?;
         modulator.set(value as f64, IMMEDIATELY);
         red4ext_rs::info!("update frequencies modulator: {value}");
         Ok(true)
@@ -163,10 +164,10 @@ impl Engine {
     ) -> Result<(Option<PlayerGender>, Locale, Locale), Error> {
         let spoken = *spoken_language()
             .try_read()
-            .map_err(crate::error::Error::from)?;
+            .map_err(audioware_core::error::Error::from)?;
         let written = *written_language()
             .try_read()
-            .map_err(crate::error::Error::from)?;
+            .map_err(audioware_core::error::Error::from)?;
         let entity: Option<Ref<Entity>> = match entity_id {
             Some(entity_id) => Some((&SoundEntityId::from(entity_id)).try_into()?),
             None => None,
@@ -174,7 +175,11 @@ impl Engine {
         let gender: Option<PlayerGender> = match entity {
             Some(ref entity) => {
                 if entity.is_player() {
-                    Some(*gender().try_read().map_err(crate::error::Error::from)?)
+                    Some(
+                        *gender()
+                            .try_read()
+                            .map_err(audioware_core::error::Error::from)?,
+                    )
                 } else {
                     red4ext_rs::warn!("before entering safe downcast");
                     match SafeDowncast::<ScriptedPuppet>::maybe_downcast(entity) {

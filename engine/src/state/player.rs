@@ -2,7 +2,7 @@
 
 use std::sync::RwLock;
 
-use crate::error::{Error, InvalidLocaleSnafu};
+use audioware_core::error::{Error, InvalidLocaleSnafu};
 use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
 use once_cell::sync::OnceCell;
 use red4ext_rs::types::CName;

@@ -4,7 +4,7 @@ pub mod macros {
         ($expression:expr) => {
             if let Err(ref e) = $expression {
                 match e {
-                    $crate::engine::error::Error::BankRegistry { source } => match source {
+                    ::audioware_engine::Error::BankRegistry { source } => match source {
                         ::audioware_bank::error::registry::Error::MissingLocale { .. }
                         | ::audioware_bank::error::registry::Error::RequireGender { .. } => {
                             red4ext_rs::warn!("{e}")

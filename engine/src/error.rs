@@ -32,7 +32,7 @@ pub enum Error {
     },
     #[snafu(visibility(pub(crate)))]
     Internal {
-        source: crate::error::Error,
+        source: audioware_core::error::Error,
     },
     #[snafu(visibility(pub(crate)))]
     BankRegistry {
@@ -43,8 +43,8 @@ pub enum Error {
     },
 }
 
-impl From<crate::error::Error> for self::Error {
-    fn from(source: crate::error::Error) -> Self {
+impl From<audioware_core::error::Error> for self::Error {
+    fn from(source: audioware_core::error::Error) -> Self {
         Self::Internal { source }
     }
 }

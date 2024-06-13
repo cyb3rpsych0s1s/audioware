@@ -1,6 +1,7 @@
-use crate::{engine::effect::MODULATOR_NAME, natives::update_modulator};
+use crate::natives::update_modulator;
 
 use super::super::address::ON_AUDIOSYSTEM_GLOBAL_PARAMETER;
+use audioware_engine::effect::MODULATOR_NAME;
 use audioware_macros::NativeFunc;
 use red4ext_rs::types::CName;
 

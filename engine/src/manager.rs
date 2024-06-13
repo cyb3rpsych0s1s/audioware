@@ -3,6 +3,7 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
+use audioware_core::error::Error;
 use kira::{
     manager::{AudioManager, AudioManagerSettings, DefaultBackend},
     modulator::tweener::{TweenerBuilder, TweenerHandle},
@@ -46,22 +47,19 @@ pub fn audio_modulator() -> &'static Mutex<TweenerHandle> {
     MODULATOR.get().expect("initialized modulator")
 }
 
-pub fn maybe_statics(
-) -> Result<MutexGuard<'static, HashMap<HandleId, StaticSoundHandle>>, crate::error::Error> {
+pub fn maybe_statics() -> Result<MutexGuard<'static, HashMap<HandleId, StaticSoundHandle>>, Error> {
     STATICS
         .get_or_init(Default::default)
         .try_lock()
-        .map_err(crate::error::Error::from)
+        .map_err(Error::from)
 }
 
-pub fn maybe_streams() -> Result<
-    MutexGuard<'static, HashMap<HandleId, StreamingSoundHandle<FromFileError>>>,
-    crate::error::Error,
-> {
+pub fn maybe_streams(
+) -> Result<MutexGuard<'static, HashMap<HandleId, StreamingSoundHandle<FromFileError>>>, Error> {
     STREAMS
         .get_or_init(Default::default)
         .try_lock()
-        .map_err(crate::error::Error::from)
+        .map_err(Error::from)
 }
 
 pub trait Manage {

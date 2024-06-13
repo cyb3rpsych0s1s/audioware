@@ -35,7 +35,7 @@ impl PartialEq<EntityId> for SoundEntityId {
 }
 
 impl TryFrom<&SoundEntityId> for Ref<Entity> {
-    type Error = crate::engine::Error;
+    type Error = crate::Error;
 
     fn try_from(value: &SoundEntityId) -> Result<Self, Self::Error> {
         find_entity_by_id(get_game_instance(), value.0.clone())

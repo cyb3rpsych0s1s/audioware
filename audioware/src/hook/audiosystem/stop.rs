@@ -1,7 +1,7 @@
+use audioware_engine::Engine;
 use audioware_macros::NativeFunc;
 use red4ext_rs::types::{CName, EntityId};
 
-use crate::engine::Engine;
 use crate::hook::Maybe;
 
 use super::super::address::ON_AUDIOSYSTEM_STOP;

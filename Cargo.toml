@@ -1,5 +1,5 @@
 [workspace]
-members = ["audioware", "sys", "macros", "mem", "manifest", "bank", "core"]
+members = ["audioware", "sys", "macros", "mem", "manifest", "bank", "core", "engine"]
 resolver = "2"
 
 [workspace.package]
@@ -15,6 +15,7 @@ codegen-units = 1
 [workspace.dependencies]
 audioware-bank = { path = "bank" }
 audioware-core = { path = "core" }
+audioware-engine = { path = "engine" }
 audioware-macros = { path = "macros" }
 audioware-manifest = { path = "manifest" }
 audioware-mem = { path = "mem" }

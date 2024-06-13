@@ -3,29 +3,30 @@
 use std::time::Duration;
 
 use audioware_core::ok_or_return;
+use audioware_engine::{update_gender, update_locales, Engine, State};
 use audioware_manifest::{AsChildTween, AudiowareTween, IntoTween};
 use audioware_sys::interop::gender::PlayerGender;
 use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId, MaybeUninitRef};
 
-use crate::{state::game, Maybe};
+use crate::Maybe;
 
-pub fn update_game_state(state: game::State) {
-    crate::engine::Engine::update_game_state(state);
+pub fn update_game_state(state: State) {
+    audioware_engine::Engine::update_game_state(state);
 }
 
 pub fn update_modulator(value: f32) -> bool {
-    ok_or_return!(crate::engine::Engine::update_modulator(value), false)
+    ok_or_return!(Engine::update_modulator(value), false)
 }
 
 pub fn update_player_gender(gender: PlayerGender) {
-    if let Err(e) = crate::state::player::update_gender(gender) {
+    if let Err(e) = update_gender(gender) {
         red4ext_rs::error!("{e}");
     }
 }
 
 pub fn update_player_locales(spoken: CName, written: CName) {
-    if let Err(e) = crate::state::player::update_locales(spoken, written) {
+    if let Err(e) = update_locales(spoken, written) {
         red4ext_rs::error!("{e}");
     }
 }
@@ -36,7 +37,7 @@ pub fn audioware_stop_engine() {
         duration: Duration::from_millis(1),
         easing: kira::tween::Easing::Linear,
     };
-    crate::engine::Engine::stop(Some(immediately));
+    Engine::stop(Some(immediately));
 }
 
 /// stop sound playing on track
@@ -67,8 +68,8 @@ pub fn audioware_track_stop(
             }
         };
         match (&sound_name, entity_id.maybe()) {
-            (n, None) => crate::engine::Engine::stop_by_cname(n, Some(tween)),
-            (n, Some(e)) => crate::engine::Engine::stop_by_cname_for_entity(n, e, Some(tween)),
+            (n, None) => Engine::stop_by_cname(n, Some(tween)),
+            (n, Some(e)) => Engine::stop_by_cname_for_entity(n, e, Some(tween)),
         }
     } else {
         red4ext_rs::error!("uninit tween");

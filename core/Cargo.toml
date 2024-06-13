@@ -8,3 +8,4 @@ rust-version.workspace = true
 audioware-sys.workspace = true
 once_cell.workspace = true
 red4ext-rs.workspace = true
+snafu.workspace = true
