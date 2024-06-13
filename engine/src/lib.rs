@@ -177,7 +177,7 @@ impl Engine {
                 if entity.is_player() {
                     Some(*gender().try_read().map_err(audioware_core::Error::from)?)
                 } else {
-                    red4ext_rs::warn!("before entering safe downcast");
+                    audioware_core::audioware_warn!("before entering safe downcast");
                     match SafeDowncast::<ScriptedPuppet>::maybe_downcast(entity) {
                         Some(puppet) if puppet.get_gender() == CName::new("female") => {
                             Some(PlayerGender::Female)

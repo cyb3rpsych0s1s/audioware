@@ -36,30 +36,30 @@ pub static AUDIOWARE: Lazy<CName> = Lazy::new(|| CName::new_pooled("Audioware"))
 
 #[macro_export]
 macro_rules! audioware_info {
-    ($($args:expr),*) => {
+    ($($args:expr),*) => {{
         let msg = format!($($args),*);
-        red4ext_rs::info!("{}", msg.as_ref());
-        audioware_sys::interop::codeware::mod_log(AUDIOWARE.clone(), msg.as_ref());
-    }
+        red4ext_rs::info!("{}", AsRef::<str>::as_ref(&msg));
+        audioware_sys::interop::codeware::mod_log($crate::AUDIOWARE.clone(), AsRef::<str>::as_ref(&msg));
+    }}
 }
 
 #[macro_export]
 macro_rules! audioware_error {
-    ($($args:expr),*) => {
+    ($($args:expr),*) => {{
         let msg = format!($($args),*);
-        red4ext_rs::error!("{}", msg.as_ref());
-        audioware_sys::interop::codeware::mod_log(AUDIOWARE.clone(), format!("[ERROR] {}", msg.as_ref()));
-    }
+        red4ext_rs::error!("{}", AsRef::<str>::as_ref(&msg));
+        audioware_sys::interop::codeware::mod_log($crate::AUDIOWARE.clone(), format!("[ERROR] {}", AsRef::<str>::as_ref(&msg)));
+    }}
 }
 
 #[macro_export]
 macro_rules! audioware_warn {
-    ($($args:expr),*) => {
+    ($($args:expr),*) => {{
         let msg = format!($($args),*);
-        red4ext_rs::warn!("{}", msg.as_ref());
+        red4ext_rs::warn!("{}", AsRef::<str>::as_ref(&msg));
         #[cfg(debug_assertions)]
-        audioware_sys::interop::codeware::mod_log(AUDIOWARE.clone(), format!("[WARN] {}", msg.as_ref()));
-    }
+        audioware_sys::interop::codeware::mod_log($crate::AUDIOWARE.clone(), format!("[WARN] {}", AsRef::<str>::as_ref(&msg)));
+    }}
 }
 
 #[macro_export]
