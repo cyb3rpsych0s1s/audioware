@@ -11,7 +11,7 @@ use kira::spatial::{
     scene::{SpatialSceneHandle, SpatialSceneSettings},
 };
 use once_cell::sync::OnceCell;
-use snafu::{OptionExt, ResultExt};
+use snafu::OptionExt;
 
 use super::{error::Error, id::SoundEntityId, manager::audio_manager, track::maybe_tracks};
 
@@ -31,6 +31,7 @@ pub fn maybe_scene_entities<'mutex>(
         .map_err(|e| Error::Internal { source: e.into() })
 }
 
+#[allow(dead_code)]
 pub struct Scene {
     pub scene: Arc<Mutex<SpatialSceneHandle>>,
     pub v: Arc<Mutex<ListenerHandle>>,

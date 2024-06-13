@@ -16,7 +16,7 @@ use kira::tween::Tween;
 use manager::{audio_manager, audio_modulator, maybe_statics, maybe_streams};
 use red4ext_rs::types::{CName, EntityId, Ref};
 use scene::{maybe_scene_entities, Scene};
-use snafu::{OptionExt, ResultExt};
+use snafu::ResultExt;
 use track::Tracks;
 
 use audioware_bank::{Banks, Id};

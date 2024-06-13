@@ -112,7 +112,12 @@ impl AsChildTween for Ref<AudiowareTween> {
             base,
             CName::new(AudiowareLinearTween::NATIVE_NAME),
         ) {
-            let child = unsafe { std::mem::transmute(self.clone()) };
+            let child = unsafe {
+                std::mem::transmute::<
+                    red4ext_rs::prelude::Ref<crate::types::AudiowareTween>,
+                    red4ext_rs::prelude::Ref<crate::types::AudiowareLinearTween>,
+                >(self.clone())
+            };
             return Some(child);
         }
         None
@@ -126,7 +131,12 @@ impl AsChildTween for Ref<AudiowareTween> {
             base,
             CName::new(AudiowareElasticTween::NATIVE_NAME),
         ) {
-            let child = unsafe { std::mem::transmute(self.clone()) };
+            let child = unsafe {
+                std::mem::transmute::<
+                    red4ext_rs::prelude::Ref<crate::types::AudiowareTween>,
+                    red4ext_rs::prelude::Ref<crate::types::AudiowareElasticTween>,
+                >(self.clone())
+            };
             return Some(child);
         }
         None
