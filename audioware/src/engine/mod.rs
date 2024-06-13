@@ -18,7 +18,7 @@ use manager::{audio_manager, audio_modulator, maybe_statics, maybe_streams};
 use red4ext_rs::types::{CName, EntityId, Ref};
 use scene::{maybe_scene_entities, Scene};
 use snafu::{OptionExt, ResultExt};
-use track::{maybe_tracks, Tracks};
+use track::Tracks;
 
 use crate::bank::{Banks, Id};
 use crate::state::game::State;

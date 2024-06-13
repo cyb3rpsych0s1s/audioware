@@ -2,9 +2,6 @@ use audioware_sys::interop::entity::{find_entity_by_id, Entity};
 use audioware_sys::interop::game::get_game_instance;
 use kira::OutputDestination;
 use red4ext_rs::types::{CName, EntityId};
-use snafu::OptionExt;
-
-use crate::engine::{error::CannotFindEntitySnafu, id::SoundEntityId, scene::maybe_scene_entities};
 
 use super::{error::Error, track::maybe_tracks};
 

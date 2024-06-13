@@ -1,6 +1,8 @@
 use snafu::{ensure, Snafu};
 
-use crate::manifest::depot::Mod;
+use audioware_manifest::Mod;
+
+use super::Id;
 
 #[derive(Debug, Snafu)]
 pub enum Error {
@@ -8,6 +10,31 @@ pub enum Error {
     DuplicateAcrossDepots { folder: String },
     #[snafu(visibility(pub(crate)))]
     Registry { source: self::registry::Error },
+    #[snafu(display("CName already exists: {cname}"), visibility(pub(crate)))]
+    NonUniqueKey { cname: String },
+    #[snafu(
+        display("CName conflicts with existing id: {cname}"),
+        visibility(pub(crate))
+    )]
+    ConflictingKey { cname: String },
+    #[snafu(display("cannot load audio: {path}"), visibility(pub(crate)))]
+    InvalidAudio {
+        path: String,
+        source: kira::sound::FromFileError,
+    },
+    #[snafu(display("invalid audio setting"), visibility(pub(crate)))]
+    InvalidAudioSetting {
+        which: &'static str,
+        why: &'static str,
+    },
+    #[snafu(display("cannot store data: {id}"), visibility(pub(crate)))]
+    CannotStoreData { id: Id, path: String },
+    #[snafu(display("cannot store subtitle"), visibility(pub(crate)))]
+    CannotStoreSubtitle,
+    #[snafu(display("cannot store audio settings"), visibility(pub(crate)))]
+    CannotStoreSettings,
+    #[snafu(display("cannot store id: {id}"), visibility(pub(crate)))]
+    CannotStoreAgnosticId { id: Id },
 }
 
 pub mod registry {

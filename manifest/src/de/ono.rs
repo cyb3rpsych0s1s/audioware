@@ -28,7 +28,7 @@ mod tests {
 
     use test_case::test_case;
 
-    use crate::manifest::de::Ono;
+    use super::Ono;
 
     #[test_case(r##"id:
     fem: ./somewhere/sfx.wav

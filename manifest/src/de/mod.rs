@@ -168,7 +168,7 @@ mod tests {
 
     use test_case::test_case;
 
-    use crate::manifest::de::Subtitle;
+    use super::Subtitle;
 
     #[test_case(r##"subtitle: "hello world""## ; "implicit subtitle")]
     #[test_case(r##"subtitle:

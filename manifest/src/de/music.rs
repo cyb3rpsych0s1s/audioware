@@ -18,7 +18,7 @@ mod tests {
 
     use test_case::test_case;
 
-    use crate::manifest::de::Music;
+    use super::Music;
 
     #[test_case(r##"new_intro: ./somewhere/music.wav"## ; "simple music")]
     fn music(yaml: &str) {

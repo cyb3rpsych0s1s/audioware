@@ -1,5 +1,5 @@
 use crate::{
-    manifest::error::{BinaryLocationSnafu, NoFolderSnafu},
+    error::{BinaryLocationSnafu, NoFolderSnafu},
     utils::macros::ok_or_return,
 };
 use rayon::iter::ParallelIterator;

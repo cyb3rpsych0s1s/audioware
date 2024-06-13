@@ -26,7 +26,7 @@ mod tests {
 
     use test_case::test_case;
 
-    use crate::manifest::de::Playlist;
+    use super::Playlist;
 
     #[test_case(r##"summer_chill:
     name: "Summer chill"

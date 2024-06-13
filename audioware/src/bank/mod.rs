@@ -3,8 +3,14 @@ use std::{
     time::{Duration, Instant},
 };
 
+use audioware_manifest::{
+    CannotParseManifestSnafu, CannotReadManifestSnafu, DialogLine, Manifest, R6Audioware, REDmod,
+    Settings,
+};
 use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
+use conv::{ensure_music, ensure_ono, ensure_sfx, ensure_voice};
 use either::Either;
+use ensure::ensure_manifest_no_duplicates;
 use error::ensure_no_duplicate_accross_depots;
 use kira::sound::{
     static_sound::{StaticSoundData, StaticSoundSettings},
@@ -16,24 +22,16 @@ use red4ext_rs::types::CName;
 use snafu::ResultExt;
 
 pub mod conflict;
+mod ensure;
 pub mod error;
 pub use error::Error;
+mod conv;
 mod id;
 mod key;
 pub use id::*;
 pub use key::*;
 
-use crate::{
-    bank::error::registry::Error as RegistryError,
-    engine::track::{maybe_tracks, Tracks},
-    manifest::{
-        conv::{ensure_music, ensure_ono, ensure_sfx, ensure_voice},
-        de::{DialogLine, Manifest, Settings},
-        depot::{R6Audioware, REDmod},
-        error::{ensure_manifest_no_duplicates, CannotParseManifestSnafu, CannotReadManifestSnafu},
-    },
-    ok_or_continue,
-};
+use crate::{bank::error::registry::Error as RegistryError, ok_or_continue};
 
 static UNIQUES: OnceCell<HashMap<UniqueKey, StaticSoundData>> = OnceCell::new();
 static GENDERS: OnceCell<HashMap<GenderKey, StaticSoundData>> = OnceCell::new();

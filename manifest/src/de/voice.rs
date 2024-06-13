@@ -156,7 +156,7 @@ impl From<Voice> for AnyVoice {
                     HashMap::with_capacity(dialogs.len());
                 for (k, v) in dialogs.into_iter() {
                     match v {
-                        crate::manifest::de::Dialogs::Different { dialogs } => {
+                        super::Dialogs::Different { dialogs } => {
                             let aud_dialogs = dialogs
                                 .iter()
                                 .map(|(k, v)| {
@@ -182,7 +182,7 @@ impl From<Voice> for AnyVoice {
                             aud.insert(k, aud_dialogs);
                             sub.insert(k, aud_subs);
                         }
-                        crate::manifest::de::Dialogs::Shared { paths, subtitle } => {
+                        super::Dialogs::Shared { paths, subtitle } => {
                             let (fem, male) = (
                                 paths.get(&PlayerGender::Female).unwrap(),
                                 paths.get(&PlayerGender::Male).unwrap(),
@@ -229,7 +229,7 @@ impl From<Voice> for AnyVoice {
 #[cfg(test)]
 mod tests {
     mod unique_dialog {
-        use crate::manifest::de::Voice;
+        use super::super::Voice;
         use std::collections::HashMap;
         use test_case::test_case;
 
@@ -276,7 +276,7 @@ mod tests {
     mod dual_dialog {
         use std::collections::HashMap;
 
-        use crate::manifest::de::Voice;
+        use super::super::Voice;
         use test_case::test_case;
 
         #[test_case(r##"id:

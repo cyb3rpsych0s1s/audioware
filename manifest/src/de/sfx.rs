@@ -46,7 +46,7 @@ mod tests {
 
     use test_case::test_case;
 
-    use crate::manifest::de::Sfx;
+    use super::Sfx;
 
     #[test_case(r##"id: ./somewhere/sfx.wav"## ; "implicit on-demand sfx")]
     #[test_case(r##"id:

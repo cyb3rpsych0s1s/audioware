@@ -1,18 +1,11 @@
 [package]
-name = "audioware"
+name = "audioware-manifest"
 version.workspace = true
 edition.workspace = true
-publish = false
-description = "CP2077 modding tool: allows to play any audio file, without replacement"
-
-[lib]
-crate-type = ["cdylib"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+rust-version.workspace = true
 
 [dependencies]
 audioware-macros.workspace = true
-audioware-manifest.workspace = true
 audioware-mem.workspace = true
 audioware-sys.workspace = true
 either = "1.12.0"
@@ -36,6 +29,3 @@ strum_macros.workspace = true
 test-case = "3.3.1"
 ulid = "1.1.2"
 validator = { version = "0.18.1", features = ["derive"] }
-
-[package.metadata.cargo-machete]
-ignored = ["memoffset", "retour", "strum", "strum_macros"]

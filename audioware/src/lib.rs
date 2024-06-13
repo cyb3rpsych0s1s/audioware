@@ -17,7 +17,6 @@ mod bank;
 mod engine;
 mod error;
 mod hook;
-pub mod manifest;
 mod natives;
 mod state;
 pub mod utils;

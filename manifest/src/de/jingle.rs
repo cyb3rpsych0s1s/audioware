@@ -29,7 +29,7 @@ mod tests {
 
     use test_case::test_case;
 
-    use crate::manifest::de::Jingle;
+    use super::Jingle;
 
     #[test_case(r##"new_jingle: ./somewhere/music.wav"## ; "simple jingle")]
     #[test_case(r##"subtitled_jingle:
