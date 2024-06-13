@@ -1,13 +1,16 @@
+use audioware_core::audioware_dbg;
 use audioware_macros::NativeFunc;
 use red4ext_rs::types::{CName, EntityId};
 
 use crate::hook::address::ON_AUDIOSYSTEM_PLAY_ON_EMITTER;
 
 fn audioware_exists(params: &(CName, EntityId, CName)) -> bool {
-    audioware_core::dbg(format!(
+    audioware_dbg!(
         "AudioSystem::PlayOnEmitter({}, {:?}, {})",
-        params.0, params.1, params.2
-    ));
+        params.0,
+        params.1,
+        params.2
+    );
 
     false
 }

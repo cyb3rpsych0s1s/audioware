@@ -1,16 +1,18 @@
 use crate::natives::update_modulator;
 
 use super::super::address::ON_AUDIOSYSTEM_GLOBAL_PARAMETER;
+use audioware_core::audioware_dbg;
 use audioware_engine::effect::MODULATOR_NAME;
 use audioware_macros::NativeFunc;
 use red4ext_rs::types::CName;
 
 fn audioware_exists((parameter_name, parameter_value): &(CName, f32)) -> bool {
     // SAFETY: logging to CET tends to crash the game
-    audioware_core::dbg(format!(
+    audioware_dbg!(
         "AudioSystem::GlobalParameter({}, {})",
-        parameter_name, parameter_value
-    ));
+        parameter_name,
+        parameter_value
+    );
 
     parameter_name == &CName::new(MODULATOR_NAME)
 }

@@ -1,3 +1,4 @@
+use audioware_core::audioware_dbg;
 use audioware_engine::Engine;
 use audioware_macros::NativeFunc;
 use red4ext_rs::types::{CName, EntityId};
@@ -8,10 +9,12 @@ use super::super::address::ON_AUDIOSYSTEM_PLAY;
 use super::audioware_exists;
 
 pub fn audioware_play((sound_name, entity_id, emitter_name): (CName, EntityId, CName)) {
-    audioware_core::dbg(format!(
+    audioware_dbg!(
         "AudioSystem::Play({}, {:?}, {})",
-        sound_name, entity_id, emitter_name
-    ));
+        sound_name,
+        entity_id,
+        emitter_name
+    );
     safe_call!(Engine::play(
         &sound_name,
         entity_id.maybe(),

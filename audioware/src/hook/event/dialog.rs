@@ -1,4 +1,5 @@
 use super::super::address::{ON_DIALOGLINEEND_EVENT, ON_DIALOGLINE_EVENT, ON_STOPDIALOGLINE_EVENT};
+use audioware_core::audioware_dbg;
 use audioware_macros::NativeHandler;
 use audioware_mem::FromMemory;
 use audioware_sys::interop::audio::{
@@ -20,7 +21,7 @@ pub fn print_event(event: DialogLineEvent) {
         playback_speed_parameter,
         ..
     } = dialog_line;
-    audioware_core::dbg(format!(
+    audioware_dbg!(
         "intercepted {} ({}): {:?}, {}, {}, {}, {}, {}, {}, {}, {}",
         DialogLineEvent::NAME,
         DialogLineEvent::NATIVE_NAME,
@@ -33,7 +34,7 @@ pub fn print_event(event: DialogLineEvent) {
         custom_vo_event,
         seek_time,
         playback_speed_parameter
-    ));
+    );
 }
 
 pub fn print_stop_event(event: StopDialogLine) {
@@ -42,21 +43,21 @@ pub fn print_stop_event(event: StopDialogLine) {
         fade_out,
         ..
     } = event;
-    audioware_core::dbg(format!(
+    audioware_dbg!(
         "intercepted {} ({}): {:?}, {}",
         StopDialogLine::NAME,
         StopDialogLine::NATIVE_NAME,
         string_id,
         fade_out
-    ));
+    );
 }
 
 pub fn print_event_end(_: DialogLineEndEvent) {
-    audioware_core::dbg(format!(
+    audioware_dbg!(
         "intercepted {} ({})",
         DialogLineEndEvent::NAME,
         DialogLineEndEvent::NATIVE_NAME
-    ));
+    );
 }
 
 #[derive(NativeHandler)]

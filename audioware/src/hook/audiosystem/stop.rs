@@ -1,3 +1,4 @@
+use audioware_core::audioware_dbg;
 use audioware_engine::Engine;
 use audioware_macros::NativeFunc;
 use red4ext_rs::types::{CName, EntityId};
@@ -8,10 +9,12 @@ use super::super::address::ON_AUDIOSYSTEM_STOP;
 use super::audioware_exists;
 
 pub fn audioware_stop(params: (CName, EntityId, CName)) {
-    audioware_core::dbg(format!(
+    audioware_dbg!(
         "AudioSystem::Stop({}, {:?}, {})",
-        params.0, params.1, params.2
-    ));
+        params.0,
+        params.1,
+        params.2
+    );
     let (sound_name, entity_id, _) = params;
     if let Some(entity_id) = entity_id.maybe() {
         Engine::stop_by_cname_for_entity(&sound_name, entity_id, None)

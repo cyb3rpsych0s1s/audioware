@@ -1,12 +1,16 @@
 use super::super::address::ON_AUDIOSYSTEM_PARAMETER;
+use audioware_core::audioware_dbg;
 use audioware_macros::NativeFunc;
 use red4ext_rs::types::{CName, EntityId};
 
 fn audioware_exists(params: &(CName, f32, EntityId, CName)) -> bool {
-    audioware_core::dbg(format!(
+    audioware_dbg!(
         "AudioSystem::Parameter({}, {}, {:?}, {})",
-        params.0, params.1, params.2, params.3
-    ));
+        params.0,
+        params.1,
+        params.2,
+        params.3
+    );
 
     false
 }
