@@ -1,6 +1,6 @@
+use audioware_core::{SpokenLocale, WrittenLocale};
 use audioware_sys::interop::entity::Entity;
 use audioware_sys::interop::gender::PlayerGender;
-use audioware_sys::interop::locale::Locale;
 use destination::output_destination;
 use effect::IMMEDIATELY;
 use either::Either;
@@ -46,8 +46,8 @@ impl Engine {
         entity_id: Option<&EntityId>,
         emitter_name: Option<&CName>,
     ) -> Result<(), Error> {
-        let (gender, locale, _) = Self::get_player_states(entity_id)?;
-        let id = Banks::exist(sound_name, &locale, gender.as_ref()).context(BankRegistrySnafu)?;
+        let (gender, spoken, _) = Self::get_player_states(entity_id)?;
+        let id = Banks::exist(sound_name, &spoken, gender.as_ref()).context(BankRegistrySnafu)?;
         let destination = output_destination(entity_id, emitter_name, false)?;
         let data = Banks::data(id).map_either(
             |x| x.output_destination(destination),
@@ -63,8 +63,8 @@ impl Engine {
         entity_id: &EntityId,
         _emitter_name: &CName,
     ) -> Result<(), Error> {
-        let (gender, locale, _) = Self::get_player_states(Some(entity_id))?;
-        let id = Banks::exist(sound_name, &locale, gender.as_ref()).context(BankRegistrySnafu)?;
+        let (gender, spoken, _) = Self::get_player_states(Some(entity_id))?;
+        let id = Banks::exist(sound_name, &spoken, gender.as_ref()).context(BankRegistrySnafu)?;
         let data = Banks::data(id);
         let emitters = maybe_scene_entities()?;
         if let Some(emitter) = emitters.get(&entity_id.into()) {
@@ -159,7 +159,7 @@ impl Engine {
 
     fn get_player_states(
         entity_id: Option<&EntityId>,
-    ) -> Result<(Option<PlayerGender>, Locale, Locale), Error> {
+    ) -> Result<(Option<PlayerGender>, SpokenLocale, WrittenLocale), Error> {
         let spoken = *spoken_language()
             .try_read()
             .map_err(audioware_core::Error::from)?;

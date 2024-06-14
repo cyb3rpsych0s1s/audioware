@@ -2,8 +2,8 @@
 
 use std::sync::RwLock;
 
-use audioware_core::{Error, InvalidLocaleSnafu};
-use audioware_sys::interop::{gender::PlayerGender, locale::Locale};
+use audioware_core::{Error, InvalidLocaleSnafu, SpokenLocale, WrittenLocale};
+use audioware_sys::interop::gender::PlayerGender;
 use once_cell::sync::OnceCell;
 use red4ext_rs::types::CName;
 use snafu::ResultExt;
@@ -13,13 +13,13 @@ pub fn gender() -> &'static RwLock<PlayerGender> {
     INSTANCE.get_or_init(Default::default)
 }
 
-pub fn spoken_language() -> &'static RwLock<Locale> {
-    static INSTANCE: OnceCell<RwLock<Locale>> = OnceCell::new();
+pub fn spoken_language() -> &'static RwLock<SpokenLocale> {
+    static INSTANCE: OnceCell<RwLock<SpokenLocale>> = OnceCell::new();
     INSTANCE.get_or_init(Default::default)
 }
 
-pub fn written_language() -> &'static RwLock<Locale> {
-    static INSTANCE: OnceCell<RwLock<Locale>> = OnceCell::new();
+pub fn written_language() -> &'static RwLock<WrittenLocale> {
+    static INSTANCE: OnceCell<RwLock<WrittenLocale>> = OnceCell::new();
     INSTANCE.get_or_init(Default::default)
 }
 
@@ -29,8 +29,8 @@ pub fn update_gender(gender: PlayerGender) -> Result<(), Error> {
 }
 
 pub fn update_locales(spoken: CName, written: CName) -> Result<(), Error> {
-    let spoken = Locale::try_from(spoken).context(InvalidLocaleSnafu)?;
-    let written = Locale::try_from(written).context(InvalidLocaleSnafu)?;
+    let spoken = SpokenLocale::try_from(spoken).context(InvalidLocaleSnafu)?;
+    let written = WrittenLocale::try_from(written).context(InvalidLocaleSnafu)?;
     *spoken_language().try_write()? = spoken;
     *written_language().try_write()? = written;
     Ok(())

@@ -58,7 +58,7 @@ impl Banks {
     }
     pub fn exist<'a>(
         name: &CName,
-        locale: &Locale,
+        spoken: &Locale,
         gender: Option<&PlayerGender>,
     ) -> Result<&'a Id, RegistryError> {
         let mut maybe_missing_locale = false;
@@ -86,7 +86,7 @@ impl Banks {
                 if let Some(LocaleKey(k, l)) = key.as_locale() {
                     if k == name {
                         maybe_missing_locale = true;
-                        if l == locale {
+                        if l == spoken {
                             return Ok(id);
                         }
                     }
@@ -94,7 +94,7 @@ impl Banks {
                 if let Some(BothKey(k, l, g)) = key.as_both() {
                     if k == name {
                         maybe_missing_locale = true;
-                        if l == locale {
+                        if l == spoken {
                             if gender.is_none() {
                                 return Err(RegistryError::RequireGender {
                                     cname: name.clone(),
@@ -111,7 +111,7 @@ impl Banks {
         if maybe_missing_locale {
             return Err(RegistryError::MissingLocale {
                 cname: name.clone(),
-                locale: *locale,
+                locale: *spoken,
             });
         }
         Err(RegistryError::NotFound {
