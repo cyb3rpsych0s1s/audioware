@@ -1,11 +1,11 @@
 #![feature(arbitrary_self_types)]
 
+use audioware_engine::Engine;
 use audioware_mem::Hook;
 #[allow(unused_imports)]
 use audioware_mem::Intercept;
 
-use bank::Banks;
-use engine::Engine;
+use audioware_bank::Banks;
 use hook::*;
 use red4ext_rs::{
     define_trait_plugin,
@@ -13,14 +13,9 @@ use red4ext_rs::{
     register_function,
 };
 
-mod bank;
-mod engine;
-mod error;
 mod hook;
-pub mod manifest;
 mod natives;
-mod state;
-pub mod utils;
+mod utils;
 
 struct Audioware;
 
@@ -96,8 +91,8 @@ impl Plugin for Audioware {
 
     fn unload() {
         red4ext_rs::info!("on unload audioware");
-        crate::engine::Engine::update_game_state(state::game::State::Unload);
-        crate::engine::Engine::stop(None);
+        audioware_engine::Engine::update_game_state(audioware_engine::State::Unload);
+        audioware_engine::Engine::stop(None);
 
         HookAudioSystemPlay::unload();
         HookAudioSystemPlayOnEmitter::unload();

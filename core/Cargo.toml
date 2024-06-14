@@ -1,0 +1,11 @@
+[package]
+name = "audioware-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+audioware-sys.workspace = true
+once_cell.workspace = true
+red4ext-rs.workspace = true
+snafu.workspace = true

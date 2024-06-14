@@ -18,7 +18,7 @@ pub use switch::HookAudioSystemSwitch;
 
 use red4ext_rs::types::{CName, EntityId};
 
-use crate::bank::Banks;
+use audioware_bank::Banks;
 
 pub fn audioware_exists((sound_name, ..): &(CName, EntityId, CName)) -> bool {
     Banks::exists(sound_name)

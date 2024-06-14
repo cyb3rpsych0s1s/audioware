@@ -1,12 +1,10 @@
 use super::super::address::ON_AUDIOSYSTEM_ADD_TRIGGER_EFFECT;
+use audioware_core::audioware_dbg;
 use audioware_macros::NativeFunc;
 use red4ext_rs::types::CName;
 
 fn audioware_exists(params: &(CName, CName)) -> bool {
-    crate::utils::dbg(format!(
-        "AudioSystem::AddTriggerEffect({}, {})",
-        params.0, params.1
-    ));
+    audioware_dbg!("AudioSystem::AddTriggerEffect({}, {})", params.0, params.1);
 
     false
 }

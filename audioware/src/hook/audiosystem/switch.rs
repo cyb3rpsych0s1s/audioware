@@ -1,11 +1,11 @@
-use super::super::address::ON_AUDIOSYSTEM_SWITCH;
 use crate::{
-    bank::Banks,
-    engine::Engine,
-    hook::Maybe,
     natives::{delegate_play, delegate_stop},
-    safe_call,
+    safe_call, Maybe,
 };
+
+use super::super::address::ON_AUDIOSYSTEM_SWITCH;
+use audioware_bank::Banks;
+use audioware_engine::Engine;
 use audioware_mem::{load_native_func, Hook};
 use red4ext_rs::types::{CName, EntityId};
 
@@ -43,13 +43,42 @@ unsafe impl ::audioware_mem::DetourFunc for HookAudioSystemSwitch {
     type Inputs = (CName, CName, EntityId, CName);
     unsafe fn from_frame(frame: *mut red4ext_rs::ffi::CStackFrame) -> Self::Inputs {
         let mut arg_0: CName = <CName>::default();
-        unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut arg_0)) };
+        unsafe {
+            ::red4ext_rs::ffi::get_parameter(
+                frame,
+                ::std::mem::transmute::<&mut red4ext_rs::prelude::CName, red4ext_rs::types::VoidPtr>(
+                    &mut arg_0,
+                ),
+            )
+        };
         let mut arg_1: CName = <CName>::default();
-        unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut arg_1)) };
+        unsafe {
+            ::red4ext_rs::ffi::get_parameter(
+                frame,
+                ::std::mem::transmute::<&mut red4ext_rs::prelude::CName, red4ext_rs::types::VoidPtr>(
+                    &mut arg_1,
+                ),
+            )
+        };
         let mut arg_2: EntityId = <EntityId>::default();
-        unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut arg_2)) };
+        unsafe {
+            ::red4ext_rs::ffi::get_parameter(
+                frame,
+                ::std::mem::transmute::<
+                    &mut red4ext_rs::prelude::EntityId,
+                    red4ext_rs::types::VoidPtr,
+                >(&mut arg_2),
+            )
+        };
         let mut arg_3: CName = <CName>::default();
-        unsafe { ::red4ext_rs::ffi::get_parameter(frame, ::std::mem::transmute(&mut arg_3)) };
+        unsafe {
+            ::red4ext_rs::ffi::get_parameter(
+                frame,
+                ::std::mem::transmute::<&mut red4ext_rs::prelude::CName, red4ext_rs::types::VoidPtr>(
+                    &mut arg_3,
+                ),
+            )
+        };
         (arg_0, arg_1, arg_2, arg_3)
     }
 }

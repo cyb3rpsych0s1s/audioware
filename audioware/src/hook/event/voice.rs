@@ -1,4 +1,5 @@
 use super::super::address::{ON_VOICEPLAYED_EVENT, ON_VOICE_EVENT};
+use audioware_core::audioware_dbg;
 use audioware_macros::NativeHandler;
 use audioware_mem::FromMemory;
 use audioware_sys::interop::audio::{VoiceEvent, VoicePlayedEvent};
@@ -12,7 +13,7 @@ pub fn print_event(event: VoiceEvent) {
         is_v,
         ..
     } = event;
-    crate::utils::dbg(format!(
+    audioware_dbg!(
         "intercepted {} ({}): {}, {}, {}, {}",
         VoiceEvent::NAME,
         VoiceEvent::NATIVE_NAME,
@@ -20,7 +21,7 @@ pub fn print_event(event: VoiceEvent) {
         grunt_type,
         grunt_interrupt_mode,
         is_v
-    ));
+    );
 }
 
 pub fn print_event_played(event: VoicePlayedEvent) {
@@ -30,14 +31,14 @@ pub fn print_event_played(event: VoicePlayedEvent) {
         is_v,
         ..
     } = event;
-    crate::utils::dbg(format!(
+    audioware_dbg!(
         "intercepted {} ({}): {}, {}, {}",
         VoicePlayedEvent::NAME,
         VoicePlayedEvent::NATIVE_NAME,
         event_name,
         grunt_type,
         is_v
-    ));
+    );
 }
 
 #[derive(NativeHandler)]
