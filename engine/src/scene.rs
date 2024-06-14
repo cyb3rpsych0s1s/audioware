@@ -5,15 +5,18 @@ use std::{
 
 use audioware_core::UninitializedSnafu;
 use glam::{Quat, Vec3};
-use kira::spatial::{
-    emitter::EmitterHandle,
-    listener::{ListenerHandle, ListenerSettings},
-    scene::{SpatialSceneHandle, SpatialSceneSettings},
+use kira::{
+    manager::AudioManager,
+    spatial::{
+        emitter::EmitterHandle,
+        listener::{ListenerHandle, ListenerSettings},
+        scene::{SpatialSceneHandle, SpatialSceneSettings},
+    },
 };
 use once_cell::sync::OnceCell;
 use snafu::OptionExt;
 
-use super::{error::Error, id::SoundEntityId, manager::audio_manager, track::maybe_tracks};
+use super::{error::Error, id::SoundEntityId, track::maybe_tracks};
 
 pub static SCENE: OnceCell<Scene> = OnceCell::new();
 
@@ -39,11 +42,7 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn setup() -> Result<(), Error> {
-        let mut manager = audio_manager()
-            .lock()
-            .map_err(|e| Error::Internal { source: e.into() })?;
-
+    pub fn setup(manager: &mut AudioManager) -> Result<(), Error> {
         let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
         let v = scene.add_listener(
             Vec3::ZERO,

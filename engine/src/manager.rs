@@ -18,8 +18,6 @@ use rayon::iter::ParallelBridge;
 use rayon::iter::ParallelIterator;
 use red4ext_rs::types::{CName, EntityId};
 
-use crate::modulator::{Parameter, VolumeModulator};
-
 use super::id::HandleId;
 
 static STATICS: OnceCell<Mutex<HashMap<HandleId, StaticSoundHandle>>> = OnceCell::new();

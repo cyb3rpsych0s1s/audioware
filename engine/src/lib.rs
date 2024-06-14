@@ -43,9 +43,10 @@ pub use state::player::*;
 pub struct Engine;
 impl Engine {
     pub fn setup() -> Result<(), Error> {
+        let mut manager = audio_manager().lock()?;
         // SAFETY: initialization order matters
-        Tracks::setup()?;
-        Scene::setup()?;
+        Tracks::setup(&mut manager)?;
+        Scene::setup(&mut manager)?;
         Self::update_game_state(State::Load);
         Ok(())
     }

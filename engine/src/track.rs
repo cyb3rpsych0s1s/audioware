@@ -1,14 +1,7 @@
 use std::sync::Mutex;
 
-use kira::{
-    effect::{
-        filter::{FilterBuilder, FilterHandle, FilterMode},
-        reverb::ReverbBuilder,
-    },
-    manager::AudioManager,
-    modulator::tweener::TweenerBuilder,
-    track::{TrackBuilder, TrackHandle, TrackRoutes},
-};
+use ambience::AmbienceTrack;
+use kira::{manager::AudioManager, track::TrackHandle};
 use once_cell::sync::OnceCell;
 use snafu::OptionExt;
 
@@ -16,13 +9,9 @@ use audioware_core::UninitializedSnafu;
 
 use crate::modulator::{Parameter, VolumeModulator};
 
-use super::{
-    effect::{
-        HighPass, LowPass, EQ, EQ_HIGH_PASS_PHONE_CUTOFF, EQ_LOW_PASS_PHONE_CUTOFF, EQ_RESONANCE,
-    },
-    error::Error,
-    manager::audio_manager,
-};
+mod ambience;
+
+use super::{effect::EQ, error::Error};
 
 static TRACKS: OnceCell<Tracks> = OnceCell::new();
 
@@ -52,7 +41,9 @@ pub struct Holocall {
 }
 
 impl Tracks {
-    pub fn setup() -> Result<(), Error> {
+    pub fn setup(manager: &mut AudioManager) -> Result<(), Error> {
+        VolumeModulator::init(manager)?;
+        AmbienceTrack::init(manager)?;
         Ok(())
     }
 }
