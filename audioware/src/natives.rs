@@ -15,8 +15,8 @@ pub fn update_game_state(state: State) {
     audioware_engine::Engine::update_game_state(state);
 }
 
-pub fn update_modulator(value: f32) -> bool {
-    ok_or_return!(Engine::update_modulator(value), false)
+pub fn update_volume(value: f32) -> bool {
+    ok_or_return!(Engine::update_volume(value), false)
 }
 
 pub fn update_player_gender(gender: PlayerGender) {

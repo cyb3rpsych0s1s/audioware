@@ -45,8 +45,8 @@ impl<'a, T> From<TryLockError<MutexGuard<'a, T>>> for Error {
     }
 }
 
-impl<'a, T> From<PoisonError<MutexGuard<'a, T>>> for Error {
-    fn from(_: PoisonError<MutexGuard<'a, T>>) -> Self {
+impl<T> From<PoisonError<T>> for Error {
+    fn from(_: PoisonError<T>) -> Self {
         Self::Contention {
             which: std::any::type_name::<T>(),
         }

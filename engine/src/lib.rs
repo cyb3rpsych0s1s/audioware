@@ -5,13 +5,17 @@ use destination::output_destination;
 use effect::IMMEDIATELY;
 use either::Either;
 use id::{HandleId, SoundEntityId};
-use kira::sound::{
-    static_sound::{StaticSoundData, StaticSoundHandle},
-    streaming::{StreamingSoundData, StreamingSoundHandle},
-    FromFileError,
-};
 use kira::tween::Tween;
-use manager::{audio_manager, audio_modulator, maybe_statics, maybe_streams};
+use kira::{
+    sound::{
+        static_sound::{StaticSoundData, StaticSoundHandle},
+        streaming::{StreamingSoundData, StreamingSoundHandle},
+        FromFileError,
+    },
+    Volume,
+};
+use manager::{audio_manager, maybe_statics, maybe_streams};
+use modulator::Parameter;
 use red4ext_rs::types::{CName, EntityId, Ref};
 use scene::{maybe_scene_entities, Scene};
 use snafu::ResultExt;
@@ -25,10 +29,14 @@ mod error;
 pub use error::*;
 mod id;
 mod manager;
+mod modulator;
 mod scene;
 pub mod track;
 pub use manager::Manage;
 mod state;
+pub use modulator::GlobalParameter;
+pub use modulator::GlobalParameters;
+pub use modulator::VolumeModulator;
 pub use state::game::*;
 pub use state::player::*;
 
@@ -136,7 +144,7 @@ impl Engine {
         }
     }
 
-    pub fn update_modulator(value: f32) -> Result<bool, Error> {
+    pub fn update_volume(value: f32) -> Result<bool, Error> {
         if value < 0. {
             return Err(Error::InvalidModulatorValue {
                 value,
@@ -149,10 +157,7 @@ impl Engine {
                 reason: "modulator value must be lower or equals to 100.0",
             });
         }
-        let mut modulator = audio_modulator()
-            .try_lock()
-            .map_err(audioware_core::Error::from)?;
-        modulator.set(value as f64, IMMEDIATELY);
+        VolumeModulator::update(Volume::Amplitude(value as f64), IMMEDIATELY)?;
         red4ext_rs::info!("update frequencies modulator: {value}");
         Ok(true)
     }

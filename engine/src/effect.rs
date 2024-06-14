@@ -3,8 +3,6 @@ use std::time::Duration;
 use kira::{effect::filter::FilterHandle, tween::Tween};
 use red4ext_rs::conv::NativeRepr;
 
-pub const MODULATOR_NAME: &str = "audioware_frequencies";
-
 pub const IMMEDIATELY: Tween = Tween {
     start_time: kira::StartTime::Immediate,
     duration: Duration::ZERO,

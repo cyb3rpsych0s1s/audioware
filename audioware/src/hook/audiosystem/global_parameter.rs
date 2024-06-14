@@ -1,8 +1,8 @@
-use crate::natives::update_modulator;
+use crate::natives::update_volume;
 
 use super::super::address::ON_AUDIOSYSTEM_GLOBAL_PARAMETER;
 use audioware_core::audioware_dbg;
-use audioware_engine::effect::MODULATOR_NAME;
+use audioware_engine::{GlobalParameter, GlobalParameters, VolumeModulator};
 use audioware_macros::NativeFunc;
 use red4ext_rs::types::CName;
 
@@ -14,12 +14,12 @@ fn audioware_exists((parameter_name, parameter_value): &(CName, f32)) -> bool {
         parameter_value
     );
 
-    parameter_name == &CName::new(MODULATOR_NAME)
+    GlobalParameters::contains(parameter_name).unwrap_or(false)
 }
 
 fn audioware_global_parameter((parameter_name, parameter_value): (CName, f32)) {
-    if parameter_name == CName::new(MODULATOR_NAME) {
-        update_modulator(parameter_value);
+    if parameter_name == VolumeModulator::name() {
+        update_volume(parameter_value);
     }
 }
 
