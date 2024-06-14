@@ -41,6 +41,9 @@ pub enum Error {
     ResourceLimitReached {
         source: kira::ResourceLimitReached,
     },
+    CannotCreateAudioManager {
+        source: kira::manager::backend::cpal::Error,
+    },
 }
 
 impl From<audioware_core::Error> for self::Error {
@@ -69,8 +72,14 @@ impl From<ResourceLimitReached> for Error {
 
 impl<'a, T> From<PoisonError<MutexGuard<'a, T>>> for Error {
     fn from(value: PoisonError<MutexGuard<'a, T>>) -> Self {
-        Error::Internal {
+        Self::Internal {
             source: value.into(),
         }
+    }
+}
+
+impl From<kira::manager::backend::cpal::Error> for Error {
+    fn from(source: kira::manager::backend::cpal::Error) -> Self {
+        Self::CannotCreateAudioManager { source }
     }
 }
