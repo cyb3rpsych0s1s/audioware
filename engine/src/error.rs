@@ -1,4 +1,4 @@
-use std::sync::{MutexGuard, PoisonError};
+use std::sync::{MutexGuard, PoisonError, RwLockReadGuard, RwLockWriteGuard, TryLockError};
 
 use audioware_sys::interop::entity::Display;
 use kira::{manager::error::PlaySoundError, sound::FromFileError, ResourceLimitReached};
@@ -70,16 +70,32 @@ impl From<ResourceLimitReached> for Error {
     }
 }
 
-impl<'a, T> From<PoisonError<MutexGuard<'a, T>>> for Error {
-    fn from(value: PoisonError<MutexGuard<'a, T>>) -> Self {
-        Self::Internal {
-            source: value.into(),
-        }
-    }
-}
-
 impl From<kira::manager::backend::cpal::Error> for Error {
     fn from(source: kira::manager::backend::cpal::Error) -> Self {
         Self::CannotCreateAudioManager { source }
+    }
+}
+
+impl<'a, T> From<TryLockError<RwLockWriteGuard<'a, T>>> for Error {
+    fn from(e: TryLockError<RwLockWriteGuard<'a, T>>) -> Self {
+        Self::Internal { source: e.into() }
+    }
+}
+
+impl<'a, T> From<TryLockError<RwLockReadGuard<'a, T>>> for Error {
+    fn from(e: TryLockError<RwLockReadGuard<'a, T>>) -> Self {
+        Self::Internal { source: e.into() }
+    }
+}
+
+impl<'a, T> From<TryLockError<MutexGuard<'a, T>>> for Error {
+    fn from(e: TryLockError<MutexGuard<'a, T>>) -> Self {
+        Self::Internal { source: e.into() }
+    }
+}
+
+impl<T> From<PoisonError<T>> for Error {
+    fn from(e: PoisonError<T>) -> Self {
+        Self::Internal { source: e.into() }
     }
 }
