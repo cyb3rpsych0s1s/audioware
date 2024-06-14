@@ -29,9 +29,8 @@ static STREAMS: OnceCell<Mutex<HashMap<HandleId, StreamingSoundHandle<FromFileEr
 pub fn audio_manager() -> &'static Mutex<AudioManager<DefaultBackend>> {
     static INSTANCE: OnceCell<Mutex<AudioManager<DefaultBackend>>> = OnceCell::new();
     INSTANCE.get_or_init(|| {
-        let mut manager =
+        let manager =
             AudioManager::new(AudioManagerSettings::default()).expect("instantiate audio manager");
-        VolumeModulator::init(&mut manager);
         Mutex::new(manager)
     })
 }

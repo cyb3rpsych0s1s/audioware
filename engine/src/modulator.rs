@@ -2,7 +2,7 @@ mod volume;
 
 use std::sync::{Mutex, MutexGuard};
 
-use audioware_core::Error;
+use crate::Error;
 use kira::{effect::EffectBuilder, manager::AudioManager, tween::Tween};
 use once_cell::sync::OnceCell;
 use red4ext_rs::types::CName;
@@ -13,10 +13,7 @@ static MODULATORS: OnceCell<Mutex<Vec<CName>>> = OnceCell::new();
 pub struct GlobalParameters;
 impl GlobalParameters {
     fn try_lock<'a>() -> Result<MutexGuard<'a, Vec<CName>>, Error> {
-        MODULATORS
-            .get_or_init(Default::default)
-            .try_lock()
-            .map_err(Error::from)
+        Ok(MODULATORS.get_or_init(Default::default).try_lock()?)
     }
     fn register(name: &CName) -> Result<(), Error> {
         let mut modulators = Self::try_lock()?;
@@ -36,7 +33,7 @@ impl GlobalParameters {
 
 pub(super) trait Parameter {
     type Value;
-    fn init(manager: &mut AudioManager);
+    fn init(manager: &mut AudioManager) -> Result<(), Error>;
     fn effect() -> Result<impl EffectBuilder, Error>;
     fn update(value: Self::Value, tween: Tween) -> Result<bool, Error>;
 }

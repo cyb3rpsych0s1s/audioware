@@ -5,6 +5,8 @@ use kira::{
         filter::{FilterBuilder, FilterHandle, FilterMode},
         reverb::ReverbBuilder,
     },
+    manager::AudioManager,
+    modulator::tweener::TweenerBuilder,
     track::{TrackBuilder, TrackHandle, TrackRoutes},
 };
 use once_cell::sync::OnceCell;
@@ -51,63 +53,6 @@ pub struct Holocall {
 
 impl Tracks {
     pub fn setup() -> Result<(), Error> {
-        let mut manager = audio_manager().lock()?;
-        let reverb = manager.add_sub_track({
-            let mut builder = TrackBuilder::new();
-            builder.add_effect(ReverbBuilder::new().mix(1.0));
-            builder
-        })?;
-        let holocall_lowpass: FilterHandle;
-        let holocall_highpass: FilterHandle;
-        let main = manager.add_sub_track(
-            {
-                let mut builder = TrackBuilder::new();
-                builder.add_effect(VolumeModulator::effect()?);
-                builder
-            }
-            .routes(TrackRoutes::new().with_route(&reverb, 0.)),
-        )?;
-        let holocall = manager.add_sub_track({
-            let mut builder = TrackBuilder::new();
-            holocall_lowpass = builder.add_effect(
-                FilterBuilder::default()
-                    .cutoff(EQ_LOW_PASS_PHONE_CUTOFF)
-                    .resonance(EQ_RESONANCE),
-            );
-            holocall_highpass = builder.add_effect(
-                FilterBuilder::default()
-                    .mode(FilterMode::HighPass)
-                    .cutoff(EQ_HIGH_PASS_PHONE_CUTOFF)
-                    .resonance(EQ_RESONANCE),
-            );
-            builder
-        })?;
-        let vocal =
-            manager.add_sub_track(TrackBuilder::new().routes(TrackRoutes::parent(&main)))?;
-        let mental =
-            manager.add_sub_track(TrackBuilder::new().routes(TrackRoutes::parent(&main)))?;
-        let environmental =
-            manager.add_sub_track(TrackBuilder::new().routes(TrackRoutes::parent(&main)))?;
-        TRACKS
-            .set(Tracks {
-                reverb,
-                v: V {
-                    main,
-                    vocal,
-                    mental,
-                    environmental,
-                },
-                holocall: Holocall {
-                    main: holocall,
-                    eq: Mutex::new(EQ {
-                        lowpass: LowPass(holocall_lowpass),
-                        highpass: HighPass(holocall_highpass),
-                    }),
-                },
-            })
-            .map_err(|_| Error::Internal {
-                source: audioware_core::Error::CannotSet { which: "tracks" },
-            })?;
         Ok(())
     }
 }

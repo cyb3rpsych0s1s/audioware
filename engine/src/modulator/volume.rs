@@ -3,6 +3,7 @@ use std::sync::{Mutex, MutexGuard};
 use audioware_core::{Error, UninitializedSnafu};
 use kira::{
     effect::{volume_control::VolumeControlBuilder, EffectBuilder},
+    manager::AudioManager,
     modulator::tweener::{TweenerBuilder, TweenerHandle},
     tween::{ModulatorMapping, Tween, Value},
     Volume,
@@ -44,19 +45,18 @@ impl GlobalParameter for VolumeModulator {
 }
 impl Parameter for VolumeModulator {
     type Value = Volume;
-    fn init(manager: &mut kira::manager::AudioManager) {
-        let handle = manager
-            .add_modulator(TweenerBuilder { initial_value: 50. })
-            .expect("instantiate volume");
+    fn init(manager: &mut AudioManager) -> Result<(), crate::Error> {
+        let handle = manager.add_modulator(TweenerBuilder { initial_value: 50. })?;
         Self::set(handle);
+        Ok(())
     }
 
-    fn update(value: Volume, tween: Tween) -> Result<bool, Error> {
+    fn update(value: Volume, tween: Tween) -> Result<bool, crate::Error> {
         Self::try_lock()?.set(value.as_decibels(), tween);
         Ok(true)
     }
 
-    fn effect() -> Result<impl EffectBuilder, Error> {
+    fn effect() -> Result<impl EffectBuilder, crate::Error> {
         Ok(VolumeControlBuilder::new(Value::from_modulator(
             &*Self::try_lock()?,
             ModulatorMapping {
