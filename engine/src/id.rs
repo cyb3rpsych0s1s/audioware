@@ -1,5 +1,6 @@
 use std::hash::Hash;
 
+use audioware_macros::Repr;
 use audioware_sys::interop::{
     entity::{find_entity_by_id, Entity},
     game::get_game_instance,
@@ -12,25 +13,13 @@ use audioware_bank::{Id, Key};
 
 use super::error::CannotFindEntitySnafu;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Repr)]
 #[repr(transparent)]
-pub struct EmitterId(pub EntityId);
+pub struct EmitterId(EntityId);
 
 impl From<&EntityId> for EmitterId {
     fn from(value: &EntityId) -> Self {
         Self(value.clone())
-    }
-}
-
-impl Hash for EmitterId {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        u64::from(self.0.clone()).hash(state);
-    }
-}
-
-impl PartialEq<EntityId> for EmitterId {
-    fn eq(&self, other: &EntityId) -> bool {
-        self.0.eq(other)
     }
 }
 
