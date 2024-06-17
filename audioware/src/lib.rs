@@ -60,6 +60,18 @@ impl Plugin for Audioware {
             "Audioware.AudiowareTrackStop",
             crate::natives::audioware_track_stop
         );
+        register_function!(
+            "Audioware.AudiowareAddTrack",
+            crate::natives::audioware_add_track
+        );
+        register_function!(
+            "Audioware.AudiowareRemoveTrack",
+            crate::natives::audioware_remove_track
+        );
+        register_function!(
+            "Audioware.AudiowarePlayOnTrack",
+            crate::natives::audioware_play_on_track
+        );
     }
 
     fn post_register() {

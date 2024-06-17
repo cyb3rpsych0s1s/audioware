@@ -1,19 +1,30 @@
-use std::sync::Mutex;
+use std::{collections::HashMap, hash::Hash, sync::Mutex};
 
 use ambience::AmbienceTrack;
 use kira::{manager::AudioManager, track::TrackHandle};
 use once_cell::sync::OnceCell;
+use red4ext_rs::{conv::FromRepr, types::CName};
 use snafu::OptionExt;
 
 use audioware_core::UninitializedSnafu;
 
-use crate::modulator::{Parameter, VolumeModulator};
+use crate::{
+    modulator::{Parameter, VolumeModulator},
+    utils::typed_cname,
+};
 
 mod ambience;
 
 use super::{effect::EQ, error::Error};
 
 static TRACKS: OnceCell<Tracks> = OnceCell::new();
+
+typed_cname!(TrackName);
+
+pub fn maybe_custom_tracks() -> &'static Mutex<HashMap<TrackName, TrackHandle>> {
+    static INSTANCE: OnceCell<Mutex<HashMap<TrackName, TrackHandle>>> = OnceCell::new();
+    INSTANCE.get_or_init(Default::default)
+}
 
 #[inline(always)]
 pub fn maybe_tracks<'cell>() -> Result<&'cell Tracks, Error> {

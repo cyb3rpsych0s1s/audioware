@@ -2,7 +2,10 @@ module Audioware
 
 private native func StopEngine() -> Void;
 
+private native func AudiowarePlayOnTrack(eventName: CName, trackName: CName, entityID: EntityID, emitterName: CName, tween: ref<AudiowareTween>) -> Void;
 private native func AudiowareTrackStop(eventName: CName, entityID: EntityID, emitterName: CName, tween: ref<AudiowareTween>) -> Void;
+private native func AudiowareAddTrack(trackName: CName) -> Void;
+private native func AudiowareRemoveTrack(trackName: CName) -> Void;
 
 enum EngineState {
     Load = 0,

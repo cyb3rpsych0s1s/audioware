@@ -5,7 +5,9 @@ use destination::output_destination;
 use effect::IMMEDIATELY;
 use either::Either;
 use id::{HandleId, SoundEntityId};
+use kira::track::TrackBuilder;
 use kira::tween::Tween;
+use kira::OutputDestination;
 use kira::{
     sound::{
         static_sound::{StaticSoundData, StaticSoundHandle},
@@ -19,7 +21,7 @@ use modulator::Parameter;
 use red4ext_rs::types::{CName, EntityId, Ref};
 use scene::{maybe_scene_entities, Scene};
 use snafu::ResultExt;
-use track::Tracks;
+use track::{maybe_custom_tracks, maybe_tracks, TrackName, Tracks};
 
 use audioware_bank::{Banks, Id};
 
@@ -39,6 +41,7 @@ pub use modulator::GlobalParameters;
 pub use modulator::VolumeModulator;
 pub use state::game::*;
 pub use state::player::*;
+mod utils;
 
 pub struct Engine;
 impl Engine {
@@ -50,6 +53,15 @@ impl Engine {
         Self::update_game_state(State::Load);
         Ok(())
     }
+
+    pub fn another_play(
+        sound_name: &CName,
+        destination: Either<CName, EntityId>,
+        emitter_name: Option<&CName>,
+    ) -> Result<(), Error> {
+        todo!()
+    }
+
     pub fn play(
         sound_name: &CName,
         entity_id: Option<&EntityId>,
@@ -93,6 +105,28 @@ impl Engine {
             Self::store_either(id, Some(entity_id), handle)?;
         }
         Ok(())
+    }
+
+    pub fn play_on_track(
+        sound_name: &CName,
+        track_name: &TrackName,
+        entity_id: Option<&EntityId>,
+        emitter_name: Option<&CName>,
+        tween: Option<Tween>,
+    ) -> Result<(), Error> {
+        let output_destination = match track_name {
+            x if x == &CName::new("Audioware:V:vocal") => {
+                Some(OutputDestination::from(&maybe_tracks()?.v.vocal))
+            }
+            x if x == &CName::new("Audioware:V:environmental") => {
+                Some(OutputDestination::from(&maybe_tracks()?.v.environmental))
+            }
+            x => {
+                let tracks = maybe_custom_tracks().try_lock()?;
+                tracks.get(x).map(OutputDestination::from)
+            }
+        };
+        todo!()
     }
 
     fn play_either(
@@ -192,6 +226,18 @@ impl Engine {
             None => None,
         };
         Ok((gender, spoken, written))
+    }
+    pub fn add_sub_track(name: &TrackName) -> Result<(), Error> {
+        let mut manager = audio_manager().try_lock().map_err(Error::from)?;
+        let mut tracks = maybe_custom_tracks().try_lock().map_err(Error::from)?;
+        let handle = manager.add_sub_track(TrackBuilder::new())?;
+        tracks.insert(name.clone(), handle);
+        Ok(())
+    }
+    pub fn remove_sub_track(name: &TrackName) -> Result<(), Error> {
+        let mut tracks = maybe_custom_tracks().try_lock().map_err(Error::from)?;
+        tracks.remove(name);
+        Ok(())
     }
 }
 
