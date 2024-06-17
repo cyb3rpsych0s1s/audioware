@@ -4,8 +4,9 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::{quote, ToTokens};
 use syn::{
-    parse_macro_input, parse_str, punctuated::Punctuated, spanned::Spanned, BinOp, Expr,
-    ExprBinary, ExprLit, ExprPath, Lit, LitStr, Meta, MetaNameValue, Path, Token, Type,
+    parse_macro_input, parse_str, punctuated::Punctuated, spanned::Spanned, BinOp, Data,
+    DeriveInput, Error, Expr, ExprBinary, ExprLit, ExprPath, Field, Fields, Lit, LitStr, Meta,
+    MetaNameValue, Path, Token, Type,
 };
 
 const HINT_OFFSET: &str = r#"= hint: offset = 0x140975FE4 - 0x140000000
@@ -517,4 +518,59 @@ pub fn derive_native_handler(input: TokenStream) -> TokenStream {
         #storage
     }
     .into()
+}
+
+fn get_inner_ty(input: &DeriveInput) -> Result<&Field, Error> {
+    const ERROR: &str = "only supports struct with newtype pattern";
+    if let Data::Struct(ref data) = input.data {
+        if let Fields::Unnamed(ref fields) = data.fields {
+            if fields.unnamed.len() == 1 {
+                return Ok(fields.unnamed.first().unwrap());
+            }
+            return Err(Error::new(fields.span(), ERROR));
+        }
+    }
+    match input.data {
+        Data::Enum(ref x) => Err(Error::new(x.enum_token.span(), ERROR)),
+        Data::Union(ref x) => Err(Error::new(x.union_token.span(), ERROR)),
+        Data::Struct(_) => unreachable!("evaluated above"),
+    }
+}
+
+#[proc_macro_derive(Repr)]
+pub fn derive_repr(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = &input.ident;
+    let field = match get_inner_ty(&input) {
+        Ok(x) => x,
+        Err(e) => return e.to_compile_error().into(),
+    };
+    let inner_ty = &field.ty;
+    let imp = quote! {
+        impl ::red4ext_rs::conv::FromRepr for #name {
+            type Repr = #inner_ty;
+            fn from_repr(repr: Self::Repr) -> Self {
+                Self(Self::Repr::from_repr(repr))
+            }
+        }
+
+        impl ::std::hash::Hash for #name {
+            fn hash<H: ::std::hash::Hasher>(&self, state: &mut H) {
+                u64::from(self.0.clone()).hash(state);
+            }
+        }
+
+        impl ::std::cmp::PartialEq<#inner_ty> for #name {
+            fn eq(&self, other: &#inner_ty) -> bool {
+                self.0.eq(other)
+            }
+        }
+
+        impl ::std::cmp::PartialEq<#name> for #inner_ty {
+            fn eq(&self, other: &#name) -> bool {
+                self.eq(&other.0)
+            }
+        }
+    };
+    TokenStream::from(imp)
 }

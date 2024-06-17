@@ -41,7 +41,6 @@ pub use modulator::GlobalParameters;
 pub use modulator::VolumeModulator;
 pub use state::game::*;
 pub use state::player::*;
-mod utils;
 
 pub struct Engine;
 impl Engine {
