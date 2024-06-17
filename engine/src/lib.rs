@@ -4,7 +4,7 @@ use audioware_sys::interop::gender::PlayerGender;
 use destination::output_destination;
 use effect::IMMEDIATELY;
 use either::Either;
-use id::{HandleId, SoundEntityId};
+use id::{EmitterId, HandleId};
 use kira::track::TrackBuilder;
 use kira::tween::Tween;
 use kira::OutputDestination;
@@ -206,7 +206,7 @@ impl Engine {
             .try_read()
             .map_err(audioware_core::Error::from)?;
         let entity: Option<Ref<Entity>> = match entity_id {
-            Some(entity_id) => Some((&SoundEntityId::from(entity_id)).try_into()?),
+            Some(entity_id) => Some((&EmitterId::from(entity_id)).try_into()?),
             None => None,
         };
         let gender: Option<PlayerGender> = match entity {

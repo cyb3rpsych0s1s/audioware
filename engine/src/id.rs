@@ -14,30 +14,30 @@ use super::error::CannotFindEntitySnafu;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct SoundEntityId(pub EntityId);
+pub struct EmitterId(pub EntityId);
 
-impl From<&EntityId> for SoundEntityId {
+impl From<&EntityId> for EmitterId {
     fn from(value: &EntityId) -> Self {
         Self(value.clone())
     }
 }
 
-impl Hash for SoundEntityId {
+impl Hash for EmitterId {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         u64::from(self.0.clone()).hash(state);
     }
 }
 
-impl PartialEq<EntityId> for SoundEntityId {
+impl PartialEq<EntityId> for EmitterId {
     fn eq(&self, other: &EntityId) -> bool {
         self.0.eq(other)
     }
 }
 
-impl TryFrom<&SoundEntityId> for Ref<Entity> {
+impl TryFrom<&EmitterId> for Ref<Entity> {
     type Error = crate::Error;
 
-    fn try_from(value: &SoundEntityId) -> Result<Self, Self::Error> {
+    fn try_from(value: &EmitterId) -> Result<Self, Self::Error> {
         find_entity_by_id(get_game_instance(), value.0.clone())
             .into_ref()
             .context(CannotFindEntitySnafu {

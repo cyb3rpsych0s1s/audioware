@@ -16,7 +16,7 @@ use kira::{
 use once_cell::sync::OnceCell;
 use snafu::OptionExt;
 
-use super::{error::Error, id::SoundEntityId, track::maybe_tracks};
+use super::{error::Error, id::EmitterId, track::maybe_tracks};
 
 pub static SCENE: OnceCell<Scene> = OnceCell::new();
 
@@ -27,7 +27,7 @@ pub fn maybe_scene<'cell>() -> Result<&'cell Scene, Error> {
 
 #[inline(always)]
 pub fn maybe_scene_entities<'mutex>(
-) -> Result<MutexGuard<'mutex, HashMap<SoundEntityId, EmitterHandle>>, Error> {
+) -> Result<MutexGuard<'mutex, HashMap<EmitterId, EmitterHandle>>, Error> {
     maybe_scene()?
         .entities
         .try_lock()
@@ -38,7 +38,7 @@ pub fn maybe_scene_entities<'mutex>(
 pub struct Scene {
     pub scene: Arc<Mutex<SpatialSceneHandle>>,
     pub v: Arc<Mutex<ListenerHandle>>,
-    pub entities: Arc<Mutex<HashMap<SoundEntityId, EmitterHandle>>>,
+    pub entities: Arc<Mutex<HashMap<EmitterId, EmitterHandle>>>,
 }
 
 impl Scene {
