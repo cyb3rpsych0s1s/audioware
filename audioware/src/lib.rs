@@ -32,6 +32,7 @@ impl Plugin for Audioware {
             )),
             GlobalExport(global!(c"Audioware.RegisterEmitter", register_emitter)),
             GlobalExport(global!(c"Audioware.UnregisterEmitter", unregister_emitter)),
+            GlobalExport(global!(c"Audioware.EmittersCount", emitters_count)),
         ]
     }
 }
@@ -70,4 +71,10 @@ fn register_emitter(emitter_id: EntityId, emitter_name: CName) {
 fn unregister_emitter(emitter_id: EntityId) {
     let env = Audioware::env();
     log::info!(env, "TODO: unregister emitter {:?}", emitter_id);
+}
+
+fn emitters_count() -> i32 {
+    let env = Audioware::env();
+    log::info!(env, "TODO: emitters count");
+    0
 }

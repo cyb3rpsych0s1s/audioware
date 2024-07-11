@@ -5,3 +5,6 @@ public func RegisterEmitter(entityID: EntityID, emitterName: CName) -> Void { Re
 
 @addMethod(AudioSystem)
 public func UnregisterEmitter(entityID: EntityID) -> Void { UnregisterEmitter(entityID); }
+
+@addMethod(AudioSystem)
+public func EmittersCount() -> Int32 = EmittersCount();
