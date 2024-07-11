@@ -1,12 +1,13 @@
 module Audioware
 
 public class AudiowareSystem extends ScriptableSystem {
+    private let plugin: ref<AudiowarePlugin>;
     private func OnAttach() -> Void {
         FTLog(AsRef("on attach: AudiowareSystem"));
-        this.Yolo();
+        this.plugin = new AudiowarePlugin();
+        this.plugin.Yolo();
     }
-    public func Yolo() -> Void {
-        let plugin = new AudiowarePlugin();
-        plugin.Yolo();
+    private func OnDetach() -> Void {
+        this.plugin = null;
     }
 }
