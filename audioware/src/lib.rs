@@ -25,6 +25,11 @@ impl Plugin for Audioware {
 
     fn exports() -> impl Exportable {
         exports![
+            GlobalExport(global!(c"Audioware.RegisterListener", register_listener)),
+            GlobalExport(global!(
+                c"Audioware.UnregisterListener",
+                unregister_listener
+            )),
             GlobalExport(global!(c"Audioware.RegisterEmitter", register_emitter)),
             GlobalExport(global!(c"Audioware.UnregisterEmitter", unregister_emitter)),
         ]
@@ -40,6 +45,16 @@ unsafe extern "C" fn post_register() {}
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit initialization: Audioware");
+}
+
+fn register_listener(emitter_id: EntityId) {
+    let env = Audioware::env();
+    log::info!(env, "TODO: register listener {:?} V", emitter_id);
+}
+
+fn unregister_listener(emitter_id: EntityId) {
+    let env = Audioware::env();
+    log::info!(env, "TODO: unregister listener {:?} V", emitter_id);
 }
 
 fn register_emitter(emitter_id: EntityId, emitter_name: CName) {
