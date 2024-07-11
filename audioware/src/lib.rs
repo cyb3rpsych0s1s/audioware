@@ -1,9 +1,8 @@
-use plugin::AudiowarePlugin;
 use red4rs::{
-    export_plugin, exports, global, log, systems::RttiRegistrator, types::Ref, wcstr, ClassExport,
-    Exportable, GameApp, GlobalExport, Plugin, PluginOps, SdkEnv, SemVer, StateListener, U16CStr,
+    export_plugin, exports, global, log, systems::RttiRegistrator, types::Ref, wcstr, Exportable,
+    GameApp, GlobalExport, Plugin, PluginOps, SdkEnv, SemVer, StateListener, U16CStr,
 };
-use system::{AudiowareSystem, Yolo};
+use system::AudiowareSystem;
 
 mod plugin;
 mod system;
@@ -25,12 +24,7 @@ impl Plugin for Audioware {
     }
 
     fn exports() -> impl Exportable {
-        exports![
-            GlobalExport(global!(c"Audioware.CallYoloOn", call_yolo_on)),
-            // ClassExport::<AudiowarePlugin>::builder()
-            //     .base("IScriptable")
-            //     .build(),
-        ]
+        exports![GlobalExport(global!(c"Audioware.CallYoloOn", call_yolo_on)),]
     }
 }
 
