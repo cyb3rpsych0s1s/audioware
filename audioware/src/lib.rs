@@ -1,7 +1,7 @@
 use plugin::AudiowarePlugin;
 use red4rs::{
-    export_plugin, exports, log, methods, systems::RttiRegistrator, wcstr, ClassExport, Exportable,
-    GameApp, Plugin, PluginOps, SdkEnv, SemVer, StateListener, U16CStr,
+    export_plugin, exports, global, log, systems::RttiRegistrator, wcstr, Exportable, GameApp,
+    GlobalExport, Plugin, PluginOps, SdkEnv, SemVer, StateListener, U16CStr,
 };
 
 mod plugin;
@@ -23,12 +23,10 @@ impl Plugin for Audioware {
     }
 
     fn exports() -> impl Exportable {
-        exports![ClassExport::<AudiowarePlugin>::builder()
-            .base("IScriptable")
-            .methods(methods![
-                c"Yolo" => AudiowarePlugin::yolo,
-            ])
-            .build(),]
+        exports![GlobalExport(global!(
+            c"Audioware.Yolo",
+            AudiowarePlugin::yolo
+        )),]
     }
 }
 

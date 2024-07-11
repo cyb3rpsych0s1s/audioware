@@ -18,7 +18,7 @@ unsafe impl ScriptClass for AudiowarePlugin {
 }
 
 impl AudiowarePlugin {
-    pub fn yolo(&self) {
+    pub fn yolo() {
         let env = Audioware::env();
         log::info!(env, "yolo!");
     }
