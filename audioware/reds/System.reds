@@ -1,12 +1,12 @@
 module Audioware
 
-public native func CallYoloOn(system: ref<AudiowareSystem>) -> Void;
-
 public class AudiowareSystem extends ScriptableSystem {
     private func OnAttach() -> Void {
         FTLog(AsRef("on attach: AudiowareSystem"));
+        this.Yolo();
     }
     public func Yolo() -> Void {
-        FTLog(AsRef("yololololo"));
+        let plugin = new AudiowarePlugin();
+        plugin.Yolo();
     }
 }

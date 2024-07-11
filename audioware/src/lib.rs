@@ -1,11 +1,10 @@
+use plugin::AudiowarePlugin;
 use red4rs::{
-    export_plugin, exports, global, log, systems::RttiRegistrator, types::Ref, wcstr, Exportable,
-    GameApp, GlobalExport, Plugin, PluginOps, SdkEnv, SemVer, StateListener, U16CStr,
+    export_plugin, exports, log, methods, systems::RttiRegistrator, wcstr, ClassExport, Exportable,
+    GameApp, Plugin, PluginOps, SdkEnv, SemVer, StateListener, U16CStr,
 };
-use system::AudiowareSystem;
 
 mod plugin;
-mod system;
 mod types;
 
 pub struct Audioware;
@@ -24,7 +23,12 @@ impl Plugin for Audioware {
     }
 
     fn exports() -> impl Exportable {
-        exports![GlobalExport(global!(c"Audioware.CallYoloOn", call_yolo_on)),]
+        exports![ClassExport::<AudiowarePlugin>::builder()
+            .base("IScriptable")
+            .methods(methods![
+                c"Yolo" => AudiowarePlugin::yolo,
+            ])
+            .build(),]
     }
 }
 
@@ -37,10 +41,4 @@ unsafe extern "C" fn post_register() {}
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit initialization: Audioware");
-}
-
-fn call_yolo_on(system: Ref<AudiowareSystem>) {
-    if let Some(x) = unsafe { system.fields() } {
-        x.yolo()
-    }
 }
