@@ -44,7 +44,7 @@ now:
 
 # 📦 build Rust RED4Ext plugin
 build PROFILE='debug' TO=game_dir: (setup join(TO, red4ext_deploy_dir))
-  @'{{ if PROFILE == "release" { `cargo +nightly build --release` } else { `cargo +nightly build` } }}'
+  @'{{ if PROFILE == "release" { `cargo build --release` } else { `cargo build` } }}'
   @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just now
 
@@ -78,33 +78,33 @@ uninstall FROM=game_dir:
 
 # 🎨 lint code
 format:
-  @cargo +nightly fmt
+  @cargo fmt
 
 # 🎨 lint code
 @lint:
-  cargo +nightly clippy --fix --allow-dirty --allow-staged
-  cargo +nightly fix --allow-dirty --allow-staged
+  cargo clippy --fix --allow-dirty --allow-staged
+  cargo fix --allow-dirty --allow-staged
   just format
 
 alias l := lint
 
 qa:
-  @cargo +nightly clippy -- -D warnings
-  @cargo +nightly fix
-  @cargo +nightly fmt --check
+  @cargo clippy -- -D warnings
+  @cargo fix
+  @cargo fmt --check
 
 test:
-  @cargo +nightly test
+  @cargo test
 
 alias t := test
 
 check:
-  @cargo +nightly check --all
+  @cargo check --all
 
 alias c := check
 
 @doc:
-  cargo +nightly doc --open --no-deps
+  cargo doc --open --no-deps
 
 # TODO: finish updating all patterns
 offsets:
