@@ -1,10 +1,11 @@
-use plugin::AudiowarePlugin;
 use red4rs::{
-    export_plugin, exports, global, log, systems::RttiRegistrator, wcstr, Exportable, GameApp,
-    GlobalExport, Plugin, PluginOps, SdkEnv, SemVer, StateListener, U16CStr,
+    export_plugin, exports, global, log,
+    systems::RttiRegistrator,
+    types::{CName, EntityId},
+    wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, SdkEnv, SemVer, StateListener,
+    U16CStr,
 };
 
-mod plugin;
 mod types;
 
 pub struct Audioware;
@@ -23,10 +24,10 @@ impl Plugin for Audioware {
     }
 
     fn exports() -> impl Exportable {
-        exports![GlobalExport(global!(
-            c"Audioware.Yolo",
-            AudiowarePlugin::yolo
-        )),]
+        exports![
+            GlobalExport(global!(c"Audioware.RegisterEmitter", register_emitter)),
+            GlobalExport(global!(c"Audioware.UnregisterEmitter", unregister_emitter)),
+        ]
     }
 }
 
@@ -39,4 +40,19 @@ unsafe extern "C" fn post_register() {}
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit initialization: Audioware");
+}
+
+fn register_emitter(emitter_id: EntityId, emitter_name: CName) {
+    let env = Audioware::env();
+    log::info!(
+        env,
+        "TODO: register emitter {:?} {}",
+        emitter_id,
+        emitter_name
+    );
+}
+
+fn unregister_emitter(emitter_id: EntityId) {
+    let env = Audioware::env();
+    log::info!(env, "TODO: unregister emitter {:?}", emitter_id);
 }
