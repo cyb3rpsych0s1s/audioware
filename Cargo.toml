@@ -3,15 +3,11 @@ members = ["audioware"]
 resolver = "2"
 
 [workspace.package]
-version = "0.8.11"
+version = "1.0.0"
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.79.0"
 
 [profile.release]
 lto = "thin"
 strip = true
 codegen-units = 1
-
-[workspace.dependencies]
-red4rs = { git = "https://github.com/jac3km4/red4rs.git", rev = "b5ff208" }
-red4rs-bindings = { git = "https://github.com/jac3km4/red4rs-bindings.git", rev = "0d5bfa2" }
