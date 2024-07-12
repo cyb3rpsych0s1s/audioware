@@ -1,3 +1,7 @@
+//! audioware first loads all [`Depot`] from [`REDmod`] and [`R6Audioware`] folders.
+//!
+//! each [`Depot`] is expected to contain one or multiple [Manifests](crate::Manifest).
+
 use std::path::{Path, PathBuf};
 
 use crate::error::{BinaryLocationSnafu, NoFolderSnafu};

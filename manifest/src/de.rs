@@ -26,6 +26,7 @@ pub use setting::*;
 pub use sfx::*;
 pub use voice::*;
 
+/// allows modder to describe audio files, subtitles and settings.
 #[derive(Debug, Deserialize)]
 pub struct Manifest {
     pub version: Version,
@@ -143,11 +144,15 @@ impl Audio {
     }
 }
 
+/// describes usage made of audio.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Usage {
+    /// audio played on-demand.
     OnDemand,
+    /// audio loaded all at once in-memory.
     InMemory,
+    /// audio streamed on-demand.
     Streaming,
 }
 
