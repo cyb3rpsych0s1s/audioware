@@ -6,8 +6,6 @@ use red4rs::{
     U16CStr,
 };
 
-mod types;
-
 pub struct Audioware;
 
 impl Plugin for Audioware {
