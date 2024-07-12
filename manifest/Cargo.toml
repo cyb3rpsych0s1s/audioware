@@ -1,0 +1,25 @@
+[package]
+name = "audioware-manifest"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+either = "1.12.0"
+fixed-map = { version = "0.9", features = ["serde"] }
+humantime = "2.1"
+humantime-serde = "1.1"
+kira.workspace = true
+rayon.workspace = true
+red4rs.workspace = true
+red4rs-bindings.workspace = true
+semver = { version = "1", features = ["serde"] }
+serde.workspace = true
+serde_yaml = "0.9"
+snafu.workspace = true
+strum = "0.26"
+strum_macros = "0.26"
+test-case = "3.3"
+
+[package.metadata.cargo-machete]
+ignored = ["humantime-serde"]

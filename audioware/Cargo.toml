@@ -11,5 +11,5 @@ crate-type = ["cdylib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-red4rs = { git = "https://github.com/jac3km4/red4rs.git", rev = "v0.1.7" }
-red4rs-bindings = { git = "https://github.com/jac3km4/red4rs-bindings.git", rev = "v0.1.8" }
+red4rs.workspace = true
+red4rs-bindings.workspace = true

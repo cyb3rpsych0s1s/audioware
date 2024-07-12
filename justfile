@@ -94,9 +94,7 @@ qa:
   @cargo fmt --check
 
 test:
-  @echo 'TODO'; exit 0;
-# once added testable member(s):
-# cargo test --workspace --exclude audioware
+  cargo test --workspace --exclude audioware
 
 alias t := test
 
