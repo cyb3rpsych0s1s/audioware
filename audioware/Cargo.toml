@@ -12,4 +12,3 @@ crate-type = ["cdylib"]
 
 [dependencies]
 red4rs.workspace = true
-red4rs-bindings.workspace = true
