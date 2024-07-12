@@ -21,6 +21,7 @@ impl Plugin for Audioware {
         );
     }
 
+    #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
     fn exports() -> impl Exportable {
         exports![
             GlobalExport(global!(c"Audioware.RegisterListener", register_listener)),
