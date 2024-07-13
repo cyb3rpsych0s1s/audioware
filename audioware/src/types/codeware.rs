@@ -18,9 +18,7 @@ pub trait Subtitle {
 impl Subtitle for Ref<LocalizationPackage> {
     /// protected func Subtitle(key: String, valueF: String, valueM: String)
     fn subtitle(self, key: &str, value_f: &str, value_m: &str) {
-        if let Err(e) =
-            call!(self, "Subtitle;StringStringString"(key.to_string(), value_f.to_string(), value_m.to_string()) -> ())
-        {
+        if let Err(e) = call!(self, "Subtitle;StringStringString"(key, value_f, value_m) -> ()) {
             let env = Audioware::env();
             log::error!(env, "failed to call LocalizationPackage.Subtitle: {e}");
         }

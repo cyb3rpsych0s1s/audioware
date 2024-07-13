@@ -1,5 +1,4 @@
 import Audioware.LocalizationPackage
-import Audioware.DefineSubtitles
 
 /// Game.TestRegisterEmitter()
 public static exec func TestRegisterEmitter(game: GameInstance) {
@@ -28,5 +27,5 @@ public static exec func TestUnregisterEmitter(game: GameInstance) {
 /// Game.TestDefineSubtitles();
 public static exec func TestDefineSubtitles(game: GameInstance) {
     let package = new LocalizationPackage();
-    DefineSubtitles(package);
+    package.DefineSubtitles();
 }
