@@ -1,9 +1,12 @@
 use red4ext_rs::{
     export_plugin, exports, global, log,
-    types::{CName, EntityId},
+    types::{CName, EntityId, Ref},
     wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, SdkEnv, SemVer,
     StateListener, U16CStr,
 };
+use types::{LocalizationPackage, Subtitle};
+
+mod types;
 
 pub struct Audioware;
 
@@ -31,6 +34,7 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.RegisterEmitter", register_emitter)),
             GlobalExport(global!(c"Audioware.UnregisterEmitter", unregister_emitter)),
             GlobalExport(global!(c"Audioware.EmittersCount", emitters_count)),
+            GlobalExport(global!(c"Audioware.DefineSubtitles", define_subtitles)),
         ]
     }
 }
@@ -75,4 +79,8 @@ fn emitters_count() -> i32 {
     let env = Audioware::env();
     log::info!(env, "TODO: emitters count");
     0
+}
+
+fn define_subtitles(package: Ref<LocalizationPackage>) {
+    package.subtitle("custom_subtitle", "female", "male");
 }

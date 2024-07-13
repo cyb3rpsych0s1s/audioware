@@ -15,6 +15,7 @@ codegen-units = 1
 [workspace.dependencies]
 kira = { version = "0.9", features = ["serde"] }
 rayon = "1.10"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "v0.6.1" }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "fe92cdd" }
+red4ext-rs-bindings = { git = "https://github.com/jac3km4/red4ext-rs-bindings", rev = "v0.2.0" }
 serde = "1.0"
 snafu = "0.8"

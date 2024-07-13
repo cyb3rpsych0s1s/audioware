@@ -12,3 +12,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 red4ext-rs.workspace = true
+red4ext-rs-bindings.workspace = true
