@@ -11,8 +11,8 @@ humantime = "2.1"
 humantime-serde = "1.1"
 kira.workspace = true
 rayon.workspace = true
-red4rs.workspace = true
-red4rs-bindings.workspace = true
+red4ext-rs.workspace = true
+red4ext-rs-bindings.workspace = true
 semver = { version = "1", features = ["serde"] }
 serde.workspace = true
 serde_yaml = "0.9"

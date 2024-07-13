@@ -1,4 +1,4 @@
-use red4rs_bindings::ScnDialogLineType;
+use red4ext_rs_bindings::ScnDialogLineType;
 use serde::{Deserialize, Deserializer};
 
 #[repr(u32)]

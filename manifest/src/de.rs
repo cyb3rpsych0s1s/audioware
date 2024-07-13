@@ -1,6 +1,6 @@
 use std::{collections::HashMap, hash::Hash, path::PathBuf};
 
-use red4rs_bindings::ScnDialogLineType;
+use red4ext_rs_bindings::ScnDialogLineType;
 use semver::Version;
 use serde::Deserialize;
 

@@ -1,5 +1,5 @@
 use fixed_map::Key;
-use red4rs::types::CName;
+use red4ext_rs::types::CName;
 use serde::{Deserialize, Serialize};
 
 use crate::error::ConversionError;

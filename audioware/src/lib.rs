@@ -1,9 +1,8 @@
-use red4rs::{
+use red4ext_rs::{
     export_plugin, exports, global, log,
-    systems::RttiRegistrator,
     types::{CName, EntityId},
-    wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, SdkEnv, SemVer, StateListener,
-    U16CStr,
+    wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, SdkEnv, SemVer,
+    StateListener, U16CStr,
 };
 
 pub struct Audioware;
@@ -16,7 +15,7 @@ impl Plugin for Audioware {
     fn on_init(env: &SdkEnv) {
         RttiRegistrator::add(Some(register), Some(post_register));
         env.add_listener(
-            red4rs::StateType::Initialization,
+            red4ext_rs::StateType::Initialization,
             StateListener::default().with_on_exit(on_exit_initialization),
         );
     }

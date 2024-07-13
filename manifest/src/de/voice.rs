@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use either::Either;
-use red4rs_bindings::ScnDialogLineType;
+use red4ext_rs_bindings::ScnDialogLineType;
 use serde::Deserialize;
 
 use crate::{deserialize_optional_scn_dialog_line_type, Locale, PlayerGender};

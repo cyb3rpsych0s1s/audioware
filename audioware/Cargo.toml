@@ -11,4 +11,4 @@ crate-type = ["cdylib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-red4rs.workspace = true
+red4ext-rs.workspace = true
