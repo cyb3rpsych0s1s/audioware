@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 
-use red4ext_rs_bindings::ScnDialogLineType;
+use crate::ScnDialogLineType;
 use serde::Deserialize;
 
 use super::Settings;
-use crate::deserialize_optional_scn_dialog_line_type;
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -13,10 +12,6 @@ pub enum Jingle {
     Nested {
         file: PathBuf,
         captions: Vec<Caption>,
-        #[serde(
-            default,
-            deserialize_with = "deserialize_optional_scn_dialog_line_type"
-        )]
         line: Option<ScnDialogLineType>,
         settings: Option<Settings>,
     },

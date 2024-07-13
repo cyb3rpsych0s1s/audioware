@@ -1,10 +1,9 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use either::Either;
-use red4ext_rs_bindings::ScnDialogLineType;
 use serde::Deserialize;
 
-use crate::{deserialize_optional_scn_dialog_line_type, Locale, PlayerGender};
+use crate::{Locale, PlayerGender, ScnDialogLineType};
 
 use super::{paths_into_audios, Audio, DialogLine, Settings, Usage};
 
@@ -21,10 +20,6 @@ pub enum Voice {
         #[serde(flatten)]
         dialogs: HashMap<Locale, Dialog>,
         usage: Option<Usage>,
-        #[serde(
-            default,
-            deserialize_with = "deserialize_optional_scn_dialog_line_type"
-        )]
         line: Option<ScnDialogLineType>,
         settings: Option<Settings>,
     },
@@ -38,10 +33,6 @@ pub enum Voice {
         #[serde(flatten)]
         dialogs: HashMap<Locale, Dialogs>,
         usage: Option<Usage>,
-        #[serde(
-            default,
-            deserialize_with = "deserialize_optional_scn_dialog_line_type"
-        )]
         line: Option<ScnDialogLineType>,
         settings: Option<Settings>,
     },

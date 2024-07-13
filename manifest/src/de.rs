@@ -1,10 +1,8 @@
 use std::{collections::HashMap, hash::Hash, path::PathBuf};
 
-use red4ext_rs_bindings::ScnDialogLineType;
+use crate::ScnDialogLineType;
 use semver::Version;
 use serde::Deserialize;
-
-use crate::deserialize_scn_dialog_line_type;
 
 #[doc(hidden)]
 mod jingle;
@@ -166,7 +164,6 @@ pub enum Subtitle {
 #[derive(Debug, Clone, Deserialize)]
 pub struct DialogLine {
     pub msg: String,
-    #[serde(deserialize_with = "deserialize_scn_dialog_line_type")]
     pub line: ScnDialogLineType,
 }
 

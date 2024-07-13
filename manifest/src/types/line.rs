@@ -1,9 +1,9 @@
-use red4ext_rs_bindings::ScnDialogLineType;
-use serde::{Deserialize, Deserializer};
+use red4ext_rs::NativeRepr;
+use serde::Deserialize;
 
 #[repr(u32)]
-#[derive(Deserialize)]
-pub(crate) enum ScnDialogLineTypeDef {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+pub enum ScnDialogLineType {
     #[serde(rename = "none")]
     None = 0,
     #[serde(rename = "regular")]
@@ -32,42 +32,6 @@ pub(crate) enum ScnDialogLineTypeDef {
     Narrator = 13,
 }
 
-impl From<ScnDialogLineTypeDef> for ScnDialogLineType {
-    fn from(value: ScnDialogLineTypeDef) -> Self {
-        match value {
-            ScnDialogLineTypeDef::None => Self::None,
-            ScnDialogLineTypeDef::Regular => Self::Regular,
-            ScnDialogLineTypeDef::Holocall => Self::Holocall,
-            ScnDialogLineTypeDef::SceneComment => Self::SceneComment,
-            ScnDialogLineTypeDef::OverHead => Self::OverHead,
-            ScnDialogLineTypeDef::Radio => Self::Radio,
-            ScnDialogLineTypeDef::GlobalTv => Self::GlobalTv,
-            ScnDialogLineTypeDef::Invisible => Self::Invisible,
-            ScnDialogLineTypeDef::OverHeadAlwaysVisible => Self::OverHeadAlwaysVisible,
-            ScnDialogLineTypeDef::OwnerlessRegular => Self::OwnerlessRegular,
-            ScnDialogLineTypeDef::AlwaysCinematicNoSpeaker => Self::AlwaysCinematicNoSpeaker,
-            ScnDialogLineTypeDef::GlobalTvAlwaysVisible => Self::GlobalTvAlwaysVisible,
-            ScnDialogLineTypeDef::Narrator => Self::Narrator,
-        }
-    }
-}
-
-pub fn deserialize_scn_dialog_line_type<'de, D>(
-    deserializer: D,
-) -> Result<ScnDialogLineType, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let helper = ScnDialogLineTypeDef::deserialize(deserializer)?;
-    Ok(helper.into())
-}
-
-pub fn deserialize_optional_scn_dialog_line_type<'de, D>(
-    deserializer: D,
-) -> Result<Option<ScnDialogLineType>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let helper = Option::<ScnDialogLineTypeDef>::deserialize(deserializer)?;
-    Ok(helper.map(Into::into))
+unsafe impl NativeRepr for ScnDialogLineType {
+    const NAME: &'static str = "scnDialogLineType";
 }
