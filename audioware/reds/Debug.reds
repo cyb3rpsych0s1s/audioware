@@ -1,4 +1,5 @@
 import Audioware.LocalizationPackage
+import Codeware.Localization.*
 
 /// Game.TestRegisterEmitter()
 public static exec func TestRegisterEmitter(game: GameInstance) {
@@ -28,4 +29,6 @@ public static exec func TestUnregisterEmitter(game: GameInstance) {
 public static exec func TestDefineSubtitles(game: GameInstance) {
     let package = new LocalizationPackage();
     package.DefineSubtitles();
+    let text = LocalizationSystem.GetInstance(game).GetSubtitle("custom_subtitle");
+    FTLog(AsRef(text));
 }

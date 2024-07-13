@@ -13,14 +13,16 @@ unsafe impl ScriptClass for LocalizationPackage {
     const CLASS_NAME: &'static str = "Audioware.LocalizationPackage";
 }
 pub trait Subtitle {
-    fn subtitle(self, key: &str, value_f: &str, value_m: &str);
+    fn subtitle(&self, key: &str, value_f: &str, value_m: &str);
 }
 impl Subtitle for Ref<LocalizationPackage> {
     /// protected func Subtitle(key: String, valueF: String, valueM: String)
-    fn subtitle(self, key: &str, value_f: &str, value_m: &str) {
+    fn subtitle(&self, key: &str, value_f: &str, value_m: &str) {
+        let env = Audioware::env();
         if let Err(e) = call!(self, "Subtitle;StringStringString"(key, value_f, value_m) -> ()) {
-            let env = Audioware::env();
             log::error!(env, "failed to call LocalizationPackage.Subtitle: {e}");
+        } else {
+            log::info!(env, "subtitle executed succesfully");
         }
     }
 }

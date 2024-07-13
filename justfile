@@ -52,6 +52,10 @@ alias b := build
 
 dev: (build) reload
 
+lldb TO=game_dir: dev
+  @just copy '{{ join(red4ext_bin_dir, "debug", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
+  @just now
+
 ci TO: (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
 
 optimize TO:
