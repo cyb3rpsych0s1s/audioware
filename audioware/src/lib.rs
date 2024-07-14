@@ -83,7 +83,8 @@ unsafe extern "C" fn register() {}
 unsafe extern "C" fn post_register() {}
 
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
-    log::info!(Audioware::env(), "on exit initialization: Audioware");
+    let env = Audioware::env();
+    log::info!(env, "on exit initialization: Audioware");
 }
 
 fn register_listener(emitter_id: EntityId) {
