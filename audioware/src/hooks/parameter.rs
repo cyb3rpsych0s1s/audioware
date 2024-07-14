@@ -4,7 +4,7 @@ use red4ext_rs::{
     PluginOps, SdkEnv, VoidPtr,
 };
 
-use crate::Audioware;
+use crate::{types::frame_mut, Audioware};
 
 hooks! {
    static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
@@ -27,6 +27,7 @@ unsafe extern "C" fn detour(
     cb: unsafe extern "C" fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr),
 ) {
     let frame = &mut *f;
+    let state = frame_mut(frame).state();
 
     let parameter_name: CName = StackFrame::get_arg(frame);
     let parameter_value: f32 = StackFrame::get_arg(frame);
@@ -35,5 +36,6 @@ unsafe extern "C" fn detour(
 
     let env = Audioware::env();
     log::info!(env, "AudioSystem.Parameter: called {parameter_name}");
+    frame_mut(frame).rewind(state);
     cb(i, f, a3, a4);
 }
