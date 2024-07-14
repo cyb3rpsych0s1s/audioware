@@ -1,4 +1,5 @@
 use audioware_bank::Banks;
+use hooks::attach_hook_audiosystem_play;
 use red4ext_rs::{
     export_plugin, exports, global, log,
     types::{CName, EntityId, Ref},
@@ -7,9 +8,42 @@ use red4ext_rs::{
 };
 use types::{LocalizationPackage, Subtitle};
 
+mod hooks;
 mod types;
 
 pub struct Audioware;
+
+impl Audioware {
+    fn register_listeners(env: &SdkEnv) {
+        RttiRegistrator::add(Some(register), Some(post_register));
+        env.add_listener(
+            red4ext_rs::StateType::Initialization,
+            StateListener::default().with_on_exit(on_exit_initialization),
+        );
+    }
+
+    fn load_banks(env: &SdkEnv) {
+        let report = Banks::setup();
+        let status = if report.errors.is_empty() {
+            "successfully"
+        } else {
+            "partially"
+        };
+        log::info!(env, "banks {status} initialized:\n{report}");
+        for error in report.errors {
+            log::error!(env, "{error}");
+        }
+        log::info!(
+            env,
+            "as_if_I_didnt_know_already: {}",
+            Banks::exists(&CName::new("as_if_I_didnt_know_already"))
+        );
+    }
+
+    fn attach_hooks(env: &SdkEnv) {
+        attach_hook_audiosystem_play(env);
+    }
+}
 
 impl Plugin for Audioware {
     const NAME: &'static U16CStr = wcstr!("audioware");
@@ -17,16 +51,9 @@ impl Plugin for Audioware {
     const VERSION: SemVer = SemVer::new(1, 0, 0);
 
     fn on_init(env: &SdkEnv) {
-        RttiRegistrator::add(Some(register), Some(post_register));
-        env.add_listener(
-            red4ext_rs::StateType::Initialization,
-            StateListener::default().with_on_exit(on_exit_initialization),
-        );
-        let report = Banks::setup();
-        log::info!(env, "banks successfully initialized:\n{report}");
-        for error in report.errors {
-            log::error!(env, "{error}");
-        }
+        Self::register_listeners(env);
+        Self::load_banks(env);
+        Self::attach_hooks(env);
     }
 
     #[allow(clippy::transmute_ptr_to_ref)] // upstream lint

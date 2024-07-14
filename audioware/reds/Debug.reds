@@ -32,3 +32,11 @@ public static exec func TestDefineSubtitles(game: GameInstance) {
     let text = LocalizationSystem.GetInstance(game).GetSubtitle("custom_subtitle");
     FTLog(AsRef(text));
 }
+
+/// Game.TestAudioSystemPlay("ono_v_effort_short");
+/// Game.TestAudioSystemPlay("nah_everything_is_all_good");
+/// Game.TestAudioSystemPlay("as_if_I_didnt_know_already");
+public static exec func TestAudioSystemPlay(game: GameInstance, name: String) {
+    let cname = StringToName(name);
+    GameInstance.GetAudioSystem(game).Play(cname);
+}

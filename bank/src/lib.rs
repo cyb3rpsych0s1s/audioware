@@ -46,6 +46,9 @@ static KEYS: OnceLock<HashSet<Id>> = OnceLock::new();
 
 pub struct Banks;
 impl Banks {
+    pub unsafe fn ids<'a>() -> &'a HashSet<Id> {
+        KEYS.get().unwrap_unchecked()
+    }
     pub fn exists(cname: &CName) -> bool {
         if cname == &CName::undefined() {
             return false;
