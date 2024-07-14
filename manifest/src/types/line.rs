@@ -1,4 +1,3 @@
-use red4ext_rs::NativeRepr;
 use serde::Deserialize;
 
 #[repr(u32)]
@@ -32,6 +31,7 @@ pub enum ScnDialogLineType {
     Narrator = 13,
 }
 
-unsafe impl NativeRepr for ScnDialogLineType {
+#[cfg(not(test))]
+unsafe impl red4ext_rs::NativeRepr for ScnDialogLineType {
     const NAME: &'static str = "scnDialogLineType";
 }

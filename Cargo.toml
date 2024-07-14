@@ -1,5 +1,5 @@
 [workspace]
-members = ["manifest", "audioware"]
+members = ["manifest", "bank", "audioware"]
 resolver = "2"
 
 [workspace.package]
@@ -13,9 +13,11 @@ strip = true
 codegen-units = 1
 
 [workspace.dependencies]
+audioware-manifest = { path = "manifest" }
+audioware-bank = { path = "bank" }
 kira = { version = "0.9", features = ["serde"] }
 rayon = "1.10"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "v0.6.3" }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "v0.6.3", features = ["log"] }
 red4ext-rs-bindings = { git = "https://github.com/jac3km4/red4ext-rs-bindings", rev = "v0.2.0" }
 serde = "1.0"
 snafu = "0.8"

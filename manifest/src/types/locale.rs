@@ -1,8 +1,5 @@
 use fixed_map::Key;
-use red4ext_rs::types::CName;
 use serde::{Deserialize, Serialize};
-
-use crate::error::ConversionError;
 
 #[derive(
     Debug,
@@ -58,9 +55,10 @@ pub enum Locale {
     Thai,
 }
 
-impl From<Locale> for CName {
+#[cfg(not(test))]
+impl From<Locale> for red4ext_rs::types::CName {
     fn from(val: Locale) -> Self {
-        CName::new(match val {
+        red4ext_rs::types::CName::new(match val {
             Locale::Polish => "pl-pl",
             Locale::English => "en-us",
             Locale::Spanish => "es-es",
@@ -83,10 +81,11 @@ impl From<Locale> for CName {
     }
 }
 
-impl TryFrom<CName> for Locale {
-    type Error = ConversionError;
+#[cfg(not(test))]
+impl TryFrom<red4ext_rs::types::CName> for Locale {
+    type Error = crate::error::ConversionError;
 
-    fn try_from(value: CName) -> Result<Self, Self::Error> {
+    fn try_from(value: red4ext_rs::types::CName) -> Result<Self, Self::Error> {
         match value.as_str() {
             "pl-pl" => Ok(Self::Polish),
             "en-us" => Ok(Self::English),
@@ -106,7 +105,7 @@ impl TryFrom<CName> for Locale {
             "hu-hu" => Ok(Self::Hungarian),
             "tr-tr" => Ok(Self::Turkish),
             "th-th" => Ok(Self::Thai),
-            v => Err(ConversionError::InvalidLocale {
+            v => Err(Self::Error::InvalidLocale {
                 value: v.to_string(),
             }),
         }

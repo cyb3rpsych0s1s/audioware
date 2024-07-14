@@ -98,7 +98,7 @@ qa:
   @cargo fmt --check
 
 test:
-  cargo test --workspace --exclude audioware
+  cargo test --workspace --exclude audioware --exclude audioware-bank
 
 alias t := test
 

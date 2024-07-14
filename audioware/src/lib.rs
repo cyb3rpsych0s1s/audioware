@@ -1,7 +1,8 @@
+use audioware_bank::Banks;
 use red4ext_rs::{
     export_plugin, exports, global, log,
     types::{CName, EntityId, Ref},
-    wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, SdkEnv, SemVer,
+    wcstr, Exportable, GameApp, GlobalExport, Plugin, RttiRegistrator, SdkEnv, SemVer,
     StateListener, U16CStr,
 };
 use types::{LocalizationPackage, Subtitle};
@@ -16,6 +17,14 @@ impl Plugin for Audioware {
     const VERSION: SemVer = SemVer::new(1, 0, 0);
 
     fn on_init(env: &SdkEnv) {
+        match Banks::setup() {
+            Ok(report) => {
+                red4ext_rs::log::info!("banks successfully initialized:\n{report}");
+            }
+            Err(e) => {
+                red4ext_rs::log::error!("{e}");
+            }
+        };
         RttiRegistrator::add(Some(register), Some(post_register));
         env.add_listener(
             red4ext_rs::StateType::Initialization,
@@ -46,38 +55,27 @@ unsafe extern "C" fn register() {}
 unsafe extern "C" fn post_register() {}
 
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
-    let env = Audioware::env();
-    log::info!(env, "on exit initialization: Audioware");
+    log::info!("on exit initialization: Audioware");
 }
 
 fn register_listener(emitter_id: EntityId) {
-    let env = Audioware::env();
-    log::info!(env, "TODO: register listener {:?} V", emitter_id);
+    log::info!("TODO: register listener {:?} V", emitter_id);
 }
 
 fn unregister_listener(emitter_id: EntityId) {
-    let env = Audioware::env();
-    log::info!(env, "TODO: unregister listener {:?} V", emitter_id);
+    log::info!("TODO: unregister listener {:?} V", emitter_id);
 }
 
 fn register_emitter(emitter_id: EntityId, emitter_name: CName) {
-    let env = Audioware::env();
-    log::info!(
-        env,
-        "TODO: register emitter {:?} {}",
-        emitter_id,
-        emitter_name
-    );
+    log::info!("TODO: register emitter {:?} {}", emitter_id, emitter_name);
 }
 
 fn unregister_emitter(emitter_id: EntityId) {
-    let env = Audioware::env();
-    log::info!(env, "TODO: unregister emitter {:?}", emitter_id);
+    log::info!("TODO: unregister emitter {:?}", emitter_id);
 }
 
 fn emitters_count() -> i32 {
-    let env = Audioware::env();
-    log::info!(env, "TODO: emitters count");
+    log::info!("TODO: emitters count");
     0
 }
 
