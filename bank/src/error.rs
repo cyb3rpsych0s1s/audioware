@@ -6,6 +6,8 @@ pub enum Error {
     Registry { source: self::registry::Error },
     #[snafu(visibility(pub(crate)))]
     Validation { source: self::validation::Error },
+    #[snafu(visibility(pub(crate)))]
+    Manifest { source: audioware_manifest::Error },
 }
 
 pub mod registry {
@@ -70,5 +72,11 @@ impl From<self::registry::Error> for self::Error {
 impl From<self::validation::Error> for self::Error {
     fn from(source: self::validation::Error) -> Self {
         Self::Validation { source }
+    }
+}
+
+impl From<audioware_manifest::Error> for self::Error {
+    fn from(source: audioware_manifest::Error) -> Self {
+        Self::Manifest { source }
     }
 }

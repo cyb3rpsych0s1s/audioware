@@ -5,8 +5,8 @@ use std::{
 };
 
 use audioware_manifest::{
-    ok_or_continue, CannotParseManifestSnafu, CannotReadManifestSnafu, Depot, DialogLine, Locale,
-    Manifest, PlayerGender, R6Audioware, REDmod, Settings,
+    CannotParseManifestSnafu, CannotReadManifestSnafu, Depot, DialogLine, Locale, Manifest,
+    PlayerGender, R6Audioware, REDmod, Settings,
 };
 use either::Either;
 use ensure::*;
@@ -15,7 +15,7 @@ use kira::sound::{
     streaming::{StreamingSoundData, StreamingSoundSettings},
     FromFileError,
 };
-use red4ext_rs::{log, types::CName};
+use red4ext_rs::types::CName;
 use snafu::ResultExt;
 
 pub mod conflict;
@@ -226,8 +226,10 @@ impl Banks {
             Id::InMemory(_) => None,
         }
     }
-    pub fn setup() -> Result<Initialization, Error> {
+    pub fn setup() -> Initialization {
         let since = Instant::now();
+
+        let mut errors: Vec<Error> = vec![];
 
         let mut mods = Vec::with_capacity(30);
         let mut redmod_exists = false;
@@ -240,7 +242,7 @@ impl Banks {
                 if let Err(e) =
                     ensure_no_duplicate_accross_depots(redmod_exists, &m, mods.as_slice())
                 {
-                    log::error!("{e}");
+                    errors.push(e);
                     continue;
                 }
                 mods.push(m);
@@ -264,41 +266,69 @@ impl Banks {
         for m in mods {
             let paths = m.manifests_paths();
             for ref path in paths {
-                file = ok_or_continue!(std::fs::read(path).context(CannotReadManifestSnafu {
+                file = match std::fs::read(path).context(CannotReadManifestSnafu {
                     manifest: path.display().to_string(),
-                }));
-                manifest = ok_or_continue!(serde_yaml::from_slice::<Manifest>(file.as_slice())
-                    .context(CannotParseManifestSnafu {
+                }) {
+                    Ok(x) => x,
+                    Err(e) => {
+                        errors.push(e.into());
+                        continue;
+                    }
+                };
+                manifest = match serde_yaml::from_slice::<Manifest>(file.as_slice()).context(
+                    CannotParseManifestSnafu {
                         manifest: path.display().to_string(),
-                    },));
-                ok_or_continue!(ensure_manifest_no_duplicates(&manifest));
+                    },
+                ) {
+                    Ok(x) => x,
+                    Err(e) => {
+                        errors.push(e.into());
+                        continue;
+                    }
+                };
+                if let Err(e) = ensure_manifest_no_duplicates(&manifest) {
+                    errors.push(e);
+                    continue;
+                }
                 if let Some(sfx) = manifest.sfx {
                     for (key, value) in sfx {
-                        ok_or_continue!(ensure_sfx(
+                        match ensure_sfx(
                             key.as_str(),
                             value,
                             &m,
                             &mut ids,
                             &mut uniques,
                             &mut unique_settings,
-                        ));
+                        ) {
+                            Ok(x) => x,
+                            Err(e) => {
+                                errors.push(e);
+                                continue;
+                            }
+                        }
                     }
                 }
                 if let Some(onos) = manifest.onos {
                     for (key, value) in onos {
-                        ok_or_continue!(ensure_ono(
+                        match ensure_ono(
                             key.as_str(),
                             value,
                             &m,
                             &mut ids,
                             &mut genders,
                             &mut gender_settings,
-                        ));
+                        ) {
+                            Ok(x) => x,
+                            Err(e) => {
+                                errors.push(e);
+                                continue;
+                            }
+                        };
                     }
                 }
                 if let Some(voices) = manifest.voices {
                     for (key, value) in voices {
-                        ok_or_continue!(ensure_voice(
+                        match ensure_voice(
                             key.as_str(),
                             value,
                             &m,
@@ -308,19 +338,26 @@ impl Banks {
                             &mut single_subs,
                             &mut dual_subs,
                             &mut single_settings,
-                            &mut dual_settings
-                        ));
+                            &mut dual_settings,
+                        ) {
+                            Ok(x) => x,
+                            Err(e) => {
+                                errors.push(e);
+                                continue;
+                            }
+                        };
                     }
                 }
                 if let Some(music) = manifest.music {
                     for (key, value) in music {
-                        ok_or_continue!(ensure_music(
-                            key.as_str(),
-                            value,
-                            &m,
-                            &mut ids,
-                            &mut unique_settings
-                        ));
+                        match ensure_music(key.as_str(), value, &m, &mut ids, &mut unique_settings)
+                        {
+                            Ok(x) => x,
+                            Err(e) => {
+                                errors.push(e);
+                                continue;
+                            }
+                        };
                     }
                 }
             }
@@ -346,6 +383,7 @@ impl Banks {
                 lengths.0, lengths.1, lengths.2
             ),
             len_ids: ids.len(),
+            errors,
         };
 
         let _ = KEYS.set(ids);
@@ -360,7 +398,7 @@ impl Banks {
         let _ = LOC_SET.set(single_settings);
         let _ = MUL_SET.set(dual_settings);
 
-        Ok(report)
+        report
     }
 }
 
@@ -368,6 +406,7 @@ pub struct Initialization {
     duration: Duration,
     lengths: String,
     len_ids: usize,
+    pub errors: Vec<Error>,
 }
 
 impl std::fmt::Display for Initialization {
@@ -376,6 +415,7 @@ impl std::fmt::Display for Initialization {
             duration,
             lengths,
             len_ids,
+            ..
         } = self;
         write!(
             f,
