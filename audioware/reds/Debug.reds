@@ -49,3 +49,10 @@ public static exec func TestAudioSystemPlayOnEmitter(game: GameInstance, name: S
     let entity_id = GetPlayer(game).GetEntityID();
     GameInstance.GetAudioSystem(game).PlayOnEmitter(cname, entity_id, n"V");
 }
+
+/// Game.TestAudioSystemParameter("Audioware:Reverb", 1.0);
+/// Game.TestAudioSystemParameter("Audioware:Reverb", 0.0);
+public static exec func TestAudioSystemParameter(game: GameInstance, name: String, value: Float) {
+    let cname = StringToName(name);
+    GameInstance.GetAudioSystem(game).Parameter(cname, value);
+}
