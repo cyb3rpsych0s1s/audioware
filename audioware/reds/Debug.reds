@@ -40,3 +40,12 @@ public static exec func TestAudioSystemPlay(game: GameInstance, name: String) {
     let cname = StringToName(name);
     GameInstance.GetAudioSystem(game).Play(cname);
 }
+
+/// Game.TestAudioSystemPlayOnEmitter("ono_v_effort_short");
+/// Game.TestAudioSystemPlayOnEmitter("nah_everything_is_all_good");
+/// Game.TestAudioSystemPlayOnEmitter("as_if_I_didnt_know_already");
+public static exec func TestAudioSystemPlayOnEmitter(game: GameInstance, name: String) {
+    let cname = StringToName(name);
+    let entity_id = GetPlayer(game).GetEntityID();
+    GameInstance.GetAudioSystem(game).PlayOnEmitter(cname, entity_id, n"V");
+}

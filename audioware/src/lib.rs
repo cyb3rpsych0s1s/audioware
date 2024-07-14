@@ -1,5 +1,5 @@
 use audioware_bank::Banks;
-use hooks::attach_hook_audiosystem_play;
+use hooks::*;
 use red4ext_rs::{
     export_plugin, exports, global, log,
     types::{CName, EntityId, Ref},
@@ -41,7 +41,10 @@ impl Audioware {
     }
 
     fn attach_hooks(env: &SdkEnv) {
-        attach_hook_audiosystem_play(env);
+        play::attach_hook(env);
+        stop::attach_hook(env);
+        switch::attach_hook(env);
+        play_on_emitter::attach_hook(env);
     }
 }
 

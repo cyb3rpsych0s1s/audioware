@@ -46,6 +46,9 @@ static KEYS: OnceLock<HashSet<Id>> = OnceLock::new();
 
 pub struct Banks;
 impl Banks {
+    /// # Safety
+    ///
+    /// Will panic if [`Banks`] are not initialized yet.
     pub unsafe fn ids<'a>() -> &'a HashSet<Id> {
         KEYS.get().unwrap_unchecked()
     }
