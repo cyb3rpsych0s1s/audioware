@@ -1,4 +1,5 @@
 use audioware_bank::Banks;
+use audioware_manifest::PlayerGender;
 use hooks::*;
 use red4ext_rs::{
     export_plugin, exports, global, log,
@@ -6,11 +7,14 @@ use red4ext_rs::{
     wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, SdkEnv, SemVer,
     StateListener, U16CStr,
 };
+use state::gender;
 use types::{
     get_game_instance, GameAudioSystem, GameInstance, IGameInstance, LocalizationPackage, Subtitle,
 };
 
+mod error;
 mod hooks;
+mod state;
 mod types;
 
 pub struct Audioware;
@@ -74,6 +78,8 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.UnregisterEmitter", unregister_emitter)),
             GlobalExport(global!(c"Audioware.EmittersCount", emitters_count)),
             GlobalExport(global!(c"Audioware.DefineSubtitles", define_subtitles)),
+            GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
+            GlobalExport(global!(c"Audioware.UnsetPlayerGender", unset_player_gender)),
         ]
     }
 }
@@ -133,4 +139,20 @@ fn emitters_count() -> i32 {
 
 fn define_subtitles(package: Ref<LocalizationPackage>) {
     package.subtitle("custom_subtitle", "female", "male");
+}
+
+fn set_player_gender(new: PlayerGender) {
+    if let Ok(gender) = gender().as_deref_mut() {
+        if *gender != Some(new) {
+            *gender = Some(new);
+        }
+    }
+}
+
+fn unset_player_gender() {
+    if let Ok(gender) = gender().as_deref_mut() {
+        if gender.is_some() {
+            *gender = None;
+        }
+    }
 }

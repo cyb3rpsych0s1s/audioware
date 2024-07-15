@@ -15,3 +15,19 @@ public class LocalizationPackage extends ModLocalizationPackage {
         DefineSubtitles(this);
     }
 }
+
+public class LocalizationProvider extends ModLocalizationProvider {
+    public func OnLocaleChange() -> Void {
+        // TODO
+    }
+    public func OnGenderChange() -> Void {
+        let system = LocalizationSystem.GetInstance(this.GetGameInstance());
+        let gender = system.GetPlayerGender();
+        SetPlayerGender(gender);
+    }
+    public func GetPackage(language: CName) -> ref<ModLocalizationPackage> {
+        // TODO
+        return null;
+    }
+    public func GetFallback() -> CName { return n""; }
+}

@@ -12,4 +12,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 audioware-bank.workspace = true
+audioware-manifest.workspace = true
 red4ext-rs.workspace = true
+snafu.workspace = true
