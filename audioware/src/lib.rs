@@ -6,7 +6,9 @@ use red4ext_rs::{
     wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, SdkEnv, SemVer,
     StateListener, U16CStr,
 };
-use types::{LocalizationPackage, Subtitle};
+use types::{
+    get_game_instance, GameAudioSystem, GameInstance, IGameInstance, LocalizationPackage, Subtitle,
+};
 
 mod hooks;
 mod types;
@@ -85,6 +87,10 @@ unsafe extern "C" fn post_register() {}
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit initialization: Audioware");
+
+    let game = get_game_instance();
+    let system = GameInstance::get_audio_system(game);
+    system.play(CName::new("ono_v_pain_long"), None, None);
 }
 
 fn register_listener(emitter_id: EntityId) {

@@ -1,6 +1,7 @@
 use red4ext_rs::{
-    types::{IScriptable, Native, ScriptClass, StackFrame, Type},
-    NativeRepr, VoidPtr,
+    call,
+    types::{CName, EntityId, IScriptable, Method, Native, Ref, ScriptClass},
+    NativeRepr, RttiSystem,
 };
 
 #[repr(C, align(8))]
@@ -11,6 +12,23 @@ pub struct GameInstance {
 
 unsafe impl NativeRepr for GameInstance {
     const NAME: &'static str = "ScriptGameInstance";
+}
+
+pub trait IGameInstance {
+    fn get_audio_system(game: GameInstance) -> Ref<AudioSystem>;
+}
+
+impl IGameInstance for GameInstance {
+    fn get_audio_system(game: GameInstance) -> Ref<AudioSystem> {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(Self::NAME)).unwrap();
+        let static_method = cls
+            .static_methods()
+            .iter()
+            .find(|x| x.as_function().name() == CName::new("GetAudioSystem"))
+            .unwrap();
+        static_method.as_function().execute(None, (game,)).unwrap()
+    }
 }
 
 #[repr(C)]
@@ -31,35 +49,78 @@ impl AsRef<IScriptable> for AudioSystem {
     }
 }
 
-/// a `C` stack frame
-///
-/// see [RED4ext::CStackFrame](https://github.com/WopsS/RED4ext.SDK/blob/master/include/RED4ext/Scripting/Stack.hpp#L111)
-#[repr(C)]
-#[allow(non_snake_case)]
-pub struct RewindableStackFrame {
-    code: *mut i8, // 0
-    pad: [u8; 0x30 - 0x8],
-    data: VoidPtr,       // 30
-    dataType: *mut Type, // 38
-    pad2: [u8; 0x62 - 0x40],
-    currentParam: u8, // 62
-    useDirectData: bool,
+pub trait GameAudioSystem {
+    fn play(&self, event_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>);
+    fn stop(&self, event_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>);
+    fn switch(
+        &self,
+        switch_name: CName,
+        switch_value: CName,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+    );
 }
 
-type StackState = (*mut i8, VoidPtr, *mut Type);
-
-impl RewindableStackFrame {
-    pub unsafe fn state(&self) -> StackState {
-        (self.code, self.data, self.dataType)
+impl GameAudioSystem for Ref<AudioSystem> {
+    fn play(&self, event_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>) {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
+        let method: &Method = cls.get_method(CName::new("Play")).ok().unwrap();
+        method
+            .as_function()
+            .execute::<_, ()>(
+                unsafe { self.instance() }.map(AsRef::as_ref),
+                (
+                    event_name,
+                    entity_id.unwrap_or_default(),
+                    emitter_name.unwrap_or_default(),
+                ),
+            )
+            .unwrap();
     }
-    pub unsafe fn rewind(&mut self, state: StackState) {
-        self.code = state.0;
-        self.data = state.1;
-        self.dataType = state.2;
-        self.currentParam = 0;
+
+    fn stop(&self, event_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>) {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
+        let method: &Method = cls.get_method(CName::new("Stop")).ok().unwrap();
+        method
+            .as_function()
+            .execute::<_, ()>(
+                unsafe { self.instance() }.map(AsRef::as_ref),
+                (
+                    event_name,
+                    entity_id.unwrap_or_default(),
+                    emitter_name.unwrap_or_default(),
+                ),
+            )
+            .unwrap();
+    }
+
+    fn switch(
+        &self,
+        switch_name: CName,
+        switch_value: CName,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+    ) {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
+        let method: &Method = cls.get_method(CName::new("Switch")).ok().unwrap();
+        method
+            .as_function()
+            .execute::<_, ()>(
+                unsafe { self.instance() }.map(AsRef::as_ref),
+                (
+                    switch_name,
+                    switch_value,
+                    entity_id.unwrap_or_default(),
+                    emitter_name.unwrap_or_default(),
+                ),
+            )
+            .unwrap();
     }
 }
 
-pub unsafe fn frame_mut(src: &mut StackFrame) -> &mut RewindableStackFrame {
-    unsafe { std::mem::transmute(src) }
+pub fn get_game_instance() -> GameInstance {
+    call!("GetGameInstance"() -> GameInstance).unwrap_or_default()
 }
