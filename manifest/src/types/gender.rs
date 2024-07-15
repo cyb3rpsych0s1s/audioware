@@ -1,13 +1,15 @@
 use std::fmt;
 
+use red4ext_rs::NativeRepr;
 use serde::Deserialize;
 
-#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, Deserialize, PartialEq, Eq, Hash)]
 pub enum PlayerGender {
+    #[default]
     #[serde(rename = "fem")]
-    Female,
+    Female = 0,
     #[serde(rename = "male")]
-    Male,
+    Male = 1,
 }
 
 impl fmt::Display for PlayerGender {
@@ -21,4 +23,8 @@ impl fmt::Display for PlayerGender {
             }
         )
     }
+}
+
+unsafe impl NativeRepr for PlayerGender {
+    const NAME: &'static str = "Codeware.Localization.PlayerGender";
 }
