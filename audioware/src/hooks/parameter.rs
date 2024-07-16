@@ -27,7 +27,7 @@ unsafe extern "C" fn detour(
     cb: unsafe extern "C" fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr),
 ) {
     let frame = &mut *f;
-    let state = frame.state();
+    let state = frame.args_state();
 
     let parameter_name: CName = StackFrame::get_arg(frame);
     let parameter_value: f32 = StackFrame::get_arg(frame);
@@ -36,6 +36,6 @@ unsafe extern "C" fn detour(
 
     let env = Audioware::env();
     log::info!(env, "AudioSystem.Parameter: called {parameter_name}");
-    frame.rewind(state);
+    frame.restore_args(state);
     cb(i, f, a3, a4);
 }
