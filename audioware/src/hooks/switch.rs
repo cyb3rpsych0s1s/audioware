@@ -5,7 +5,10 @@ use red4ext_rs::{
     PluginOps, SdkEnv, VoidPtr,
 };
 
-use crate::Audioware;
+use crate::{
+    types::{get_game_instance, GameAudioSystem, GameInstance, IGameInstance},
+    Audioware,
+};
 
 hooks! {
    static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
@@ -35,7 +38,29 @@ unsafe extern "C" fn detour(
     let entity_id: EntityId = StackFrame::get_arg(frame);
     let emitter_name: CName = StackFrame::get_arg(frame);
 
-    if Banks::exists(&switch_name) || Banks::exists(&switch_value) {
+    let prev = Banks::exists(&switch_name);
+    let next = Banks::exists(&switch_value);
+
+    if prev || next {
+        let game = get_game_instance();
+        let system = GameInstance::get_audio_system(game);
+        let entity_id = if entity_id == EntityId::default() {
+            None
+        } else {
+            Some(entity_id)
+        };
+        let emitter_name = if emitter_name == CName::default() {
+            None
+        } else {
+            Some(emitter_name)
+        };
+        if !prev {
+            system.stop(switch_name, entity_id, emitter_name);
+        }
+        // TODO: kira stop/play
+        if !next {
+            system.play(switch_value, entity_id, emitter_name);
+        }
         let env = Audioware::env();
         log::info!(
             env,
