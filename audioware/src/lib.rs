@@ -80,6 +80,7 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.DefineSubtitles", define_subtitles)),
             GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
             GlobalExport(global!(c"Audioware.UnsetPlayerGender", unset_player_gender)),
+            GlobalExport(global!(c"Audioware.TestPlay", test_play)),
         ]
     }
 }
@@ -93,10 +94,6 @@ unsafe extern "C" fn post_register() {}
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit initialization: Audioware");
-
-    let game = get_game_instance();
-    let system = GameInstance::get_audio_system(game);
-    system.play(CName::new("ono_v_pain_long"), None, None);
 }
 
 fn register_listener(emitter_id: EntityId) {
@@ -155,4 +152,10 @@ fn unset_player_gender() {
             *gender = None;
         }
     }
+}
+
+fn test_play() {
+    let game = get_game_instance();
+    let system = GameInstance::get_audio_system(game);
+    system.play(CName::new("ono_v_pain_long"), None, None);
 }

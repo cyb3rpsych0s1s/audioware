@@ -49,6 +49,7 @@ impl AsRef<IScriptable> for AudioSystem {
     }
 }
 
+#[allow(dead_code)]
 pub trait GameAudioSystem {
     fn play(&self, event_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>);
     fn stop(&self, event_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>);

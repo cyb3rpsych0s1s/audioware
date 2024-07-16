@@ -1,4 +1,5 @@
 import Audioware.LocalizationPackage
+import Audioware.TestPlay
 import Codeware.Localization.*
 
 /// Game.TestRegisterEmitter()
@@ -55,4 +56,9 @@ public static exec func TestAudioSystemPlayOnEmitter(game: GameInstance, name: S
 public static exec func TestAudioSystemParameter(game: GameInstance, name: String, value: Float) {
     let cname = StringToName(name);
     GameInstance.GetAudioSystem(game).Parameter(cname, value);
+}
+
+/// Game.TestPlayRustOnly();
+public static exec func TestPlayRustOnly(game: GameInstance) {
+    TestPlay();
 }
