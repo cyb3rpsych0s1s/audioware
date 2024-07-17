@@ -1,35 +1,7 @@
 use red4ext_rs::{
-    call,
-    types::{CName, EntityId, IScriptable, Method, Native, Ref, ScriptClass},
-    NativeRepr, RttiSystem,
+    types::{CName, EntityId, IScriptable, Method, Native, Opt, Ref, ScriptClass},
+    RttiSystem,
 };
-
-#[repr(C, align(8))]
-#[derive(Default)]
-pub struct GameInstance {
-    pub _padding0: [u8; 0x18],
-}
-
-unsafe impl NativeRepr for GameInstance {
-    const NAME: &'static str = "ScriptGameInstance";
-}
-
-pub trait IGameInstance {
-    fn get_audio_system(game: GameInstance) -> Ref<AudioSystem>;
-}
-
-impl IGameInstance for GameInstance {
-    fn get_audio_system(game: GameInstance) -> Ref<AudioSystem> {
-        let rtti = RttiSystem::get();
-        let cls = rtti.get_class(CName::new(Self::NAME)).unwrap();
-        let static_method = cls
-            .static_methods()
-            .iter()
-            .find(|x| x.as_function().name() == CName::new("GetAudioSystem"))
-            .unwrap();
-        static_method.as_function().execute(None, (game,)).unwrap()
-    }
-}
 
 #[repr(C)]
 pub struct AudioSystem {
@@ -51,19 +23,19 @@ impl AsRef<IScriptable> for AudioSystem {
 
 #[allow(dead_code)]
 pub trait GameAudioSystem {
-    fn play(&self, event_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>);
-    fn stop(&self, event_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>);
+    fn play(&self, event_name: CName, entity_id: Opt<EntityId>, emitter_name: Opt<CName>);
+    fn stop(&self, event_name: CName, entity_id: Opt<EntityId>, emitter_name: Opt<CName>);
     fn switch(
         &self,
         switch_name: CName,
         switch_value: CName,
-        entity_id: Option<EntityId>,
-        emitter_name: Option<CName>,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
     );
 }
 
 impl GameAudioSystem for Ref<AudioSystem> {
-    fn play(&self, event_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>) {
+    fn play(&self, event_name: CName, entity_id: Opt<EntityId>, emitter_name: Opt<CName>) {
         let rtti = RttiSystem::get();
         let cls = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
         let method: &Method = cls.get_method(CName::new("Play")).ok().unwrap();
@@ -80,7 +52,7 @@ impl GameAudioSystem for Ref<AudioSystem> {
             .unwrap();
     }
 
-    fn stop(&self, event_name: CName, entity_id: Option<EntityId>, emitter_name: Option<CName>) {
+    fn stop(&self, event_name: CName, entity_id: Opt<EntityId>, emitter_name: Opt<CName>) {
         let rtti = RttiSystem::get();
         let cls = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
         let method: &Method = cls.get_method(CName::new("Stop")).ok().unwrap();
@@ -101,8 +73,8 @@ impl GameAudioSystem for Ref<AudioSystem> {
         &self,
         switch_name: CName,
         switch_value: CName,
-        entity_id: Option<EntityId>,
-        emitter_name: Option<CName>,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
     ) {
         let rtti = RttiSystem::get();
         let cls = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
@@ -120,8 +92,4 @@ impl GameAudioSystem for Ref<AudioSystem> {
             )
             .unwrap();
     }
-}
-
-pub fn get_game_instance() -> GameInstance {
-    call!("GetGameInstance"() -> GameInstance).unwrap_or_default()
 }

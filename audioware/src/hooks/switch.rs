@@ -1,12 +1,12 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
     hashes, hooks, log,
-    types::{CName, EntityId, IScriptable, StackFrame},
-    PluginOps, SdkEnv, VoidPtr,
+    types::{CName, EntityId, GameEngine, IScriptable, Opt, ScriptClass, StackFrame},
+    PluginOps, RttiSystem, SdkEnv, VoidPtr,
 };
 
 use crate::{
-    types::{get_game_instance, GameAudioSystem, GameInstance, IGameInstance},
+    types::{AudioSystem, GameAudioSystem},
     Audioware,
 };
 
@@ -42,17 +42,23 @@ unsafe extern "C" fn detour(
     let next = Banks::exists(&switch_value);
 
     if prev || next {
-        let game = get_game_instance();
-        let system = GameInstance::get_audio_system(game);
+        let rtti = RttiSystem::get();
+        let class = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
+        let engine = GameEngine::get();
+        let game = engine.game_instance();
+        let system = game
+            .get_system(class.as_type())
+            .cast::<AudioSystem>()
+            .unwrap();
         let entity_id = if entity_id == EntityId::default() {
-            None
+            Opt::Default
         } else {
-            Some(entity_id)
+            Opt::NonDefault(entity_id)
         };
         let emitter_name = if emitter_name == CName::default() {
-            None
+            Opt::Default
         } else {
-            Some(emitter_name)
+            Opt::NonDefault(emitter_name)
         };
         if !prev {
             system.stop(switch_name, entity_id, emitter_name);

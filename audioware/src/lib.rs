@@ -3,14 +3,12 @@ use audioware_manifest::PlayerGender;
 use hooks::*;
 use red4ext_rs::{
     export_plugin, exports, global, log,
-    types::{CName, EntityId, Ref},
-    wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, SdkEnv, SemVer,
-    StateListener, U16CStr,
+    types::{CName, EntityId, GameEngine, Opt, Ref, ScriptClass},
+    wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem,
+    SdkEnv, SemVer, StateListener, U16CStr,
 };
 use state::gender;
-use types::{
-    get_game_instance, GameAudioSystem, GameInstance, IGameInstance, LocalizationPackage, Subtitle,
-};
+use types::{AudioSystem, GameAudioSystem, LocalizationPackage, Subtitle};
 
 mod error;
 mod hooks;
@@ -155,7 +153,13 @@ fn unset_player_gender() {
 }
 
 fn test_play() {
-    let game = get_game_instance();
-    let system = GameInstance::get_audio_system(game);
-    system.play(CName::new("ono_v_pain_long"), None, None);
+    let rtti = RttiSystem::get();
+    let class = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
+    let engine = GameEngine::get();
+    let game = engine.game_instance();
+    let system = game
+        .get_system(class.as_type())
+        .cast::<AudioSystem>()
+        .unwrap();
+    system.play(CName::new("ono_v_pain_long"), Opt::Default, Opt::Default);
 }
