@@ -1,6 +1,5 @@
 use red4ext_rs::{
-    types::{CName, EntityId, IScriptable, Method, Native, Opt, Ref, ScriptClass},
-    RttiSystem,
+    types::{CName, EntityId, IScriptable, Method, Native, Opt, Ref, ScriptClass}, NativeRepr, RttiSystem
 };
 
 #[repr(C)]
@@ -92,4 +91,17 @@ impl GameAudioSystem for Ref<AudioSystem> {
             )
             .unwrap();
     }
+}
+
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+#[repr(C, align(16))]
+pub struct Vector4 {
+    pub x: f32, // 0x0
+    pub y: f32, // 0x4
+    pub z: f32, // 0x8
+    pub w: f32, // 0xC
+}
+
+unsafe impl NativeRepr for Vector4 {
+    const NAME: &'static str = "Vector4";
 }

@@ -2,13 +2,10 @@ use audioware_bank::Banks;
 use audioware_manifest::PlayerGender;
 use hooks::*;
 use red4ext_rs::{
-    export_plugin, exports, global, log,
-    types::{CName, EntityId, GameEngine, Opt, Ref, ScriptClass},
-    wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem,
-    SdkEnv, SemVer, StateListener, U16CStr,
+    call, export_plugin, exports, global, log, types::{CName, EntityId, GameEngine, Opt, Ref, ScriptClass}, wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem, SdkEnv, SemVer, StateListener, U16CStr
 };
 use state::gender;
-use types::{AudioSystem, GameAudioSystem, LocalizationPackage, Subtitle};
+use types::{AudioSystem, GameAudioSystem, LocalizationPackage, Subtitle, Vector4};
 
 mod error;
 mod hooks;
@@ -92,6 +89,7 @@ unsafe extern "C" fn post_register() {}
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit initialization: Audioware");
+    test_static();
 }
 
 fn register_listener(emitter_id: EntityId) {
@@ -162,4 +160,12 @@ fn test_play() {
         .cast::<AudioSystem>()
         .unwrap();
     system.play(CName::new("ono_v_pain_long"), Opt::Default, Opt::Default);
+}
+
+fn test_static() {
+    let env = Audioware::env();
+    let from = Vector4 { x: 0., y: 1., z: 2., w: 3. };
+    let to = Vector4 { x: 3., y: 2., z: 1., w: 0. };
+    let distance = call!("Vector4"::"Distance"(from, to) -> f32).unwrap();
+    log::info!(env, "distance: {distance}");
 }
