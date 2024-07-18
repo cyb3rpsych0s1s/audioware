@@ -1,5 +1,6 @@
 use red4ext_rs::{
-    types::{CName, EntityId, IScriptable, Method, Native, Opt, Ref, ScriptClass}, NativeRepr, RttiSystem
+    types::{CName, EntityId, IScriptable, Method, Native, Opt, Ref, ScriptClass},
+    NativeRepr, RttiSystem,
 };
 
 #[repr(C)]
