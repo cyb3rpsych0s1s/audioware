@@ -1,8 +1,13 @@
 //! game state
 
-use std::{convert::Infallible, sync::{atomic::AtomicU8, OnceLock}};
+use std::{
+    convert::Infallible,
+    sync::{atomic::AtomicU8, OnceLock},
+};
 
-use red4ext_rs::NativeRepr;
+use red4ext_rs::{log, NativeRepr, PluginOps};
+
+use crate::Audioware;
 
 /// retrieve [`State`]
 fn state() -> &'static AtomicU8 {
@@ -12,10 +17,15 @@ fn state() -> &'static AtomicU8 {
 
 impl GameState {
     pub fn set(state: GameState) -> Self {
-        self::state()
+        let env = Audioware::env();
+        let prev = self::state()
             .swap(state as u8, std::sync::atomic::Ordering::SeqCst)
             .try_into()
-            .expect("game state is internally managed")
+            .expect("game state is internally managed");
+        if prev != state {
+            log::info!(env, "game state: {prev} -> {state}");
+        }
+        prev
     }
 }
 

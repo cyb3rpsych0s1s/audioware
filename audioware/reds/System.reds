@@ -7,7 +7,6 @@ public class AudiowareSystem extends ScriptableSystem {
 
     private func OnAttach() -> Void {
         FTLog(AsRef("on attach: AudiowareSystem"));
-        SetGameState(GameState.Start);
         let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
         let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
         let ui: ref<IBlackboard> = system.Get(definitions.UI_System);
@@ -15,7 +14,6 @@ public class AudiowareSystem extends ScriptableSystem {
     }
     private func OnDetach() -> Void {
         FTLog(AsRef("on detach: AudiowareSystem"));
-        SetGameState(GameState.End);
         let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
         let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
         if IsDefined(this.menuListener) {
@@ -34,6 +32,7 @@ public class AudiowareSystem extends ScriptableSystem {
         UnsetPlayerGender();
     }
     protected cb func OnInMenu(value: Bool) -> Bool {
+        FTLog(AsRef(s"on \(value ? "enter" : "exit") menu: AudiowareSystem"));
         SetGameState(value ? GameState.InMenu : GameState.InGame);
     }
 }

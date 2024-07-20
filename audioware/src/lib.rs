@@ -203,7 +203,5 @@ fn test_static() {
 }
 
 fn set_game_state(after: GameState) {
-    let env = Audioware::env();
-    let before = GameState::set(after);
-    log::info!(env, "game state: {before} -> {after}");
+    GameState::set(after);
 }

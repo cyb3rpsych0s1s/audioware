@@ -27,20 +27,20 @@ class AudiowareService extends ScriptableService {
         switch event.GetEventName() {
             case n"Session/Start":
                 FTLog(AsRef("on session start: AudiowareService"));
+                SetGameState(GameState.Start);
                 break;
             case n"Session/Ready":
                 FTLog(AsRef("on session ready: AudiowareService"));
                 break;
             case n"Session/Pause":
                 FTLog(AsRef("on session pause: AudiowareService"));
-                SetGameState(GameState.InPause);
                 break;
             case n"Session/Resume":
                 FTLog(AsRef("on session resume: AudiowareService"));
-                SetGameState(GameState.InGame);
                 break;
             case n"Session/BeforeEnd":
                 FTLog(AsRef("on session before end: AudiowareService"));
+                SetGameState(GameState.End);
                 break;
             default:
                 break;
