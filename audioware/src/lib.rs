@@ -14,6 +14,7 @@ mod error;
 mod hooks;
 mod states;
 mod types;
+mod utils;
 
 pub struct Audioware;
 
@@ -100,6 +101,9 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     log::info!(env, "on exit initialization: Audioware");
     test_play();
     test_static();
+    utils::info("it should be able to call FTLog");
+    utils::warn("it should be able to call FTLogWarning");
+    utils::error("it should be able to call FTLogError");
 }
 
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {

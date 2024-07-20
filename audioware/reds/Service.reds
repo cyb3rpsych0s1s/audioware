@@ -4,6 +4,8 @@ class AudiowareService extends ScriptableService {
     private cb func OnLoad() {
         // game session state
         GameInstance.GetCallbackSystem()
+            .RegisterCallback(n"Session/BeforeStart", this, n"OnSessionChange");
+        GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Session/Start", this, n"OnSessionChange");
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Session/Ready", this, n"OnSessionChange");
@@ -13,6 +15,8 @@ class AudiowareService extends ScriptableService {
             .RegisterCallback(n"Session/Resume", this, n"OnSessionChange");
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionChange");
+        GameInstance.GetCallbackSystem()
+            .RegisterCallback(n"Session/End", this, n"OnSessionChange");
         
         // spatial scene emitters
         GameInstance.GetCallbackSystem()
@@ -25,6 +29,9 @@ class AudiowareService extends ScriptableService {
 
     private cb func OnSessionChange(event: ref<GameSessionEvent>) {
         switch event.GetEventName() {
+            case n"Session/BeforeStart":
+                FTLog(AsRef("on session before start: AudiowareService"));
+                break;
             case n"Session/Start":
                 FTLog(AsRef("on session start: AudiowareService"));
                 SetGameState(GameState.Start);
@@ -41,6 +48,9 @@ class AudiowareService extends ScriptableService {
             case n"Session/BeforeEnd":
                 FTLog(AsRef("on session before end: AudiowareService"));
                 SetGameState(GameState.End);
+                break;
+            case n"Session/End":
+                FTLog(AsRef("on session end: AudiowareService"));
                 break;
             default:
                 break;
