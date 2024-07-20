@@ -15,6 +15,7 @@ redscript_repo_dir  := join(justfile_directory(), "audioware", "reds")
 red4ext_deploy_dir    := join("red4ext", "plugins", plugin_name)
 redscript_deploy_dir  := join("r6", "scripts", capitalize(plugin_name))
 red_cache_dir         := join("r6", "cache")
+red4ext_logs_dir      := join("red4ext", "logs")
 
 # cli
 zoltan_exe            := env_var_or_default("ZOLTAN_EXE", "")
@@ -116,3 +117,25 @@ offsets:
 
 checksum TO:
   Get-FileHash -Path "{{TO}}" -Algorithm SHA256 | Select-Object -ExpandProperty Hash
+
+@log TO=game_dir:
+  $folder = '{{ join(TO, red4ext_logs_dir) }}'; \
+  $files = Get-ChildItem -Path $folder -Filter "audioware-*.log"; \
+  $logs = @(); \
+  foreach ($file in $files) { \
+    if ($file.Name -match "audioware-(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2})") { \
+        $dateString = "$($matches[1])-$($matches[2])-$($matches[3]) $($matches[4]):$($matches[5]):$($matches[6])"; \
+        $date = [datetime]::ParseExact($dateString, "yyyy-MM-dd HH:mm:ss", $null); \
+        $logs += [PSCustomObject]@{ \
+            File = $file.FullName; \
+            Date = $date; \
+        } \
+    } \
+  } \
+  $latest = $logs | Sort-Object Date -Descending | Select-Object -First 1; \
+  if ($latest) { \
+    Write-Output "The most recent log file is: $($latest.File)"; \
+    Get-Content -Path $latest.File -Wait; \
+  } else { \
+    Write-Output "No log files found."; \
+  }
