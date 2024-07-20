@@ -19,19 +19,19 @@ public class LocalizationPackage extends ModLocalizationPackage {
 public class LocalizationProvider extends ModLocalizationProvider {
     protected func OnAttach() {
         super.OnAttach();
-        FTLog(AsRef("on attach: LocalizationProvider"));
+        LOG("on attach: LocalizationProvider");
         this.OnLocaleChange();
         this.OnGenderChange();
     }
     public func OnLocaleChange() -> Void {
-        FTLog(AsRef("on locale change: LocalizationProvider"));
+        LOG("on locale change: LocalizationProvider");
         let system = LocalizationSystem.GetInstance(this.GetGameInstance());
         let spoken = system.GetVoiceLanguage();
         let written = system.GetSubtitleLanguage();
         SetGameLocales(spoken, written);
     }
     public func OnGenderChange() -> Void {
-        FTLog(AsRef("on gender change: LocalizationProvider"));
+        LOG("on gender change: LocalizationProvider");
         let system = LocalizationSystem.GetInstance(this.GetGameInstance());
         let gender = system.GetPlayerGender();
         SetPlayerGender(gender);

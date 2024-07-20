@@ -2,6 +2,23 @@ module Audioware
 
 import Codeware.Localization.PlayerGender
 
+private static func LOG(msg: String) {
+    FTLog(AsRef(msg));
+    PLog(msg);
+}
+private static func WARN(msg: String) {
+    FTLogWarning(AsRef(msg));
+    PLogWarning(msg);
+}
+private static func ERR(msg: String) {
+    FTLogError(AsRef(msg));
+    PLogError(msg);
+}
+
+private native func PLog(msg: String) -> Void;
+private native func PLogWarning(msg: String) -> Void;
+private native func PLogError(msg: String) -> Void;
+
 private native func RegisterListener(listenerID: EntityID) -> Void;
 private native func UnregisterListener(listenerID: EntityID) -> Void;
 private native func RegisterEmitter(emitterID: EntityID, emitterName: CName) -> Void;

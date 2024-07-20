@@ -81,6 +81,9 @@ impl Plugin for Audioware {
                 c"Audioware.UnregisterListener",
                 unregister_listener
             )),
+            GlobalExport(global!(c"Audioware.PLog", plog_info)),
+            GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
+            GlobalExport(global!(c"Audioware.PLogError", plog_error)),
             GlobalExport(global!(c"Audioware.RegisterEmitter", register_emitter)),
             GlobalExport(global!(c"Audioware.UnregisterEmitter", unregister_emitter)),
             GlobalExport(global!(c"Audioware.EmittersCount", emitters_count)),
@@ -114,6 +117,34 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit running: Audioware");
     GameState::set(GameState::Unload);
+}
+
+fn plog_info(msg: String) {
+    plog(msg, "PLog");
+}
+
+fn plog_warn(msg: String) {
+    plog(msg, "PLogWarning");
+}
+
+fn plog_error(msg: String) {
+    plog(msg, "PLogError");
+}
+
+#[inline]
+fn plog(msg: String, func_name: &str) {
+    match func_name {
+        "PLog" => {
+            log::info!(Audioware::env(), "{msg}");
+        }
+        "PLogWarning" => {
+            log::warn!(Audioware::env(), "{msg}");
+        }
+        "PLogError" => {
+            log::error!(Audioware::env(), "{msg}");
+        }
+        _ => unreachable!(),
+    }
 }
 
 fn register_listener(emitter_id: EntityId) {

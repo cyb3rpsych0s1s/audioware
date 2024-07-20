@@ -6,14 +6,14 @@ public class AudiowareSystem extends ScriptableSystem {
     private let menuListener: ref<CallbackHandle>;
 
     private func OnAttach() -> Void {
-        FTLog(AsRef("on attach: AudiowareSystem"));
+        LOG("on attach: AudiowareSystem");
         let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
         let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
         let ui: ref<IBlackboard> = system.Get(definitions.UI_System);
         this.menuListener = ui.RegisterListenerBool(definitions.UI_System.IsInMenu, this, n"OnInMenu");
     }
     private func OnDetach() -> Void {
-        FTLog(AsRef("on detach: AudiowareSystem"));
+        LOG("on detach: AudiowareSystem");
         let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
         let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
         if IsDefined(this.menuListener) {
@@ -23,16 +23,16 @@ public class AudiowareSystem extends ScriptableSystem {
         }
     }
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {
-        FTLog(AsRef("on player attach: AudiowareSystem"));
+        LOG("on player attach: AudiowareSystem");
         SetGameState(GameState.InGame);
         TestPlay();
     }
     private final func OnPlayerDetach(request: ref<PlayerDetachRequest>) -> Void {
-        FTLog(AsRef("on player detach: AudiowareSystem"));
+        LOG("on player detach: AudiowareSystem");
         UnsetPlayerGender();
     }
     protected cb func OnInMenu(value: Bool) -> Bool {
-        FTLog(AsRef(s"on \(value ? "enter" : "exit") menu: AudiowareSystem"));
+        LOG(s"on \(value ? "enter" : "exit") menu: AudiowareSystem");
         SetGameState(value ? GameState.InMenu : GameState.InGame);
     }
 }
