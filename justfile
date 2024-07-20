@@ -124,12 +124,12 @@ checksum TO:
   $logs = @(); \
   foreach ($file in $files) { \
     if ($file.Name -match "audioware-(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2})") { \
-        $dateString = "$($matches[1])-$($matches[2])-$($matches[3]) $($matches[4]):$($matches[5]):$($matches[6])"; \
-        $date = [datetime]::ParseExact($dateString, "yyyy-MM-dd HH:mm:ss", $null); \
-        $logs += [PSCustomObject]@{ \
-            File = $file.FullName; \
-            Date = $date; \
-        } \
+      $dateString = "$($matches[1])-$($matches[2])-$($matches[3]) $($matches[4]):$($matches[5]):$($matches[6])"; \
+      $date = [datetime]::ParseExact($dateString, "yyyy-MM-dd HH:mm:ss", $null); \
+      $logs += [PSCustomObject]@{ \
+        File = $file.FullName; \
+        Date = $date; \
+      } \
     } \
   } \
   $latest = $logs | Sort-Object Date -Descending | Select-Object -First 1; \
