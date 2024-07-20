@@ -25,6 +25,14 @@ pub enum Error {
 
 #[derive(Debug, Snafu)]
 pub enum ConversionError {
-    #[snafu(display("invalid locale: {value}"))]
+    #[snafu(display("invalid locale: {value}"), visibility(pub))]
     InvalidLocale { value: String },
 }
+
+// impl IntoError<ConversionError> for InvalidLocaleSnafu<String> {
+//     type Source = String;
+
+//     fn into_error(self, value: Self::Source) -> ConversionError {
+//         ConversionError::InvalidLocale { value }
+//     }
+// }

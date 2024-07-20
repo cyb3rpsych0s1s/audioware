@@ -17,10 +17,21 @@ public class LocalizationPackage extends ModLocalizationPackage {
 }
 
 public class LocalizationProvider extends ModLocalizationProvider {
+    protected func OnAttach() {
+        super.OnAttach();
+        FTLog(AsRef("on attach: LocalizationProvider"));
+        this.OnLocaleChange();
+        this.OnGenderChange();
+    }
     public func OnLocaleChange() -> Void {
-        // TODO
+        FTLog(AsRef("on locale change: LocalizationProvider"));
+        let system = LocalizationSystem.GetInstance(this.GetGameInstance());
+        let spoken = system.GetVoiceLanguage();
+        let written = system.GetSubtitleLanguage();
+        SetGameLocales(spoken, written);
     }
     public func OnGenderChange() -> Void {
+        FTLog(AsRef("on gender change: LocalizationProvider"));
         let system = LocalizationSystem.GetInstance(this.GetGameInstance());
         let gender = system.GetPlayerGender();
         SetPlayerGender(gender);

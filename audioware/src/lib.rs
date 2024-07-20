@@ -8,7 +8,10 @@ use red4ext_rs::{
     SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{gender, GameState, State};
-use types::{AudioSystem, GameAudioSystem, LocalizationPackage, Subtitle, Vector4};
+use types::{
+    AudioSystem, GameAudioSystem, LocalizationPackage, SpokenLocale, Subtitle, Vector4,
+    WrittenLocale,
+};
 
 mod error;
 mod hooks;
@@ -85,6 +88,7 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetGameState", set_game_state)),
             GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
             GlobalExport(global!(c"Audioware.UnsetPlayerGender", unset_player_gender)),
+            GlobalExport(global!(c"Audioware.SetGameLocales", set_game_locales)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play)),
         ]
     }
@@ -208,4 +212,26 @@ fn test_static() {
 
 fn set_game_state(after: GameState) {
     GameState::set(after);
+}
+
+fn set_game_locales(spoken: CName, written: CName) {
+    let env = Audioware::env();
+    let (spoken, written): (SpokenLocale, WrittenLocale) = (
+        match spoken.try_into() {
+            Ok(x) => x,
+            Err(e) => {
+                log::error!(env, "Invalid spoken language: {}", e);
+                return;
+            }
+        },
+        match written.try_into() {
+            Ok(x) => x,
+            Err(e) => {
+                log::error!(env, "Invalid written language: {}", e);
+                return;
+            }
+        },
+    );
+    SpokenLocale::set(spoken);
+    WrittenLocale::set(written);
 }

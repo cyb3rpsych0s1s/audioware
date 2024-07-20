@@ -7,6 +7,8 @@ use crate::error::InternalError;
 mod game;
 pub use game::*;
 
+mod player;
+
 pub trait State {
     type Value;
     fn set(value: Self::Value) -> Self::Value;

@@ -10,6 +10,7 @@ private native func EmittersCount() -> Int32;
 private native func SetGameState(state: GameState) -> Void;
 private native func SetPlayerGender(gender: PlayerGender) -> Void;
 private native func UnsetPlayerGender() -> Void;
+private native func SetGameLocales(spoken: CName, written: CName) -> Void;
 
 enum GameState {
     Load = 0,

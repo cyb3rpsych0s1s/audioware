@@ -86,6 +86,9 @@ impl TryFrom<red4ext_rs::types::CName> for Locale {
     type Error = crate::error::ConversionError;
 
     fn try_from(value: red4ext_rs::types::CName) -> Result<Self, Self::Error> {
+        if value == red4ext_rs::types::CName::undefined() {
+            return Ok(Self::English);
+        }
         match value.as_str() {
             "pl-pl" => Ok(Self::Polish),
             "en-us" => Ok(Self::English),
