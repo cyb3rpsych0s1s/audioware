@@ -11,8 +11,8 @@ use crate::{
 
 use super::State;
 
-pub fn gender() -> &'static RwLock<PlayerGender> {
-    static INSTANCE: OnceLock<RwLock<PlayerGender>> = OnceLock::new();
+pub fn gender() -> &'static RwLock<Option<PlayerGender>> {
+    static INSTANCE: OnceLock<RwLock<Option<PlayerGender>>> = OnceLock::new();
     INSTANCE.get_or_init(Default::default)
 }
 
@@ -27,7 +27,7 @@ fn written_language() -> &'static RwLock<WrittenLocale> {
 }
 
 impl State for PlayerGender {
-    type Value = PlayerGender;
+    type Value = Option<PlayerGender>;
 
     fn set(value: Self::Value) -> Self::Value {
         let env = Audioware::env();
@@ -35,7 +35,12 @@ impl State for PlayerGender {
             Ok(mut x) => {
                 let prior = *x;
                 *x = value;
-                log::info!(env, "gender: {prior} -> {value}");
+                log::info!(
+                    env,
+                    "gender: {} -> {}",
+                    prior.map(|x| x.to_string()).unwrap_or("None".to_string()),
+                    value.map(|x| x.to_string()).unwrap_or("None".to_string())
+                );
                 return prior;
             }
             Err(_) => {

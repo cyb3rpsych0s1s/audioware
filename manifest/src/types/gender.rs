@@ -18,8 +18,8 @@ impl fmt::Display for PlayerGender {
             f,
             "{}",
             match self {
-                PlayerGender::Female => "female",
-                PlayerGender::Male => "male",
+                PlayerGender::Female => "Female",
+                PlayerGender::Male => "Male",
             }
         )
     }

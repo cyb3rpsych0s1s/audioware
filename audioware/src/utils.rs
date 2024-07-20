@@ -1,3 +1,5 @@
+//! Logging utils.
+
 use red4ext_rs::{
     log,
     types::{CName, ScriptRef},
@@ -6,15 +8,49 @@ use red4ext_rs::{
 
 use crate::Audioware;
 
-pub(super) fn info(msg: impl Into<String>) {
+/// Exposes `PLog` to Redscript.
+pub fn plog_info(msg: String) {
+    plog(msg, "PLog");
+}
+
+/// Exposes `PLogWarning` to Redscript.
+pub fn plog_warn(msg: String) {
+    plog(msg, "PLogWarning");
+}
+
+/// Exposes `PLogError` to Redscript.
+pub fn plog_error(msg: String) {
+    plog(msg, "PLogError");
+}
+
+#[inline]
+fn plog(msg: String, func_name: &str) {
+    match func_name {
+        "PLog" => {
+            log::info!(Audioware::env(), "{msg}");
+        }
+        "PLogWarning" => {
+            log::warn!(Audioware::env(), "{msg}");
+        }
+        "PLogError" => {
+            log::error!(Audioware::env(), "{msg}");
+        }
+        _ => unreachable!(),
+    }
+}
+
+/// Exposes `FTLog` to Rust.
+pub fn info(msg: impl Into<String>) {
     console(msg, "FTLog");
 }
 
-pub(super) fn warn(msg: impl Into<String>) {
+/// Exposes `FTLogWarning` to Rust.
+pub fn warn(msg: impl Into<String>) {
     console(msg, "FTLogWarning");
 }
 
-pub(super) fn error(msg: impl Into<String>) {
+/// Exposes `FTLogError` to Rust.
+pub fn error(msg: impl Into<String>) {
     console(msg, "FTLogError");
 }
 

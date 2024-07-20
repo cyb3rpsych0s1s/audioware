@@ -7,11 +7,12 @@ use red4ext_rs::{
     wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem,
     SdkEnv, SemVer, StateListener, U16CStr,
 };
-use states::{gender, GameState, State};
+use states::{GameState, State};
 use types::{
     AudioSystem, GameAudioSystem, LocalizationPackage, SpokenLocale, Subtitle, Vector4,
     WrittenLocale,
 };
+use utils::{plog_error, plog_info, plog_warn};
 
 mod error;
 mod hooks;
@@ -119,34 +120,6 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     GameState::set(GameState::Unload);
 }
 
-fn plog_info(msg: String) {
-    plog(msg, "PLog");
-}
-
-fn plog_warn(msg: String) {
-    plog(msg, "PLogWarning");
-}
-
-fn plog_error(msg: String) {
-    plog(msg, "PLogError");
-}
-
-#[inline]
-fn plog(msg: String, func_name: &str) {
-    match func_name {
-        "PLog" => {
-            log::info!(Audioware::env(), "{msg}");
-        }
-        "PLogWarning" => {
-            log::warn!(Audioware::env(), "{msg}");
-        }
-        "PLogError" => {
-            log::error!(Audioware::env(), "{msg}");
-        }
-        _ => unreachable!(),
-    }
-}
-
 fn register_listener(emitter_id: EntityId) {
     log::info!(
         Audioware::env(),
@@ -189,20 +162,12 @@ fn define_subtitles(package: Ref<LocalizationPackage>) {
     package.subtitle("custom_subtitle", "female", "male");
 }
 
-fn set_player_gender(new: PlayerGender) {
-    if let Ok(gender) = gender().as_deref_mut() {
-        if *gender != Some(new) {
-            *gender = Some(new);
-        }
-    }
+fn set_player_gender(value: PlayerGender) {
+    PlayerGender::set(Some(value));
 }
 
 fn unset_player_gender() {
-    if let Ok(gender) = gender().as_deref_mut() {
-        if gender.is_some() {
-            *gender = None;
-        }
-    }
+    PlayerGender::set(None);
 }
 
 fn test_play() {
