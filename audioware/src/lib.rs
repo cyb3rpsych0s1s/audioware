@@ -7,12 +7,12 @@ use red4ext_rs::{
     wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem,
     SdkEnv, SemVer, StateListener, U16CStr,
 };
-use state::gender;
+use states::{gender, GameState};
 use types::{AudioSystem, GameAudioSystem, LocalizationPackage, Subtitle, Vector4};
 
 mod error;
 mod hooks;
-mod state;
+mod states;
 mod types;
 
 pub struct Audioware;
@@ -23,6 +23,10 @@ impl Audioware {
         env.add_listener(
             red4ext_rs::StateType::Initialization,
             StateListener::default().with_on_exit(on_exit_initialization),
+        );
+        env.add_listener(
+            red4ext_rs::StateType::Running,
+            StateListener::default().with_on_exit(on_exit_running),
         );
     }
 
@@ -59,6 +63,7 @@ impl Plugin for Audioware {
     const VERSION: SemVer = SemVer::new(1, 0, 0);
 
     fn on_init(env: &SdkEnv) {
+        GameState::set(GameState::Load);
         Self::register_listeners(env);
         Self::load_banks(env);
         Self::attach_hooks(env);
@@ -76,6 +81,7 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.UnregisterEmitter", unregister_emitter)),
             GlobalExport(global!(c"Audioware.EmittersCount", emitters_count)),
             GlobalExport(global!(c"Audioware.DefineSubtitles", define_subtitles)),
+            GlobalExport(global!(c"Audioware.SetGameState", set_game_state)),
             GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
             GlobalExport(global!(c"Audioware.UnsetPlayerGender", unset_player_gender)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play)),
@@ -94,6 +100,12 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     log::info!(env, "on exit initialization: Audioware");
     test_play();
     test_static();
+}
+
+unsafe extern "C" fn on_exit_running(_game: &GameApp) {
+    let env = Audioware::env();
+    log::info!(env, "on exit running: Audioware");
+    GameState::set(GameState::Unload);
 }
 
 fn register_listener(emitter_id: EntityId) {
@@ -188,4 +200,10 @@ fn test_static() {
 
     let threshold = call!("PlayerPuppet"::"GetCriticalHealthThreshold;"() -> f32).unwrap();
     log::info!(env, "player critical health threshold: {threshold}");
+}
+
+fn set_game_state(after: GameState) {
+    let env = Audioware::env();
+    let before = GameState::set(after);
+    log::info!(env, "game state: {before} -> {after}");
 }

@@ -4,6 +4,9 @@ use audioware_manifest::PlayerGender;
 
 use crate::error::InternalError;
 
+mod game;
+pub use game::*;
+
 fn player_gender() -> &'static Mutex<Option<PlayerGender>> {
     static INSTANCE: OnceLock<Mutex<Option<PlayerGender>>> = OnceLock::new();
     INSTANCE.get_or_init(Default::default)
