@@ -9,14 +9,17 @@ use red4ext_rs::{log, NativeRepr, PluginOps};
 
 use crate::Audioware;
 
+use super::State;
+
 /// retrieve [`State`]
 fn state() -> &'static AtomicU8 {
     static INSTANCE: OnceLock<AtomicU8> = OnceLock::new();
     INSTANCE.get_or_init(|| AtomicU8::new(GameState::default() as u8))
 }
 
-impl GameState {
-    pub fn set(state: GameState) -> Self {
+impl State for GameState {
+    type Value = Self;
+    fn set(state: GameState) -> Self {
         let env = Audioware::env();
         let prev = self::state()
             .swap(state as u8, std::sync::atomic::Ordering::SeqCst)
@@ -26,6 +29,11 @@ impl GameState {
             log::info!(env, "game state: {prev} -> {state}");
         }
         prev
+    }
+
+    fn get() -> Self::Value {
+        GameState::try_from(self::state().load(std::sync::atomic::Ordering::Relaxed))
+            .expect("game state is internally managed")
     }
 }
 

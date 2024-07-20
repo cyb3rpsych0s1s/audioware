@@ -7,7 +7,7 @@ use red4ext_rs::{
     wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem,
     SdkEnv, SemVer, StateListener, U16CStr,
 };
-use states::{gender, GameState};
+use states::{gender, GameState, State};
 use types::{AudioSystem, GameAudioSystem, LocalizationPackage, Subtitle, Vector4};
 
 mod error;
