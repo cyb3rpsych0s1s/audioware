@@ -1,13 +1,11 @@
 use std::sync::{Mutex, OnceLock};
 
-use glam::{Quat, Vec3};
 use kira::{
     effect::{
         filter::{FilterBuilder, FilterHandle, FilterMode},
         reverb::ReverbBuilder,
     },
     manager::AudioManager,
-    spatial::listener::ListenerSettings,
     track::{TrackBuilder, TrackHandle, TrackRoutes},
 };
 
@@ -111,7 +109,11 @@ impl Tracks {
                     }),
                 },
             })
-            .map_err(|_| Error::from(InternalError::Once))?;
+            .map_err(|_| {
+                Error::from(InternalError::Init {
+                    origin: "main tracks",
+                })
+            })?;
 
         Ok(())
     }

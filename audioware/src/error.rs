@@ -16,10 +16,9 @@ pub enum Error {
 #[derive(Debug, Snafu)]
 pub enum InternalError {
     #[snafu(display("{origin} contention"))]
-    Contention {
-        origin: &'static str,
-    },
-    Once,
+    Contention { origin: &'static str },
+    #[snafu(display("{origin} cannot be initialized more than once"))]
+    Init { origin: &'static str },
 }
 
 impl From<InternalError> for Error {

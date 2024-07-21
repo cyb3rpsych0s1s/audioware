@@ -1,5 +1,5 @@
 use audioware_bank::Banks;
-use audioware_manifest::PlayerGender;
+use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::Engine;
 use error::Error;
 use hooks::*;
@@ -10,10 +10,7 @@ use red4ext_rs::{
     ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
-use types::{
-    AudioSystem, GameAudioSystem, LocalizationPackage, SpokenLocale, Subtitle, Vector4,
-    WrittenLocale,
-};
+use types::{AudioSystem, GameAudioSystem, LocalizationPackage, Subtitle, Vector4};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod engine;

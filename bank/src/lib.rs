@@ -5,8 +5,8 @@ use std::{
 };
 
 use audioware_manifest::{
-    CannotParseManifestSnafu, CannotReadManifestSnafu, Depot, DialogLine, Locale, Manifest,
-    PlayerGender, R6Audioware, REDmod, Settings,
+    CannotParseManifestSnafu, CannotReadManifestSnafu, Depot, DialogLine, Manifest, PlayerGender,
+    R6Audioware, REDmod, Settings, SpokenLocale,
 };
 use either::Either;
 use ensure::*;
@@ -62,7 +62,7 @@ impl Banks {
     }
     pub fn exist<'a>(
         name: &CName,
-        spoken: &Locale,
+        spoken: &SpokenLocale,
         gender: Option<&PlayerGender>,
     ) -> Result<&'a Id, RegistryError> {
         let mut maybe_missing_locale = false;
@@ -109,7 +109,7 @@ impl Banks {
             }
         }
         if maybe_missing_locale {
-            return Err(RegistryError::MissingLocale {
+            return Err(RegistryError::MissingSpokenLocale {
                 cname: *name,
                 locale: *spoken,
             });

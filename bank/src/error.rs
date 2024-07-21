@@ -11,14 +11,16 @@ pub enum Error {
 }
 
 pub mod registry {
-    use audioware_manifest::Locale;
+    use audioware_manifest::{SpokenLocale, WrittenLocale};
     use red4ext_rs::types::CName;
     use snafu::Snafu;
 
     #[derive(Debug, Snafu)]
     pub enum Error {
-        #[snafu(display("missing locale: {} for {}", locale, cname.to_string()), visibility(pub(crate)))]
-        MissingLocale { cname: CName, locale: Locale },
+        #[snafu(display("missing spoken locale: {} for {}", locale, cname.to_string()), visibility(pub(crate)))]
+        MissingSpokenLocale { cname: CName, locale: SpokenLocale },
+        #[snafu(display("missing written locale: {} for {}", locale, cname.to_string()), visibility(pub(crate)))]
+        MissingWrittenLocale { cname: CName, locale: WrittenLocale },
         #[snafu(display("requires gender: {}", cname.to_string()), visibility(pub(crate)))]
         RequireGender { cname: CName },
         #[snafu(display("not found: {}", cname.to_string()), visibility(pub(crate)))]

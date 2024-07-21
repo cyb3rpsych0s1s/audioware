@@ -1,6 +1,68 @@
 use fixed_map::Key;
 use serde::{Deserialize, Serialize};
 
+use core::fmt;
+
+/// locale currently used for e.g. subtitles and UI texts.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct SpokenLocale(Locale);
+
+impl fmt::Display for SpokenLocale {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl PartialEq<SpokenLocale> for Locale {
+    fn eq(&self, other: &SpokenLocale) -> bool {
+        other.0.eq(self)
+    }
+}
+
+impl PartialEq<Locale> for SpokenLocale {
+    fn eq(&self, other: &Locale) -> bool {
+        self.0.eq(other)
+    }
+}
+
+#[cfg(not(test))]
+impl TryFrom<red4ext_rs::types::CName> for SpokenLocale {
+    type Error = crate::ConversionError;
+    fn try_from(value: red4ext_rs::types::CName) -> Result<Self, Self::Error> {
+        Ok(Self(Locale::try_from(value)?))
+    }
+}
+
+/// locale currently set for e.g. voices and dialogs.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct WrittenLocale(Locale);
+
+impl fmt::Display for WrittenLocale {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl PartialEq<Locale> for WrittenLocale {
+    fn eq(&self, other: &Locale) -> bool {
+        self.0.eq(other)
+    }
+}
+
+impl PartialEq<WrittenLocale> for Locale {
+    fn eq(&self, other: &WrittenLocale) -> bool {
+        other.0.eq(self)
+    }
+}
+
+#[cfg(not(test))]
+impl TryFrom<red4ext_rs::types::CName> for WrittenLocale {
+    type Error = crate::ConversionError;
+    fn try_from(value: red4ext_rs::types::CName) -> Result<Self, Self::Error> {
+        Ok(Self(Locale::try_from(value)?))
+    }
+}
+
 #[derive(
     Debug,
     Default,

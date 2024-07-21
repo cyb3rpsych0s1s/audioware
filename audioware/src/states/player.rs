@@ -1,13 +1,9 @@
 use std::sync::{OnceLock, RwLock};
 
-use audioware_manifest::PlayerGender;
+use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use red4ext_rs::{log, PluginOps};
 
-use crate::{
-    error::InternalError,
-    types::{SpokenLocale, WrittenLocale},
-    Audioware,
-};
+use crate::{error::InternalError, Audioware};
 
 use super::State;
 
