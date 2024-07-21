@@ -1,5 +1,7 @@
 use audioware_bank::Banks;
 use audioware_manifest::PlayerGender;
+use engine::Engine;
+use error::Error;
 use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log,
@@ -14,6 +16,7 @@ use types::{
 };
 use utils::{plog_error, plog_info, plog_warn};
 
+mod engine;
 mod error;
 mod hooks;
 mod states;
@@ -51,6 +54,11 @@ impl Audioware {
             "as_if_I_didnt_know_already: {}",
             Banks::exists(&CName::new("as_if_I_didnt_know_already"))
         );
+    }
+
+    fn load_engine(env: &SdkEnv) -> Result<(), Error> {
+        Engine::setup()?;
+        Ok(())
     }
 
     fn attach_hooks(env: &SdkEnv) {
