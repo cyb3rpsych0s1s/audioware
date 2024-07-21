@@ -1,11 +1,15 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, ScnDialogLineType, SpokenLocale, WrittenLocale};
 use manager::Manager;
-use red4ext_rs::types::{CName, EntityId};
+use red4ext_rs::{
+    log,
+    types::{CName, EntityId},
+    PluginOps,
+};
 use scene::Scene;
 use tracks::Tracks;
 
-use crate::{error::Error, states::State};
+use crate::{error::Error, states::State, Audioware};
 
 mod eq;
 mod id;
@@ -23,6 +27,11 @@ impl Engine {
         Tracks::setup(&mut manager)?;
         Scene::setup(&mut manager)?;
         Ok(())
+    }
+    pub fn register_listener(entity_id: EntityId) {
+        if let Err(e) = Scene::register_listener(entity_id) {
+            log::error!(Audioware::env(), "couldn't add listener to scene: {e}");
+        }
     }
     /// play sound
     pub fn play(

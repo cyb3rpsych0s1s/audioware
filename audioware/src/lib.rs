@@ -131,6 +131,7 @@ fn register_listener(emitter_id: EntityId) {
         "TODO: register listener {:?} V",
         emitter_id
     );
+    Engine::register_listener(emitter_id);
 }
 
 fn unregister_listener(emitter_id: EntityId) {

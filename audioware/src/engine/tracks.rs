@@ -51,4 +51,7 @@ impl Tracks {
 
         Ok(())
     }
+    pub fn get() -> &'static Tracks {
+        TRACKS.get().unwrap()
+    }
 }
