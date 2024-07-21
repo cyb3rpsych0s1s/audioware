@@ -1,6 +1,7 @@
 use red4ext_rs::{
-    types::{CName, EntityId, IScriptable, Method, Native, Opt, Ref, ScriptClass},
-    NativeRepr, RttiSystem,
+    class_kind::Native,
+    types::{CName, EntityId, IScriptable, Method, Opt, Ref},
+    NativeRepr, RttiSystem, ScriptClass,
 };
 
 #[repr(C)]
@@ -10,7 +11,7 @@ pub struct AudioSystem {
 }
 
 unsafe impl ScriptClass for AudioSystem {
-    const CLASS_NAME: &'static str = "gameGameAudioSystem";
+    const NAME: &'static str = "gameGameAudioSystem";
     type Kind = Native;
 }
 
@@ -37,7 +38,7 @@ pub trait GameAudioSystem {
 impl GameAudioSystem for Ref<AudioSystem> {
     fn play(&self, event_name: CName, entity_id: Opt<EntityId>, emitter_name: Opt<CName>) {
         let rtti = RttiSystem::get();
-        let cls = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
+        let cls = rtti.get_class(CName::new(AudioSystem::NAME)).unwrap();
         let method: &Method = cls.get_method(CName::new("Play")).ok().unwrap();
         method
             .as_function()
@@ -54,7 +55,7 @@ impl GameAudioSystem for Ref<AudioSystem> {
 
     fn stop(&self, event_name: CName, entity_id: Opt<EntityId>, emitter_name: Opt<CName>) {
         let rtti = RttiSystem::get();
-        let cls = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
+        let cls = rtti.get_class(CName::new(AudioSystem::NAME)).unwrap();
         let method: &Method = cls.get_method(CName::new("Stop")).ok().unwrap();
         method
             .as_function()
@@ -77,7 +78,7 @@ impl GameAudioSystem for Ref<AudioSystem> {
         emitter_name: Opt<CName>,
     ) {
         let rtti = RttiSystem::get();
-        let cls = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
+        let cls = rtti.get_class(CName::new(AudioSystem::NAME)).unwrap();
         let method: &Method = cls.get_method(CName::new("Switch")).ok().unwrap();
         method
             .as_function()

@@ -1,8 +1,4 @@
-use red4ext_rs::{
-    call, log,
-    types::{Ref, ScriptClass, Scripted},
-    PluginOps,
-};
+use red4ext_rs::{call, class_kind::Scripted, log, types::Ref, PluginOps, ScriptClass};
 
 use crate::Audioware;
 
@@ -10,7 +6,7 @@ use crate::Audioware;
 pub struct LocalizationPackage;
 unsafe impl ScriptClass for LocalizationPackage {
     type Kind = Scripted;
-    const CLASS_NAME: &'static str = "Audioware.LocalizationPackage";
+    const NAME: &'static str = "Audioware.LocalizationPackage";
 }
 pub trait Subtitle {
     fn subtitle(&self, key: &str, value_f: &str, value_m: &str);

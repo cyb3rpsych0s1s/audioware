@@ -1,6 +1,6 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
-    hashes, hooks, log,
+    addr_hashes, hooks, log,
     types::{CName, EntityId, IScriptable, StackFrame},
     PluginOps, SdkEnv, VoidPtr,
 };
@@ -13,7 +13,7 @@ hooks! {
 
 #[allow(clippy::missing_transmute_annotations)]
 pub fn attach_hook(env: &SdkEnv) {
-    let addr = hashes::resolve(super::offsets::PLAY);
+    let addr = addr_hashes::resolve(super::offsets::PLAY);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
     log::info!(env, "attached hook for AudioSystem.Play");

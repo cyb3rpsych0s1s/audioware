@@ -1,8 +1,8 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
-    hashes, hooks, log,
-    types::{CName, EntityId, GameEngine, IScriptable, Opt, ScriptClass, StackFrame},
-    PluginOps, RttiSystem, SdkEnv, VoidPtr,
+    addr_hashes, hooks, log,
+    types::{CName, EntityId, GameEngine, IScriptable, Opt, StackFrame},
+    PluginOps, RttiSystem, ScriptClass, SdkEnv, VoidPtr,
 };
 
 use crate::{
@@ -16,7 +16,7 @@ hooks! {
 
 #[allow(clippy::missing_transmute_annotations)]
 pub fn attach_hook(env: &SdkEnv) {
-    let addr = hashes::resolve(super::offsets::SWITCH);
+    let addr = addr_hashes::resolve(super::offsets::SWITCH);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
     log::info!(env, "attached hook for AudioSystem.Switch");
@@ -43,7 +43,7 @@ unsafe extern "C" fn detour(
 
     if prev || next {
         let rtti = RttiSystem::get();
-        let class = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
+        let class = rtti.get_class(CName::new(AudioSystem::NAME)).unwrap();
         let engine = GameEngine::get();
         let game = engine.game_instance();
         let system = game

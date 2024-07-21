@@ -2,10 +2,10 @@ use audioware_bank::Banks;
 use audioware_manifest::PlayerGender;
 use hooks::*;
 use red4ext_rs::{
-    call, export_plugin, exports, global, log,
-    types::{CName, EntityId, GameEngine, Opt, Ref, ScriptClass},
+    call, export_plugin_symbols, exports, global, log,
+    types::{CName, EntityId, GameEngine, Opt, Ref},
     wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem,
-    SdkEnv, SemVer, StateListener, U16CStr,
+    ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
 use types::{
@@ -98,7 +98,7 @@ impl Plugin for Audioware {
     }
 }
 
-export_plugin!(Audioware);
+export_plugin_symbols!(Audioware);
 
 unsafe extern "C" fn register() {}
 
@@ -172,7 +172,7 @@ fn unset_player_gender() {
 
 fn test_play() {
     let rtti = RttiSystem::get();
-    let class = rtti.get_class(CName::new(AudioSystem::CLASS_NAME)).unwrap();
+    let class = rtti.get_class(CName::new(AudioSystem::NAME)).unwrap();
     let engine = GameEngine::get();
     let game = engine.game_instance();
     let system = game
