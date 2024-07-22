@@ -34,6 +34,8 @@ impl PartialEq for HandleId {
     }
 }
 
+impl Eq for HandleId {}
+
 /// Represents a currently registered spatial audio scene
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EmitterId {

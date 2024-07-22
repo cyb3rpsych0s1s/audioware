@@ -1,10 +1,11 @@
 use serde::Deserialize;
 
 #[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
 pub enum ScnDialogLineType {
     #[serde(rename = "none")]
     None = 0,
+    #[default]
     #[serde(rename = "regular")]
     Regular = 1,
     #[serde(rename = "holocall")]
