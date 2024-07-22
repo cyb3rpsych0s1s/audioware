@@ -11,6 +11,7 @@ use kira::{
         listener::{ListenerHandle, ListenerSettings},
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
+    tween::Tween,
     OutputDestination,
 };
 use red4ext_rs::{
@@ -21,7 +22,7 @@ use red4ext_rs::{
 
 use crate::{
     error::{Error, InternalError},
-    types::{AsEntity, AsGameInstance},
+    types::{AsEntity, AsGameInstance, Quaternion, Vector4},
     Audioware,
 };
 
@@ -112,6 +113,14 @@ impl Scene {
             position,
             orientation
         );
+        Ok(())
+    }
+    pub fn update_listener(position: Vector4, orientation: Quaternion) -> Result<(), Error> {
+        let mut listener = Self::try_lock_listener()?;
+        if let Some(listener) = listener.deref_mut() {
+            listener.set_position(position, Tween::default());
+            listener.set_orientation(orientation, Tween::default());
+        }
         Ok(())
     }
     pub fn unregister_listener(_: EntityId) -> Result<(), Error> {

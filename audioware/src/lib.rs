@@ -10,7 +10,9 @@ use red4ext_rs::{
     ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
-use types::{AsAudioSystem, AudioSystem, GameObject, LocalizationPackage, Subtitle, Vector4};
+use types::{
+    AsAudioSystem, AudioSystem, GameObject, LocalizationPackage, Quaternion, Subtitle, Vector4,
+};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod engine;
@@ -86,6 +88,7 @@ impl Plugin for Audioware {
     fn exports() -> impl Exportable {
         exports![
             GlobalExport(global!(c"Audioware.RegisterListener", register_listener)),
+            GlobalExport(global!(c"Audioware.UpdateListener", update_listener)),
             GlobalExport(global!(
                 c"Audioware.UnregisterListener",
                 unregister_listener
@@ -133,6 +136,16 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
 fn register_listener(emitter_id: EntityId) {
     log::info!(Audioware::env(), "register listener {:?} V", emitter_id);
     Engine::register_listener(emitter_id);
+}
+
+fn update_listener(position: Vector4, orientation: Quaternion) {
+    log::info!(
+        Audioware::env(),
+        "update listener position: {}, orientation {} V",
+        position,
+        orientation
+    );
+    Engine::update_listener(position, orientation);
 }
 
 fn unregister_listener(emitter_id: EntityId) {

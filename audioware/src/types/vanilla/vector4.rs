@@ -1,3 +1,5 @@
+use std::fmt;
+
 use red4ext_rs::NativeRepr;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy, Default)]
@@ -63,5 +65,15 @@ impl From<Vector4> for mint::Vector4<f32> {
             z: value.z,
             w: value.w,
         }
+    }
+}
+
+impl fmt::Display for Vector4 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "[ x: {}, y: {}, z: {}, w: {} ]",
+            self.x, self.y, self.z, self.w
+        )
     }
 }
