@@ -11,6 +11,7 @@ use kira::{
         listener::{ListenerHandle, ListenerSettings},
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
+    OutputDestination,
 };
 use red4ext_rs::types::{CName, EntityId, GameInstance};
 
@@ -127,5 +128,16 @@ impl Scene {
     pub fn clear_emitters() -> Result<(), Error> {
         Self::try_lock_emitters()?.clear();
         Ok(())
+    }
+    pub fn output_destination(entity_id: &EntityId) -> Option<OutputDestination> {
+        Self::try_lock_emitters().ok().and_then(|x| {
+            x.iter().find_map(|(k, v)| {
+                if k.entity_id() == entity_id {
+                    Some(v.into())
+                } else {
+                    None
+                }
+            })
+        })
     }
 }

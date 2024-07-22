@@ -132,10 +132,19 @@ impl Engine {
                 return;
             }
         };
-        // TODO: output destination
+        let destination = match Scene::output_destination(&entity_id) {
+            Some(x) => x,
+            None => {
+                log::error!(
+                    Audioware::env(),
+                    "Entity is not registered as emitter: {entity_id:?}"
+                );
+                return;
+            }
+        };
         match Banks::data(id) {
             either::Either::Left(data) => {
-                let handle = manager.play(data).unwrap();
+                let handle = manager.play(data.output_destination(destination)).unwrap();
                 match StaticStorage::try_lock() {
                     Ok(mut x) => {
                         x.insert(HandleId::new(id, Some(entity_id)), handle);

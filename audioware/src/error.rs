@@ -19,6 +19,8 @@ pub enum InternalError {
     Contention { origin: &'static str },
     #[snafu(display("{origin} cannot be initialized more than once"))]
     Init { origin: &'static str },
+    #[snafu(display("invalid cast"))]
+    Cast,
 }
 
 impl From<InternalError> for Error {
