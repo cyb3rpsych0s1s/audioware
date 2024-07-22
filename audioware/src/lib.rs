@@ -97,6 +97,7 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
             GlobalExport(global!(c"Audioware.PLogError", plog_error)),
             GlobalExport(global!(c"Audioware.RegisterEmitter", register_emitter)),
+            GlobalExport(global!(c"Audioware.UpdateEmitter", update_emitter)),
             GlobalExport(global!(c"Audioware.UnregisterEmitter", unregister_emitter)),
             GlobalExport(global!(c"Audioware.EmittersCount", emitters_count)),
             GlobalExport(global!(c"Audioware.DefineSubtitles", define_subtitles)),
@@ -161,6 +162,19 @@ fn register_emitter(emitter_id: EntityId, emitter_name: Opt<CName>) {
         emitter_name
     );
     Engine::register_emitter(emitter_id, emitter_name.into_option());
+}
+
+fn update_emitter(emitter_id: EntityId, position: Vector4) {
+    if !Engine::is_registered_emitter(&emitter_id) {
+        return;
+    }
+    log::info!(
+        Audioware::env(),
+        "update emitter {:?} {}",
+        emitter_id,
+        position
+    );
+    Engine::update_emitter(&emitter_id, position);
 }
 
 fn unregister_emitter(emitter_id: EntityId) {

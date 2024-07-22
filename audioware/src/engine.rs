@@ -57,6 +57,11 @@ impl Engine {
             log::error!(Audioware::env(), "couldn't register emitter to scene: {e}");
         }
     }
+    pub fn update_emitter(entity_id: &EntityId, position: Vector4) {
+        if let Err(e) = Scene::update_emitter(entity_id, position) {
+            log::error!(Audioware::env(), "couldn't update emitter in scene: {e}");
+        }
+    }
     pub fn unregister_emitter(entity_id: EntityId) {
         if let Err(e) = Scene::unregister_emitter(&entity_id) {
             log::error!(
@@ -64,6 +69,9 @@ impl Engine {
                 "couldn't unregister emitter from scene: {e}"
             );
         }
+    }
+    pub fn is_registered_emitter(entity_id: &EntityId) -> bool {
+        Scene::is_registered_emitter(entity_id)
     }
     pub fn clear_emitters() {
         if let Err(e) = Scene::clear_emitters() {

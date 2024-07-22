@@ -23,6 +23,7 @@ private native func RegisterListener(listenerID: EntityID) -> Void;
 private native func UpdateListener(position: Vector4, orientation: Quaternion) -> Void;
 private native func UnregisterListener(listenerID: EntityID) -> Void;
 private native func RegisterEmitter(emitterID: EntityID, opt emitterName: CName) -> Void;
+private native func UpdateEmitter(id: EntityID, position: Vector4) -> Void;
 private native func UnregisterEmitter(emitterID: EntityID) -> Void;
 private native func EmittersCount() -> Int32;
 private native func SetGameState(state: GameState) -> Void;

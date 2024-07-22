@@ -143,6 +143,16 @@ impl Scene {
         );
         Ok(())
     }
+    pub fn update_emitter(id: &EntityId, position: Vector4) -> Result<(), Error> {
+        let mut emitters = Self::try_lock_emitters()?;
+        for (k, v) in emitters.iter_mut() {
+            if k.entity_id() == id {
+                v.set_position(position, Tween::default());
+                break;
+            }
+        }
+        Ok(())
+    }
     pub fn unregister_emitter(entity_id: &EntityId) -> Result<(), Error> {
         let entities = Self::try_lock_emitters()?;
         let mut id: Option<&EmitterId> = None;
@@ -172,5 +182,15 @@ impl Scene {
                 }
             })
         })
+    }
+    pub fn is_registered_emitter(entity_id: &EntityId) -> bool {
+        if let Ok(emitters) = Self::try_lock_emitters() {
+            for k in emitters.keys() {
+                if k.entity_id() == entity_id {
+                    return true;
+                }
+            }
+        }
+        false
     }
 }
