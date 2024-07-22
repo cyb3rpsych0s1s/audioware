@@ -6,7 +6,7 @@ use red4ext_rs::{
 };
 
 use crate::{
-    types::{AudioSystem, GameAudioSystem},
+    types::{AsAudioSystem, AudioSystem},
     Audioware,
 };
 

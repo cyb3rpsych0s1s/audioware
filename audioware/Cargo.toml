@@ -16,6 +16,7 @@ audioware-manifest.workspace = true
 either.workspace = true
 glam = { version = "0.27.0", features = ["mint"] }
 kira.workspace = true
+mint = { version = "0.5" }
 red4ext-rs.workspace = true
 snafu.workspace = true
 snowflake.workspace = true

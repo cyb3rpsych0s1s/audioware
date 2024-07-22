@@ -4,7 +4,6 @@ use std::{
     sync::{Arc, Mutex, OnceLock},
 };
 
-use glam::{Quat, Vec3};
 use kira::{
     manager::AudioManager,
     spatial::{
@@ -13,9 +12,12 @@ use kira::{
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
 };
-use red4ext_rs::types::EntityId;
+use red4ext_rs::types::{EntityId, GameInstance};
 
-use crate::error::{Error, InternalError};
+use crate::{
+    error::{Error, InternalError},
+    types::{AsEntity, AsGameInstance},
+};
 
 use super::{id::EmitterId, tracks::Tracks};
 
@@ -42,6 +44,10 @@ impl Scene {
         Ok(())
     }
     pub fn register_listener(entity_id: EntityId) -> Result<(), Error> {
+        let game = GameInstance::new();
+        let entity = GameInstance::find_entity_by_id(game, entity_id);
+        let position = entity.get_world_position();
+        let orientation = entity.get_world_orientation();
         let scene = SCENE.get().unwrap();
         let v = scene
             .scene
@@ -50,8 +56,8 @@ impl Scene {
                 origin: "spatial scene",
             })?
             .add_listener(
-                Vec3::ZERO,
-                Quat::IDENTITY,
+                position,
+                orientation,
                 ListenerSettings::new().track(&Tracks::get().v.main),
             )
             .map_err(|source| Error::Engine { source })?;
@@ -62,6 +68,17 @@ impl Scene {
                 origin: "write spatial scene listener",
             })?
             .deref_mut() = Some(v);
+        Ok(())
+    }
+    pub fn unregister_listener(_: EntityId) -> Result<(), Error> {
+        let scene = SCENE.get().unwrap();
+        *scene
+            .v
+            .try_lock()
+            .map_err(|_| InternalError::Contention {
+                origin: "erase spatial scene listener",
+            })?
+            .deref_mut() = None;
         Ok(())
     }
 }

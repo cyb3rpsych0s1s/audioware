@@ -30,7 +30,15 @@ impl Engine {
     }
     pub fn register_listener(entity_id: EntityId) {
         if let Err(e) = Scene::register_listener(entity_id) {
-            log::error!(Audioware::env(), "couldn't add listener to scene: {e}");
+            log::error!(Audioware::env(), "couldn't register listener to scene: {e}");
+        }
+    }
+    pub fn unregister_listener(entity_id: EntityId) {
+        if let Err(e) = Scene::unregister_listener(entity_id) {
+            log::error!(
+                Audioware::env(),
+                "couldn't unregister listener from scene: {e}"
+            );
         }
     }
     /// play sound

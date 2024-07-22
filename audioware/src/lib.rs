@@ -10,7 +10,7 @@ use red4ext_rs::{
     ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
-use types::{AudioSystem, GameAudioSystem, LocalizationPackage, Subtitle, Vector4};
+use types::{AsAudioSystem, AudioSystem, LocalizationPackage, Subtitle, Vector4};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod engine;
@@ -76,6 +76,9 @@ impl Plugin for Audioware {
         GameState::set(GameState::Load);
         Self::register_listeners(env);
         Self::load_banks(env);
+        if let Err(e) = Self::load_engine(env) {
+            log::error!(env, "Unable to load engine: {e}");
+        }
         Self::attach_hooks(env);
     }
 
@@ -126,20 +129,13 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
 }
 
 fn register_listener(emitter_id: EntityId) {
-    log::info!(
-        Audioware::env(),
-        "TODO: register listener {:?} V",
-        emitter_id
-    );
+    log::info!(Audioware::env(), "register listener {:?} V", emitter_id);
     Engine::register_listener(emitter_id);
 }
 
 fn unregister_listener(emitter_id: EntityId) {
-    log::info!(
-        Audioware::env(),
-        "TODO: unregister listener {:?} V",
-        emitter_id
-    );
+    log::info!(Audioware::env(), "unregister listener {:?} V", emitter_id);
+    Engine::unregister_listener(emitter_id);
 }
 
 fn register_emitter(emitter_id: EntityId, emitter_name: CName) {
