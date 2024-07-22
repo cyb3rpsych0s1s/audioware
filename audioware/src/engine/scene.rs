@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     ops::DerefMut,
-    sync::{Arc, Mutex, OnceLock},
+    sync::{Arc, Mutex, MutexGuard, OnceLock},
 };
 
 use kira::{
@@ -43,74 +43,74 @@ impl Scene {
             .map_err(|_| Error::from(InternalError::Contention { origin: "scene" }))?;
         Ok(())
     }
+    fn try_lock_scene<'a>() -> Result<MutexGuard<'a, SpatialSceneHandle>, InternalError> {
+        SCENE
+            .get()
+            .ok_or(InternalError::Init {
+                origin: "spatial scene",
+            })?
+            .scene
+            .try_lock()
+            .map_err(|_| InternalError::Contention {
+                origin: "spatial scene handle",
+            })
+    }
+    fn try_lock_listener<'a>() -> Result<MutexGuard<'a, Option<ListenerHandle>>, InternalError> {
+        SCENE
+            .get()
+            .ok_or(InternalError::Init {
+                origin: "spatial scene",
+            })?
+            .v
+            .try_lock()
+            .map_err(|_| InternalError::Contention {
+                origin: "spatial scene listener handle",
+            })
+    }
+    fn try_lock_emitters<'a>(
+    ) -> Result<MutexGuard<'a, HashMap<EmitterId, EmitterHandle>>, InternalError> {
+        SCENE
+            .get()
+            .ok_or(InternalError::Init {
+                origin: "spatial scene",
+            })?
+            .entities
+            .try_lock()
+            .map_err(|_| InternalError::Contention {
+                origin: "spatial scene emitters handles",
+            })
+    }
     pub fn register_listener(entity_id: EntityId) -> Result<(), Error> {
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, entity_id);
         let position = entity.get_world_position();
         let orientation = entity.get_world_orientation();
-        let scene = SCENE.get().unwrap();
-        let v = scene
-            .scene
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: "spatial scene",
-            })?
+        let v = Self::try_lock_scene()?
             .add_listener(
                 position,
                 orientation,
                 ListenerSettings::new().track(&Tracks::get().v.main),
             )
             .map_err(|source| Error::Engine { source })?;
-        *scene
-            .v
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: "write spatial scene listener",
-            })?
-            .deref_mut() = Some(v);
+        *Self::try_lock_listener()?.deref_mut() = Some(v);
         Ok(())
     }
     pub fn unregister_listener(_: EntityId) -> Result<(), Error> {
-        let scene = SCENE.get().unwrap();
-        *scene
-            .v
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: "erase spatial scene listener",
-            })?
-            .deref_mut() = None;
+        *Self::try_lock_listener()?.deref_mut() = None;
         Ok(())
     }
     pub fn register_emitter(entity_id: EntityId, emitter_name: Option<CName>) -> Result<(), Error> {
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, entity_id);
         let position = entity.get_world_position();
-        let scene = SCENE.get().unwrap();
-        let emitter = scene
-            .scene
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: "register spatial scene emitter",
-            })?
+        let emitter = Self::try_lock_scene()?
             .add_emitter(position, EmitterSettings::default())
             .map_err(|source| Error::Engine { source })?;
-        scene
-            .entities
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: "store spatial scene emitter",
-            })?
-            .insert(EmitterId::new(entity_id, emitter_name), emitter);
+        Self::try_lock_emitters()?.insert(EmitterId::new(entity_id, emitter_name), emitter);
         Ok(())
     }
     pub fn unregister_emitter(entity_id: &EntityId) -> Result<(), Error> {
-        let scene = SCENE.get().unwrap();
-        let entities = scene
-            .entities
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: "read spatial scene emitters",
-            })?;
+        let entities = Self::try_lock_emitters()?;
         let mut id: Option<&EmitterId> = None;
         for (k, _) in entities.iter() {
             if k.entity_id() == entity_id {
@@ -119,26 +119,13 @@ impl Scene {
             }
         }
         if let Some(id) = id {
-            let mut entities =
-                scene
-                    .entities
-                    .try_lock()
-                    .map_err(|_| InternalError::Contention {
-                        origin: "remove spatial scene emitters",
-                    })?;
+            let mut entities = Self::try_lock_emitters()?;
             entities.remove(id);
         }
         Ok(())
     }
     pub fn clear_emitters() -> Result<(), Error> {
-        let scene = SCENE.get().unwrap();
-        scene
-            .entities
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: "clear spatial scene emitters",
-            })?
-            .clear();
+        Self::try_lock_emitters()?.clear();
         Ok(())
     }
 }

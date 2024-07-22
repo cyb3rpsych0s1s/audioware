@@ -1,7 +1,7 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, ScnDialogLineType, SpokenLocale, WrittenLocale};
 use id::HandleId;
-use manager::{static_handles, streaming_handles, Manager};
+use manager::{Manager, StaticStorage, StreamStorage};
 use red4ext_rs::{
     log,
     types::{CName, EntityId},
@@ -88,7 +88,7 @@ impl Engine {
         match Banks::data(id) {
             either::Either::Left(data) => {
                 let handle = manager.play(data).unwrap();
-                match static_handles() {
+                match StaticStorage::try_lock() {
                     Ok(mut x) => {
                         x.insert(HandleId::new(id, entity_id), handle);
                     }
@@ -99,7 +99,7 @@ impl Engine {
             }
             either::Either::Right(data) => {
                 let handle = manager.play(data).unwrap();
-                match streaming_handles() {
+                match StreamStorage::try_lock() {
                     Ok(mut x) => {
                         x.insert(HandleId::new(id, entity_id), handle);
                     }
@@ -136,7 +136,7 @@ impl Engine {
         match Banks::data(id) {
             either::Either::Left(data) => {
                 let handle = manager.play(data).unwrap();
-                match static_handles() {
+                match StaticStorage::try_lock() {
                     Ok(mut x) => {
                         x.insert(HandleId::new(id, Some(entity_id)), handle);
                     }
@@ -147,7 +147,7 @@ impl Engine {
             }
             either::Either::Right(data) => {
                 let handle = manager.play(data).unwrap();
-                match streaming_handles() {
+                match StreamStorage::try_lock() {
                     Ok(mut x) => {
                         x.insert(HandleId::new(id, Some(entity_id)), handle);
                     }
