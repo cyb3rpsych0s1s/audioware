@@ -12,6 +12,16 @@ pub struct WorldPosition {
     pub z: FixedPoint, // 0x8
 }
 
+impl From<WorldPosition> for glam::Vec3 {
+    fn from(value: WorldPosition) -> Self {
+        Self {
+            x: value.x.bits as f32,
+            y: value.y.bits as f32,
+            z: value.z.bits as f32,
+        }
+    }
+}
+
 unsafe impl NativeRepr for WorldPosition {
     const NAME: &'static str = "WorldPosition";
 }

@@ -68,6 +68,7 @@ pub enum EntityStatus {
 
 pub trait AsEntity {
     fn get_world_position(&self) -> Vector4;
+    fn get_world_forward(&self) -> Vector4;
     fn get_world_orientation(&self) -> Quaternion;
     fn get_world_transform(&self) -> WorldTransform;
 }
@@ -78,11 +79,27 @@ impl AsEntity for Ref<Entity> {
             .map(|x| x.status == EntityStatus::Attached)
             .unwrap_or(false);
         if !attached {
-            return Vec3::NEG_Z.into();
+            return Vec3::ZERO.into();
         }
         let rtti = RttiSystem::get();
         let cls = rtti.get_class(CName::new(Entity::NAME)).unwrap();
         let method: &Method = cls.get_method(CName::new("GetWorldPosition")).ok().unwrap();
+        method
+            .as_function()
+            .execute::<_, Vector4>(unsafe { self.instance() }.map(AsRef::as_ref), ())
+            .unwrap()
+    }
+
+    fn get_world_forward(&self) -> Vector4 {
+        let attached = unsafe { self.instance() }
+            .map(|x| x.status == EntityStatus::Attached)
+            .unwrap_or(false);
+        if !attached {
+            return Vec3::NEG_Z.into();
+        }
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(Entity::NAME)).unwrap();
+        let method: &Method = cls.get_method(CName::new("GetWorldForward")).ok().unwrap();
         method
             .as_function()
             .execute::<_, Vector4>(unsafe { self.instance() }.map(AsRef::as_ref), ())
