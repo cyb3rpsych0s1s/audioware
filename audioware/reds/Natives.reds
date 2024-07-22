@@ -21,7 +21,7 @@ private native func PLogError(msg: String) -> Void;
 
 private native func RegisterListener(listenerID: EntityID) -> Void;
 private native func UnregisterListener(listenerID: EntityID) -> Void;
-private native func RegisterEmitter(emitterID: EntityID, emitterName: CName) -> Void;
+private native func RegisterEmitter(emitterID: EntityID, opt emitterName: CName) -> Void;
 private native func UnregisterEmitter(emitterID: EntityID) -> Void;
 private native func EmittersCount() -> Int32;
 private native func SetGameState(state: GameState) -> Void;

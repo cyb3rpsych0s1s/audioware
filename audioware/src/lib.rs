@@ -125,6 +125,7 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit running: Audioware");
+    Engine::clear_emitters();
     GameState::set(GameState::Unload);
 }
 
@@ -138,21 +139,19 @@ fn unregister_listener(emitter_id: EntityId) {
     Engine::unregister_listener(emitter_id);
 }
 
-fn register_emitter(emitter_id: EntityId, emitter_name: CName) {
+fn register_emitter(emitter_id: EntityId, emitter_name: Opt<CName>) {
     log::info!(
         Audioware::env(),
-        "TODO: register emitter {:?} {}",
+        "register emitter {:?} {}",
         emitter_id,
         emitter_name
     );
+    Engine::register_emitter(emitter_id, emitter_name.into_option());
 }
 
 fn unregister_emitter(emitter_id: EntityId) {
-    log::info!(
-        Audioware::env(),
-        "TODO: unregister emitter {:?}",
-        emitter_id
-    );
+    log::info!(Audioware::env(), "unregister emitter {:?}", emitter_id);
+    Engine::unregister_emitter(emitter_id);
 }
 
 fn emitters_count() -> i32 {

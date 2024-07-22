@@ -1,7 +1,7 @@
 use std::hash::Hash;
 
 use audioware_bank::{Id, Key};
-use red4ext_rs::types::EntityId;
+use red4ext_rs::types::{CName, EntityId};
 use snowflake::ProcessUniqueId;
 
 /// Represents a currently playing audio resource ID.
@@ -36,5 +36,19 @@ impl PartialEq for HandleId {
 
 /// Represents a currently registered spatial audio scene
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[repr(transparent)]
-pub struct EmitterId(EntityId);
+pub struct EmitterId {
+    id: EntityId,
+    name: Option<CName>,
+}
+
+impl EmitterId {
+    pub fn new(entity_id: EntityId, emitter_name: Option<CName>) -> Self {
+        Self {
+            id: entity_id,
+            name: emitter_name,
+        }
+    }
+    pub fn entity_id(&self) -> &EntityId {
+        &self.id
+    }
+}

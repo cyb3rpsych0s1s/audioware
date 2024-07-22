@@ -41,6 +41,24 @@ impl Engine {
             );
         }
     }
+    pub fn register_emitter(entity_id: EntityId, emitter_name: Option<CName>) {
+        if let Err(e) = Scene::register_emitter(entity_id, emitter_name) {
+            log::error!(Audioware::env(), "couldn't register emitter to scene: {e}");
+        }
+    }
+    pub fn unregister_emitter(entity_id: EntityId) {
+        if let Err(e) = Scene::unregister_emitter(&entity_id) {
+            log::error!(
+                Audioware::env(),
+                "couldn't unregister emitter from scene: {e}"
+            );
+        }
+    }
+    pub fn clear_emitters() {
+        if let Err(e) = Scene::clear_emitters() {
+            log::error!(Audioware::env(), "couldn't clear emitters on scene: {e}");
+        }
+    }
     /// play sound
     pub fn play(
         sound_name: CName,

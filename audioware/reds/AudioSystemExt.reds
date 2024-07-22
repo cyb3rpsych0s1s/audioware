@@ -12,7 +12,7 @@ private func Switch(eventName: CName, eventValue: CName, entityID: EntityID, emi
 }
 
 @addMethod(AudioSystem)
-public func RegisterEmitter(entityID: EntityID, emitterName: CName) -> Void { RegisterEmitter(entityID, emitterName); }
+public func RegisterEmitter(entityID: EntityID, opt emitterName: CName) -> Void { RegisterEmitter(entityID, emitterName); }
 
 @addMethod(AudioSystem)
 public func UnregisterEmitter(entityID: EntityID) -> Void { UnregisterEmitter(entityID); }
