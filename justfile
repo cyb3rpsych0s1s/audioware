@@ -139,3 +139,6 @@ checksum TO:
   } else { \
     Write-Output "No log files found."; \
   }
+
+smash FROM=game_dir:
+  {{ join(justfile_directory(), "community", "redscript-cli.exe") }} decompile -f -i '{{ join(FROM, red_cache_dir, "final.redscripts") }}' -o '{{ join(justfile_directory(), "..", "dump_smasher") }}'

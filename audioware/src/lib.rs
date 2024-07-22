@@ -55,7 +55,7 @@ impl Audioware {
         );
     }
 
-    fn load_engine(env: &SdkEnv) -> Result<(), Error> {
+    fn load_engine(_: &SdkEnv) -> Result<(), Error> {
         Engine::setup()?;
         Ok(())
     }
@@ -66,6 +66,8 @@ impl Audioware {
         play_on_emitter::attach_hook(env);
         stop::attach_hook(env);
         switch::attach_hook(env);
+        set_local_position::attach_hook(env);
+        set_local_orientation::attach_hook(env);
     }
 }
 
@@ -100,6 +102,7 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.UpdateEmitter", update_emitter)),
             GlobalExport(global!(c"Audioware.UnregisterEmitter", unregister_emitter)),
             GlobalExport(global!(c"Audioware.EmittersCount", emitters_count)),
+            GlobalExport(global!(c"Audioware.ClearEmitters", clear_emitters)),
             GlobalExport(global!(c"Audioware.DefineSubtitles", define_subtitles)),
             GlobalExport(global!(c"Audioware.SetGameState", set_game_state)),
             GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
@@ -121,7 +124,7 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     log::info!(env, "on exit initialization: Audioware");
     test_play();
     test_static();
-    test_is_player();
+    // test_is_player();
     utils::info("it should be able to call FTLog");
     utils::warn("it should be able to call FTLogWarning");
     utils::error("it should be able to call FTLogError");
@@ -130,8 +133,8 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit running: Audioware");
-    Engine::clear_emitters();
     GameState::set(GameState::Unload);
+    Engine::shutdown();
 }
 
 fn register_listener(emitter_id: EntityId) {
@@ -183,8 +186,11 @@ fn unregister_emitter(emitter_id: EntityId) {
 }
 
 fn emitters_count() -> i32 {
-    log::info!(Audioware::env(), "TODO: emitters count");
-    0
+    Engine::emitters_count()
+}
+
+fn clear_emitters() {
+    Engine::clear_emitters();
 }
 
 fn define_subtitles(package: Ref<LocalizationPackage>) {
@@ -235,6 +241,7 @@ fn test_static() {
     log::info!(env, "player critical health threshold: {threshold}");
 }
 
+#[allow(dead_code)]
 fn test_is_player() {
     let env = Audioware::env();
     let rtti = RttiSystem::get();

@@ -168,6 +168,9 @@ impl Scene {
         }
         Ok(())
     }
+    pub fn emitters_count() -> Result<usize, Error> {
+        Ok(Self::try_lock_emitters()?.len())
+    }
     pub fn clear_emitters() -> Result<(), Error> {
         Self::try_lock_emitters()?.clear();
         Ok(())

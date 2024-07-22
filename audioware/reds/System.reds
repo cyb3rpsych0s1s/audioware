@@ -14,6 +14,7 @@ public class AudiowareSystem extends ScriptableSystem {
     }
     private func OnDetach() -> Void {
         LOG("on detach: AudiowareSystem");
+        ClearEmitters();
         let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
         let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
         if IsDefined(this.menuListener) {

@@ -12,10 +12,24 @@ private func Switch(eventName: CName, eventValue: CName, entityID: EntityID, emi
 }
 
 @addMethod(AudioSystem)
-public func RegisterEmitter(entityID: EntityID, opt emitterName: CName) -> Void { RegisterEmitter(entityID, emitterName); }
+public func RegisterEmitter(entityID: EntityID, opt emitterName: CName) -> Void {
+    let entity = GameInstance.FindEntityByID(GetGameInstance(), entityID);
+    if IsDefined(entity) && entity.IsA(n"gameObject") {
+        let go = entity as GameObject;
+        go.EnableTransformUpdates(true);
+    }
+    RegisterEmitter(entityID, emitterName);
+}
 
 @addMethod(AudioSystem)
-public func UnregisterEmitter(entityID: EntityID) -> Void { UnregisterEmitter(entityID); }
+public func UnregisterEmitter(entityID: EntityID) -> Void {
+    let entity = GameInstance.FindEntityByID(GetGameInstance(), entityID);
+    if IsDefined(entity) && entity.IsA(n"gameObject") {
+        let go = entity as GameObject;
+        go.EnableTransformUpdates(false);
+    }
+    UnregisterEmitter(entityID);
+}
 
 @addMethod(AudioSystem)
 public func EmittersCount() -> Int32 = EmittersCount();

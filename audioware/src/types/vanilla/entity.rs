@@ -67,6 +67,7 @@ pub enum EntityStatus {
 }
 
 pub trait AsEntity {
+    fn get_entity_id(&self) -> EntityId;
     fn get_world_position(&self) -> Vector4;
     fn get_world_forward(&self) -> Vector4;
     fn get_world_orientation(&self) -> Quaternion;
@@ -74,6 +75,12 @@ pub trait AsEntity {
 }
 
 impl AsEntity for Ref<Entity> {
+    fn get_entity_id(&self) -> EntityId {
+        if self.is_null() {
+            return EntityId::default();
+        }
+        unsafe { self.instance() }.unwrap().entity_id
+    }
     fn get_world_position(&self) -> Vector4 {
         let attached = unsafe { self.instance() }
             .map(|x| x.status == EntityStatus::Attached)

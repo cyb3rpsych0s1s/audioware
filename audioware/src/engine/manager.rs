@@ -7,10 +7,11 @@ use super::id::HandleId;
 use kira::{
     manager::{AudioManager, AudioManagerSettings, DefaultBackend},
     sound::{static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError},
+    tween::Tween,
 };
 use once_cell::sync::Lazy;
 
-use crate::error::InternalError;
+use crate::error::{Error, InternalError};
 
 pub struct Manager;
 
@@ -37,6 +38,15 @@ impl Manager {
             .map_err(|_| InternalError::Contention {
                 origin: "audio manager",
             })
+    }
+    pub fn stop_all() -> Result<(), Error> {
+        for (_, v) in StaticStorage::try_lock()?.iter_mut() {
+            v.stop(Tween::default());
+        }
+        for (_, v) in StreamStorage::try_lock()?.iter_mut() {
+            v.stop(Tween::default());
+        }
+        Ok(())
     }
 }
 

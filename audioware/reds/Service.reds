@@ -1,6 +1,8 @@
 module Audioware
 
 class AudiowareService extends ScriptableService {
+    public let deltaTime: Float;
+
     private cb func OnLoad() {
         // game session state
         GameInstance.GetCallbackSystem()
@@ -20,7 +22,7 @@ class AudiowareService extends ScriptableService {
         
         // spatial scene emitters
         GameInstance.GetCallbackSystem()
-            .RegisterCallback(n"Entity/Initialize", this, n"OnPlayerSpawn")
+            .RegisterCallback(n"Entity/Attached", this, n"OnPlayerSpawn")
             .AddTarget(EntityTarget.Type(n"PlayerPuppet"));
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Entity/Uninitialize", this, n"OnPlayerDespawn")
@@ -71,5 +73,11 @@ class AudiowareService extends ScriptableService {
         if IsDefined(v) {
             UnregisterListener(v.GetEntityID());
         }
+    }
+
+    public static func GetInstance() -> ref<AudiowareService> {
+        return GameInstance
+        .GetScriptableServiceContainer()
+        .GetService(n"Audioware.AudiowareService") as AudiowareService;
     }
 }

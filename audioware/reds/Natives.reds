@@ -26,6 +26,7 @@ private native func RegisterEmitter(emitterID: EntityID, opt emitterName: CName)
 private native func UpdateEmitter(id: EntityID, position: Vector4) -> Void;
 private native func UnregisterEmitter(emitterID: EntityID) -> Void;
 private native func EmittersCount() -> Int32;
+private native func ClearEmitters() -> Void;
 private native func SetGameState(state: GameState) -> Void;
 private native func SetPlayerGender(gender: PlayerGender) -> Void;
 private native func UnsetPlayerGender() -> Void;

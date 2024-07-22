@@ -34,6 +34,14 @@ impl Engine {
         Scene::setup(&mut manager)?;
         Ok(())
     }
+    pub fn shutdown() {
+        if let Err(e) = Manager::stop_all() {
+            log::error!(Audioware::env(), "could stop all sounds on manager: {e}");
+        }
+        if let Err(e) = Scene::clear_emitters() {
+            log::error!(Audioware::env(), "could clear emitters in scene: {e}");
+        }
+    }
     pub fn register_listener(entity_id: EntityId) {
         if let Err(e) = Scene::register_listener(entity_id) {
             log::error!(Audioware::env(), "couldn't register listener to scene: {e}");
@@ -73,11 +81,20 @@ impl Engine {
     pub fn is_registered_emitter(entity_id: &EntityId) -> bool {
         Scene::is_registered_emitter(entity_id)
     }
+    pub fn emitters_count() -> i32 {
+        let count = Scene::emitters_count();
+        if let Err(e) = count {
+            log::error!(Audioware::env(), "couldn't count emitters in scene: {e}");
+            return -1;
+        }
+        count.unwrap() as i32
+    }
     pub fn clear_emitters() {
         if let Err(e) = Scene::clear_emitters() {
             log::error!(Audioware::env(), "couldn't clear emitters on scene: {e}");
         }
     }
+    pub fn stop_all() {}
     /// play sound
     pub fn play(
         sound_name: CName,
