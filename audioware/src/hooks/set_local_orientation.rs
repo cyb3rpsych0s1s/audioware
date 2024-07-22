@@ -39,7 +39,11 @@ unsafe extern "C" fn detour(
 
     let env = Audioware::env();
     if !i.is_null() {
-        if let Some(icomponent) = (*i).as_serializable().inner_ref::<IComponent>().upgrade() {
+        if let Some(icomponent) = (*i)
+            .as_serializable()
+            .inner_ref::<IComponent>()
+            .and_then(|x| x.upgrade())
+        {
             if let Some(entity) = icomponent.get_entity().upgrade() {
                 let entity_id = entity.get_entity_id();
                 log::info!(

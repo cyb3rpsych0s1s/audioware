@@ -9,8 +9,11 @@ mod offsets {
     // IPlacedComponent
     pub(super) const SET_LOCAL_POSITION: u32    = 0x748F21DD; // 0x14141A1B0
     pub(super) const SET_LOCAL_ORIENTATION: u32 = 0xE8502314; // 0x142382E44
+    // GameObject
+    pub(super) const ON_TRANSFORM_UPDATED: u32  = 0x2AF1B37;  // 0x14014E8D0
 }
 
+pub mod on_transform_updated;
 pub mod parameter;
 pub mod play;
 pub mod play_on_emitter;

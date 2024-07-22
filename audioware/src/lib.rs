@@ -61,6 +61,7 @@ impl Audioware {
     }
 
     fn attach_hooks(env: &SdkEnv) {
+        on_transform_updated::attach_hook(env);
         parameter::attach_hook(env);
         play::attach_hook(env);
         play_on_emitter::attach_hook(env);

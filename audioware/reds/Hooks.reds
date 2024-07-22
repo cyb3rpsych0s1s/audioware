@@ -14,24 +14,24 @@ public func OnUpdate(timeDelta: Float, stateContext: ref<StateContext>, scriptIn
     UpdateListener(position, orientation);
 }
 
-@addField(GameObject)
-private let lastDelta: Float;
+// @addField(GameObject)
+// private let lastDelta: Float;
 
-@wrapMethod(GameObject)
-protected func OnTransformUpdated() -> Void {
-    wrappedMethod();
-    let now = GameInstance.GetTimeSystem(this.GetGame()).GetGameTimeStamp();
-    if now > (this.lastDelta + 0.2) {
-        this.lastDelta = now;
-        let me = this.GetEntity();
-        let me = EntityGameInterface.GetEntity(me);
-        if IsDefined(me) {
-            let id = me.GetEntityID();
-            let position = me.GetWorldPosition();
-            UpdateEmitter(id, position);
-        }
-    }
-}
+// @wrapMethod(GameObject)
+// protected func OnTransformUpdated() -> Void {
+//     wrappedMethod();
+//     let now = GameInstance.GetTimeSystem(this.GetGame()).GetGameTimeStamp();
+//     if now > (this.lastDelta + 0.2) {
+//         this.lastDelta = now;
+//         let me = this.GetEntity();
+//         let me = EntityGameInterface.GetEntity(me);
+//         if IsDefined(me) {
+//             let id = me.GetEntityID();
+//             let position = me.GetWorldPosition();
+//             UpdateEmitter(id, position);
+//         }
+//     }
+// }
 
 // @wrapMethod(GameObject)
 // public final func PassUpdate(dt: Float) -> Void {
