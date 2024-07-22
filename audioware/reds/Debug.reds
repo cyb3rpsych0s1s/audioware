@@ -47,8 +47,12 @@ public static exec func TestAudioSystemPlay(game: GameInstance, name: String) {
 /// Game.TestAudioSystemPlayOnEmitter("as_if_I_didnt_know_already");
 public static exec func TestAudioSystemPlayOnEmitter(game: GameInstance, name: String) {
     let cname = StringToName(name);
-    let entity_id = GetPlayer(game).GetEntityID();
-    GameInstance.GetAudioSystem(game).PlayOnEmitter(cname, entity_id, n"V");
+    let emitterID: EntityID;
+
+    let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
+    emitterID = target.GetEntityID();
+    
+    GameInstance.GetAudioSystem(game).PlayOnEmitter(cname, emitterID, n"Jean-Michel");
 }
 
 /// Game.TestAudioSystemParameter("Audioware:Reverb", 1.0);

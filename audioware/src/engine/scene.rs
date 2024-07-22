@@ -13,11 +13,16 @@ use kira::{
     },
     OutputDestination,
 };
-use red4ext_rs::types::{CName, EntityId, GameInstance};
+use red4ext_rs::{
+    log,
+    types::{CName, EntityId, GameInstance},
+    PluginOps,
+};
 
 use crate::{
     error::{Error, InternalError},
     types::{AsEntity, AsGameInstance},
+    Audioware,
 };
 
 use super::{id::EmitterId, tracks::Tracks};
@@ -94,6 +99,13 @@ impl Scene {
             )
             .map_err(|source| Error::Engine { source })?;
         *Self::try_lock_listener()?.deref_mut() = Some(v);
+        log::info!(
+            Audioware::env(),
+            "registered listener: {:?} -> {:?}, {:?}",
+            entity_id,
+            position,
+            orientation
+        );
         Ok(())
     }
     pub fn unregister_listener(_: EntityId) -> Result<(), Error> {
@@ -108,6 +120,12 @@ impl Scene {
             .add_emitter(position, EmitterSettings::default())
             .map_err(|source| Error::Engine { source })?;
         Self::try_lock_emitters()?.insert(EmitterId::new(entity_id, emitter_name), emitter);
+        log::info!(
+            Audioware::env(),
+            "registered emitter: {:?} -> {:?}",
+            entity_id,
+            position
+        );
         Ok(())
     }
     pub fn unregister_emitter(entity_id: &EntityId) -> Result<(), Error> {

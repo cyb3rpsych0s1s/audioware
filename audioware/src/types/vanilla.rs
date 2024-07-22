@@ -1,11 +1,13 @@
 #![allow(dead_code)]
 
+use glam::{Quat, Vec3};
 use red4ext_rs::{
     class_kind::Native,
     types::{
-        CName, EntityId, GameInstance, IScriptable, LocalizationString, Method, Opt, RedArray, Ref,
+        CName, EntityId, GameInstance, IScriptable, LocalizationString, Method, NativeGameInstance,
+        Opt, RedArray, Ref, ResRef,
     },
-    NativeRepr, RttiSystem, ScriptClass,
+    NativeRepr, RttiSystem, ScriptClass, VoidPtr,
 };
 
 pub trait AsIScriptable {
@@ -150,17 +152,35 @@ unsafe impl NativeRepr for Vector4 {
     const NAME: &'static str = "Vector4";
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy, Default)]
-#[repr(C, align(16))]
-pub struct Quaternion {
-    pub i: f32, // 0x0
-    pub j: f32, // 0x4
-    pub k: f32, // 0x8
-    pub r: f32, // 0xC
+impl From<Vector4> for mint::Vector3<f32> {
+    fn from(value: Vector4) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+            z: value.z,
+        }
+    }
 }
 
-unsafe impl NativeRepr for Quaternion {
-    const NAME: &'static str = "Quaternion";
+impl From<Vector4> for glam::Vec3 {
+    fn from(value: Vector4) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+            z: value.z,
+        }
+    }
+}
+
+impl From<glam::Vec3> for Vector4 {
+    fn from(value: glam::Vec3) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+            z: value.z,
+            w: 1.,
+        }
+    }
 }
 
 impl From<mint::Vector4<f32>> for Vector4 {
@@ -174,16 +194,6 @@ impl From<mint::Vector4<f32>> for Vector4 {
     }
 }
 
-impl From<Vector4> for mint::Vector3<f32> {
-    fn from(value: Vector4) -> Self {
-        Self {
-            x: value.x,
-            y: value.y,
-            z: value.z,
-        }
-    }
-}
-
 impl From<Vector4> for mint::Vector4<f32> {
     fn from(value: Vector4) -> Self {
         Self {
@@ -191,6 +201,30 @@ impl From<Vector4> for mint::Vector4<f32> {
             y: value.y,
             z: value.z,
             w: value.w,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy, Default)]
+#[repr(C, align(16))]
+pub struct Quaternion {
+    pub i: f32, // 0x0
+    pub j: f32, // 0x4
+    pub k: f32, // 0x8
+    pub r: f32, // 0xC
+}
+
+unsafe impl NativeRepr for Quaternion {
+    const NAME: &'static str = "Quaternion";
+}
+
+impl From<glam::Quat> for Quaternion {
+    fn from(value: glam::Quat) -> Self {
+        Self {
+            i: value.x,
+            j: value.y,
+            k: value.z,
+            r: value.w,
         }
     }
 }
@@ -219,12 +253,34 @@ impl From<Quaternion> for mint::Quaternion<f32> {
     }
 }
 
+const EVENT_MANAGER_PADDING: usize = 0x138 - 0xD8;
+const PADDING_UNK148: usize = 0x154 - 0x148;
+const PADDING_UNK157: usize = 0x15B - 0x157;
+
 #[repr(C)]
 pub struct Entity {
     pub base: IScriptable,
-    pub _padding0: [u8; 0x114],
-    pub custom_camera_target: ECustomCameraTarget, // 0x154
-    pub _padding1: [u8; 0x6],
+    unk40: u32,                                        // 0x40
+    unk44: u32,                                        // 0x44
+    pub entity_id: EntityId,                           // 0x48
+    pub appearance_name: CName,                        // 0x50
+    unk58: u64,                                        // 0x58
+    pub template_path: ResRef,                         // 0x60
+    unk68: u64,                                        // 0x68
+    component_storage: [u8; 0x30],                     // 0x70
+    pub components: RedArray<Ref<IScriptable>>,        // 0xA0
+    transform_component: *const IScriptable,           // 0xB0
+    runtime_scene: *const WorldRuntimeScene,           // 0xB8
+    game_instance: *const NativeGameInstance,          // 0xC0
+    unk_c8: VoidPtr,                                   // 0xC8
+    unk_d0: VoidPtr,                                   // 0xD0
+    event_manager: [u8; EVENT_MANAGER_PADDING],        // 0xD8
+    visual_tags: RedTagList,                           // 0x138
+    unk148: [u8; PADDING_UNK148],                      // 0x148
+    pub custom_camera_target: ECustomCameraTarget,     // 0x154
+    unk155: u8,                                        // 0x155
+    pub status: EntityStatus,                          // 0x156
+    unk157: [u8; PADDING_UNK157],                      // 0x157
     pub render_scene_layer_mask: RenderSceneLayerMask, // 0x15B
 }
 
@@ -238,6 +294,28 @@ impl AsRef<IScriptable> for Entity {
     fn as_ref(&self) -> &IScriptable {
         &self.base
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u8)]
+pub enum EntityStatus {
+    Undefined = 0,
+    Initializing = 1,
+    Detached = 2,
+    Attaching = 3,
+    Attached = 4,
+    Detaching = 5,
+    Uninitializing = 6,
+    Uninitialized = 7,
+}
+
+#[repr(C, align(8))]
+pub struct WorldRuntimeScene {
+    pub _padding0: [u8; 0x4B8],
+}
+
+unsafe impl NativeRepr for WorldRuntimeScene {
+    const NAME: &'static str = "worldRuntimeScene";
 }
 
 #[allow(clippy::enum_variant_names)]
@@ -284,6 +362,12 @@ pub trait AsEntity {
 
 impl AsEntity for Ref<Entity> {
     fn get_world_position(&self) -> Vector4 {
+        let attached = unsafe { self.instance() }
+            .map(|x| x.status == EntityStatus::Attached)
+            .unwrap_or(false);
+        if !attached {
+            return Vec3::NEG_Z.into();
+        }
         let rtti = RttiSystem::get();
         let cls = rtti.get_class(CName::new(Entity::NAME)).unwrap();
         let method: &Method = cls.get_method(CName::new("GetWorldPosition")).ok().unwrap();
@@ -294,6 +378,12 @@ impl AsEntity for Ref<Entity> {
     }
 
     fn get_world_orientation(&self) -> Quaternion {
+        let attached = unsafe { self.instance() }
+            .map(|x| x.status == EntityStatus::Attached)
+            .unwrap_or(false);
+        if !attached {
+            return Quat::IDENTITY.into();
+        }
         let rtti = RttiSystem::get();
         let cls = rtti.get_class(CName::new(Entity::NAME)).unwrap();
         let method: &Method = cls
@@ -355,20 +445,4 @@ pub struct RedTagList {
 
 unsafe impl NativeRepr for RedTagList {
     const NAME: &'static str = "redTagList";
-}
-
-pub trait AsGameObject {
-    fn is_player(&self) -> bool;
-}
-
-impl AsGameObject for Ref<GameObject> {
-    fn is_player(&self) -> bool {
-        let rtti = RttiSystem::get();
-        let cls = rtti.get_class(CName::new(GameObject::NAME)).unwrap();
-        let method: &Method = cls.get_method(CName::new("IsPlayer")).ok().unwrap();
-        method
-            .as_function()
-            .execute::<_, bool>(unsafe { self.instance() }.map(AsRef::as_ref), ())
-            .unwrap()
-    }
 }

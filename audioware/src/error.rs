@@ -5,12 +5,14 @@ use snafu::Snafu;
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum Error {
-    #[snafu(display("Conversion error"))]
+    #[snafu(display("Conversion error: {source}"))]
     Conversion { source: ConversionError },
-    #[snafu(display("Internal error"))]
+    #[snafu(display("Internal error: {source}"))]
     Internal { source: InternalError },
-    #[snafu(display("Engine error"))]
+    #[snafu(display("Engine error: {source}"))]
     Engine { source: ResourceLimitReached },
+    #[snafu(display("Scene error: {source}"))]
+    Scene { source: SceneError },
 }
 
 #[derive(Debug, Snafu)]
@@ -19,8 +21,14 @@ pub enum InternalError {
     Contention { origin: &'static str },
     #[snafu(display("{origin} cannot be initialized more than once"))]
     Init { origin: &'static str },
-    #[snafu(display("invalid cast"))]
-    Cast,
+}
+
+#[derive(Debug, Snafu)]
+pub enum SceneError {
+    #[snafu(display("Only V can be registered as the listener."))]
+    InvalidListener,
+    #[snafu(display("V cannot be registered as an emitter."))]
+    InvalidEmitter,
 }
 
 impl From<InternalError> for Error {
@@ -38,5 +46,11 @@ impl From<ConversionError> for Error {
 impl From<ResourceLimitReached> for Error {
     fn from(source: ResourceLimitReached) -> Self {
         Self::Engine { source }
+    }
+}
+
+impl From<SceneError> for Error {
+    fn from(source: SceneError) -> Self {
+        Self::Scene { source }
     }
 }

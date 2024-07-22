@@ -10,7 +10,7 @@ use red4ext_rs::{
     ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
-use types::{AsAudioSystem, AudioSystem, LocalizationPackage, Subtitle, Vector4};
+use types::{AsAudioSystem, AudioSystem, GameObject, LocalizationPackage, Subtitle, Vector4};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod engine;
@@ -117,6 +117,7 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     log::info!(env, "on exit initialization: Audioware");
     test_play();
     test_static();
+    test_is_player();
     utils::info("it should be able to call FTLog");
     utils::warn("it should be able to call FTLogWarning");
     utils::error("it should be able to call FTLogError");
@@ -205,6 +206,27 @@ fn test_static() {
 
     let threshold = call!("PlayerPuppet"::"GetCriticalHealthThreshold;"() -> f32).unwrap();
     log::info!(env, "player critical health threshold: {threshold}");
+}
+
+fn test_is_player() {
+    let env = Audioware::env();
+    let rtti = RttiSystem::get();
+    let cls = rtti.get_class(CName::new(GameObject::NAME)).unwrap();
+    match cls.get_method(CName::new("IsPlayer;")) {
+        Ok(x) => {
+            log::info!(env, "IsPlayer ====> {x:#?}");
+        }
+        Err(e) => {
+            log::error!(
+                env,
+                "IsPlayer ====> {}",
+                e.into_iter()
+                    .map(|x| x.as_function().name().as_str())
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            );
+        }
+    };
 }
 
 fn set_game_state(after: GameState) {

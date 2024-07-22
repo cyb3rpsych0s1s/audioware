@@ -20,7 +20,7 @@ class AudiowareService extends ScriptableService {
         
         // spatial scene emitters
         GameInstance.GetCallbackSystem()
-            .RegisterCallback(n"Entity/Attached", this, n"OnPlayerSpawn")
+            .RegisterCallback(n"Entity/Initialize", this, n"OnPlayerSpawn")
             .AddTarget(EntityTarget.Type(n"PlayerPuppet"));
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Entity/Uninitialize", this, n"OnPlayerDespawn")
@@ -58,6 +58,7 @@ class AudiowareService extends ScriptableService {
     }
 
     private cb func OnPlayerSpawn(event: ref<EntityLifecycleEvent>) {
+        LOG("on player spawn: AudiowareService");
         let v = event.GetEntity();
         if IsDefined(v) {
             RegisterListener(v.GetEntityID());
@@ -65,6 +66,7 @@ class AudiowareService extends ScriptableService {
     }
 
     private cb func OnPlayerDespawn(event: ref<EntityLifecycleEvent>) {
+        LOG("on player despawn: AudiowareService");
         let v = event.GetEntity();
         if IsDefined(v) {
             UnregisterListener(v.GetEntityID());
