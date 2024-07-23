@@ -224,7 +224,7 @@ unsafe impl ScriptClass for PlayerPuppet {
 
 impl AsRef<IScriptable> for PlayerPuppet {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.as_ref()
+        self.base.as_ref()
     }
 }
 
