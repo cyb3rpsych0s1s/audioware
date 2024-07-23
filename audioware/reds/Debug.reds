@@ -52,7 +52,7 @@ public static exec func TestAudioSystemPlayOnEmitter(game: GameInstance, name: S
 
     let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
     emitterID = target.GetEntityID();
-    
+
     GameInstance.GetAudioSystem(game).PlayOnEmitter(cname, emitterID, n"Jean-Michel");
 }
 
@@ -66,4 +66,42 @@ public static exec func TestAudioSystemParameter(game: GameInstance, name: Strin
 /// Game.TestPlayRustOnly();
 public static exec func TestPlayRustOnly(game: GameInstance) {
     TestPlay();
+}
+
+/// Game.TestScenePositions();
+public static exec func TestScenePositions(game: GameInstance) {
+    let player = GetPlayer(game);
+    let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(player);
+    LogPositions(player, "listener");
+    LogPositions(target, "emitter");
+}
+
+private func LogVector4(position: Vector4, name: String) {
+    let x = position.X;
+    let y = position.Y;
+    let z = position.Z;
+    FTLog(AsRef(s"\(name) => x: \(ToString(x)), y: \(ToString(y)), z: \(ToString(z))"));
+}
+
+private func LogQuaternion(orientation: Quaternion, name: String) {
+    let i = orientation.i;
+    let j = orientation.j;
+    let k = orientation.k;
+    let r = orientation.r;
+    FTLog(AsRef(s"\(name) => i: \(ToString(i)), j: \(ToString(j)), k: \(ToString(k)), r: \(ToString(r))"));
+}
+
+private func LogPositions(entity: ref<Entity>, name: String) {
+    let position = entity.GetWorldPosition();
+    let forward = entity.GetWorldForward();
+    let up = entity.GetWorldUp();
+    let right = entity.GetWorldRight();
+    let orientation = entity.GetWorldOrientation();
+    FTLog(AsRef(s"== \(name) =="));
+    LogVector4(position, "world position");
+    LogVector4(forward, "world forward");
+    LogVector4(up, "world up");
+    LogVector4(right, "world right");
+    LogQuaternion(orientation, "world orientation");
+    FTLog(AsRef(s"============"));
 }

@@ -199,7 +199,7 @@ impl Engine {
                 }
             }
             either::Either::Right(data) => {
-                let handle = manager.play(data).unwrap();
+                let handle = manager.play(data.output_destination(destination)).unwrap();
                 match StreamStorage::try_lock() {
                     Ok(mut x) => {
                         x.insert(HandleId::new(id, Some(entity_id)), handle);

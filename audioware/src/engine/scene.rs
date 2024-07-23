@@ -1,14 +1,14 @@
 use std::{
     collections::HashMap,
-    ops::DerefMut,
     sync::{Arc, Mutex, MutexGuard, OnceLock},
 };
 
+use glam::{Quat, Vec3};
 use kira::{
     manager::AudioManager,
     spatial::{
         emitter::{EmitterHandle, EmitterSettings},
-        listener::{ListenerHandle, ListenerSettings},
+        listener::ListenerHandle,
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
     tween::Tween,
@@ -26,25 +26,26 @@ use crate::{
     Audioware,
 };
 
-use super::{id::EmitterId, tracks::Tracks};
+use super::id::EmitterId;
 
 static SCENE: OnceLock<Scene> = OnceLock::new();
 
 pub struct Scene {
     pub scene: Arc<Mutex<SpatialSceneHandle>>,
-    pub v: Arc<Mutex<Option<ListenerHandle>>>,
+    pub v: Arc<Mutex<ListenerHandle>>,
     pub entities: Arc<Mutex<HashMap<EmitterId, EmitterHandle>>>,
 }
 
 impl Scene {
     pub fn setup(manager: &mut AudioManager) -> Result<(), Error> {
-        let scene = manager
+        let mut scene = manager
             .add_spatial_scene(SpatialSceneSettings::default())
             .map_err(|source| Error::Engine { source })?;
+        let listener = scene.add_listener(Vec3::ZERO, Quat::IDENTITY, Default::default())?;
         SCENE
             .set(Scene {
                 scene: Arc::new(Mutex::new(scene)),
-                v: Arc::new(Mutex::new(None)),
+                v: Arc::new(Mutex::new(listener)),
                 entities: Arc::new(Mutex::new(HashMap::new())),
             })
             .map_err(|_| Error::from(InternalError::Contention { origin: "scene" }))?;
@@ -62,7 +63,7 @@ impl Scene {
                 origin: "spatial scene handle",
             })
     }
-    fn try_lock_listener<'a>() -> Result<MutexGuard<'a, Option<ListenerHandle>>, InternalError> {
+    fn try_lock_listener<'a>() -> Result<MutexGuard<'a, ListenerHandle>, InternalError> {
         SCENE
             .get()
             .ok_or(InternalError::Init {
@@ -92,20 +93,15 @@ impl Scene {
         let entity = GameInstance::find_entity_by_id(game, entity_id);
         let position = entity.get_world_position();
         let orientation = entity.get_world_orientation();
-        let transform = entity.get_world_transform();
-        log::info!(
-            Audioware::env(),
-            "transforms: {transform} -> {} (inverse)",
-            transform.get_inverse()
-        );
-        let v = Self::try_lock_scene()?
-            .add_listener(
-                position,
-                orientation,
-                ListenerSettings::new().track(&Tracks::get().v.main),
-            )
-            .map_err(|source| Error::Engine { source })?;
-        *Self::try_lock_listener()?.deref_mut() = Some(v);
+        // let transform = entity.get_world_transform();
+        // log::info!(
+        //     Audioware::env(),
+        //     "transforms: {transform} -> {} (inverse)",
+        //     transform.get_inverse()
+        // );
+        let mut v = Self::try_lock_listener()?;
+        v.set_position(position, Tween::default());
+        v.set_orientation(orientation, Tween::default());
         log::info!(
             Audioware::env(),
             "registered listener: {:?} -> {:?}, {:?}",
@@ -117,14 +113,11 @@ impl Scene {
     }
     pub fn update_listener(position: Vector4, orientation: Quaternion) -> Result<(), Error> {
         let mut listener = Self::try_lock_listener()?;
-        if let Some(listener) = listener.deref_mut() {
-            listener.set_position(position, Tween::default());
-            listener.set_orientation(orientation, Tween::default());
-        }
+        listener.set_position(position, Tween::default());
+        listener.set_orientation(orientation, Tween::default());
         Ok(())
     }
     pub fn unregister_listener(_: EntityId) -> Result<(), Error> {
-        *Self::try_lock_listener()?.deref_mut() = None;
         Ok(())
     }
     pub fn register_emitter(entity_id: EntityId, emitter_name: Option<CName>) -> Result<(), Error> {
@@ -191,13 +184,13 @@ impl Scene {
         Ok(())
     }
     pub fn sync_listener() -> Result<(), Error> {
-        if let Ok(Some(ref mut v)) = Self::try_lock_listener().as_deref_mut() {
+        if let Ok(ref mut v) = Self::try_lock_listener().as_deref_mut() {
             let player = GameInstance::get_player(GameInstance::new());
             if player.is_null() {
                 return Ok(());
             }
             let entity = player.cast::<Entity>().unwrap();
-            let position = entity.get_world_forward();
+            let position = entity.get_world_position();
             let orientation = entity.get_world_orientation();
             v.set_position(position, Tween::default());
             v.set_orientation(orientation, Tween::default());
