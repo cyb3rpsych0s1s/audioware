@@ -94,7 +94,16 @@ impl Engine {
             log::error!(Audioware::env(), "couldn't clear emitters on scene: {e}");
         }
     }
-    pub fn stop_all() {}
+    pub fn sync_emitters() {
+        if let Err(e) = Scene::sync_emitters() {
+            log::error!(Audioware::env(), "couldn't sync emitters on scene: {e}");
+        }
+    }
+    pub fn sync_listener() {
+        if let Err(e) = Scene::sync_listener() {
+            log::error!(Audioware::env(), "couldn't sync listener on scene: {e}");
+        }
+    }
     /// play sound
     pub fn play(
         sound_name: CName,

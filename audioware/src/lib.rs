@@ -67,8 +67,6 @@ impl Audioware {
         play_on_emitter::attach_hook(env);
         stop::attach_hook(env);
         switch::attach_hook(env);
-        set_local_position::attach_hook(env);
-        set_local_orientation::attach_hook(env);
     }
 }
 
@@ -125,6 +123,7 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     log::info!(env, "on exit initialization: Audioware");
     test_play();
     test_static();
+    // test_get_player();
     // test_is_player();
     utils::info("it should be able to call FTLog");
     utils::warn("it should be able to call FTLogWarning");
@@ -260,6 +259,31 @@ fn test_is_player() {
                     .collect::<Vec<_>>()
                     .join("\n")
             );
+        }
+    };
+}
+
+#[allow(dead_code)]
+fn test_get_player() {
+    let env = Audioware::env();
+    let rtti = RttiSystem::get();
+    let methods = rtti.get_global_functions();
+    match methods.iter().find(|x| {
+        x.name() == CName::new("GetPlayer")
+            || x.short_name() == CName::new("GetPlayer")
+            || x.name() == CName::new("GetPlayer;GameInstance")
+            || x.short_name() == CName::new("GetPlayer;GameInstance")
+    }) {
+        Some(x) => {
+            log::info!(
+                env,
+                "GetPlayer ====> full: {}, short: {}\n{x:#?}",
+                x.name().as_str(),
+                x.short_name().as_str()
+            );
+        }
+        None => {
+            log::error!(env, "GetPlayer ====> NOT FOUND");
         }
     };
 }

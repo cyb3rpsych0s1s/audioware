@@ -14,9 +14,10 @@ pub use fixed_point::*;
 mod game_object;
 pub use game_object::*;
 mod iplaced_component;
-pub use iplaced_component::*;
 mod orphans;
 pub use orphans::*;
+mod puppet;
+pub use puppet::*;
 mod quaternion;
 pub use quaternion::*;
 mod vector4;
@@ -66,6 +67,7 @@ impl AsIScriptable for Ref<IScriptable> {
 
 pub trait AsGameInstance {
     fn find_entity_by_id(game: GameInstance, entity_id: EntityId) -> Ref<Entity>;
+    fn get_player(game: GameInstance) -> Ref<PlayerPuppet>;
 }
 
 impl AsGameInstance for GameInstance {
@@ -80,6 +82,18 @@ impl AsGameInstance for GameInstance {
         method
             .as_function()
             .execute::<_, Ref<Entity>>(None, (game, entity_id))
+            .unwrap()
+    }
+
+    fn get_player(game: GameInstance) -> Ref<PlayerPuppet> {
+        let rtti = RttiSystem::get();
+        let methods = rtti.get_global_functions();
+        let method = methods
+            .iter()
+            .find(|x| x.name() == CName::new("GetPlayer;GameInstance"))
+            .unwrap();
+        method
+            .execute::<_, Ref<PlayerPuppet>>(None, (game,))
             .unwrap()
     }
 }

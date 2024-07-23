@@ -16,13 +16,13 @@ use kira::{
 };
 use red4ext_rs::{
     log,
-    types::{CName, EntityId, GameInstance},
+    types::{CName, EntityId, GameInstance, Ref},
     PluginOps,
 };
 
 use crate::{
     error::{Error, InternalError},
-    types::{AsEntity, AsGameInstance, Quaternion, Vector4},
+    types::{AsEntity, AsGameInstance, Entity, Quaternion, Vector4},
     Audioware,
 };
 
@@ -173,6 +173,35 @@ impl Scene {
     }
     pub fn clear_emitters() -> Result<(), Error> {
         Self::try_lock_emitters()?.clear();
+        Ok(())
+    }
+    pub fn sync_emitters() -> Result<(), Error> {
+        let mut entity: Ref<Entity>;
+        let mut position: Vector4;
+        if let Ok(mut emitters) = Self::try_lock_emitters() {
+            for (k, v) in emitters.iter_mut() {
+                entity = GameInstance::find_entity_by_id(GameInstance::new(), *k.entity_id());
+                if entity.is_null() {
+                    continue;
+                }
+                position = entity.get_world_position();
+                v.set_position(position, Tween::default());
+            }
+        }
+        Ok(())
+    }
+    pub fn sync_listener() -> Result<(), Error> {
+        if let Ok(Some(ref mut v)) = Self::try_lock_listener().as_deref_mut() {
+            let player = GameInstance::get_player(GameInstance::new());
+            if player.is_null() {
+                return Ok(());
+            }
+            let entity = player.cast::<Entity>().unwrap();
+            let position = entity.get_world_forward();
+            let orientation = entity.get_world_orientation();
+            v.set_position(position, Tween::default());
+            v.set_orientation(orientation, Tween::default());
+        }
         Ok(())
     }
     pub fn output_destination(entity_id: &EntityId) -> Option<OutputDestination> {
