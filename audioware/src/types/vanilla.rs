@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use red4ext_rs::{
-    types::{CName, EntityId, GameInstance, IScriptable, Ref},
+    types::{CName, EntityId, GameInstance, Ref},
     NativeRepr, RttiSystem, ScriptClass,
 };
 
@@ -26,44 +26,6 @@ mod world_position;
 pub use world_position::*;
 mod world_transform;
 pub use world_transform::*;
-
-pub trait AsIScriptable {
-    fn is_a(&self, class_name: CName) -> bool;
-    fn is_exactly_a(&self, class_name: CName) -> bool;
-    fn get_class_name(&self) -> CName;
-}
-
-impl AsIScriptable for Ref<IScriptable> {
-    fn is_a(&self, class_name: CName) -> bool {
-        let rtti = RttiSystem::get();
-        let cls = rtti.get_class(CName::new(IScriptable::NAME)).unwrap();
-        let method = cls.get_method(CName::new("IsA")).ok().unwrap();
-        method
-            .as_function()
-            .execute::<_, bool>(unsafe { self.instance() }, (class_name,))
-            .unwrap()
-    }
-
-    fn is_exactly_a(&self, class_name: CName) -> bool {
-        let rtti = RttiSystem::get();
-        let cls = rtti.get_class(CName::new(IScriptable::NAME)).unwrap();
-        let method = cls.get_method(CName::new("IsExactlyA")).ok().unwrap();
-        method
-            .as_function()
-            .execute::<_, bool>(unsafe { self.instance() }, (class_name,))
-            .unwrap()
-    }
-
-    fn get_class_name(&self) -> CName {
-        let rtti = RttiSystem::get();
-        let cls = rtti.get_class(CName::new(IScriptable::NAME)).unwrap();
-        let method = cls.get_method(CName::new("GetClassName")).ok().unwrap();
-        method
-            .as_function()
-            .execute::<_, CName>(unsafe { self.instance() }, ())
-            .unwrap()
-    }
-}
 
 pub trait AsGameInstance {
     /// `public static native func FindEntityByID(self: GameInstance, entityId: EntityID) -> ref<Entity>`
