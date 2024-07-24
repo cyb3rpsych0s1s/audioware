@@ -18,9 +18,8 @@ audioware-bank = { path = "bank" }
 either = "1.13"
 kira = { version = "0.9", features = ["serde"] }
 rayon = "1.10"
-# red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "v0.7.2" }
-red4ext-rs = { path = "../red4ext-rs" }
-red4ext-rs-bindings = { git = "https://github.com/jac3km4/red4ext-rs-bindings", rev = "v0.2.3" }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "475572e" }
+red4ext-rs-bindings = { git = "https://github.com/jac3km4/red4ext-rs-bindings", rev = "v0.3.0" }
 serde = "1.0"
 snafu = "0.8"
 snowflake = "1.2"
