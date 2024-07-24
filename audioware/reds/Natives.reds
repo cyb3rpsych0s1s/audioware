@@ -20,10 +20,8 @@ private native func PLogWarning(msg: String) -> Void;
 private native func PLogError(msg: String) -> Void;
 
 private native func RegisterListener(listenerID: EntityID) -> Void;
-private native func UpdateListener(position: Vector4, orientation: Quaternion) -> Void;
 private native func UnregisterListener(listenerID: EntityID) -> Void;
 private native func RegisterEmitter(emitterID: EntityID, opt emitterName: CName) -> Void;
-private native func UpdateEmitter(id: EntityID, position: Vector4) -> Void;
 private native func UnregisterEmitter(emitterID: EntityID) -> Void;
 private native func EmittersCount() -> Int32;
 private native func ClearEmitters() -> Void;

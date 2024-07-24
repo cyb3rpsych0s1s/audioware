@@ -10,9 +10,7 @@ use red4ext_rs::{
     ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
-use types::{
-    AsAudioSystem, AudioSystem, GameObject, LocalizationPackage, Quaternion, Subtitle, Vector4,
-};
+use types::{AsAudioSystem, AudioSystem, GameObject, LocalizationPackage, Subtitle, Vector4};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod engine;
@@ -89,7 +87,6 @@ impl Plugin for Audioware {
     fn exports() -> impl Exportable {
         exports![
             GlobalExport(global!(c"Audioware.RegisterListener", register_listener)),
-            GlobalExport(global!(c"Audioware.UpdateListener", update_listener)),
             GlobalExport(global!(
                 c"Audioware.UnregisterListener",
                 unregister_listener
@@ -98,7 +95,6 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
             GlobalExport(global!(c"Audioware.PLogError", plog_error)),
             GlobalExport(global!(c"Audioware.RegisterEmitter", register_emitter)),
-            GlobalExport(global!(c"Audioware.UpdateEmitter", update_emitter)),
             GlobalExport(global!(c"Audioware.UnregisterEmitter", unregister_emitter)),
             GlobalExport(global!(c"Audioware.EmittersCount", emitters_count)),
             GlobalExport(global!(c"Audioware.ClearEmitters", clear_emitters)),
@@ -142,16 +138,6 @@ fn register_listener(emitter_id: EntityId) {
     Engine::register_listener(emitter_id);
 }
 
-fn update_listener(position: Vector4, orientation: Quaternion) {
-    log::info!(
-        Audioware::env(),
-        "update listener position: {}, orientation {} V",
-        position,
-        orientation
-    );
-    Engine::update_listener(position, orientation);
-}
-
 fn unregister_listener(emitter_id: EntityId) {
     log::info!(Audioware::env(), "unregister listener {:?} V", emitter_id);
     Engine::unregister_listener(emitter_id);
@@ -165,19 +151,6 @@ fn register_emitter(emitter_id: EntityId, emitter_name: Opt<CName>) {
         emitter_name
     );
     Engine::register_emitter(emitter_id, emitter_name.into_option());
-}
-
-fn update_emitter(emitter_id: EntityId, position: Vector4) {
-    if !Engine::is_registered_emitter(&emitter_id) {
-        return;
-    }
-    log::info!(
-        Audioware::env(),
-        "update emitter {:?} {}",
-        emitter_id,
-        position
-    );
-    Engine::update_emitter(&emitter_id, position);
 }
 
 fn unregister_emitter(emitter_id: EntityId) {

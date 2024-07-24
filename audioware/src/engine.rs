@@ -11,12 +11,7 @@ use red4ext_rs::{
 use scene::Scene;
 use tracks::Tracks;
 
-use crate::{
-    error::Error,
-    states::State,
-    types::{Quaternion, Vector4},
-    Audioware,
-};
+use crate::{error::Error, states::State, Audioware};
 
 mod effects;
 mod eq;
@@ -49,11 +44,6 @@ impl Engine {
             log::error!(Audioware::env(), "couldn't register listener to scene: {e}");
         }
     }
-    pub fn update_listener(position: Vector4, orientation: Quaternion) {
-        if let Err(e) = Scene::update_listener(position, orientation) {
-            log::error!(Audioware::env(), "couldn't update listener in scene: {e}");
-        }
-    }
     pub fn unregister_listener(entity_id: EntityId) {
         if let Err(e) = Scene::unregister_listener(entity_id) {
             log::error!(
@@ -65,11 +55,6 @@ impl Engine {
     pub fn register_emitter(entity_id: EntityId, emitter_name: Option<CName>) {
         if let Err(e) = Scene::register_emitter(entity_id, emitter_name) {
             log::error!(Audioware::env(), "couldn't register emitter to scene: {e}");
-        }
-    }
-    pub fn update_emitter(entity_id: &EntityId, position: Vector4) {
-        if let Err(e) = Scene::update_emitter(entity_id, position) {
-            log::error!(Audioware::env(), "couldn't update emitter in scene: {e}");
         }
     }
     pub fn unregister_emitter(entity_id: EntityId) {

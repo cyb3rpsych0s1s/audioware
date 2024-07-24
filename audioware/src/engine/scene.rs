@@ -13,7 +13,6 @@ use kira::{
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
     track::TrackHandle,
-    tween::Tween,
     OutputDestination,
 };
 use red4ext_rs::{
@@ -27,13 +26,13 @@ use crate::{
     error::{Error, InternalError},
     types::{
         AsAudiowareService, AsCallbackSystem, AsCallbackSystemHandler, AsEntity, AsEntityTarget,
-        AsGameInstance, AudiowareService, CallbackSystemHandler, Entity, EntityTarget, Quaternion,
-        Vector4, ENTITY_LIFECYCLE_EVENT_UNINITIALIZE,
+        AsGameInstance, AudiowareService, CallbackSystemHandler, Entity, EntityTarget, Vector4,
+        ENTITY_LIFECYCLE_EVENT_UNINITIALIZE,
     },
     Audioware,
 };
 
-use super::id::EmitterId;
+use super::{effects::IMMEDIATELY, id::EmitterId};
 
 static SCENE: OnceLock<Scene> = OnceLock::new();
 
@@ -119,8 +118,8 @@ impl Scene {
         let position = entity.get_world_position();
         let orientation = entity.get_world_orientation();
         let mut v = Self::try_lock_listener()?;
-        v.set_position(position, Tween::default());
-        v.set_orientation(orientation, Tween::default());
+        v.set_position(position, IMMEDIATELY);
+        v.set_orientation(orientation, IMMEDIATELY);
         log::info!(
             Audioware::env(),
             "registered listener: {:?} -> {:?}, {:?}",
@@ -128,12 +127,6 @@ impl Scene {
             position,
             orientation
         );
-        Ok(())
-    }
-    pub fn update_listener(position: Vector4, orientation: Quaternion) -> Result<(), Error> {
-        let mut listener = Self::try_lock_listener()?;
-        listener.set_position(position, Tween::default());
-        listener.set_orientation(orientation, Tween::default());
         Ok(())
     }
     pub fn unregister_listener(_: EntityId) -> Result<(), Error> {
@@ -171,15 +164,6 @@ impl Scene {
             entity_id,
             position
         );
-        Ok(())
-    }
-    pub fn update_emitter(id: &EntityId, position: Vector4) -> Result<(), Error> {
-        if let Some((_, v)) = Self::try_lock_emitters()?
-            .iter_mut()
-            .find(|(k, _)| k.entity_id() == id)
-        {
-            v.set_position(position, Tween::default());
-        }
         Ok(())
     }
     pub fn unregister_emitter(entity_id: &EntityId) -> Result<(), Error> {
@@ -223,13 +207,13 @@ impl Scene {
                     continue;
                 }
                 position = entity.get_world_position();
-                v.set_position(position, Tween::default());
+                v.set_position(position, IMMEDIATELY);
             }
         }
         Ok(())
     }
     pub fn sync_listener() -> Result<(), Error> {
-        if let Ok(ref mut v) = Self::try_lock_listener().as_deref_mut() {
+        if let Ok(v) = Self::try_lock_listener().as_deref_mut() {
             let player = GameInstance::get_player(GameInstance::new());
             if player.is_null() {
                 return Ok(());
@@ -237,8 +221,8 @@ impl Scene {
             let entity = player.cast::<Entity>().unwrap();
             let position = entity.get_world_position();
             let orientation = entity.get_world_orientation();
-            v.set_position(position, Tween::default());
-            v.set_orientation(orientation, Tween::default());
+            v.set_position(position, IMMEDIATELY);
+            v.set_orientation(orientation, IMMEDIATELY);
         }
         Ok(())
     }
