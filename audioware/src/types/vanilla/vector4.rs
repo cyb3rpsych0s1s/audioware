@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, ops::Add};
 
 use red4ext_rs::NativeRepr;
 
@@ -13,6 +13,19 @@ pub struct Vector4 {
 
 unsafe impl NativeRepr for Vector4 {
     const NAME: &'static str = "Vector4";
+}
+
+impl Add for Vector4 {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+            w: self.w + rhs.w,
+        }
+    }
 }
 
 impl From<Vector4> for mint::Vector3<f32> {
