@@ -93,12 +93,6 @@ impl Scene {
         let entity = GameInstance::find_entity_by_id(game, entity_id);
         let position = entity.get_world_position();
         let orientation = entity.get_world_orientation();
-        // let transform = entity.get_world_transform();
-        // log::info!(
-        //     Audioware::env(),
-        //     "transforms: {transform} -> {} (inverse)",
-        //     transform.get_inverse()
-        // );
         let mut v = Self::try_lock_listener()?;
         v.set_position(position, Tween::default());
         v.set_orientation(orientation, Tween::default());
