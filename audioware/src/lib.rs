@@ -86,11 +86,6 @@ impl Plugin for Audioware {
     #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
     fn exports() -> impl Exportable {
         exports![
-            GlobalExport(global!(c"Audioware.RegisterListener", register_listener)),
-            GlobalExport(global!(
-                c"Audioware.UnregisterListener",
-                unregister_listener
-            )),
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
             GlobalExport(global!(c"Audioware.PLogError", plog_error)),
@@ -131,16 +126,6 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     log::info!(env, "on exit running: Audioware");
     GameState::set(GameState::Unload);
     Engine::shutdown();
-}
-
-fn register_listener(emitter_id: EntityId) {
-    log::info!(Audioware::env(), "register listener {:?} V", emitter_id);
-    Engine::register_listener(emitter_id);
-}
-
-fn unregister_listener(emitter_id: EntityId) {
-    log::info!(Audioware::env(), "unregister listener {:?} V", emitter_id);
-    Engine::unregister_listener(emitter_id);
 }
 
 fn register_emitter(emitter_id: EntityId, emitter_name: Opt<CName>) {

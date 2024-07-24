@@ -39,19 +39,6 @@ impl Engine {
             log::error!(Audioware::env(), "could clear emitters in scene: {e}");
         }
     }
-    pub fn register_listener(entity_id: EntityId) {
-        if let Err(e) = Scene::register_listener(entity_id) {
-            log::error!(Audioware::env(), "couldn't register listener to scene: {e}");
-        }
-    }
-    pub fn unregister_listener(entity_id: EntityId) {
-        if let Err(e) = Scene::unregister_listener(entity_id) {
-            log::error!(
-                Audioware::env(),
-                "couldn't unregister listener from scene: {e}"
-            );
-        }
-    }
     pub fn register_emitter(entity_id: EntityId, emitter_name: Option<CName>) {
         if let Err(e) = Scene::register_emitter(entity_id, emitter_name) {
             log::error!(Audioware::env(), "couldn't register emitter to scene: {e}");

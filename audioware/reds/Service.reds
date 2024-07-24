@@ -61,18 +61,10 @@ class AudiowareService extends ScriptableService {
 
     private cb func OnPlayerSpawn(event: ref<EntityLifecycleEvent>) {
         LOG("on player spawn: AudiowareService");
-        let v = event.GetEntity();
-        if IsDefined(v) {
-            RegisterListener(v.GetEntityID());
-        }
     }
 
     private cb func OnPlayerDespawn(event: ref<EntityLifecycleEvent>) {
         LOG("on player despawn: AudiowareService");
-        let v = event.GetEntity();
-        if IsDefined(v) {
-            UnregisterListener(v.GetEntityID());
-        }
     }
 
     // managed on native side
@@ -80,7 +72,7 @@ class AudiowareService extends ScriptableService {
         LOG("on emitter despawn: AudiowareService");
         let v = event.GetEntity();
         if IsDefined(v) {
-            UnregisterListener(v.GetEntityID());
+            UnregisterEmitter(v.GetEntityID());
         }
     }
 

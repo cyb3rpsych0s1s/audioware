@@ -112,26 +112,6 @@ impl Scene {
                 origin: "callback system handler",
             })
     }
-    pub fn register_listener(entity_id: EntityId) -> Result<(), Error> {
-        let game = GameInstance::new();
-        let entity = GameInstance::find_entity_by_id(game, entity_id);
-        let position = entity.get_world_position();
-        let orientation = entity.get_world_orientation();
-        let mut v = Self::try_lock_listener()?;
-        v.set_position(position, IMMEDIATELY);
-        v.set_orientation(orientation, IMMEDIATELY);
-        log::info!(
-            Audioware::env(),
-            "registered listener: {:?} -> {:?}, {:?}",
-            entity_id,
-            position,
-            orientation
-        );
-        Ok(())
-    }
-    pub fn unregister_listener(_: EntityId) -> Result<(), Error> {
-        Ok(())
-    }
     pub fn register_emitter(entity_id: EntityId, emitter_name: Option<CName>) -> Result<(), Error> {
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, entity_id);

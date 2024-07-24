@@ -26,16 +26,11 @@ public class AudiowareSystem extends ScriptableSystem {
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {
         LOG("on player attach: AudiowareSystem");
         SetGameState(GameState.InGame);
-        if IsDefined(request.owner) {
-            RegisterListener(request.owner.GetEntityID());
-        }
         TestPlay();
     }
     private final func OnPlayerDetach(request: ref<PlayerDetachRequest>) -> Void {
         LOG("on player detach: AudiowareSystem");
         UnsetPlayerGender();
-        UnregisterListener(request.ownerID);
-
     }
     protected cb func OnInMenu(value: Bool) -> Bool {
         LOG(s"on \(value ? "enter" : "exit") menu: AudiowareSystem");
