@@ -174,12 +174,11 @@ impl Scene {
         Ok(())
     }
     pub fn update_emitter(id: &EntityId, position: Vector4) -> Result<(), Error> {
-        let mut emitters = Self::try_lock_emitters()?;
-        for (k, v) in emitters.iter_mut() {
-            if k.entity_id() == id {
-                v.set_position(position, Tween::default());
-                break;
-            }
+        if let Some((_, v)) = Self::try_lock_emitters()?
+            .iter_mut()
+            .find(|(k, _)| k.entity_id() == id)
+        {
+            v.set_position(position, Tween::default());
         }
         Ok(())
     }
