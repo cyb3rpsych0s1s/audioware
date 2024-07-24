@@ -3,11 +3,10 @@ use std::{
     sync::{Mutex, MutexGuard, OnceLock},
 };
 
-use super::id::HandleId;
+use super::{effects::IMMEDIATELY, id::HandleId};
 use kira::{
     manager::{AudioManager, AudioManagerSettings, DefaultBackend},
     sound::{static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError},
-    tween::Tween,
 };
 use once_cell::sync::Lazy;
 
@@ -41,10 +40,10 @@ impl Manager {
     }
     pub fn stop_all() -> Result<(), Error> {
         for (_, v) in StaticStorage::try_lock()?.iter_mut() {
-            v.stop(Tween::default());
+            v.stop(IMMEDIATELY);
         }
         for (_, v) in StreamStorage::try_lock()?.iter_mut() {
-            v.stop(Tween::default());
+            v.stop(IMMEDIATELY);
         }
         Ok(())
     }

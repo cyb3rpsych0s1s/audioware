@@ -17,6 +17,7 @@ use crate::{
     Audioware,
 };
 
+mod effects;
 mod eq;
 mod id;
 mod manager;

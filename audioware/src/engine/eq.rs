@@ -1,15 +1,9 @@
-use std::time::Duration;
-
-use kira::{effect::filter::FilterHandle, tween::Tween};
+use kira::effect::filter::FilterHandle;
 use red4ext_rs::{log, NativeRepr, PluginOps};
 
 use crate::Audioware;
 
-pub const IMMEDIATELY: Tween = Tween {
-    start_time: kira::StartTime::Immediate,
-    duration: Duration::ZERO,
-    easing: kira::tween::Easing::Linear,
-};
+use super::effects::DEFAULT;
 
 /// suppress high frequences (from 20k to x)
 pub const EQ_LOW_PASS_DEFAULT_FREQUENCES: f64 = 20_000.;
@@ -61,19 +55,17 @@ impl EqPass for LowPass {
     fn preset(&mut self, preset: Preset) {
         match preset {
             Preset::None => {
-                self.0.set_mix(0., Default::default());
+                self.0.set_mix(0., DEFAULT);
             }
             Preset::OnThePhone => {
-                self.0
-                    .set_cutoff(EQ_LOW_PASS_PHONE_CUTOFF, Default::default());
-                self.0.set_resonance(EQ_RESONANCE, Default::default());
-                self.0.set_mix(1., Default::default());
+                self.0.set_cutoff(EQ_LOW_PASS_PHONE_CUTOFF, DEFAULT);
+                self.0.set_resonance(EQ_RESONANCE, DEFAULT);
+                self.0.set_mix(1., DEFAULT);
             }
             Preset::Underwater => {
-                self.0
-                    .set_cutoff(EQ_LOW_PASS_UNDERWATER_CUTOFF, Default::default());
-                self.0.set_resonance(EQ_RESONANCE, Default::default());
-                self.0.set_mix(1., Default::default());
+                self.0.set_cutoff(EQ_LOW_PASS_UNDERWATER_CUTOFF, DEFAULT);
+                self.0.set_resonance(EQ_RESONANCE, DEFAULT);
+                self.0.set_mix(1., DEFAULT);
             }
         }
     }
@@ -83,13 +75,12 @@ impl EqPass for HighPass {
     fn preset(&mut self, preset: Preset) {
         match preset {
             Preset::None | Preset::Underwater => {
-                self.0.set_mix(0., Default::default());
+                self.0.set_mix(0., DEFAULT);
             }
             Preset::OnThePhone => {
-                self.0
-                    .set_cutoff(EQ_HIGH_PASS_PHONE_CUTOFF, Default::default());
-                self.0.set_resonance(EQ_RESONANCE, Default::default());
-                self.0.set_mix(1., Default::default());
+                self.0.set_cutoff(EQ_HIGH_PASS_PHONE_CUTOFF, DEFAULT);
+                self.0.set_resonance(EQ_RESONANCE, DEFAULT);
+                self.0.set_mix(1., DEFAULT);
             }
         }
     }
