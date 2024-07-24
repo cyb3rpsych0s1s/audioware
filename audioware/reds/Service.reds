@@ -1,7 +1,6 @@
 module Audioware
 
 class AudiowareService extends ScriptableService {
-    public let deltaTime: Float;
 
     private cb func OnLoad() {
         // game session state

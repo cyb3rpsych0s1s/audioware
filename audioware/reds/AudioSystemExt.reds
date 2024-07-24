@@ -13,11 +13,6 @@ private func Switch(eventName: CName, eventValue: CName, entityID: EntityID, emi
 
 @addMethod(AudioSystem)
 public func RegisterEmitter(entityID: EntityID, opt emitterName: CName) -> Void {
-    let entity = GameInstance.FindEntityByID(GetGameInstance(), entityID);
-    if IsDefined(entity) && entity.IsA(n"gameObject") {
-        let go = entity as GameObject;
-        go.EnableTransformUpdates(true);
-    }
     RegisterEmitter(entityID, emitterName);
 }
 
