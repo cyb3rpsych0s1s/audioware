@@ -1,6 +1,7 @@
 module Audioware
 
 class AudiowareService extends ScriptableService {
+    private let collector: ref<CallbackSystemHandler>;
 
     private cb func OnLoad() {
         // game session state
@@ -68,6 +69,15 @@ class AudiowareService extends ScriptableService {
 
     private cb func OnPlayerDespawn(event: ref<EntityLifecycleEvent>) {
         LOG("on player despawn: AudiowareService");
+        let v = event.GetEntity();
+        if IsDefined(v) {
+            UnregisterListener(v.GetEntityID());
+        }
+    }
+
+    // managed on native side
+    private cb func OnEmitterDespawn(event: ref<EntityLifecycleEvent>) {
+        LOG("on emitter despawn: AudiowareService");
         let v = event.GetEntity();
         if IsDefined(v) {
             UnregisterListener(v.GetEntityID());

@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    ops::DerefMut,
     sync::{Arc, Mutex, MutexGuard, OnceLock},
 };
 
@@ -17,19 +18,26 @@ use kira::{
 };
 use red4ext_rs::{
     log,
-    types::{CName, EntityId, GameInstance, Ref},
+    types::{CName, EntityId, GameInstance, Opt, Ref},
     PluginOps,
 };
+use std::mem;
 
 use crate::{
     error::{Error, InternalError},
-    types::{AsEntity, AsGameInstance, Entity, Quaternion, Vector4},
+    types::{
+        AsAudiowareService, AsCallbackSystem, AsCallbackSystemHandler, AsEntity, AsEntityTarget,
+        AsGameInstance, AudiowareService, CallbackSystemHandler, Entity, EntityTarget, Quaternion,
+        Vector4, ENTITY_LIFECYCLE_EVENT_UNINITIALIZE,
+    },
     Audioware,
 };
 
 use super::id::EmitterId;
 
 static SCENE: OnceLock<Scene> = OnceLock::new();
+
+static HANDLER: OnceLock<Mutex<Option<Ref<CallbackSystemHandler>>>> = OnceLock::new();
 
 pub struct Scene {
     pub scene: Arc<Mutex<SpatialSceneHandle>>,
@@ -93,6 +101,18 @@ impl Scene {
                 origin: "spatial scene emitters handles",
             })
     }
+    fn try_lock_handler<'a>(
+    ) -> Result<MutexGuard<'a, Option<Ref<CallbackSystemHandler>>>, InternalError> {
+        HANDLER
+            .get()
+            .ok_or(InternalError::Init {
+                origin: "callback system handler",
+            })?
+            .try_lock()
+            .map_err(|_| InternalError::Contention {
+                origin: "callback system handler",
+            })
+    }
     pub fn register_listener(entity_id: EntityId) -> Result<(), Error> {
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, entity_id);
@@ -127,6 +147,24 @@ impl Scene {
             .add_emitter(position, EmitterSettings::default())
             .map_err(|source| Error::Engine { source })?;
         Self::try_lock_emitters()?.insert(EmitterId::new(entity_id, emitter_name), emitter);
+        match Self::try_lock_handler()?.deref_mut() {
+            Some(handler) => {
+                let target = EntityTarget::id(entity_id);
+                *handler = handler.add_target(unsafe { mem::transmute(target) });
+            }
+            x if x.is_none() => {
+                let system = GameInstance::get_callback_system(GameInstance::new());
+                let service = AudiowareService::get_instance();
+                let handler = system.register_callback(
+                    CName::new(ENTITY_LIFECYCLE_EVENT_UNINITIALIZE),
+                    unsafe { mem::transmute(service) },
+                    CName::new("OnEmitterDespawn"),
+                    Opt::Default,
+                );
+                *x = Some(handler);
+            }
+            _ => unreachable!(),
+        };
         log::info!(
             Audioware::env(),
             "registered emitter: {:?} -> {:?}",
@@ -147,16 +185,25 @@ impl Scene {
     }
     pub fn unregister_emitter(entity_id: &EntityId) -> Result<(), Error> {
         let entities = Self::try_lock_emitters()?;
-        let mut id: Option<&EmitterId> = None;
-        for (k, _) in entities.iter() {
-            if k.entity_id() == entity_id {
-                id = Some(k);
-                break;
-            }
-        }
-        if let Some(id) = id {
+        let mut handler = Self::try_lock_handler()?;
+        if let Some(id) = entities.keys().find(|k| k.entity_id() == entity_id) {
             let mut entities = Self::try_lock_emitters()?;
             entities.remove(id);
+            if entities.len() > 0 {
+                if let Some(handler) = handler.deref_mut() {
+                    let target = EntityTarget::id(*entity_id);
+                    *handler = handler.remove_target(unsafe { mem::transmute(target) });
+                }
+            } else {
+                let system = GameInstance::get_callback_system(GameInstance::new());
+                let service = AudiowareService::get_instance();
+                system.unregister_callback(
+                    CName::new(ENTITY_LIFECYCLE_EVENT_UNINITIALIZE),
+                    unsafe { mem::transmute(service) },
+                    Opt::NonDefault(CName::new("OnEmitterDespawn")),
+                );
+                *handler = None;
+            }
         }
         Ok(())
     }
