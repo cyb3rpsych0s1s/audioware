@@ -2,7 +2,7 @@
 
 use red4ext_rs::{
     types::{CName, EntityId, GameInstance, Ref},
-    NativeRepr, RttiSystem, ScriptClass,
+    NativeRepr, RttiSystem,
 };
 
 mod audio_system;

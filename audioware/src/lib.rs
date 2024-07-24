@@ -6,8 +6,8 @@ use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log,
     types::{CName, EntityId, GameEngine, Opt, Ref},
-    wcstr, Exportable, GameApp, GlobalExport, NativeRepr, Plugin, PluginOps, RttiRegistrator,
-    RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
+    wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem,
+    ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
 use types::{AsAudioSystem, AudioSystem, GameObject, LocalizationPackage, Subtitle, Vector4};
