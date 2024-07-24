@@ -27,8 +27,6 @@ pub use world_position::*;
 mod world_transform;
 pub use world_transform::*;
 
-use super::CallbackSystem;
-
 pub trait AsIScriptable {
     fn is_a(&self, class_name: CName) -> bool;
     fn is_exactly_a(&self, class_name: CName) -> bool;
@@ -68,9 +66,8 @@ impl AsIScriptable for Ref<IScriptable> {
 }
 
 pub trait AsGameInstance {
+    /// `public static native func FindEntityByID(self: GameInstance, entityId: EntityID) -> ref<Entity>`
     fn find_entity_by_id(game: GameInstance, entity_id: EntityId) -> Ref<Entity>;
-    fn get_player(game: GameInstance) -> Ref<PlayerPuppet>;
-    fn get_callback_system(game: GameInstance) -> Ref<CallbackSystem>;
 }
 
 impl AsGameInstance for GameInstance {
@@ -85,30 +82,6 @@ impl AsGameInstance for GameInstance {
         method
             .as_function()
             .execute::<_, Ref<Entity>>(None, (game, entity_id))
-            .unwrap()
-    }
-
-    fn get_player(game: GameInstance) -> Ref<PlayerPuppet> {
-        let rtti = RttiSystem::get();
-        let methods = rtti.get_global_functions();
-        let method = methods
-            .iter()
-            .find(|x| x.name() == CName::new("GetPlayer;GameInstance"))
-            .unwrap();
-        method
-            .execute::<_, Ref<PlayerPuppet>>(None, (game,))
-            .unwrap()
-    }
-
-    fn get_callback_system(game: GameInstance) -> Ref<CallbackSystem> {
-        let rtti = RttiSystem::get();
-        let methods = rtti.get_global_functions();
-        let method = methods
-            .iter()
-            .find(|x| x.name() == CName::new("GetCallbackSystem;GameInstance"))
-            .unwrap();
-        method
-            .execute::<_, Ref<CallbackSystem>>(None, (game,))
             .unwrap()
     }
 }

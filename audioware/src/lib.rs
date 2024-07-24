@@ -6,8 +6,8 @@ use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log,
     types::{CName, EntityId, GameEngine, Opt, Ref},
-    wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem,
-    ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
+    wcstr, Exportable, GameApp, GlobalExport, NativeRepr, Plugin, PluginOps, RttiRegistrator,
+    RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
 use types::{AsAudioSystem, AudioSystem, GameObject, LocalizationPackage, Subtitle, Vector4};
@@ -270,4 +270,37 @@ fn set_game_locales(spoken: CName, written: CName) {
     );
     SpokenLocale::set(spoken);
     WrittenLocale::set(written);
+}
+
+#[cfg(debug_assertions)]
+#[allow(dead_code)]
+fn scan_rtti(class_name: &str) {
+    let env = Audioware::env();
+    let rtti = RttiSystem::get();
+    let cls = rtti.get_class(CName::new(class_name)).unwrap();
+    log::info!(env, "{} ({:#02X})", cls.name(), cls.size());
+    let static_methods = cls.static_methods();
+    for s in static_methods.iter() {
+        log::info!(
+            env,
+            "static => {} ({})",
+            s.as_function().name(),
+            s.as_function().short_name()
+        );
+    }
+    let member_methods = cls.methods();
+    for m in member_methods.iter() {
+        log::info!(
+            env,
+            "member => {} ({})",
+            m.as_function().name(),
+            m.as_function().short_name()
+        );
+    }
+    let global_methods = rtti.get_global_functions();
+    for g in global_methods.iter() {
+        if g.name().as_str().contains(class_name) || g.short_name().as_str().contains(class_name) {
+            log::info!(env, "global => {} ({})", g.name(), g.short_name());
+        }
+    }
 }

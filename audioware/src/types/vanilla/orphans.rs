@@ -1,7 +1,22 @@
 use red4ext_rs::{
-    types::{CName, RedArray},
-    NativeRepr,
+    types::{CName, GameInstance, RedArray, Ref},
+    NativeRepr, RttiSystem,
 };
+
+use super::PlayerPuppet;
+
+/// `public static native func FindEntityByID(self: GameInstance, entityId: EntityID) -> ref<Entity>`
+pub fn get_player(game: GameInstance) -> Ref<PlayerPuppet> {
+    let rtti = RttiSystem::get();
+    let methods = rtti.get_global_functions();
+    let method = methods
+        .iter()
+        .find(|x| x.name() == CName::new("GetPlayer;GameInstance"))
+        .unwrap();
+    method
+        .execute::<_, Ref<PlayerPuppet>>(None, (game,))
+        .unwrap()
+}
 
 #[repr(C, align(8))]
 pub struct WorldRuntimeScene {

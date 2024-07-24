@@ -1,7 +1,7 @@
 module Audioware
 
 class AudiowareService extends ScriptableService {
-    private let collector: ref<CallbackSystemHandler>;
+    private let handler: ref<CallbackSystemHandler>;
 
     private cb func OnLoad() {
         // game session state
@@ -20,13 +20,14 @@ class AudiowareService extends ScriptableService {
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Session/End", this, n"OnSessionChange");
         
-        // spatial scene emitters
-        GameInstance.GetCallbackSystem()
-            .RegisterCallback(n"Entity/Attached", this, n"OnPlayerSpawn")
+        // spatial scene
+        this.handler = GameInstance.GetCallbackSystem()
+            .RegisterCallback(n"Entity/Uninitialize", this, n"OnDespawn")
             .AddTarget(EntityTarget.Type(n"PlayerPuppet"));
-        GameInstance.GetCallbackSystem()
-            .RegisterCallback(n"Entity/Uninitialize", this, n"OnPlayerDespawn")
-            .AddTarget(EntityTarget.Type(n"PlayerPuppet"));
+    }
+
+    private cb func OnUninitialize() {
+        this.handler = null;
     }
 
     private cb func OnSessionChange(event: ref<GameSessionEvent>) {
@@ -59,21 +60,21 @@ class AudiowareService extends ScriptableService {
         }
     }
 
-    private cb func OnPlayerSpawn(event: ref<EntityLifecycleEvent>) {
-        LOG("on player spawn: AudiowareService");
+    private cb func OnDespawn(event: ref<EntityLifecycleEvent>) {
+        let entity = event.GetEntity();
+        if !IsDefined(entity) { return; }
+        if !entity.IsA(n"PlayerPuppet") {
+            LOG("on emitter despawn: AudiowareService");
+            UnregisterEmitter(entity.GetEntityID());
+        } else { LOG("on player despawn: AudiowareService"); }
     }
 
-    private cb func OnPlayerDespawn(event: ref<EntityLifecycleEvent>) {
-        LOG("on player despawn: AudiowareService");
+    public func AddTarget(target: ref<CallbackSystemTarget>) {
+        this.handler.AddTarget(target);
     }
 
-    // managed on native side
-    private cb func OnEmitterDespawn(event: ref<EntityLifecycleEvent>) {
-        LOG("on emitter despawn: AudiowareService");
-        let v = event.GetEntity();
-        if IsDefined(v) {
-            UnregisterEmitter(v.GetEntityID());
-        }
+    public func RemoveTarget(target: ref<CallbackSystemTarget>) {
+        this.handler.RemoveTarget(target);
     }
 
     public static func GetInstance() -> ref<AudiowareService> {

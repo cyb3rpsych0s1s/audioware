@@ -1,7 +1,7 @@
 use std::{sync::RwLock, time::Instant};
 
 use once_cell::sync::Lazy;
-use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, PluginOps, SdkEnv};
+use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, SdkEnv};
 
 use crate::engine::Engine;
 
