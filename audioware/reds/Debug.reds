@@ -46,6 +46,8 @@ public static exec func TestAudioSystemPlay(game: GameInstance, name: String) {
 /// Game.TestAudioSystemPlayOnEmitter("nah_everything_is_all_good");
 /// Game.TestAudioSystemPlayOnEmitter("as_if_I_didnt_know_already");
 /// Game.TestAudioSystemPlayOnEmitter("god_love_us");
+/// Game.TestAudioSystemPlayOnEmitter("coco_caline");
+/// Game.TestAudioSystemPlayOnEmitter("copacabana");
 public static exec func TestAudioSystemPlayOnEmitter(game: GameInstance, name: String) {
     let cname = StringToName(name);
     let emitterID: EntityID;

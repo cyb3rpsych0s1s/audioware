@@ -11,6 +11,8 @@ hooks! {
 
 static DELTA_TIME: Lazy<RwLock<Instant>> = Lazy::new(|| RwLock::new(Instant::now()));
 
+pub const MIN_PERCEPTION_MILLIS: u128 = 20;
+
 #[allow(clippy::missing_transmute_annotations)]
 pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(super::offsets::ON_TRANSFORM_UPDATED);
@@ -25,10 +27,9 @@ unsafe extern "C" fn detour(i: *mut IScriptable, cb: unsafe extern "C" fn(i: *mu
     let elapsed = DELTA_TIME
         .try_read()
         .as_deref()
-        .map(|x| now.duration_since(*x).as_millis() > 1)
+        .map(|x| now.duration_since(*x).as_millis() > MIN_PERCEPTION_MILLIS)
         .unwrap_or(false);
     if elapsed {
-        // it's reasonable to miss a couple of updates
         if let Ok(x) = DELTA_TIME.try_write().as_deref_mut() {
             *x = now;
             Engine::sync_listener();

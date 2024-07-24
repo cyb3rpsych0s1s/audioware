@@ -8,9 +8,10 @@ use kira::{
     manager::AudioManager,
     spatial::{
         emitter::{EmitterHandle, EmitterSettings},
-        listener::ListenerHandle,
+        listener::{ListenerHandle, ListenerSettings},
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
+    track::TrackHandle,
     tween::Tween,
     OutputDestination,
 };
@@ -37,11 +38,15 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn setup(manager: &mut AudioManager) -> Result<(), Error> {
+    pub fn setup(manager: &mut AudioManager, main: &TrackHandle) -> Result<(), Error> {
         let mut scene = manager
             .add_spatial_scene(SpatialSceneSettings::default())
             .map_err(|source| Error::Engine { source })?;
-        let listener = scene.add_listener(Vec3::ZERO, Quat::IDENTITY, Default::default())?;
+        let listener = scene.add_listener(
+            Vec3::ZERO,
+            Quat::IDENTITY,
+            ListenerSettings::default().track(main),
+        )?;
         SCENE
             .set(Scene {
                 scene: Arc::new(Mutex::new(scene)),

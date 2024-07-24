@@ -32,7 +32,7 @@ impl Engine {
         // SAFETY: initialization order matters
         let mut manager = Manager::try_lock()?;
         Tracks::setup(&mut manager)?;
-        Scene::setup(&mut manager)?;
+        Scene::setup(&mut manager, &Tracks::get().v.main)?;
         Ok(())
     }
     pub fn shutdown() {

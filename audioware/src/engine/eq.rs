@@ -6,8 +6,10 @@ use crate::Audioware;
 use super::effects::DEFAULT;
 
 /// suppress high frequences (from 20k to x)
+#[allow(dead_code)]
 pub const EQ_LOW_PASS_DEFAULT_FREQUENCES: f64 = 20_000.;
 /// suppress low frequences (from 0 to x)
+#[allow(dead_code)]
 pub const EQ_HIGH_PASS_DEFAULT_FREQUENCES: f64 = 0.;
 
 pub const EQ_LOW_PASS_PHONE_CUTOFF: f64 = 5_000.;
