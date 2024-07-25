@@ -4,13 +4,13 @@ use engine::Engine;
 use error::Error;
 use hooks::*;
 use red4ext_rs::{
-    call, export_plugin_symbols, exports, global, log,
-    types::{CName, EntityId, GameEngine, Opt, Ref},
-    wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem,
-    ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
+    call, class_kind::Native, export_plugin_symbols, exports, global, log, types::{CName, EntityId, GameEngine, IScriptable, Opt, Ref}, wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr
 };
 use states::{GameState, State};
-use types::{AsAudioSystem, AudioSystem, GameObject, LocalizationPackage, Subtitle, Vector4};
+use types::{
+    AsAudioSystem, AudioSystem, AudiowareTween, GameObject, LocalizationPackage, Subtitle, ToTween,
+    Vector4,
+};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod engine;
@@ -98,7 +98,12 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
             GlobalExport(global!(c"Audioware.UnsetPlayerGender", unset_player_gender)),
             GlobalExport(global!(c"Audioware.SetGameLocales", set_game_locales)),
-            GlobalExport(global!(c"Audioware.TestPlay", test_play)),
+            GlobalExport(global!(c"Audioware.Play", play_with_tween)),
+            GlobalExport(global!(c"Audioware.Stop", stop_with_tween)),
+            GlobalExport(global!(c"Audioware.Switch", switch_with_tween)),
+            GlobalExport(global!(c"Audioware.PlayOnEmitter", play_on_emitter_with_tween)),
+            GlobalExport(global!(c"Audioware.StopOnEmitter", stop_on_emitter_with_tween)),
+            GlobalExport(global!(c"Audioware.TestPlay", test_play))
         ]
     }
 }
@@ -303,4 +308,63 @@ fn scan_rtti(class_name: &str) {
             log::info!(env, "global => {} ({})", g.name(), g.short_name());
         }
     }
+}
+
+fn play_with_tween(
+    event_name: CName,
+    entity_id: Opt<EntityId>,
+    emitter_name: Opt<CName>,
+    tween: Ref<AudiowareTween>,
+) {
+    Engine::play(
+        event_name,
+        entity_id.into_option(),
+        emitter_name.into_option(),
+        None,
+        tween.into_tween(),
+    );
+}
+
+fn stop_with_tween(event_name: CName, entity_id: Opt<EntityId>, tween: Ref<AudiowareTween>) {
+    if let Some(entity_id) = entity_id.into_option() {
+        Engine::stop_by_cname_for_entity(&event_name, &entity_id, tween.into_tween());
+    } else {
+        Engine::stop_by_cname(&event_name, tween.into_tween());
+    }
+}
+
+fn switch_with_tween(
+    switch_name: CName,
+    switch_value: CName,
+    entity_id: Opt<EntityId>,
+    emitter_name: Opt<CName>,
+    switch_name_tween: Ref<AudiowareTween>,
+    switch_value_tween: Ref<AudiowareTween>,
+) {
+    Engine::switch(
+        switch_name,
+        switch_value,
+        entity_id,
+        emitter_name,
+        switch_name_tween.into_tween(),
+        switch_value_tween.into_tween(),
+    );
+}
+
+fn play_on_emitter_with_tween(
+    event_name: CName,
+    entity_id: EntityId,
+    emitter_name: CName,
+    tween: Ref<AudiowareTween>,
+) {
+    Engine::play_on_emitter(event_name, entity_id, emitter_name, tween.into_tween());
+}
+
+fn stop_on_emitter_with_tween(
+    event_name: CName,
+    entity_id: EntityId,
+    emitter_name: CName,
+    tween: Ref<AudiowareTween>,
+) {
+    Engine::stop_by_cname_for_entity(&event_name, &entity_id, tween.into_tween());
 }

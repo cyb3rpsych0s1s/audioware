@@ -1,15 +1,11 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
     addr_hashes, hooks, log,
-    types::{CName, EntityId, GameInstance, IScriptable, Opt, StackFrame},
+    types::{CName, EntityId, IScriptable, Opt, StackFrame},
     PluginOps, SdkEnv, VoidPtr,
 };
 
-use crate::{
-    engine::{effects::SMOOTHLY, Engine},
-    types::{AsAudioSystem, AsGameInstance},
-    Audioware,
-};
+use crate::{engine::Engine, types::AsAudioSystem, Audioware};
 
 hooks! {
    static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
@@ -49,28 +45,14 @@ unsafe extern "C" fn detour(
             "AudioSystem.Switch: intercepted {switch_name}/{switch_value}"
         );
 
-        let system = GameInstance::get_audio_system();
-
-        if prev {
-            match entity_id.into_option() {
-                Some(x) => Engine::stop_by_cname_for_entity(&switch_name, &x, Some(SMOOTHLY)),
-                None => Engine::stop_by_cname(&switch_name, Some(SMOOTHLY)),
-            };
-        } else {
-            system.stop(switch_name, entity_id, emitter_name);
-        }
-
-        if next {
-            Engine::play(
-                switch_value,
-                entity_id.into_option(),
-                emitter_name.into_option(),
-                None,
-                Some(SMOOTHLY),
-            );
-        } else {
-            system.play(switch_value, entity_id, emitter_name);
-        }
+        Engine::switch(
+            switch_name,
+            switch_value,
+            entity_id,
+            emitter_name,
+            None,
+            None,
+        );
     } else {
         frame.restore_args(state);
         cb(i, f, a3, a4);

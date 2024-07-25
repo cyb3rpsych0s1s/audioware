@@ -1,5 +1,6 @@
 import Audioware.LocalizationPackage
 import Audioware.TestPlay
+import Audioware.StopOnEmitter
 import Codeware.Localization.*
 
 /// Game.TestRegisterEmitter()
@@ -71,6 +72,17 @@ public static exec func TestAudioSystemPlayOnEmitter(game: GameInstance, name: S
     emitterID = target.GetEntityID();
 
     GameInstance.GetAudioSystem(game).PlayOnEmitter(cname, emitterID, n"Jean-Michel");
+}
+
+/// Game.TestAudioSystemPlayOnEmitter("coco_caline");
+public static exec func TestAudioSystemStopOnEmitter(game: GameInstance, name: String) {
+    let cname = StringToName(name);
+    let emitterID: EntityID;
+
+    let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
+    emitterID = target.GetEntityID();
+
+    StopOnEmitter(cname, emitterID, n"Jean-Michel");
 }
 
 /// Game.TestAudioSystemParameter("Audioware:Reverb", 1.0);

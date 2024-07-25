@@ -1,18 +1,24 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, ScnDialogLineType, SpokenLocale, WrittenLocale};
+use effects::SMOOTHLY;
 use id::HandleId;
 use kira::tween::Tween;
 use manager::{Manager, StaticStorage, StreamStorage};
 use red4ext_rs::{
     log,
-    types::{CName, EntityId},
+    types::{CName, EntityId, GameInstance, Opt},
     PluginOps,
 };
 
 use scene::Scene;
 use tracks::Tracks;
 
-use crate::{error::Error, states::State, Audioware};
+use crate::{
+    error::Error,
+    states::State,
+    types::{AsAudioSystem, AsGameInstance},
+    Audioware,
+};
 
 pub mod effects;
 mod eq;
@@ -142,7 +148,12 @@ impl Engine {
         }
         // TODO: propagate subtitles
     }
-    pub fn play_on_emitter(sound_name: CName, entity_id: EntityId, emitter_name: CName) {
+    pub fn play_on_emitter(
+        sound_name: CName,
+        entity_id: EntityId,
+        emitter_name: CName,
+        tween: Option<Tween>,
+    ) {
         let mut manager = match Manager::try_lock() {
             Ok(x) => x,
             Err(e) => {
@@ -211,6 +222,45 @@ impl Engine {
     ) {
         if let Err(e) = Manager::stop_by_cname_for_entity(event_name, entity_id, tween) {
             log::error!(Audioware::env(), "{e}");
+        }
+    }
+    pub fn switch(
+        switch_name: CName,
+        switch_value: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        switch_name_tween: Option<Tween>,
+        switch_value_tween: Option<Tween>,
+    ) {
+        let prev = Banks::exists(&switch_name);
+        let next = Banks::exists(&switch_value);
+        let system = GameInstance::get_audio_system();
+
+        if prev {
+            match entity_id.into_option() {
+                Some(x) => Engine::stop_by_cname_for_entity(
+                    &switch_name,
+                    &x,
+                    Some(switch_name_tween.unwrap_or(SMOOTHLY)),
+                ),
+                None => {
+                    Engine::stop_by_cname(&switch_name, Some(switch_name_tween.unwrap_or(SMOOTHLY)))
+                }
+            };
+        } else {
+            system.stop(switch_name, entity_id, emitter_name);
+        }
+
+        if next {
+            Engine::play(
+                switch_value,
+                entity_id.into_option(),
+                emitter_name.into_option(),
+                None,
+                Some(switch_value_tween.unwrap_or(SMOOTHLY)),
+            );
+        } else {
+            system.play(switch_value, entity_id, emitter_name);
         }
     }
 }
