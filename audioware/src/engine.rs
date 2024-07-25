@@ -1,6 +1,7 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, ScnDialogLineType, SpokenLocale, WrittenLocale};
 use id::HandleId;
+use kira::tween::Tween;
 use manager::{Manager, StaticStorage, StreamStorage};
 use red4ext_rs::{
     log,
@@ -34,7 +35,7 @@ impl Engine {
         Ok(())
     }
     pub fn shutdown() {
-        if let Err(e) = Manager::stop_all() {
+        if let Err(e) = Manager::stop(None) {
             log::error!(Audioware::env(), "could stop all sounds on manager: {e}");
         }
         if let Err(e) = Scene::clear_emitters() {
@@ -191,156 +192,18 @@ impl Engine {
         }
         // TODO: propagate subtitles
     }
-}
-
-impl Manage for Engine {
-    fn stop(&mut self, tween: Option<kira::tween::Tween>) {
-        match StaticStorage::try_lock() {
-            Ok(mut x) => x.stop(tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-        match StreamStorage::try_lock() {
-            Ok(mut x) => x.stop(tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
+    pub fn stop_by_cname(event_name: &CName, tween: Option<Tween>) {
+        if let Err(e) = Manager::stop_by_cname(event_name, tween) {
+            log::error!(Audioware::env(), "{e}");
         }
     }
-
-    fn stop_by_cname(&mut self, cname: &CName, tween: Option<kira::tween::Tween>) {
-        match StaticStorage::try_lock() {
-            Ok(mut x) => x.stop_by_cname(cname, tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-        match StreamStorage::try_lock() {
-            Ok(mut x) => x.stop_by_cname(cname, tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-    }
-
-    fn stop_by_cname_for_entity(
-        &mut self,
-        cname: &CName,
+    pub fn stop_by_cname_for_entity(
+        event_name: &CName,
         entity_id: &EntityId,
-        tween: Option<kira::tween::Tween>,
+        tween: Option<Tween>,
     ) {
-        match StaticStorage::try_lock() {
-            Ok(mut x) => x.stop_by_cname_for_entity(cname, entity_id, tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-        match StreamStorage::try_lock() {
-            Ok(mut x) => x.stop_by_cname_for_entity(cname, entity_id, tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-    }
-
-    fn pause(&mut self, tween: Option<kira::tween::Tween>) {
-        match StaticStorage::try_lock() {
-            Ok(mut x) => x.pause(tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-        match StreamStorage::try_lock() {
-            Ok(mut x) => x.pause(tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-    }
-
-    fn pause_by_cname(&mut self, cname: &CName, tween: Option<kira::tween::Tween>) {
-        match StaticStorage::try_lock() {
-            Ok(mut x) => x.pause_by_cname(cname, tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-        match StreamStorage::try_lock() {
-            Ok(mut x) => x.pause_by_cname(cname, tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-    }
-
-    fn pause_by_cname_for_entity(
-        &mut self,
-        cname: &CName,
-        entity_id: &EntityId,
-        tween: Option<kira::tween::Tween>,
-    ) {
-        match StaticStorage::try_lock() {
-            Ok(mut x) => x.pause_by_cname_for_entity(cname, entity_id, tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-        match StreamStorage::try_lock() {
-            Ok(mut x) => x.pause_by_cname_for_entity(cname, entity_id, tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-    }
-
-    fn resume(&mut self, tween: Option<kira::tween::Tween>) {
-        match StaticStorage::try_lock() {
-            Ok(mut x) => x.resume(tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-        match StreamStorage::try_lock() {
-            Ok(mut x) => x.resume(tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-    }
-
-    fn resume_by_cname(&mut self, cname: &CName, tween: Option<kira::tween::Tween>) {
-        match StaticStorage::try_lock() {
-            Ok(mut x) => x.resume_by_cname(cname, tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-        match StreamStorage::try_lock() {
-            Ok(mut x) => x.resume_by_cname(cname, tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-    }
-
-    fn resume_by_cname_for_entity(
-        &mut self,
-        cname: &CName,
-        entity_id: &EntityId,
-        tween: Option<kira::tween::Tween>,
-    ) {
-        match StaticStorage::try_lock() {
-            Ok(mut x) => x.resume_by_cname_for_entity(cname, entity_id, tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
-        }
-        match StreamStorage::try_lock() {
-            Ok(mut x) => x.resume_by_cname_for_entity(cname, entity_id, tween),
-            Err(e) => {
-                log::error!(Audioware::env(), "{e}");
-            }
+        if let Err(e) = Manager::stop_by_cname_for_entity(event_name, entity_id, tween) {
+            log::error!(Audioware::env(), "{e}");
         }
     }
 }

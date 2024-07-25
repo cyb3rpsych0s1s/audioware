@@ -6,7 +6,7 @@ use red4ext_rs::{
 };
 
 use crate::{
-    engine::{Engine, Manage},
+    engine::Engine,
     Audioware,
 };
 
@@ -42,8 +42,8 @@ unsafe extern "C" fn detour(
         log::info!(env, "AudioSystem.Stop: intercepted {event_name}");
 
         match entity_id.into_option() {
-            Some(x) => Engine.stop_by_cname_for_entity(&event_name, &x, None),
-            None => Engine.stop_by_cname(&event_name, None),
+            Some(x) => Engine::stop_by_cname_for_entity(&event_name, &x, None),
+            None => Engine::stop_by_cname(&event_name, None),
         };
     } else {
         frame.restore_args(state);

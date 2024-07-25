@@ -2,12 +2,13 @@ use kira::sound::PlaybackState;
 use rayon::iter::IntoParallelRefMutIterator;
 use rayon::iter::ParallelBridge;
 use rayon::iter::ParallelIterator;
+use std::ops::DerefMut;
 use std::{
     collections::HashMap,
     sync::{Mutex, MutexGuard, OnceLock},
 };
 
-use super::{effects::IMMEDIATELY, id::HandleId};
+use super::id::HandleId;
 use kira::{
     manager::{AudioManager, AudioManagerSettings, DefaultBackend},
     sound::{static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError},
@@ -16,7 +17,7 @@ use kira::{
 use once_cell::sync::Lazy;
 use red4ext_rs::types::{CName, EntityId};
 
-use crate::error::{Error, InternalError};
+use crate::error::InternalError;
 
 pub struct Manager;
 
@@ -68,15 +69,6 @@ impl Manager {
                 origin: "audio manager",
             })
     }
-    pub fn stop_all() -> Result<(), Error> {
-        for (_, v) in StaticStorage::try_lock()?.iter_mut() {
-            v.stop(IMMEDIATELY);
-        }
-        for (_, v) in StreamStorage::try_lock()?.iter_mut() {
-            v.stop(IMMEDIATELY);
-        }
-        Ok(())
-    }
 }
 
 impl StaticStorage {
@@ -98,10 +90,106 @@ impl StreamStorage {
     }
 }
 
+impl Manager {
+    pub fn stop(tween: Option<Tween>) -> Result<(), InternalError> {
+        StaticStorage::try_lock()?.deref_mut().stop(tween);
+        StreamStorage::try_lock()?.deref_mut().stop(tween);
+        Ok(())
+    }
+    pub fn stop_by_cname(cname: &CName, tween: Option<Tween>) -> Result<(), InternalError> {
+        StaticStorage::try_lock()?
+            .deref_mut()
+            .stop_by_cname(cname, tween);
+        StreamStorage::try_lock()?
+            .deref_mut()
+            .stop_by_cname(cname, tween);
+        Ok(())
+    }
+    pub fn stop_by_cname_for_entity(
+        cname: &CName,
+        entity_id: &EntityId,
+        tween: Option<kira::tween::Tween>,
+    ) -> Result<(), InternalError> {
+        StaticStorage::try_lock()?
+            .deref_mut()
+            .stop_by_cname_for_entity(cname, entity_id, tween);
+        StreamStorage::try_lock()?
+            .deref_mut()
+            .stop_by_cname_for_entity(cname, entity_id, tween);
+        Ok(())
+    }
+
+    pub fn pause(tween: Option<kira::tween::Tween>) -> Result<(), InternalError> {
+        StaticStorage::try_lock()?.deref_mut().pause(tween);
+        StreamStorage::try_lock()?.deref_mut().pause(tween);
+        Ok(())
+    }
+
+    pub fn pause_by_cname(
+        cname: &CName,
+        tween: Option<kira::tween::Tween>,
+    ) -> Result<(), InternalError> {
+        StaticStorage::try_lock()?
+            .deref_mut()
+            .pause_by_cname(cname, tween);
+        StreamStorage::try_lock()?
+            .deref_mut()
+            .pause_by_cname(cname, tween);
+        Ok(())
+    }
+
+    pub fn pause_by_cname_for_entity(
+        cname: &CName,
+        entity_id: &EntityId,
+        tween: Option<kira::tween::Tween>,
+    ) -> Result<(), InternalError> {
+        StaticStorage::try_lock()?
+            .deref_mut()
+            .pause_by_cname_for_entity(cname, entity_id, tween);
+        StreamStorage::try_lock()?
+            .deref_mut()
+            .pause_by_cname_for_entity(cname, entity_id, tween);
+        Ok(())
+    }
+
+    pub fn resume(tween: Option<kira::tween::Tween>) -> Result<(), InternalError> {
+        StaticStorage::try_lock()?.deref_mut().resume(tween);
+        StreamStorage::try_lock()?.deref_mut().resume(tween);
+        Ok(())
+    }
+
+    pub fn resume_by_cname(
+        cname: &CName,
+        tween: Option<kira::tween::Tween>,
+    ) -> Result<(), InternalError> {
+        StaticStorage::try_lock()?
+            .deref_mut()
+            .resume_by_cname(cname, tween);
+        StreamStorage::try_lock()?
+            .deref_mut()
+            .resume_by_cname(cname, tween);
+        Ok(())
+    }
+
+    pub fn resume_by_cname_for_entity(
+        cname: &CName,
+        entity_id: &EntityId,
+        tween: Option<kira::tween::Tween>,
+    ) -> Result<(), InternalError> {
+        StaticStorage::try_lock()?
+            .deref_mut()
+            .resume_by_cname_for_entity(cname, entity_id, tween);
+        StreamStorage::try_lock()?
+            .deref_mut()
+            .resume_by_cname_for_entity(cname, entity_id, tween);
+        Ok(())
+    }
+}
+
 macro_rules! impl_manage {
     ($value_ty:ty) => {
-        impl Manage for HashMap<HandleId, $value_ty> {
-            fn stop(&mut self, tween: Option<Tween>) {
+        impl Manage for $value_ty {
+            fn stop(&mut self, tween: Option<kira::tween::Tween>) {
                 self.values_mut()
                     .par_bridge()
                     .filter(|v| {
@@ -110,7 +198,7 @@ macro_rules! impl_manage {
                     .for_each(|v| v.stop(tween.unwrap_or_default()));
             }
 
-            fn stop_by_cname(&mut self, cname: &CName, tween: Option<Tween>) {
+            fn stop_by_cname(&mut self, cname: &CName, tween: Option<kira::tween::Tween>) {
                 self.par_iter_mut()
                     .filter(|(k, v)| {
                         k.event_name() == cname
@@ -124,7 +212,7 @@ macro_rules! impl_manage {
                 &mut self,
                 cname: &CName,
                 entity_id: &EntityId,
-                tween: Option<Tween>,
+                tween: Option<kira::tween::Tween>,
             ) {
                 self.par_iter_mut()
                     .filter(|(k, v)| {
@@ -136,14 +224,14 @@ macro_rules! impl_manage {
                     .for_each(|(_, v)| v.stop(tween.unwrap_or_default()));
             }
 
-            fn pause(&mut self, tween: Option<Tween>) {
+            fn pause(&mut self, tween: Option<kira::tween::Tween>) {
                 self.values_mut()
                     .par_bridge()
                     .filter(|v| v.state() == PlaybackState::Playing)
                     .for_each(|v| v.pause(tween.unwrap_or_default()));
             }
 
-            fn pause_by_cname(&mut self, cname: &CName, tween: Option<Tween>) {
+            fn pause_by_cname(&mut self, cname: &CName, tween: Option<kira::tween::Tween>) {
                 self.par_iter_mut()
                     .filter(|(k, v)| k.event_name() == cname && v.state() == PlaybackState::Playing)
                     .for_each(|(_, v)| v.pause(tween.unwrap_or_default()));
@@ -153,7 +241,7 @@ macro_rules! impl_manage {
                 &mut self,
                 cname: &CName,
                 entity_id: &EntityId,
-                tween: Option<Tween>,
+                tween: Option<kira::tween::Tween>,
             ) {
                 self.par_iter_mut()
                     .filter(|(k, v)| {
@@ -164,7 +252,7 @@ macro_rules! impl_manage {
                     .for_each(|(_, v)| v.pause(tween.unwrap_or_default()));
             }
 
-            fn resume(&mut self, tween: Option<Tween>) {
+            fn resume(&mut self, tween: Option<kira::tween::Tween>) {
                 self.values_mut()
                     .par_bridge()
                     .filter(|v| {
@@ -173,7 +261,7 @@ macro_rules! impl_manage {
                     .for_each(|v| v.resume(tween.unwrap_or_default()));
             }
 
-            fn resume_by_cname(&mut self, cname: &CName, tween: Option<Tween>) {
+            fn resume_by_cname(&mut self, cname: &CName, tween: Option<kira::tween::Tween>) {
                 self.par_iter_mut()
                     .filter(|(k, v)| {
                         k.event_name() == cname
@@ -187,7 +275,7 @@ macro_rules! impl_manage {
                 &mut self,
                 cname: &CName,
                 entity_id: &EntityId,
-                tween: Option<Tween>,
+                tween: Option<kira::tween::Tween>,
             ) {
                 self.par_iter_mut()
                     .filter(|(k, v)| {
@@ -202,5 +290,5 @@ macro_rules! impl_manage {
     };
 }
 
-impl_manage!(StaticSoundHandle);
-impl_manage!(StreamingSoundHandle<FromFileError>);
+impl_manage!(HashMap<HandleId,StaticSoundHandle>);
+impl_manage!(HashMap<HandleId,StreamingSoundHandle<FromFileError>>);

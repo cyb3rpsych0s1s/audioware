@@ -6,7 +6,7 @@ use red4ext_rs::{
 };
 
 use crate::{
-    engine::{Engine, Manage},
+    engine::Engine,
     types::{AsAudioSystem, AudioSystem},
     Audioware,
 };
@@ -60,9 +60,11 @@ unsafe extern "C" fn detour(
 
         if prev {
             match entity_id.into_option() {
-                Some(x) => Engine.stop_by_cname_for_entity(&switch_name, &x, None),
-                None => Engine.stop_by_cname(&switch_name, None),
+                Some(x) => Engine::stop_by_cname_for_entity(&switch_name, &x, None),
+                None => Engine::stop_by_cname(&switch_name, None),
             };
+        } else {
+            system.stop(switch_name, entity_id, emitter_name);
         }
 
         if next {
@@ -72,6 +74,8 @@ unsafe extern "C" fn detour(
                 emitter_name.into_option(),
                 None,
             );
+        } else {
+            system.play(switch_value, entity_id, emitter_name);
         }
     } else {
         frame.restore_args(state);
