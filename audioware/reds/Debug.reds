@@ -42,6 +42,21 @@ public static exec func TestAudioSystemPlay(game: GameInstance, name: String) {
     GameInstance.GetAudioSystem(game).Play(cname);
 }
 
+/// Game.TestAudioSystemStop("god_love_us");
+/// Game.TestAudioSystemStop("coco_caline");
+/// Game.TestAudioSystemStop("copacabana");
+public static exec func TestAudioSystemStop(game: GameInstance, name: String) {
+    let cname = StringToName(name);
+    GameInstance.GetAudioSystem(game).Stop(cname);
+}
+
+/// Game.TestAudioSystemSwitch("coco_caline", "copacabana");
+public static exec func TestAudioSystemSwitch(game: GameInstance, prev: String, next: String) {
+    let name = StringToName(prev);
+    let value = StringToName(next);
+    GameInstance.GetAudioSystem(game).Switch(name, value);
+}
+
 /// Game.TestAudioSystemPlayOnEmitter("ono_v_effort_short");
 /// Game.TestAudioSystemPlayOnEmitter("nah_everything_is_all_good");
 /// Game.TestAudioSystemPlayOnEmitter("as_if_I_didnt_know_already");

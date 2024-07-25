@@ -5,10 +5,7 @@ use red4ext_rs::{
     PluginOps, SdkEnv, VoidPtr,
 };
 
-use crate::{
-    engine::Engine,
-    Audioware,
-};
+use crate::{engine::Engine, Audioware};
 
 hooks! {
    static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();

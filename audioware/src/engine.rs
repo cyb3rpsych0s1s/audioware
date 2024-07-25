@@ -14,7 +14,7 @@ use tracks::Tracks;
 
 use crate::{error::Error, states::State, Audioware};
 
-mod effects;
+pub mod effects;
 mod eq;
 mod id;
 mod manager;
@@ -87,6 +87,7 @@ impl Engine {
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
         line_type: Option<ScnDialogLineType>,
+        tween: Option<Tween>,
     ) {
         let mut manager = match Manager::try_lock() {
             Ok(x) => x,
@@ -107,7 +108,10 @@ impl Engine {
         };
         // TODO: output destination
         match Banks::data(id) {
-            either::Either::Left(data) => {
+            either::Either::Left(mut data) => {
+                if tween.is_some() {
+                    data.settings.fade_in_tween = tween;
+                }
                 let handle = manager.play(data).unwrap();
                 match StaticStorage::try_lock() {
                     Ok(mut x) => {
@@ -118,7 +122,10 @@ impl Engine {
                     }
                 }
             }
-            either::Either::Right(data) => {
+            either::Either::Right(mut data) => {
+                if tween.is_some() {
+                    data.settings.fade_in_tween = tween;
+                }
                 let handle = manager.play(data).unwrap();
                 match StreamStorage::try_lock() {
                     Ok(mut x) => {

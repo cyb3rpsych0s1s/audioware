@@ -1,13 +1,13 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
     addr_hashes, hooks, log,
-    types::{CName, EntityId, GameEngine, IScriptable, Opt, StackFrame},
-    PluginOps, RttiSystem, ScriptClass, SdkEnv, VoidPtr,
+    types::{CName, EntityId, GameInstance, IScriptable, Opt, StackFrame},
+    PluginOps, SdkEnv, VoidPtr,
 };
 
 use crate::{
-    engine::Engine,
-    types::{AsAudioSystem, AudioSystem},
+    engine::{effects::SMOOTHLY, Engine},
+    types::{AsAudioSystem, AsGameInstance},
     Audioware,
 };
 
@@ -49,19 +49,12 @@ unsafe extern "C" fn detour(
             "AudioSystem.Switch: intercepted {switch_name}/{switch_value}"
         );
 
-        let rtti = RttiSystem::get();
-        let class = rtti.get_class(CName::new(AudioSystem::NAME)).unwrap();
-        let engine = GameEngine::get();
-        let game = engine.game_instance();
-        let system = game
-            .get_system(class.as_type())
-            .cast::<AudioSystem>()
-            .unwrap();
+        let system = GameInstance::get_audio_system();
 
         if prev {
             match entity_id.into_option() {
-                Some(x) => Engine::stop_by_cname_for_entity(&switch_name, &x, None),
-                None => Engine::stop_by_cname(&switch_name, None),
+                Some(x) => Engine::stop_by_cname_for_entity(&switch_name, &x, Some(SMOOTHLY)),
+                None => Engine::stop_by_cname(&switch_name, Some(SMOOTHLY)),
             };
         } else {
             system.stop(switch_name, entity_id, emitter_name);
@@ -73,6 +66,7 @@ unsafe extern "C" fn detour(
                 entity_id.into_option(),
                 emitter_name.into_option(),
                 None,
+                Some(SMOOTHLY),
             );
         } else {
             system.play(switch_value, entity_id, emitter_name);

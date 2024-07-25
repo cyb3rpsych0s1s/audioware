@@ -42,6 +42,7 @@ unsafe extern "C" fn detour(
             entity_id.into_option(),
             emitter_name.into_option(),
             None,
+            None,
         );
     } else {
         frame.restore_args(state);

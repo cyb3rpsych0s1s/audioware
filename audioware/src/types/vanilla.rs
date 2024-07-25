@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 use red4ext_rs::{
-    types::{CName, EntityId, GameInstance, Ref},
-    NativeRepr, RttiSystem,
+    types::{CName, EntityId, GameEngine, GameInstance, Ref},
+    NativeRepr, RttiSystem, ScriptClass,
 };
 
 mod audio_system;
@@ -30,6 +30,7 @@ pub use world_transform::*;
 pub trait AsGameInstance {
     /// `public static native func FindEntityByID(self: GameInstance, entityId: EntityID) -> ref<Entity>`
     fn find_entity_by_id(game: GameInstance, entity_id: EntityId) -> Ref<Entity>;
+    fn get_audio_system() -> Ref<AudioSystem>;
 }
 
 impl AsGameInstance for GameInstance {
@@ -45,5 +46,15 @@ impl AsGameInstance for GameInstance {
             .as_function()
             .execute::<_, Ref<Entity>>(None, (game, entity_id))
             .unwrap()
+    }
+
+    fn get_audio_system() -> Ref<AudioSystem> {
+        let rtti = RttiSystem::get();
+        let class = rtti.get_class(CName::new(AudioSystem::NAME)).unwrap();
+        let engine = GameEngine::get();
+        let game = engine.game_instance();
+        game.get_system(class.as_type())
+            .cast::<AudioSystem>()
+            .unwrap_or_default()
     }
 }
