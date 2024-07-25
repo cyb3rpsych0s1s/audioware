@@ -23,6 +23,7 @@ pub fn attach_hook(env: &SdkEnv) {
 
 #[allow(unused_variables)]
 unsafe extern "C" fn detour(i: *mut IScriptable, cb: unsafe extern "C" fn(i: *mut IScriptable)) {
+    cb(i);
     let now = Instant::now();
     let elapsed = DELTA_TIME
         .try_read()
@@ -36,5 +37,4 @@ unsafe extern "C" fn detour(i: *mut IScriptable, cb: unsafe extern "C" fn(i: *mu
             Engine::sync_emitters();
         }
     }
-    cb(i);
 }

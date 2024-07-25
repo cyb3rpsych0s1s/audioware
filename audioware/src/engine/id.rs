@@ -20,6 +20,15 @@ impl HandleId {
             entity_id,
         }
     }
+    pub fn entity_id(&self) -> Option<&EntityId> {
+        self.entity_id.as_ref()
+    }
+    pub fn key(&self) -> &Key {
+        &self.key
+    }
+    pub fn event_name(&self) -> &CName {
+        self.key.as_ref()
+    }
 }
 
 impl Hash for HandleId {

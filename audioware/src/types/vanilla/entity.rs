@@ -1,3 +1,4 @@
+use audioware_manifest::PlayerGender;
 use glam::{Quat, Vec3};
 use red4ext_rs::{
     class_kind::Native,
@@ -50,6 +51,12 @@ impl AsRef<IScriptable> for Entity {
     #[inline]
     fn as_ref(&self) -> &IScriptable {
         &self.base
+    }
+}
+
+impl Entity {
+    pub fn template_path_gender(&self) -> PlayerGender {
+        todo!()
     }
 }
 

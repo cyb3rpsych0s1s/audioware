@@ -6,6 +6,7 @@ use red4ext_rs::{
 };
 
 use crate::{
+    engine::{Engine, Manage},
     types::{AsAudioSystem, AudioSystem},
     Audioware,
 };
@@ -35,13 +36,19 @@ unsafe extern "C" fn detour(
 
     let switch_name: CName = StackFrame::get_arg(frame);
     let switch_value: CName = StackFrame::get_arg(frame);
-    let entity_id: EntityId = StackFrame::get_arg(frame);
-    let emitter_name: CName = StackFrame::get_arg(frame);
+    let entity_id: Opt<EntityId> = StackFrame::get_arg(frame);
+    let emitter_name: Opt<CName> = StackFrame::get_arg(frame);
 
     let prev = Banks::exists(&switch_name);
     let next = Banks::exists(&switch_value);
 
     if prev || next {
+        let env = Audioware::env();
+        log::info!(
+            env,
+            "AudioSystem.Switch: intercepted {switch_name}/{switch_value}"
+        );
+
         let rtti = RttiSystem::get();
         let class = rtti.get_class(CName::new(AudioSystem::NAME)).unwrap();
         let engine = GameEngine::get();
@@ -50,28 +57,22 @@ unsafe extern "C" fn detour(
             .get_system(class.as_type())
             .cast::<AudioSystem>()
             .unwrap();
-        let entity_id = if entity_id == EntityId::default() {
-            Opt::Default
-        } else {
-            Opt::NonDefault(entity_id)
-        };
-        let emitter_name = if emitter_name == CName::default() {
-            Opt::Default
-        } else {
-            Opt::NonDefault(emitter_name)
-        };
-        if !prev {
-            system.stop(switch_name, entity_id, emitter_name);
+
+        if prev {
+            match entity_id.into_option() {
+                Some(x) => Engine.stop_by_cname_for_entity(&switch_name, &x, None),
+                None => Engine.stop_by_cname(&switch_name, None),
+            };
         }
-        // TODO: kira stop/play
-        if !next {
-            system.play(switch_value, entity_id, emitter_name);
+
+        if next {
+            Engine::play(
+                switch_value,
+                entity_id.into_option(),
+                emitter_name.into_option(),
+                None,
+            );
         }
-        let env = Audioware::env();
-        log::info!(
-            env,
-            "AudioSystem.Switch: intercepted {switch_name}/{switch_value}"
-        );
     } else {
         frame.restore_args(state);
         cb(i, f, a3, a4);

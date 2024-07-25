@@ -1,11 +1,14 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
     addr_hashes, hooks, log,
-    types::{CName, EntityId, IScriptable, StackFrame},
+    types::{CName, EntityId, IScriptable, Opt, StackFrame},
     PluginOps, SdkEnv, VoidPtr,
 };
 
-use crate::Audioware;
+use crate::{
+    engine::{Engine, Manage},
+    Audioware,
+};
 
 hooks! {
    static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
@@ -31,12 +34,17 @@ unsafe extern "C" fn detour(
     let state = frame.args_state();
 
     let event_name: CName = StackFrame::get_arg(frame);
-    let entity_id: EntityId = StackFrame::get_arg(frame);
-    let emitter_name: CName = StackFrame::get_arg(frame);
+    let entity_id: Opt<EntityId> = StackFrame::get_arg(frame);
+    let emitter_name: Opt<CName> = StackFrame::get_arg(frame);
 
     if Banks::exists(&event_name) {
         let env = Audioware::env();
         log::info!(env, "AudioSystem.Stop: intercepted {event_name}");
+
+        match entity_id.into_option() {
+            Some(x) => Engine.stop_by_cname_for_entity(&event_name, &x, None),
+            None => Engine.stop_by_cname(&event_name, None),
+        };
     } else {
         frame.restore_args(state);
         cb(i, f, a3, a4);
