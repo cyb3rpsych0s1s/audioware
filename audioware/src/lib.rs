@@ -91,6 +91,7 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
             GlobalExport(global!(c"Audioware.PLogError", plog_error)),
+            GlobalExport(global!(c"Audioware.Shutdown", Engine::shutdown)),
             GlobalExport(global!(
                 c"Audioware.RegisterEmitter",
                 Engine::register_emitter
@@ -100,7 +101,6 @@ impl Plugin for Audioware {
                 Engine::unregister_emitter
             )),
             GlobalExport(global!(c"Audioware.EmittersCount", Engine::emitters_count)),
-            GlobalExport(global!(c"Audioware.ClearEmitters", Engine::clear_emitters)),
             GlobalExport(global!(
                 c"Audioware.DefineSubtitles",
                 Engine::define_subtitles
@@ -140,7 +140,6 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     test_static();
     // test_get_player();
     // test_is_player();
-    scan_globals("PropagateSubtitle");
     utils::info("it should be able to call FTLog");
     utils::warn("it should be able to call FTLogWarning");
     utils::error("it should be able to call FTLogError");

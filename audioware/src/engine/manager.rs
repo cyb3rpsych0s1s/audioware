@@ -78,6 +78,12 @@ impl StreamStorage {
 }
 
 impl Manager {
+    pub fn clear_tracks(tween: Option<Tween>) -> Result<(), InternalError> {
+        Self::stop(tween)?;
+        StaticStorage::try_lock()?.deref_mut().clear();
+        StreamStorage::try_lock()?.deref_mut().clear();
+        Ok(())
+    }
     pub fn stop(tween: Option<Tween>) -> Result<(), InternalError> {
         StaticStorage::try_lock()?.deref_mut().stop(tween);
         StreamStorage::try_lock()?.deref_mut().stop(tween);

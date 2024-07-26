@@ -16,7 +16,8 @@ public class AudiowareSystem extends ScriptableSystem {
         let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
         let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
         let ui: ref<IBlackboard> = system.Get(definitions.UI_System);
-        this.menuListener = ui.RegisterListenerBool(definitions.UI_System.IsInMenu, this, n"OnInMenu");
+        this.menuListener = ui
+        .RegisterListenerBool(definitions.UI_System.IsInMenu, this, n"OnInMenu");
         let audio: ref<IBlackboard> = system.Get(definitions.Audioware_Settings);
         this.playerReverbListener = audio
         .RegisterListenerFloat(definitions.Audioware_Settings.PlayerReverb, this, n"OnPlayerReverb", false);
@@ -26,7 +27,6 @@ public class AudiowareSystem extends ScriptableSystem {
     private func OnDetach() -> Void {
         LOG("on detach: AudiowareSystem");
         this.CancelHideSubtitle();
-        ClearEmitters();
         let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
         let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
         if IsDefined(this.menuListener) {
@@ -38,7 +38,7 @@ public class AudiowareSystem extends ScriptableSystem {
         if IsDefined(this.playerReverbListener) {
             audio.UnregisterListenerFloat(definitions.Audioware_Settings.PlayerReverb, this.playerReverbListener);
         }
-        if IsDefined(this.playerReverbListener) {
+        if IsDefined(this.playerPresetListener) {
             audio.UnregisterListenerInt(definitions.Audioware_Settings.PlayerPreset, this.playerPresetListener);
         }
     }
@@ -92,7 +92,13 @@ public class AudiowareSystem extends ScriptableSystem {
     protected cb func OnInMenu(value: Bool) -> Bool {
         LOG(s"on \(value ? "enter" : "exit") menu: AudiowareSystem");
         SetGameState(value ? GameState.InMenu : GameState.InGame);
-        if value { this.PauseHideSubtitleCallback(); } else { this.ResumeHideSubtitleCallback(); }
+        if value {
+            Pause();
+            this.PauseHideSubtitleCallback();
+        } else {
+            Resume();
+            this.ResumeHideSubtitleCallback();
+        }
     }
     protected cb func OnPlayerReverb(value: Float) -> Bool {
         LOG(s"on player reverb changed (\(ToString(value))): AudiowareSystem");
@@ -105,8 +111,9 @@ public class AudiowareSystem extends ScriptableSystem {
     }
 
     public final static func GetInstance(game: GameInstance) -> ref<AudiowareSystem> {
-        let container = GameInstance.GetScriptableSystemsContainer(game);
-        return container.Get(n"Audioware.AudiowareSystem") as AudiowareSystem;
+        return GameInstance
+        .GetScriptableSystemsContainer(game)
+        .Get(n"Audioware.AudiowareSystem") as AudiowareSystem;
     }
 }
 

@@ -1,7 +1,7 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
     addr_hashes, hooks, log,
-    types::{CName, EntityId, IScriptable, Opt, Ref, StackFrame},
+    types::{CName, EntityId, IScriptable, Ref, StackFrame},
     PluginOps, SdkEnv, VoidPtr,
 };
 

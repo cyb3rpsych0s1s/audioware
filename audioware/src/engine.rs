@@ -56,11 +56,11 @@ impl Engine {
         Banks::languages().into_iter().map(|x| x.into()).collect()
     }
     pub fn shutdown() {
-        if let Err(e) = Manager::stop(None) {
-            log::error!(Audioware::env(), "could stop all sounds on manager: {e}");
+        if let Err(e) = Manager::clear_tracks(None) {
+            log::error!(Audioware::env(), "couldn't clear tracks on manager: {e}");
         }
         if let Err(e) = Scene::clear_emitters() {
-            log::error!(Audioware::env(), "could clear emitters in scene: {e}");
+            log::error!(Audioware::env(), "couldn't clear emitters in scene: {e}");
         }
     }
     pub fn register_emitter(entity_id: EntityId, emitter_name: Opt<CName>) {
@@ -167,7 +167,12 @@ impl Engine {
                 }
             }
         }
-        log::info!(Audioware::env(), "about to call propagate subtitle ({:?}, {:?})", entity_id, emitter_name);
+        log::info!(
+            Audioware::env(),
+            "about to call propagate subtitle ({:?}, {:?})",
+            entity_id,
+            emitter_name
+        );
         if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
             propagate_subtitles(
                 sound_name,

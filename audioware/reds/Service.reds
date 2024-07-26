@@ -55,6 +55,7 @@ class AudiowareService extends ScriptableService {
                 SetGameState(GameState.End);
                 SetPlayerPreset(Preset.None);
                 SetPlayerReverb(0.);
+                Shutdown();
                 break;
             case n"Session/End":
                 LOG("on session end: AudiowareService");
