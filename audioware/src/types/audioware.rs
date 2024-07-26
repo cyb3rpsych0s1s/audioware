@@ -1,11 +1,38 @@
 use std::time::Duration;
 
+use audioware_manifest::ScnDialogLineType;
 use kira::tween::{Easing, Tween};
 use red4ext_rs::{
     class_kind::Scripted,
-    types::{IScriptable, Ref},
-    NativeRepr, ScriptClass,
+    types::{CName, EntityId, IScriptable, Ref},
+    NativeRepr, RttiSystem, ScriptClass,
 };
+
+pub fn propagate_subtitles(
+    reaction: CName,
+    entity_id: EntityId,
+    emitter_name: CName,
+    line_type: ScnDialogLineType,
+    duration: f32,
+) {
+    let rtti = RttiSystem::get();
+    let methods = rtti.get_global_functions();
+    let method = methods
+        .iter()
+        .find(|x| {
+            x.name()
+                == CName::new(
+                    "Audioware.PropagateSubtitle;CNameEntityIDCNamescnDialogLineTypeFloat",
+                )
+        })
+        .unwrap();
+    method
+        .execute::<_, ()>(
+            None,
+            (reaction, entity_id, emitter_name, line_type, duration),
+        )
+        .unwrap();
+}
 
 #[allow(clippy::enum_variant_names, dead_code)]
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

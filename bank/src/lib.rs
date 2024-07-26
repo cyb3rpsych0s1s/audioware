@@ -5,8 +5,8 @@ use std::{
 };
 
 use audioware_manifest::{
-    CannotParseManifestSnafu, CannotReadManifestSnafu, Depot, DialogLine, Manifest, PlayerGender,
-    R6Audioware, REDmod, Settings, SpokenLocale,
+    CannotParseManifestSnafu, CannotReadManifestSnafu, Depot, DialogLine, Locale, Manifest,
+    PlayerGender, R6Audioware, REDmod, Settings, SpokenLocale, WrittenLocale,
 };
 use either::Either;
 use ensure::*;
@@ -44,6 +44,51 @@ static MUL_SET: OnceLock<HashMap<BothKey, Settings>> = OnceLock::new();
 
 static KEYS: OnceLock<HashSet<Id>> = OnceLock::new();
 
+pub trait Package {
+    fn package(&self, locale: Locale) -> Vec<(CName, (String, String))>;
+}
+
+impl Package for HashMap<LocaleKey, DialogLine> {
+    fn package(&self, locale: Locale) -> Vec<(CName, (String, String))> {
+        let mut out = Vec::new();
+        for (k, v) in self {
+            if k.1 == locale {
+                out.push((k.0, (v.msg.clone(), v.msg.clone())));
+            }
+        }
+        out
+    }
+}
+
+impl Package for HashMap<BothKey, DialogLine> {
+    fn package(&self, locale: Locale) -> Vec<(CName, (String, String))> {
+        let mut out = Vec::new();
+        let mut female: String;
+        let mut male: String;
+        for (k, v) in self {
+            if k.1 == locale {
+                if k.2 == PlayerGender::Female {
+                    female = v.msg.clone();
+                    male = self
+                        .get(&BothKey(k.0, k.1, PlayerGender::Male))
+                        .expect("genders cannot be partially defined")
+                        .msg
+                        .clone();
+                } else {
+                    male = v.msg.clone();
+                    female = self
+                        .get(&BothKey(k.0, k.1, PlayerGender::Female))
+                        .expect("genders cannot be partially defined")
+                        .msg
+                        .clone();
+                }
+                out.push((k.0, (female, male)));
+            }
+        }
+        out
+    }
+}
+
 pub struct Banks;
 impl Banks {
     /// # Safety
@@ -60,7 +105,28 @@ impl Banks {
             .and_then(|x| x.iter().find(|x| AsRef::<CName>::as_ref(x) == cname))
             .is_some()
     }
-    pub fn exist<'a>(
+    pub fn languages() -> HashSet<Locale> {
+        let mut out = HashSet::new();
+        for key in LOC_SUB.get().unwrap().keys() {
+            out.insert(key.1);
+        }
+        for key in MUL_SUB.get().unwrap().keys() {
+            out.insert(key.1);
+        }
+        out
+    }
+    pub fn subtitles<'a>(locale: WrittenLocale) -> Vec<(CName, (String, String))> {
+        let simple_package = LOC_SUB
+            .get()
+            .map(|x| x.package(locale.into_inner()))
+            .unwrap_or_default();
+        let complex_package = MUL_SUB
+            .get()
+            .map(|x| x.package(locale.into_inner()))
+            .unwrap_or_default();
+        [simple_package, complex_package].concat()
+    }
+    pub fn try_get<'a>(
         name: &CName,
         spoken: &SpokenLocale,
         gender: Option<&PlayerGender>,

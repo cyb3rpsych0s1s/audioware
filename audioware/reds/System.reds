@@ -6,6 +6,7 @@ public class AudiowareSystem extends ScriptableSystem {
     private let menuListener: ref<CallbackHandle>;
     private let playerReverbListener: ref<CallbackHandle>;
     private let playerPresetListener: ref<CallbackHandle>;
+    private let subtitleDelayID: DelayID;
 
     private func OnAttach() -> Void {
         LOG("on attach: AudiowareSystem");
@@ -21,6 +22,7 @@ public class AudiowareSystem extends ScriptableSystem {
     }
     private func OnDetach() -> Void {
         LOG("on detach: AudiowareSystem");
+        this.CancelHideSubtitle();
         ClearEmitters();
         let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
         let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
@@ -46,6 +48,23 @@ public class AudiowareSystem extends ScriptableSystem {
         LOG("on player detach: AudiowareSystem");
         UnsetPlayerGender();
     }
+
+    public func DelayHideSubtitle(line: scnDialogLineData, duration: Float) {
+        let callback: ref<HideSubtitleCallback> = new HideSubtitleCallback();
+        callback.line = line;
+        this.subtitleDelayID = GameInstance
+        .GetDelaySystem(GetGameInstance())
+        .DelayCallback(callback, duration);
+    }
+
+    public func CancelHideSubtitle() {
+        if NotEquals(this.subtitleDelayID, GetInvalidDelayID()) {
+            GameInstance
+            .GetDelaySystem(this.GetGameInstance())
+            .CancelCallback(this.subtitleDelayID);
+        }
+    }
+
     protected cb func OnInMenu(value: Bool) -> Bool {
         LOG(s"on \(value ? "enter" : "exit") menu: AudiowareSystem");
         SetGameState(value ? GameState.InMenu : GameState.InGame);
@@ -58,5 +77,23 @@ public class AudiowareSystem extends ScriptableSystem {
         let preset = IntEnum<Preset>(value);
         LOG(s"on player preset changed (\(ToString(preset))): AudiowareSystem");
         SetPlayerPreset(preset);
+    }
+
+    public final static func GetInstance(game: GameInstance) -> ref<AudiowareSystem> {
+        let container = GameInstance.GetScriptableSystemsContainer(game);
+        return container.Get(n"Audioware.AudiowareSystem") as AudiowareSystem;
+    }
+}
+
+public class HideSubtitleCallback extends DelayCallback {
+    public let line: scnDialogLineData;
+    public func Call() -> Void {
+        if !IsDefined(this.line.speaker) { return; }
+        let game = this.line.speaker.GetGame();
+        GameInstance
+        .GetDelaySystem(game)
+        .CancelCallback(AudiowareSystem.GetInstance(game).subtitleDelayID);
+        let board: ref<IBlackboard> = GameInstance.GetBlackboardSystem(game).Get(GetAllBlackboardDefs().UIGameData);
+        board.SetVariant(GetAllBlackboardDefs().UIGameData.HideDialogLine, [this.line.id], true);
     }
 }

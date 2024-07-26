@@ -37,6 +37,12 @@ impl TryFrom<red4ext_rs::types::CName> for SpokenLocale {
 #[derive(Debug, Default, Clone, Copy)]
 pub struct WrittenLocale(Locale);
 
+impl WrittenLocale {
+    pub fn into_inner(self) -> Locale {
+        self.0
+    }
+}
+
 impl fmt::Display for WrittenLocale {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)

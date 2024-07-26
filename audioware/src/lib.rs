@@ -105,6 +105,10 @@ impl Plugin for Audioware {
                 c"Audioware.DefineSubtitles",
                 Engine::define_subtitles
             )),
+            GlobalExport(global!(
+                c"Audioware.SupportedLanguages",
+                Engine::supported_languages
+            )),
             GlobalExport(global!(c"Audioware.SetGameState", GameState::set)),
             GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
             GlobalExport(global!(c"Audioware.UnsetPlayerGender", unset_player_gender)),
@@ -136,6 +140,7 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     test_static();
     // test_get_player();
     // test_is_player();
+    scan_globals("PropagateSubtitle");
     utils::info("it should be able to call FTLog");
     utils::warn("it should be able to call FTLogWarning");
     utils::error("it should be able to call FTLogError");
@@ -267,7 +272,7 @@ fn set_game_locales(spoken: CName, written: CName) {
 
 #[cfg(debug_assertions)]
 #[allow(dead_code)]
-fn scan_rtti(class_name: &str) {
+fn scan_class(class_name: &str) {
     let env = Audioware::env();
     let rtti = RttiSystem::get();
     let cls = rtti.get_class(CName::new(class_name)).unwrap();
@@ -293,6 +298,19 @@ fn scan_rtti(class_name: &str) {
     let global_methods = rtti.get_global_functions();
     for g in global_methods.iter() {
         if g.name().as_str().contains(class_name) || g.short_name().as_str().contains(class_name) {
+            log::info!(env, "global => {} ({})", g.name(), g.short_name());
+        }
+    }
+}
+
+#[cfg(debug_assertions)]
+#[allow(dead_code)]
+fn scan_globals(func_name: &str) {
+    let env = Audioware::env();
+    let rtti = RttiSystem::get();
+    let global_methods = rtti.get_global_functions();
+    for g in global_methods.iter() {
+        if g.name().as_str().contains(func_name) || g.short_name().as_str().contains(func_name) {
             log::info!(env, "global => {} ({})", g.name(), g.short_name());
         }
     }

@@ -11,7 +11,8 @@ use crate::{
     error::Error,
     states::State,
     types::{
-        AsAudioSystem, AsGameInstance, AudiowareTween, LocalizationPackage, Subtitle, ToTween,
+        propagate_subtitles, AsAudioSystem, AsGameInstance, AudiowareTween, LocalizationPackage,
+        Subtitle, ToTween,
     },
     Audioware,
 };
@@ -45,7 +46,18 @@ impl Engine {
         Ok(())
     }
     pub fn define_subtitles(package: Ref<LocalizationPackage>) {
-        package.subtitle("custom_subtitle", "female", "male"); // TODO:
+        let written = WrittenLocale::get();
+        let subtitles = Banks::subtitles(written);
+        for (key, (value_f, value_m)) in subtitles.iter() {
+            package.subtitle(key.as_str(), value_f.as_str(), value_m.as_str());
+        }
+        log::info!(
+            Audioware::env(),
+            "defined subtitles for {written}: {subtitles:?}"
+        );
+    }
+    pub fn supported_languages() -> Vec<CName> {
+        Banks::languages().into_iter().map(|x| x.into()).collect()
     }
     pub fn shutdown() {
         if let Err(e) = Manager::stop(None) {
@@ -110,10 +122,10 @@ impl Engine {
             }
         };
         let spoken = SpokenLocale::get();
-        let written = WrittenLocale::get();
         let gender = PlayerGender::get();
         let entity_id = entity_id.into_option();
-        let id = match Banks::exist(&sound_name, &spoken, gender.as_ref()) {
+        let emitter_name = emitter_name.into_option();
+        let id = match Banks::try_get(&sound_name, &spoken, gender.as_ref()) {
             Ok(x) => x,
             Err(e) => {
                 log::error!(Audioware::env(), "Unable to get sound ID: {e}");
@@ -122,18 +134,17 @@ impl Engine {
         };
         // TODO: output destination
         let tween = tween.into_tween();
+        let mut duration: f32 = 3.0;
         match Banks::data(id) {
             either::Either::Left(mut data) => {
                 if tween.is_some() {
                     data.settings.fade_in_tween = tween;
                 }
+                duration = data.duration().as_secs_f32();
                 let handle = manager.play(data).unwrap();
                 match StaticStorage::try_lock() {
                     Ok(mut x) => {
-                        x.insert(
-                            HandleId::new(id, entity_id, emitter_name.into_option()),
-                            handle,
-                        );
+                        x.insert(HandleId::new(id, entity_id, emitter_name), handle);
                     }
                     Err(e) => {
                         log::error!(Audioware::env(), "Unable to store static sound handle: {e}");
@@ -144,13 +155,11 @@ impl Engine {
                 if tween.is_some() {
                     data.settings.fade_in_tween = tween;
                 }
+                duration = data.duration().as_secs_f32();
                 let handle = manager.play(data).unwrap();
                 match StreamStorage::try_lock() {
                     Ok(mut x) => {
-                        x.insert(
-                            HandleId::new(id, entity_id, emitter_name.into_option()),
-                            handle,
-                        );
+                        x.insert(HandleId::new(id, entity_id, emitter_name), handle);
                     }
                     Err(e) => {
                         log::error!(
@@ -161,7 +170,15 @@ impl Engine {
                 }
             }
         }
-        // TODO: propagate subtitles
+        if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
+            propagate_subtitles(
+                sound_name,
+                entity_id,
+                emitter_name,
+                line_type.unwrap_or_default(),
+                duration,
+            )
+        }
     }
     pub fn stop(
         event_name: CName,
@@ -234,7 +251,8 @@ impl Engine {
         let spoken = SpokenLocale::get();
         let written = WrittenLocale::get();
         let gender = PlayerGender::get();
-        let id = match Banks::exist(&sound_name, &spoken, gender.as_ref()) {
+        let mut duration: f32 = 3.0;
+        let id = match Banks::try_get(&sound_name, &spoken, gender.as_ref()) {
             Ok(x) => x,
             Err(e) => {
                 log::error!(Audioware::env(), "Unable to get sound ID: {e}");
@@ -253,6 +271,7 @@ impl Engine {
         };
         match Banks::data(id) {
             either::Either::Left(data) => {
+                duration = data.duration().as_secs_f32();
                 let handle = manager.play(data.output_destination(destination)).unwrap();
                 match StaticStorage::try_lock() {
                     Ok(mut x) => {
@@ -267,6 +286,7 @@ impl Engine {
                 }
             }
             either::Either::Right(data) => {
+                duration = data.duration().as_secs_f32();
                 let handle = manager.play(data.output_destination(destination)).unwrap();
                 match StreamStorage::try_lock() {
                     Ok(mut x) => {
@@ -284,7 +304,13 @@ impl Engine {
                 }
             }
         }
-        // TODO: propagate subtitles
+        propagate_subtitles(
+            sound_name,
+            entity_id,
+            emitter_name,
+            ScnDialogLineType::default(),
+            duration,
+        );
     }
     pub fn stop_on_emitter(
         event_name: CName,
