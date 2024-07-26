@@ -1,4 +1,4 @@
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
 
 use holocall::Holocall;
 use kira::{
@@ -18,7 +18,7 @@ mod v;
 static TRACKS: OnceLock<Tracks> = OnceLock::new();
 
 pub struct Tracks {
-    pub reverb: TrackHandle,
+    pub reverb: Mutex<TrackHandle>,
     pub v: V,
     pub holocall: Holocall,
 }
@@ -39,7 +39,7 @@ impl Tracks {
 
         TRACKS
             .set(Tracks {
-                reverb,
+                reverb: Mutex::new(reverb),
                 v,
                 holocall,
             })

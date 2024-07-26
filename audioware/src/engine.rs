@@ -1,6 +1,7 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, ScnDialogLineType, SpokenLocale, WrittenLocale};
-use effects::SMOOTHLY;
+use effects::{IMMEDIATELY, SMOOTHLY};
+use eq::Preset;
 use id::HandleId;
 use kira::tween::Tween;
 use manager::{Manager, StaticStorage, StreamStorage};
@@ -14,6 +15,7 @@ use scene::Scene;
 use tracks::Tracks;
 
 use crate::{
+    engine::eq::EqPass,
     error::Error,
     states::State,
     types::{AsAudioSystem, AsGameInstance},
@@ -21,7 +23,7 @@ use crate::{
 };
 
 pub mod effects;
-mod eq;
+pub mod eq;
 mod id;
 mod manager;
 pub mod modulators;
@@ -261,6 +263,27 @@ impl Engine {
             );
         } else {
             system.play(switch_value, entity_id, emitter_name);
+        }
+    }
+    pub fn set_player_reverb(value: f32) {
+        if !(0. ..=1.).contains(&value) {
+            log::error!(
+                Audioware::env(),
+                "reverb must be between 0. and 1. (inclusive)"
+            );
+            return;
+        }
+        let tracks = Tracks::get();
+        match tracks.reverb.try_lock() {
+            Ok(ref mut x) => x.set_volume(kira::Volume::Amplitude(value as f64), IMMEDIATELY),
+            Err(e) => log::error!(Audioware::env(), "Unable to set reverb volume: {e}"),
+        }
+    }
+    pub fn set_player_preset(value: Preset) {
+        let tracks = Tracks::get();
+        match tracks.v.eq.try_lock() {
+            Ok(ref mut x) => x.set_preset(value),
+            Err(e) => log::error!(Audioware::env(), "Unable to set EQ preset: {e}"),
         }
     }
 }

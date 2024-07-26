@@ -1,10 +1,13 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
-use engine::Engine;
+use engine::{eq::Preset, Engine};
 use error::Error;
 use hooks::*;
 use red4ext_rs::{
-    call, class_kind::Native, export_plugin_symbols, exports, global, log, types::{CName, EntityId, GameEngine, IScriptable, Opt, Ref}, wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr
+    call, export_plugin_symbols, exports, global, log,
+    types::{CName, EntityId, GameEngine, Opt, Ref},
+    wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem,
+    ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
 use types::{
@@ -101,8 +104,16 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.Play", play_with_tween)),
             GlobalExport(global!(c"Audioware.Stop", stop_with_tween)),
             GlobalExport(global!(c"Audioware.Switch", switch_with_tween)),
-            GlobalExport(global!(c"Audioware.PlayOnEmitter", play_on_emitter_with_tween)),
-            GlobalExport(global!(c"Audioware.StopOnEmitter", stop_on_emitter_with_tween)),
+            GlobalExport(global!(
+                c"Audioware.PlayOnEmitter",
+                play_on_emitter_with_tween
+            )),
+            GlobalExport(global!(
+                c"Audioware.StopOnEmitter",
+                stop_on_emitter_with_tween
+            )),
+            GlobalExport(global!(c"Audioware.SetPlayerReverb", set_player_reverb)),
+            GlobalExport(global!(c"Audioware.SetPlayerPreset", set_player_preset)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play))
         ]
     }
@@ -367,4 +378,12 @@ fn stop_on_emitter_with_tween(
     tween: Ref<AudiowareTween>,
 ) {
     Engine::stop_by_cname_for_entity(&event_name, &entity_id, tween.into_tween());
+}
+
+fn set_player_reverb(value: f32) {
+    Engine::set_player_reverb(value);
+}
+
+fn set_player_preset(value: Preset) {
+    Engine::set_player_preset(value);
 }

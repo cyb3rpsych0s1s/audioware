@@ -26,6 +26,7 @@ pub struct EQ {
 pub struct LowPass(pub FilterHandle);
 pub struct HighPass(pub FilterHandle);
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 #[repr(i64)]
 pub enum Preset {
@@ -50,11 +51,11 @@ unsafe impl NativeRepr for Preset {
 }
 
 pub trait EqPass {
-    fn preset(&mut self, preset: Preset);
+    fn set_preset(&mut self, preset: Preset);
 }
 
 impl EqPass for LowPass {
-    fn preset(&mut self, preset: Preset) {
+    fn set_preset(&mut self, preset: Preset) {
         match preset {
             Preset::None => {
                 self.0.set_mix(0., DEFAULT);
@@ -74,7 +75,7 @@ impl EqPass for LowPass {
 }
 
 impl EqPass for HighPass {
-    fn preset(&mut self, preset: Preset) {
+    fn set_preset(&mut self, preset: Preset) {
         match preset {
             Preset::None | Preset::Underwater => {
                 self.0.set_mix(0., DEFAULT);
@@ -89,9 +90,9 @@ impl EqPass for HighPass {
 }
 
 impl EqPass for EQ {
-    fn preset(&mut self, preset: Preset) {
-        self.lowpass.preset(preset);
-        self.highpass.preset(preset);
+    fn set_preset(&mut self, preset: Preset) {
+        self.lowpass.set_preset(preset);
+        self.highpass.set_preset(preset);
         let env = Audioware::env();
         log::info!(env, "updated preset successfully to {preset}");
     }

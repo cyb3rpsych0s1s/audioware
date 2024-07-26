@@ -6,7 +6,7 @@ enum Preset {
     OnThePhone = 2,
 }
 
-public class AudiowareSettingsDef extends BlackboardDefinition {
+public class Audioware_SettingsDef extends BlackboardDefinition {
     public let PlayerReverb: BlackboardID_Float;
     public let PlayerPreset: BlackboardID_Int;
     public final const func AutoCreateInSystem() -> Bool {
@@ -19,4 +19,4 @@ public class AudiowareSettingsDef extends BlackboardDefinition {
 }
 
 @addField(AllBlackboardDefinitions)
-public let AudiowareSettings: ref<AudiowareSettingsDef>;
+public let Audioware_Settings: ref<Audioware_SettingsDef>;

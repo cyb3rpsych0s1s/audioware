@@ -74,7 +74,7 @@ public static exec func TestAudioSystemPlayOnEmitter(game: GameInstance, name: S
     GameInstance.GetAudioSystem(game).PlayOnEmitter(cname, emitterID, n"Jean-Michel");
 }
 
-/// Game.TestAudioSystemPlayOnEmitter("coco_caline");
+/// Game.TestAudioSystemStopOnEmitter("coco_caline");
 public static exec func TestAudioSystemStopOnEmitter(game: GameInstance, name: String) {
     let cname = StringToName(name);
     let emitterID: EntityID;
