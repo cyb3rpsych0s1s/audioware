@@ -111,15 +111,11 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetGameLocales", set_game_locales)),
             GlobalExport(global!(c"Audioware.Play", Engine::play)),
             GlobalExport(global!(c"Audioware.Stop", Engine::stop)),
+            GlobalExport(global!(c"Audioware.Pause", Engine::pause)),
+            GlobalExport(global!(c"Audioware.Resume", Engine::resume)),
             GlobalExport(global!(c"Audioware.Switch", Engine::switch)),
-            // GlobalExport(global!(
-            //     c"Audioware.PlayOnEmitter",
-            //     play_on_emitter_with_tween
-            // )),
-            // GlobalExport(global!(
-            //     c"Audioware.StopOnEmitter",
-            //     stop_on_emitter_with_tween
-            // )),
+            GlobalExport(global!(c"Audioware.PlayOnEmitter", Engine::play_on_emitter)),
+            GlobalExport(global!(c"Audioware.StopOnEmitter", Engine::stop_on_emitter)),
             GlobalExport(global!(c"Audioware.SetPlayerReverb", set_player_reverb)),
             GlobalExport(global!(c"Audioware.SetPlayerPreset", set_player_preset)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play))

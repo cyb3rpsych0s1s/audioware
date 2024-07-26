@@ -163,6 +163,61 @@ impl Engine {
         }
         // TODO: propagate subtitles
     }
+    pub fn stop(
+        event_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        tween: Ref<AudiowareTween>,
+    ) {
+        if let Err(e) = Manager::stop_by(
+            &event_name,
+            entity_id.into_option().as_ref(),
+            emitter_name.into_option().as_ref(),
+            tween.into_tween(),
+        ) {
+            log::error!(Audioware::env(), "{e}");
+        }
+    }
+    pub fn pause(tween: Ref<AudiowareTween>) {
+        if let Err(e) = Manager::pause(tween.into_tween()) {
+            log::error!(Audioware::env(), "{e}");
+        }
+    }
+    pub fn resume(tween: Ref<AudiowareTween>) {
+        if let Err(e) = Manager::resume(tween.into_tween()) {
+            log::error!(Audioware::env(), "{e}");
+        }
+    }
+    pub fn switch(
+        switch_name: CName,
+        switch_value: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        switch_name_tween: Ref<AudiowareTween>,
+        switch_value_tween: Ref<AudiowareTween>,
+    ) {
+        let prev = Banks::exists(&switch_name);
+        let next = Banks::exists(&switch_value);
+        let system = GameInstance::get_audio_system();
+
+        if prev {
+            Engine::stop(switch_name, entity_id, emitter_name, switch_name_tween);
+        } else {
+            system.stop(switch_name, entity_id, emitter_name);
+        }
+
+        if next {
+            Engine::play(
+                switch_value,
+                entity_id,
+                emitter_name,
+                Opt::Default,
+                switch_value_tween,
+            );
+        } else {
+            system.play(switch_value, entity_id, emitter_name);
+        }
+    }
     pub fn play_on_emitter(
         sound_name: CName,
         entity_id: EntityId,
@@ -231,49 +286,19 @@ impl Engine {
         }
         // TODO: propagate subtitles
     }
-    pub fn stop(
+    pub fn stop_on_emitter(
         event_name: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
+        entity_id: EntityId,
+        emitter_name: CName,
         tween: Ref<AudiowareTween>,
     ) {
         if let Err(e) = Manager::stop_by(
             &event_name,
-            entity_id.into_option().as_ref(),
-            emitter_name.into_option().as_ref(),
+            Some(&entity_id),
+            Some(&emitter_name),
             tween.into_tween(),
         ) {
             log::error!(Audioware::env(), "{e}");
-        }
-    }
-    pub fn switch(
-        switch_name: CName,
-        switch_value: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
-        switch_name_tween: Ref<AudiowareTween>,
-        switch_value_tween: Ref<AudiowareTween>,
-    ) {
-        let prev = Banks::exists(&switch_name);
-        let next = Banks::exists(&switch_value);
-        let system = GameInstance::get_audio_system();
-
-        if prev {
-            Engine::stop(switch_name, entity_id, emitter_name, switch_name_tween);
-        } else {
-            system.stop(switch_name, entity_id, emitter_name);
-        }
-
-        if next {
-            Engine::play(
-                switch_value,
-                entity_id,
-                emitter_name,
-                Opt::Default,
-                switch_value_tween,
-            );
-        } else {
-            system.play(switch_value, entity_id, emitter_name);
         }
     }
     pub fn set_player_reverb(value: f32) {

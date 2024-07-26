@@ -44,9 +44,11 @@ class AudiowareService extends ScriptableService {
                 break;
             case n"Session/Pause":
                 LOG("on session pause: AudiowareService");
+                Pause();
                 break;
             case n"Session/Resume":
                 LOG("on session resume: AudiowareService");
+                Resume();
                 break;
             case n"Session/BeforeEnd":
                 LOG("on session before end: AudiowareService");
