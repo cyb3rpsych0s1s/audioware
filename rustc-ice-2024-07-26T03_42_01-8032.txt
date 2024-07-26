@@ -1,0 +1,106 @@
+thread 'rustc' panicked at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13\compiler\rustc_query_system\src\query\plumbing.rs:726:9:
+Found unstable fingerprints for evaluate_obligation(89642d655a20ea0e-6b87fbd42df1904e): Ok(EvaluatedToAmbig)
+stack backtrace:
+   0:     0x7fffa99bd553 - std::backtrace_rs::backtrace::dbghelp64::trace
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\std\src\..\..\backtrace\src\backtrace\dbghelp64.rs:91
+   1:     0x7fffa99bd553 - std::backtrace_rs::backtrace::trace_unsynchronized
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\std\src\..\..\backtrace\src\backtrace\mod.rs:66
+   2:     0x7fffa99bd553 - std::backtrace::Backtrace::create
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\std\src\backtrace.rs:331
+   3:     0x7fffa99bd49a - std::backtrace::Backtrace::force_capture
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\std\src\backtrace.rs:312
+   4:     0x7fff7f465190 - __longjmp_internal
+   5:     0x7fffa99d7017 - alloc::boxed::impl$50::call
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\alloc\src\boxed.rs:2036
+   6:     0x7fffa99d7017 - std::panicking::rust_panic_with_hook
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\std\src\panicking.rs:799
+   7:     0x7fffa99d6ea7 - std::panicking::begin_panic_handler::closure$0
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\std\src\panicking.rs:664
+   8:     0x7fffa99d441f - std::sys_common::backtrace::__rust_end_short_backtrace<std::panicking::begin_panic_handler::closure_env$0,never$>
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\std\src\sys_common\backtrace.rs:171
+   9:     0x7fffa99d6b58 - std::panicking::begin_panic_handler
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\std\src\panicking.rs:652
+  10:     0x7fffa9a2d4a4 - core::panicking::panic_fmt
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\core\src\panicking.rs:72
+  11:     0x7fff7fdeffed - <rustc_ty_utils[63813538911b381f]::opaque_types::OpaqueTypeCollector as rustc_type_ir[2830caffeeaf0d9]::visit::TypeVisitor<rustc_middle[54aa9f413c8870f3]::ty::context::TyCtxt>>::visit_ty
+  12:     0x7fff7ea43040 - rustc_ty_utils[63813538911b381f]::ty::self_ty_of_trait_impl_enabling_order_dep_trait_object_hack
+  13:     0x7fff7ea0b436 - rustc_ty_utils[63813538911b381f]::ty::self_ty_of_trait_impl_enabling_order_dep_trait_object_hack
+  14:     0x7fff7eaf40a8 - rustc_query_impl[a0395804cb7e68a8]::plumbing::query_key_hash_verify_all
+  15:     0x7fff7edd16e1 - <rustc_trait_selection[476b4e50032d31d7]::traits::fulfill::FulfillProcessor as rustc_data_structures[e6b827521d87fa51]::obligation_forest::ObligationProcessor>::process_obligation
+  16:     0x7fff7ed3c30c - <rustc_const_eval[8430b01d7141b499]::transform::check_consts::check::Checker as rustc_middle[54aa9f413c8870f3]::mir::visit::Visitor>::visit_terminator
+  17:     0x7fff7ed7d7d2 - <rustc_trait_selection[476b4e50032d31d7]::traits::fulfill::FulfillmentContext as rustc_infer[1774f376b0375014]::traits::engine::TraitEngine>::select_where_possible
+  18:     0x7fff7e1a4c64 - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  19:     0x7fff7e1bdec0 - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  20:     0x7fff7e215fc4 - <rustc_hir_typeck[bf00291bf4335c03]::expr_use_visitor::ExprUseVisitor>::walk_expr
+  21:     0x7fff7e1be51c - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  22:     0x7fff7e1a4ded - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  23:     0x7fff7e1bdec0 - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  24:     0x7fff7e1a4ded - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  25:     0x7fff7e1bdec0 - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  26:     0x7fff7e1a4ded - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  27:     0x7fff7e1bdec0 - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  28:     0x7fff7e1a4ded - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  29:     0x7fff7e1bdec0 - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  30:     0x7fff7e1a4ded - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  31:     0x7fff7e1bdec0 - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  32:     0x7fff7e1a4ded - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  33:     0x7fff7e1bdec0 - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  34:     0x7fff7e1a4ded - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  35:     0x7fff7e1bdec0 - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  36:     0x7fff7e1a4ded - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  37:     0x7fff7e1bdec0 - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  38:     0x7fff7e1a4ded - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  39:     0x7fff7e1bdec0 - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  40:     0x7fff7e1a4ded - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  41:     0x7fff7e1bdec0 - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  42:     0x7fff7e215fc4 - <rustc_hir_typeck[bf00291bf4335c03]::expr_use_visitor::ExprUseVisitor>::walk_expr
+  43:     0x7fff7e1be51c - <rustc_codegen_llvm[2dd684fce687b081]::builder::Builder as rustc_codegen_ssa[a2f11edb50695ca6]::traits::builder::BuilderMethods>::load_operand
+  44:     0x7fff7e276721 - rustc_hir_typeck[bf00291bf4335c03]::typeck
+  45:     0x7fff7e2672be - rustc_hir_typeck[bf00291bf4335c03]::typeck
+  46:     0x7fff7eae35aa - rustc_query_impl[a0395804cb7e68a8]::plumbing::query_key_hash_verify_all
+  47:     0x7fff7ea34819 - rustc_ty_utils[63813538911b381f]::ty::self_ty_of_trait_impl_enabling_order_dep_trait_object_hack
+  48:     0x7fff7dca1c58 - <dyn std[775a36164a5db028]::io::Write as nu_ansi_term[6c9ad3d8e88fe0a7]::write::AnyWrite>::write_str
+  49:     0x7fff7dc7cd3f - rustc_ty_utils[63813538911b381f]::ty::adt_sized_constraint
+  50:     0x7fff7e9af0f0 - rustc_ty_utils[63813538911b381f]::ty::self_ty_of_trait_impl_enabling_order_dep_trait_object_hack
+  51:     0x7fff7e9af067 - rustc_ty_utils[63813538911b381f]::ty::self_ty_of_trait_impl_enabling_order_dep_trait_object_hack
+  52:     0x7fff7e9df45c - rustc_ty_utils[63813538911b381f]::ty::self_ty_of_trait_impl_enabling_order_dep_trait_object_hack
+  53:     0x7fff7eae4c76 - rustc_query_impl[a0395804cb7e68a8]::plumbing::query_key_hash_verify_all
+  54:     0x7fff7f7cd1cf - <rustc_hir_typeck[bf00291bf4335c03]::fn_ctxt::arg_matrix::ProvidedIdx as core[89916c94f57dadad]::fmt::Debug>::fmt
+  55:     0x7fff7e2d7561 - rustc_hir_analysis[7ad6b2f045fbae3a]::check::check::check_abi
+  56:     0x7fff7e2f2547 - rustc_hir_analysis[7ad6b2f045fbae3a]::check::wfcheck::check_well_formed
+  57:     0x7fff7eae285a - rustc_query_impl[a0395804cb7e68a8]::plumbing::query_key_hash_verify_all
+  58:     0x7fff7ea3acb5 - rustc_ty_utils[63813538911b381f]::ty::self_ty_of_trait_impl_enabling_order_dep_trait_object_hack
+  59:     0x7fff7dc79f63 - rustc_ty_utils[63813538911b381f]::ty::adt_sized_constraint
+  60:     0x7fff7e9af0f0 - rustc_ty_utils[63813538911b381f]::ty::self_ty_of_trait_impl_enabling_order_dep_trait_object_hack
+  61:     0x7fff7e9aee0a - rustc_ty_utils[63813538911b381f]::ty::self_ty_of_trait_impl_enabling_order_dep_trait_object_hack
+  62:     0x7fff7dbbba7a - rustc_ty_utils[63813538911b381f]::ty::adt_sized_constraint
+  63:     0x7fff7dcb4fcb - rustc_query_impl[a0395804cb7e68a8]::query_system
+  64:     0x7fff7e34082f - rustc_hir_analysis[7ad6b2f045fbae3a]::check_crate
+  65:     0x7fff7e0b4682 - <rustc_interface[a41d1aea01bb429e]::passes::LintStoreExpandImpl as rustc_expand[40f443521432ca1]::base::LintStoreExpand>::pre_expansion_lint
+  66:     0x7fff7b0b8257 - rustc_interface[a41d1aea01bb429e]::passes::create_global_ctxt
+  67:     0x7fff7dca553a - <dyn std[775a36164a5db028]::io::Write as nu_ansi_term[6c9ad3d8e88fe0a7]::write::AnyWrite>::write_str
+  68:     0x7fff7dbc55f9 - rustc_ty_utils[63813538911b381f]::ty::adt_sized_constraint
+  69:     0x7fff7dcaaac3 - rustc_query_impl[a0395804cb7e68a8]::query_system
+  70:     0x7fff7b073ba9 - llvm::function_ref<void __cdecl(llvm::Value const * __ptr64)>::callback_fn<`llvm::Value::stripInBoundsOffsets'::`1'::<lambda_1_1> >
+  71:     0x7fff7b070e0f - llvm::function_ref<void __cdecl(llvm::Value const * __ptr64)>::callback_fn<`llvm::Value::stripInBoundsOffsets'::`1'::<lambda_1_1> >
+  72:     0x7fff7b078c39 - llvm::function_ref<void __cdecl(llvm::Value const * __ptr64)>::callback_fn<`llvm::Value::stripInBoundsOffsets'::`1'::<lambda_1_1> >
+  73:     0x7fffa99e808d - alloc::boxed::impl$48::call_once
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\alloc\src\boxed.rs:2022
+  74:     0x7fffa99e808d - alloc::boxed::impl$48::call_once
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\alloc\src\boxed.rs:2022
+  75:     0x7fffa99e808d - std::sys::pal::windows::thread::impl$0::new::thread_start
+                               at /rustc/8f9080db423ca0fb6bef0686ce9a93940cdf1f13/library\std\src\sys\pal\windows\thread.rs:52
+  76:     0x7ff83298257d - BaseThreadInitThunk
+  77:     0x7ff83408af28 - RtlUserThreadStart
+
+
+rustc version: 1.80.0-nightly (8f9080db4 2024-05-09)
+platform: x86_64-pc-windows-msvc
+
+query stack during panic:
+#0 [evaluate_obligation] evaluating trait selection obligation `<states::game::GameState as states::State>::set: core::ops::function::Fn<(states::game::GameState,)>`
+#1 [typeck] type-checking `<impl at audioware\src\lib.rs:77:1: 77:26>::exports`
+#2 [type_of] computing type of `<impl at audioware\src\lib.rs:77:1: 77:26>::exports::{opaque#0}`
+#3 [check_well_formed] checking that `<impl at audioware\src\lib.rs:77:1: 77:26>::exports::{opaque#0}` is well-formed
+#4 [analysis] running analysis passes on this crate
+end of query stack

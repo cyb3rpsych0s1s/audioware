@@ -25,7 +25,7 @@ fn written_language() -> &'static RwLock<WrittenLocale> {
 impl State for PlayerGender {
     type Value = Option<PlayerGender>;
 
-    fn set(value: Self::Value) -> Self::Value {
+    fn swap(value: Self::Value) -> Self::Value {
         let env = Audioware::env();
         match gender().try_write() {
             Ok(mut x) => {
@@ -76,7 +76,7 @@ impl State for PlayerGender {
 impl State for SpokenLocale {
     type Value = SpokenLocale;
 
-    fn set(value: Self::Value) -> Self::Value {
+    fn swap(value: Self::Value) -> Self::Value {
         let env = Audioware::env();
         match spoken_language().try_write() {
             Ok(mut x) => {
@@ -122,7 +122,7 @@ impl State for SpokenLocale {
 impl State for WrittenLocale {
     type Value = WrittenLocale;
 
-    fn set(value: Self::Value) -> Self::Value {
+    fn swap(value: Self::Value) -> Self::Value {
         let env = Audioware::env();
         match written_language().try_write() {
             Ok(mut x) => {

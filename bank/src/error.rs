@@ -2,11 +2,11 @@ use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
 pub enum Error {
-    #[snafu(visibility(pub(crate)))]
+    #[snafu(display("Registry error: {source}"), visibility(pub(crate)))]
     Registry { source: self::registry::Error },
-    #[snafu(visibility(pub(crate)))]
+    #[snafu(display("Validation error: {source}"), visibility(pub(crate)))]
     Validation { source: self::validation::Error },
-    #[snafu(visibility(pub(crate)))]
+    #[snafu(display("Manifest error: {source}"), visibility(pub(crate)))]
     Manifest { source: audioware_manifest::Error },
 }
 

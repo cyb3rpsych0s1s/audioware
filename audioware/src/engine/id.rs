@@ -10,24 +10,26 @@ pub struct HandleId {
     id: ProcessUniqueId,
     key: Key,
     entity_id: Option<EntityId>,
+    emitter_name: Option<CName>,
 }
 
 impl HandleId {
-    pub fn new(id: &Id, entity_id: Option<EntityId>) -> Self {
+    pub fn new(id: &Id, entity_id: Option<EntityId>, emitter_name: Option<CName>) -> Self {
         Self {
             id: ProcessUniqueId::new(),
             key: AsRef::<Key>::as_ref(id).clone(),
             entity_id,
+            emitter_name,
         }
+    }
+    pub fn event_name(&self) -> &CName {
+        self.key.as_ref()
     }
     pub fn entity_id(&self) -> Option<&EntityId> {
         self.entity_id.as_ref()
     }
-    pub fn key(&self) -> &Key {
-        &self.key
-    }
-    pub fn event_name(&self) -> &CName {
-        self.key.as_ref()
+    pub fn emitter_name(&self) -> Option<&CName> {
+        self.emitter_name.as_ref()
     }
 }
 

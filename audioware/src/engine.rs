@@ -1,46 +1,51 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, ScnDialogLineType, SpokenLocale, WrittenLocale};
-use effects::{IMMEDIATELY, SMOOTHLY};
-use eq::Preset;
 use id::HandleId;
-use kira::tween::Tween;
-use manager::{Manager, StaticStorage, StreamStorage};
 use red4ext_rs::{
     log,
-    types::{CName, EntityId, GameInstance, Opt},
+    types::{CName, EntityId, GameInstance, Opt, Ref},
     PluginOps,
 };
 
-use scene::Scene;
-use tracks::Tracks;
-
 use crate::{
-    engine::eq::EqPass,
     error::Error,
     states::State,
-    types::{AsAudioSystem, AsGameInstance},
+    types::{
+        AsAudioSystem, AsGameInstance, AudiowareTween, LocalizationPackage, Subtitle, ToTween,
+    },
     Audioware,
 };
 
-pub mod effects;
-pub mod eq;
+mod effects;
+mod eq;
 mod id;
 mod manager;
-pub mod modulators;
+mod modulators;
 mod scene;
 mod tracks;
 
+pub use effects::IMMEDIATELY;
+pub use eq::EqPass;
+pub use eq::Preset;
 pub use manager::Manage;
+pub use manager::Manager;
+pub use manager::StaticStorage;
+pub use manager::StreamStorage;
+pub use scene::Scene;
+pub use tracks::Tracks;
 
 pub struct Engine;
 
 impl Engine {
-    pub fn setup() -> Result<(), Error> {
+    pub(crate) fn setup() -> Result<(), Error> {
         // SAFETY: initialization order matters
         let mut manager = Manager::try_lock()?;
         Tracks::setup(&mut manager)?;
         Scene::setup(&mut manager, &Tracks::get().v.main)?;
         Ok(())
+    }
+    pub fn define_subtitles(package: Ref<LocalizationPackage>) {
+        package.subtitle("custom_subtitle", "female", "male"); // TODO:
     }
     pub fn shutdown() {
         if let Err(e) = Manager::stop(None) {
@@ -50,8 +55,8 @@ impl Engine {
             log::error!(Audioware::env(), "could clear emitters in scene: {e}");
         }
     }
-    pub fn register_emitter(entity_id: EntityId, emitter_name: Option<CName>) {
-        if let Err(e) = Scene::register_emitter(entity_id, emitter_name) {
+    pub fn register_emitter(entity_id: EntityId, emitter_name: Opt<CName>) {
+        if let Err(e) = Scene::register_emitter(entity_id, emitter_name.into_option()) {
             log::error!(Audioware::env(), "couldn't register emitter to scene: {e}");
         }
     }
@@ -92,10 +97,10 @@ impl Engine {
     /// play sound
     pub fn play(
         sound_name: CName,
-        entity_id: Option<EntityId>,
-        emitter_name: Option<CName>,
-        line_type: Option<ScnDialogLineType>,
-        tween: Option<Tween>,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        line_type: Opt<ScnDialogLineType>,
+        tween: Ref<AudiowareTween>,
     ) {
         let mut manager = match Manager::try_lock() {
             Ok(x) => x,
@@ -107,6 +112,7 @@ impl Engine {
         let spoken = SpokenLocale::get();
         let written = WrittenLocale::get();
         let gender = PlayerGender::get();
+        let entity_id = entity_id.into_option();
         let id = match Banks::exist(&sound_name, &spoken, gender.as_ref()) {
             Ok(x) => x,
             Err(e) => {
@@ -115,6 +121,7 @@ impl Engine {
             }
         };
         // TODO: output destination
+        let tween = tween.into_tween();
         match Banks::data(id) {
             either::Either::Left(mut data) => {
                 if tween.is_some() {
@@ -123,7 +130,10 @@ impl Engine {
                 let handle = manager.play(data).unwrap();
                 match StaticStorage::try_lock() {
                     Ok(mut x) => {
-                        x.insert(HandleId::new(id, entity_id), handle);
+                        x.insert(
+                            HandleId::new(id, entity_id, emitter_name.into_option()),
+                            handle,
+                        );
                     }
                     Err(e) => {
                         log::error!(Audioware::env(), "Unable to store static sound handle: {e}");
@@ -137,7 +147,10 @@ impl Engine {
                 let handle = manager.play(data).unwrap();
                 match StreamStorage::try_lock() {
                     Ok(mut x) => {
-                        x.insert(HandleId::new(id, entity_id), handle);
+                        x.insert(
+                            HandleId::new(id, entity_id, emitter_name.into_option()),
+                            handle,
+                        );
                     }
                     Err(e) => {
                         log::error!(
@@ -154,7 +167,7 @@ impl Engine {
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        tween: Option<Tween>,
+        tween: Ref<AudiowareTween>,
     ) {
         let mut manager = match Manager::try_lock() {
             Ok(x) => x,
@@ -188,7 +201,10 @@ impl Engine {
                 let handle = manager.play(data.output_destination(destination)).unwrap();
                 match StaticStorage::try_lock() {
                     Ok(mut x) => {
-                        x.insert(HandleId::new(id, Some(entity_id)), handle);
+                        x.insert(
+                            HandleId::new(id, Some(entity_id), Some(emitter_name)),
+                            handle,
+                        );
                     }
                     Err(e) => {
                         log::error!(Audioware::env(), "Unable to store static sound handle: {e}");
@@ -199,7 +215,10 @@ impl Engine {
                 let handle = manager.play(data.output_destination(destination)).unwrap();
                 match StreamStorage::try_lock() {
                     Ok(mut x) => {
-                        x.insert(HandleId::new(id, Some(entity_id)), handle);
+                        x.insert(
+                            HandleId::new(id, Some(entity_id), Some(emitter_name)),
+                            handle,
+                        );
                     }
                     Err(e) => {
                         log::error!(
@@ -212,17 +231,18 @@ impl Engine {
         }
         // TODO: propagate subtitles
     }
-    pub fn stop_by_cname(event_name: &CName, tween: Option<Tween>) {
-        if let Err(e) = Manager::stop_by_cname(event_name, tween) {
-            log::error!(Audioware::env(), "{e}");
-        }
-    }
-    pub fn stop_by_cname_for_entity(
-        event_name: &CName,
-        entity_id: &EntityId,
-        tween: Option<Tween>,
+    pub fn stop(
+        event_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        tween: Ref<AudiowareTween>,
     ) {
-        if let Err(e) = Manager::stop_by_cname_for_entity(event_name, entity_id, tween) {
+        if let Err(e) = Manager::stop_by(
+            &event_name,
+            entity_id.into_option().as_ref(),
+            emitter_name.into_option().as_ref(),
+            tween.into_tween(),
+        ) {
             log::error!(Audioware::env(), "{e}");
         }
     }
@@ -231,24 +251,15 @@ impl Engine {
         switch_value: CName,
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
-        switch_name_tween: Option<Tween>,
-        switch_value_tween: Option<Tween>,
+        switch_name_tween: Ref<AudiowareTween>,
+        switch_value_tween: Ref<AudiowareTween>,
     ) {
         let prev = Banks::exists(&switch_name);
         let next = Banks::exists(&switch_value);
         let system = GameInstance::get_audio_system();
 
         if prev {
-            match entity_id.into_option() {
-                Some(x) => Engine::stop_by_cname_for_entity(
-                    &switch_name,
-                    &x,
-                    Some(switch_name_tween.unwrap_or(SMOOTHLY)),
-                ),
-                None => {
-                    Engine::stop_by_cname(&switch_name, Some(switch_name_tween.unwrap_or(SMOOTHLY)))
-                }
-            };
+            Engine::stop(switch_name, entity_id, emitter_name, switch_name_tween);
         } else {
             system.stop(switch_name, entity_id, emitter_name);
         }
@@ -256,10 +267,10 @@ impl Engine {
         if next {
             Engine::play(
                 switch_value,
-                entity_id.into_option(),
-                emitter_name.into_option(),
-                None,
-                Some(switch_value_tween.unwrap_or(SMOOTHLY)),
+                entity_id,
+                emitter_name,
+                Opt::Default,
+                switch_value_tween,
             );
         } else {
             system.play(switch_value, entity_id, emitter_name);

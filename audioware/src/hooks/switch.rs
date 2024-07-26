@@ -1,11 +1,11 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
     addr_hashes, hooks, log,
-    types::{CName, EntityId, IScriptable, Opt, StackFrame},
+    types::{CName, EntityId, IScriptable, Opt, Ref, StackFrame},
     PluginOps, SdkEnv, VoidPtr,
 };
 
-use crate::{engine::Engine, types::AsAudioSystem, Audioware};
+use crate::{engine::Engine, Audioware};
 
 hooks! {
    static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
@@ -50,8 +50,8 @@ unsafe extern "C" fn detour(
             switch_value,
             entity_id,
             emitter_name,
-            None,
-            None,
+            Ref::default(),
+            Ref::default(),
         );
     } else {
         frame.restore_args(state);

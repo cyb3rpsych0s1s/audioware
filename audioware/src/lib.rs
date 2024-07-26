@@ -1,19 +1,16 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
-use engine::{eq::Preset, Engine};
+use engine::{Engine, Preset};
 use error::Error;
 use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log,
-    types::{CName, EntityId, GameEngine, Opt, Ref},
+    types::{CName, GameEngine, Opt},
     wcstr, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem,
     ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
-use types::{
-    AsAudioSystem, AudioSystem, AudiowareTween, GameObject, LocalizationPackage, Subtitle, ToTween,
-    Vector4,
-};
+use types::{AsAudioSystem, AudioSystem, GameObject, Vector4};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod engine;
@@ -56,8 +53,10 @@ impl Audioware {
         );
     }
 
-    fn load_engine(_: &SdkEnv) -> Result<(), Error> {
-        Engine::setup()?;
+    fn load_engine(env: &SdkEnv) -> Result<(), Error> {
+        if let Err(e) = Engine::setup() {
+            log::error!(env, "Unable to load engine: {e}");
+        }
         Ok(())
     }
 
@@ -92,26 +91,35 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
             GlobalExport(global!(c"Audioware.PLogError", plog_error)),
-            GlobalExport(global!(c"Audioware.RegisterEmitter", register_emitter)),
-            GlobalExport(global!(c"Audioware.UnregisterEmitter", unregister_emitter)),
-            GlobalExport(global!(c"Audioware.EmittersCount", emitters_count)),
-            GlobalExport(global!(c"Audioware.ClearEmitters", clear_emitters)),
-            GlobalExport(global!(c"Audioware.DefineSubtitles", define_subtitles)),
-            GlobalExport(global!(c"Audioware.SetGameState", set_game_state)),
+            GlobalExport(global!(
+                c"Audioware.RegisterEmitter",
+                Engine::register_emitter
+            )),
+            GlobalExport(global!(
+                c"Audioware.UnregisterEmitter",
+                Engine::unregister_emitter
+            )),
+            GlobalExport(global!(c"Audioware.EmittersCount", Engine::emitters_count)),
+            GlobalExport(global!(c"Audioware.ClearEmitters", Engine::clear_emitters)),
+            GlobalExport(global!(
+                c"Audioware.DefineSubtitles",
+                Engine::define_subtitles
+            )),
+            GlobalExport(global!(c"Audioware.SetGameState", GameState::set)),
             GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
             GlobalExport(global!(c"Audioware.UnsetPlayerGender", unset_player_gender)),
             GlobalExport(global!(c"Audioware.SetGameLocales", set_game_locales)),
-            GlobalExport(global!(c"Audioware.Play", play_with_tween)),
-            GlobalExport(global!(c"Audioware.Stop", stop_with_tween)),
-            GlobalExport(global!(c"Audioware.Switch", switch_with_tween)),
-            GlobalExport(global!(
-                c"Audioware.PlayOnEmitter",
-                play_on_emitter_with_tween
-            )),
-            GlobalExport(global!(
-                c"Audioware.StopOnEmitter",
-                stop_on_emitter_with_tween
-            )),
+            GlobalExport(global!(c"Audioware.Play", Engine::play)),
+            GlobalExport(global!(c"Audioware.Stop", Engine::stop)),
+            GlobalExport(global!(c"Audioware.Switch", Engine::switch)),
+            // GlobalExport(global!(
+            //     c"Audioware.PlayOnEmitter",
+            //     play_on_emitter_with_tween
+            // )),
+            // GlobalExport(global!(
+            //     c"Audioware.StopOnEmitter",
+            //     stop_on_emitter_with_tween
+            // )),
             GlobalExport(global!(c"Audioware.SetPlayerReverb", set_player_reverb)),
             GlobalExport(global!(c"Audioware.SetPlayerPreset", set_player_preset)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play))
@@ -140,35 +148,8 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit running: Audioware");
-    GameState::set(GameState::Unload);
+    GameState::swap(GameState::Unload);
     Engine::shutdown();
-}
-
-fn register_emitter(emitter_id: EntityId, emitter_name: Opt<CName>) {
-    log::info!(
-        Audioware::env(),
-        "register emitter {:?} {}",
-        emitter_id,
-        emitter_name
-    );
-    Engine::register_emitter(emitter_id, emitter_name.into_option());
-}
-
-fn unregister_emitter(emitter_id: EntityId) {
-    log::info!(Audioware::env(), "unregister emitter {:?}", emitter_id);
-    Engine::unregister_emitter(emitter_id);
-}
-
-fn emitters_count() -> i32 {
-    Engine::emitters_count()
-}
-
-fn clear_emitters() {
-    Engine::clear_emitters();
-}
-
-fn define_subtitles(package: Ref<LocalizationPackage>) {
-    package.subtitle("custom_subtitle", "female", "male");
 }
 
 fn set_player_gender(value: PlayerGender) {
@@ -319,65 +300,6 @@ fn scan_rtti(class_name: &str) {
             log::info!(env, "global => {} ({})", g.name(), g.short_name());
         }
     }
-}
-
-fn play_with_tween(
-    event_name: CName,
-    entity_id: Opt<EntityId>,
-    emitter_name: Opt<CName>,
-    tween: Ref<AudiowareTween>,
-) {
-    Engine::play(
-        event_name,
-        entity_id.into_option(),
-        emitter_name.into_option(),
-        None,
-        tween.into_tween(),
-    );
-}
-
-fn stop_with_tween(event_name: CName, entity_id: Opt<EntityId>, tween: Ref<AudiowareTween>) {
-    if let Some(entity_id) = entity_id.into_option() {
-        Engine::stop_by_cname_for_entity(&event_name, &entity_id, tween.into_tween());
-    } else {
-        Engine::stop_by_cname(&event_name, tween.into_tween());
-    }
-}
-
-fn switch_with_tween(
-    switch_name: CName,
-    switch_value: CName,
-    entity_id: Opt<EntityId>,
-    emitter_name: Opt<CName>,
-    switch_name_tween: Ref<AudiowareTween>,
-    switch_value_tween: Ref<AudiowareTween>,
-) {
-    Engine::switch(
-        switch_name,
-        switch_value,
-        entity_id,
-        emitter_name,
-        switch_name_tween.into_tween(),
-        switch_value_tween.into_tween(),
-    );
-}
-
-fn play_on_emitter_with_tween(
-    event_name: CName,
-    entity_id: EntityId,
-    emitter_name: CName,
-    tween: Ref<AudiowareTween>,
-) {
-    Engine::play_on_emitter(event_name, entity_id, emitter_name, tween.into_tween());
-}
-
-fn stop_on_emitter_with_tween(
-    event_name: CName,
-    entity_id: EntityId,
-    emitter_name: CName,
-    tween: Ref<AudiowareTween>,
-) {
-    Engine::stop_by_cname_for_entity(&event_name, &entity_id, tween.into_tween());
 }
 
 fn set_player_reverb(value: f32) {

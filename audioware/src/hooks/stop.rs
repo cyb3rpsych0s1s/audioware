@@ -1,7 +1,7 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
     addr_hashes, hooks, log,
-    types::{CName, EntityId, IScriptable, Opt, StackFrame},
+    types::{CName, EntityId, IScriptable, Opt, Ref, StackFrame},
     PluginOps, SdkEnv, VoidPtr,
 };
 
@@ -38,10 +38,7 @@ unsafe extern "C" fn detour(
         let env = Audioware::env();
         log::info!(env, "AudioSystem.Stop: intercepted {event_name}");
 
-        match entity_id.into_option() {
-            Some(x) => Engine::stop_by_cname_for_entity(&event_name, &x, None),
-            None => Engine::stop_by_cname(&event_name, None),
-        };
+        Engine::stop(event_name, entity_id, emitter_name, Ref::default());
     } else {
         frame.restore_args(state);
         cb(i, f, a3, a4);

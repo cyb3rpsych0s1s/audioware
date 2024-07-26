@@ -1,7 +1,7 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
     addr_hashes, hooks, log,
-    types::{CName, EntityId, IScriptable, Opt, StackFrame},
+    types::{CName, EntityId, IScriptable, Opt, Ref, StackFrame},
     PluginOps, SdkEnv, VoidPtr,
 };
 
@@ -39,10 +39,10 @@ unsafe extern "C" fn detour(
         log::info!(env, "AudioSystem.Play: intercepted {event_name}");
         Engine::play(
             event_name,
-            entity_id.into_option(),
-            emitter_name.into_option(),
-            None,
-            None,
+            entity_id,
+            emitter_name,
+            Opt::default(),
+            Ref::default(),
         );
     } else {
         frame.restore_args(state);

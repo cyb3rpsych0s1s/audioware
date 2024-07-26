@@ -19,7 +19,7 @@ fn state() -> &'static AtomicU8 {
 
 impl State for GameState {
     type Value = Self;
-    fn set(state: GameState) -> Self {
+    fn swap(state: GameState) -> Self {
         let env = Audioware::env();
         let prev = self::state()
             .swap(state as u8, std::sync::atomic::Ordering::SeqCst)
