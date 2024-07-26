@@ -6,7 +6,10 @@ public class AudiowareSystem extends ScriptableSystem {
     private let menuListener: ref<CallbackHandle>;
     private let playerReverbListener: ref<CallbackHandle>;
     private let playerPresetListener: ref<CallbackHandle>;
+
     private let subtitleDelayID: DelayID;
+    private let subtitleRemaining: Float = 0.0;
+    private let subtitleLine: scnDialogLineData;
 
     private func OnAttach() -> Void {
         LOG("on attach: AudiowareSystem");
@@ -52,6 +55,7 @@ public class AudiowareSystem extends ScriptableSystem {
     public func DelayHideSubtitle(line: scnDialogLineData, duration: Float) {
         let callback: ref<HideSubtitleCallback> = new HideSubtitleCallback();
         callback.line = line;
+        this.subtitleLine = line;
         this.subtitleDelayID = GameInstance
         .GetDelaySystem(GetGameInstance())
         .DelayCallback(callback, duration);
@@ -62,12 +66,33 @@ public class AudiowareSystem extends ScriptableSystem {
             GameInstance
             .GetDelaySystem(this.GetGameInstance())
             .CancelCallback(this.subtitleDelayID);
+            this.subtitleRemaining = 0.0;
+            this.subtitleDelayID = GetInvalidDelayID();
+        }
+    }
+
+    public func PauseHideSubtitleCallback() -> Void {
+        if NotEquals(this.subtitleDelayID, GetInvalidDelayID()) {
+            this.subtitleRemaining = GameInstance.GetDelaySystem(GetGameInstance())
+            .GetRemainingDelayTime(this.subtitleDelayID);
+            GameInstance.GetDelaySystem(GetGameInstance()).CancelCallback(this.subtitleDelayID);
+        }
+    }
+
+    public func ResumeHideSubtitleCallback() -> Void {
+        if this.subtitleRemaining >= 0.3 {
+            let callback: ref<HideSubtitleCallback> = new HideSubtitleCallback();
+            callback.line = this.subtitleLine;
+            this.subtitleDelayID = GameInstance
+            .GetDelaySystem(this.GetGameInstance())
+            .DelayCallback(callback, this.subtitleRemaining);
         }
     }
 
     protected cb func OnInMenu(value: Bool) -> Bool {
         LOG(s"on \(value ? "enter" : "exit") menu: AudiowareSystem");
         SetGameState(value ? GameState.InMenu : GameState.InGame);
+        if value { this.PauseHideSubtitleCallback(); } else { this.ResumeHideSubtitleCallback(); }
     }
     protected cb func OnPlayerReverb(value: Float) -> Bool {
         LOG(s"on player reverb changed (\(ToString(value))): AudiowareSystem");
