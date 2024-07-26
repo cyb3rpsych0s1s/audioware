@@ -32,8 +32,8 @@ unsafe extern "C" fn detour(
 
     let switch_name: CName = StackFrame::get_arg(frame);
     let switch_value: CName = StackFrame::get_arg(frame);
-    let entity_id: Opt<EntityId> = StackFrame::get_arg(frame);
-    let emitter_name: Opt<CName> = StackFrame::get_arg(frame);
+    let entity_id: EntityId = StackFrame::get_arg(frame);
+    let emitter_name: CName = StackFrame::get_arg(frame);
 
     let prev = Banks::exists(&switch_name);
     let next = Banks::exists(&switch_value);
@@ -48,8 +48,8 @@ unsafe extern "C" fn detour(
         Engine::switch(
             switch_name,
             switch_value,
-            entity_id,
-            emitter_name,
+            entity_id.into(),
+            emitter_name.into(),
             Ref::default(),
             Ref::default(),
         );

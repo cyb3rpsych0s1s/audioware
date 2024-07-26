@@ -40,7 +40,8 @@ public static exec func TestDefineSubtitles(game: GameInstance) {
 /// Game.TestAudioSystemPlay("as_if_I_didnt_know_already");
 public static exec func TestAudioSystemPlay(game: GameInstance, name: String) {
     let cname = StringToName(name);
-    GameInstance.GetAudioSystem(game).Play(cname);
+    let player = GetPlayer(game);
+    GameInstance.GetAudioSystem(game).Play(cname, player.GetEntityID(), n"V");
 }
 
 /// Game.TestAudioSystemStop("god_love_us");

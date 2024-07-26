@@ -17,8 +17,6 @@ impl Subtitle for Ref<LocalizationPackage> {
         let env = Audioware::env();
         if let Err(e) = call!(self, "Subtitle;StringStringString"(key, value_f, value_m) -> ()) {
             log::error!(env, "failed to call LocalizationPackage.Subtitle: {e}");
-        } else {
-            log::info!(env, "subtitle executed succesfully");
         }
     }
 }

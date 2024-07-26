@@ -50,6 +50,7 @@ public class LocalizationProvider extends ModLocalizationProvider {
 }
 
 private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName: CName, lineType: scnDialogLineType, duration: Float) -> Void {
+    LOG("PropagateSubtitle called");
     if !IsNameValid(reaction) { return; }
     let target = GameInstance.FindEntityByID(GetGameInstance(), entityID);
     if !IsDefined(target) || !target.IsA(n"gameObject") { return; }

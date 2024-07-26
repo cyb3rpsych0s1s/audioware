@@ -31,14 +31,14 @@ unsafe extern "C" fn detour(
     let state = frame.args_state();
 
     let event_name: CName = StackFrame::get_arg(frame);
-    let entity_id: Opt<EntityId> = StackFrame::get_arg(frame);
-    let emitter_name: Opt<CName> = StackFrame::get_arg(frame);
+    let entity_id: EntityId = StackFrame::get_arg(frame);
+    let emitter_name: CName = StackFrame::get_arg(frame);
 
     if Banks::exists(&event_name) {
         let env = Audioware::env();
         log::info!(env, "AudioSystem.Stop: intercepted {event_name}");
 
-        Engine::stop(event_name, entity_id, emitter_name, Ref::default());
+        Engine::stop(event_name, entity_id.into(), emitter_name.into(), Ref::default());
     } else {
         frame.restore_args(state);
         cb(i, f, a3, a4);

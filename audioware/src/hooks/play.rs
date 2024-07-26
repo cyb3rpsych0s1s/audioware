@@ -31,16 +31,16 @@ unsafe extern "C" fn detour(
     let state = frame.args_state();
 
     let event_name: CName = StackFrame::get_arg(frame);
-    let entity_id: Opt<EntityId> = StackFrame::get_arg(frame);
-    let emitter_name: Opt<CName> = StackFrame::get_arg(frame);
+    let entity_id: EntityId = StackFrame::get_arg(frame);
+    let emitter_name: CName = StackFrame::get_arg(frame);
 
     if Banks::exists(&event_name) {
         let env = Audioware::env();
         log::info!(env, "AudioSystem.Play: intercepted {event_name}");
         Engine::play(
             event_name,
-            entity_id,
-            emitter_name,
+            entity_id.into(),
+            emitter_name.into(),
             Opt::default(),
             Ref::default(),
         );

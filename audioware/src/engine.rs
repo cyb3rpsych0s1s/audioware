@@ -51,10 +51,6 @@ impl Engine {
         for (key, (value_f, value_m)) in subtitles.iter() {
             package.subtitle(key.as_str(), value_f.as_str(), value_m.as_str());
         }
-        log::info!(
-            Audioware::env(),
-            "defined subtitles for {written}: {subtitles:?}"
-        );
     }
     pub fn supported_languages() -> Vec<CName> {
         Banks::languages().into_iter().map(|x| x.into()).collect()
@@ -134,6 +130,7 @@ impl Engine {
         };
         // TODO: output destination
         let tween = tween.into_tween();
+        #[allow(unused_assignments)]
         let mut duration: f32 = 3.0;
         match Banks::data(id) {
             either::Either::Left(mut data) => {
@@ -170,6 +167,7 @@ impl Engine {
                 }
             }
         }
+        log::info!(Audioware::env(), "about to call propagate subtitle ({:?}, {:?})", entity_id, emitter_name);
         if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
             propagate_subtitles(
                 sound_name,
