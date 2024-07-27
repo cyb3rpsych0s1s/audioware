@@ -1,7 +1,9 @@
 use std::time::Duration;
 
 use kira::{
-    sound::{static_sound::StaticSoundSettings, streaming::StreamingSoundSettings},
+    sound::{
+        static_sound::StaticSoundSettings, streaming::StreamingSoundSettings, PlaybackPosition,
+    },
     tween::{Tween, Value},
     StartTime, Volume,
 };
@@ -11,6 +13,8 @@ use serde::Deserialize;
 pub struct Settings {
     #[serde(with = "humantime_serde", default)]
     pub start_time: Option<Duration>,
+    #[serde(with = "humantime_serde", default)]
+    pub start_position: Option<Duration>,
     pub volume: Option<f64>,
     pub tween: Option<Interpolation>,
 }
@@ -45,6 +49,10 @@ impl From<Settings> for StaticSoundSettings {
                 .start_time
                 .map(StartTime::Delayed)
                 .unwrap_or(StartTime::Immediate),
+            start_position: value
+                .start_position
+                .map(|x| PlaybackPosition::Seconds(x.as_secs_f64()))
+                .unwrap_or(PlaybackPosition::default()),
             volume: value
                 .volume
                 .map(|x| Value::<Volume>::Fixed(Volume::Amplitude(x)))
@@ -62,6 +70,10 @@ impl From<Settings> for StreamingSoundSettings {
                 .start_time
                 .map(StartTime::Delayed)
                 .unwrap_or(StartTime::Immediate),
+            start_position: value
+                .start_position
+                .map(|x| PlaybackPosition::Seconds(x.as_secs_f64()))
+                .unwrap_or(PlaybackPosition::default()),
             volume: value
                 .volume
                 .map(|x| Value::<Volume>::Fixed(Volume::Amplitude(x)))
@@ -82,14 +94,21 @@ mod tests {
     mod duration {
         use test_case::test_case;
 
-        #[test_case(r##"120ms"##; "valid short duration")]
-        fn valid(yaml: &str) {
+        #[test_case(r##"120ms"##; "valid milliseconds duration")]
+        fn valid_ms(yaml: &str) {
             let settings = humantime::parse_duration(yaml);
             dbg!("{}", &settings);
             assert!(settings.is_ok());
         }
 
-        #[test_case(r##"1.2s"## ; "invalid short duration")]
+        #[test_case(r##"9s"##; "valid seconds duration")]
+        fn valid_s(yaml: &str) {
+            let settings = humantime::parse_duration(yaml);
+            dbg!("{}", &settings);
+            assert!(settings.is_ok());
+        }
+
+        #[test_case(r##"1.2s"## ; "invalid duration")]
         fn invalid(yaml: &str) {
             let settings = humantime::parse_duration(yaml);
             dbg!("{}", &settings);

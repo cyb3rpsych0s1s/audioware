@@ -9,12 +9,15 @@ use either::Either;
 use kira::sound::{
     static_sound::{StaticSoundData, StaticSoundSettings},
     streaming::{StreamingSoundData, StreamingSoundSettings},
-    FromFileError,
+    FromFileError, 
 };
 use red4ext_rs::types::{CName, CNamePool};
 use snafu::ensure;
 
-use crate::{error::validation::*, Id};
+use crate::{
+    error::validation::*,
+    Id,
+};
 
 use super::{
     conflict::{Conflict, Conflictual},
@@ -141,9 +144,24 @@ pub fn ensure_valid_audio(
 }
 
 pub fn ensure_valid_audio_settings(
-    _audio: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
-    _settings: Option<&Settings>,
+    audio: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
+    settings: Option<&Settings>,
 ) -> Result<(), Error> {
+    if let Some(settings) = settings {
+        if let Some(start_position) = settings.start_position.map(|x| x.as_secs_f64()) {
+            let duration = match audio {
+                Either::Left(x) => x.duration().as_secs_f64(),
+                Either::Right(x) => x.duration().as_secs_f64(),
+            };
+            ensure!(
+                start_position < duration,
+                InvalidAudioSettingSnafu {
+                    which: "start_position",
+                    why: "greater than audio duration"
+                }
+            );
+        }
+    }
     Ok(())
 }
 
