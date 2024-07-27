@@ -21,7 +21,7 @@ use red4ext_rs::{
 };
 
 use crate::{
-    error::{Error, InternalError},
+    error::{Error, InternalError, SceneError},
     types::{get_player, AsEntity, AsGameInstance, Entity, Vector4},
     Audioware,
 };
@@ -93,6 +93,11 @@ impl Scene {
             })
     }
     pub fn register_emitter(entity_id: EntityId, emitter_name: Option<CName>) -> Result<(), Error> {
+        if !entity_id.is_defined() {
+            return Err(Error::Scene {
+                source: SceneError::InvalidEmitter,
+            });
+        }
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, entity_id);
         let position = entity.get_world_position();

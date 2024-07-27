@@ -50,12 +50,12 @@ public class LocalizationProvider extends ModLocalizationProvider {
 }
 
 private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName: CName, lineType: scnDialogLineType, duration: Float) -> Void {
-    LOG("PropagateSubtitle called");
-    if !IsNameValid(reaction) { return; }
+    if !IsNameValid(reaction) || !EntityID.IsDefined(entityID) { return; }
     let target = GameInstance.FindEntityByID(GetGameInstance(), entityID);
     if !IsDefined(target) || !target.IsA(n"gameObject") { return; }
     let key: String = NameToString(reaction);
     let subtitle: String = LocalizationSystem.GetInstance(GetGameInstance()).GetSubtitle(key);
+    LOG(s"subtitle (\(key)): \(subtitle)");
     if StrLen(key) > 0 && NotEquals(key, subtitle) {
         let line: scnDialogLineData;
         line.duration = duration;
@@ -65,6 +65,7 @@ private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName:
         line.speakerName = NameToString(emitterName);
         line.text = subtitle;
         line.type = lineType;
+        LOG(s"subtitle line about to play");
         let board: ref<IBlackboard> = GameInstance.GetBlackboardSystem(GetGameInstance()).Get(GetAllBlackboardDefs().UIGameData);
         board.SetVariant(GetAllBlackboardDefs().UIGameData.ShowDialogLine, ToVariant([line]), true);
         AudiowareSystem.GetInstance(GetGameInstance()).DelayHideSubtitle(line, duration);

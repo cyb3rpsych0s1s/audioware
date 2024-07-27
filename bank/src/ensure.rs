@@ -9,15 +9,12 @@ use either::Either;
 use kira::sound::{
     static_sound::{StaticSoundData, StaticSoundSettings},
     streaming::{StreamingSoundData, StreamingSoundSettings},
-    FromFileError, 
+    FromFileError,
 };
 use red4ext_rs::types::{CName, CNamePool};
 use snafu::ensure;
 
-use crate::{
-    error::validation::*,
-    Id,
-};
+use crate::{error::validation::*, Id};
 
 use super::{
     conflict::{Conflict, Conflictual},

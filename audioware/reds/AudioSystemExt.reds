@@ -14,3 +14,8 @@ public func UnregisterEmitter(entityID: EntityID) -> Void {
 
 @addMethod(AudioSystem)
 public func EmittersCount() -> Int32 = EmittersCount();
+
+@addMethod(AudioSystem)
+public func PlayOverThePhone(eventName: CName, emitterName: CName, gender: CName) -> Void {
+    PlayOverThePhone(eventName, emitterName, gender);
+}

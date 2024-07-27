@@ -76,8 +76,8 @@ impl Engine {
             );
         }
     }
-    pub fn is_registered_emitter(entity_id: &EntityId) -> bool {
-        Scene::is_registered_emitter(entity_id)
+    pub fn is_registered_emitter(entity_id: EntityId) -> bool {
+        Scene::is_registered_emitter(&entity_id)
     }
     pub fn emitters_count() -> i32 {
         let count = Scene::emitters_count();
@@ -86,11 +86,6 @@ impl Engine {
             return -1;
         }
         count.unwrap() as i32
-    }
-    pub fn clear_emitters() {
-        if let Err(e) = Scene::clear_emitters() {
-            log::error!(Audioware::env(), "couldn't clear emitters on scene: {e}");
-        }
     }
     pub fn sync_emitters() {
         if let Err(e) = Scene::sync_emitters() {
@@ -101,6 +96,73 @@ impl Engine {
         if let Err(e) = Scene::sync_listener() {
             log::error!(Audioware::env(), "couldn't sync listener on scene: {e}");
         }
+    }
+    pub fn play_over_the_phone(event_name: CName, emitter_name: CName, gender: CName) {
+        let mut manager = match Manager::try_lock() {
+            Ok(x) => x,
+            Err(e) => {
+                log::error!(Audioware::env(), "Unable to get audio manager: {e}");
+                return;
+            }
+        };
+        let spoken = SpokenLocale::get();
+        let gender = match PlayerGender::try_from(gender) {
+            Ok(x) => x,
+            Err(e) => {
+                log::error!(Audioware::env(), "Play over the phone: {e}");
+                return;
+            }
+        };
+        let id = match Banks::try_get(&event_name, &spoken, Some(&gender)) {
+            Ok(x) => x,
+            Err(e) => {
+                log::error!(Audioware::env(), "Unable to get sound ID: {e}");
+                return;
+            }
+        };
+        #[allow(unused_assignments)]
+        let mut duration: f32 = 3.0;
+        match Banks::data(id) {
+            either::Either::Left(data) => {
+                duration = data.duration().as_secs_f32();
+                let handle = manager.play(data).unwrap();
+                match StaticStorage::try_lock() {
+                    Ok(mut x) => {
+                        x.insert(HandleId::new(id, None, Some(emitter_name)), handle);
+                    }
+                    Err(e) => {
+                        log::error!(Audioware::env(), "Unable to store static sound handle: {e}");
+                    }
+                }
+            }
+            either::Either::Right(data) => {
+                duration = data.duration().as_secs_f32();
+                let handle = manager.play(data).unwrap();
+                match StreamStorage::try_lock() {
+                    Ok(mut x) => {
+                        x.insert(HandleId::new(id, None, Some(emitter_name)), handle);
+                    }
+                    Err(e) => {
+                        log::error!(
+                            Audioware::env(),
+                            "Unable to store streaming sound handle: {e}"
+                        );
+                    }
+                }
+            }
+        }
+        log::info!(
+            Audioware::env(),
+            "about to call propagate subtitle ({})",
+            emitter_name
+        );
+        propagate_subtitles(
+            event_name,
+            todo!(),
+            emitter_name,
+            ScnDialogLineType::Holocall,
+            duration,
+        );
     }
     /// play sound
     pub fn play(
@@ -176,7 +238,7 @@ impl Engine {
         if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
             propagate_subtitles(
                 sound_name,
-                entity_id,
+                entity_id.into(),
                 emitter_name,
                 line_type.unwrap_or_default(),
                 duration,
@@ -254,7 +316,6 @@ impl Engine {
         let spoken = SpokenLocale::get();
         let written = WrittenLocale::get();
         let gender = PlayerGender::get();
-        let mut duration: f32 = 3.0;
         let id = match Banks::try_get(&sound_name, &spoken, gender.as_ref()) {
             Ok(x) => x,
             Err(e) => {
@@ -272,8 +333,13 @@ impl Engine {
                 return;
             }
         };
+        let mut duration: f32 = 3.0;
+        let tween = tween.into_tween();
         match Banks::data(id) {
-            either::Either::Left(data) => {
+            either::Either::Left(mut data) => {
+                if tween.is_some() {
+                    data.settings.fade_in_tween = tween;
+                }
                 duration = data.duration().as_secs_f32();
                 let handle = manager.play(data.output_destination(destination)).unwrap();
                 match StaticStorage::try_lock() {
@@ -288,7 +354,10 @@ impl Engine {
                     }
                 }
             }
-            either::Either::Right(data) => {
+            either::Either::Right(mut data) => {
+                if tween.is_some() {
+                    data.settings.fade_in_tween = tween;
+                }
                 duration = data.duration().as_secs_f32();
                 let handle = manager.play(data.output_destination(destination)).unwrap();
                 match StreamStorage::try_lock() {
@@ -309,7 +378,7 @@ impl Engine {
         }
         propagate_subtitles(
             sound_name,
-            entity_id,
+            entity_id.into(),
             emitter_name,
             ScnDialogLineType::default(),
             duration,

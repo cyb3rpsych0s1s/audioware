@@ -78,14 +78,10 @@ impl From<(AnyAudio, Option<&Settings>)> for Audio {
 
 impl From<(PathBuf, Option<&Settings>)> for Audio {
     fn from(value: (PathBuf, Option<&Settings>)) -> Self {
-        let mut audio: Audio = Audio {
+        Self {
             file: value.0,
-            settings: None,
-        };
-        if let Some(settings) = value.1 {
-            audio.merge_settings(settings.clone());
+            settings: value.1.cloned(),
         }
-        audio
     }
 }
 
@@ -96,14 +92,13 @@ pub fn paths_into_audios<K: PartialEq + Eq + Hash>(
     value
         .into_iter()
         .map(|(k, v)| {
-            let mut v: Audio = Audio {
-                file: v,
-                settings: None,
-            };
-            if let Some(ref settings) = settings {
-                v.merge_settings(settings.clone());
-            }
-            (k, v)
+            (
+                k,
+                Audio {
+                    file: v,
+                    settings: settings.clone(),
+                },
+            )
         })
         .collect()
 }

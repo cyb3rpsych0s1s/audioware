@@ -86,6 +86,13 @@ public static exec func TestAudioSystemStopOnEmitter(game: GameInstance, name: S
     StopOnEmitter(cname, emitterID, n"Jean-Michel");
 }
 
+/// Game.TestAudioSystemPlayOverThePhone("nah_everything_is_all_good");
+/// Game.TestAudioSystemPlayOverThePhone("as_if_I_didnt_know_already");
+public static exec func TestAudioSystemPlayOverThePhone(game: GameInstance, name: String) {
+    let cname = StringToName(name);
+    GameInstance.GetAudioSystem(game).PlayOverThePhone(cname, n"Vik", n"Male");
+}
+
 /// Game.TestAudioSystemParameter("Audioware:Reverb", 1.0);
 /// Game.TestAudioSystemParameter("Audioware:Reverb", 0.0);
 public static exec func TestAudioSystemParameter(game: GameInstance, name: String, value: Float) {
