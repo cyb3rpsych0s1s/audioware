@@ -348,12 +348,14 @@ impl Banks {
                         continue;
                     }
                 };
-                manifest = match serde_yaml::from_slice::<Manifest>(file.as_slice()).context(
+                match serde_yaml::from_slice::<Manifest>(file.as_slice()).context(
                     CannotParseManifestSnafu {
                         manifest: path.display().to_string(),
                     },
                 ) {
-                    Ok(x) => x,
+                    Ok(x) => {
+                        manifest = x;
+                    },
                     Err(e) => {
                         errors.push(e.into());
                         continue;
