@@ -182,6 +182,7 @@ impl Banks {
         }
         Err(RegistryError::NotFound { cname: *name })
     }
+    /// Retrieves sound data for a given [`Id`], including any settings.
     pub fn data(id: &Id) -> Either<StaticSoundData, StreamingSoundData<FromFileError>> {
         let settings = Self::settings(id);
         match id {
