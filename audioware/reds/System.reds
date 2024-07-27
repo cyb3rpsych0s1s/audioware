@@ -6,6 +6,7 @@ public class AudiowareSystem extends ScriptableSystem {
     private let menuListener: ref<CallbackHandle>;
     private let playerReverbListener: ref<CallbackHandle>;
     private let playerPresetListener: ref<CallbackHandle>;
+    private let swimListener: ref<CallbackHandle>;
 
     private let subtitleDelayID: DelayID;
     private let subtitleRemaining: Float = 0.0;
@@ -46,10 +47,22 @@ public class AudiowareSystem extends ScriptableSystem {
         LOG("on player attach: AudiowareSystem");
         SetGameState(GameState.InGame);
         TestPlay();
+
+        let player = request.owner as PlayerPuppet;
+        if IsDefined(player) {
+            let psm: ref<IBlackboard> = player.GetPlayerStateMachineBlackboard();
+            this.swimListener = psm.RegisterListenerInt(GetAllBlackboardDefs().PlayerStateMachine.Swimming, this, n"OnSwim", true);
+        }
     }
     private final func OnPlayerDetach(request: ref<PlayerDetachRequest>) -> Void {
         LOG("on player detach: AudiowareSystem");
         UnsetPlayerGender();
+
+        let player = GameInstance.FindEntityByID(this.GetGameInstance(), request.ownerID) as PlayerPuppet;
+        if IsDefined(player) {
+            let psm: ref<IBlackboard> = player.GetPlayerStateMachineBlackboard();
+            psm.UnregisterListenerInt(GetAllBlackboardDefs().PlayerStateMachine.Swimming, this.swimListener);
+        }
     }
 
     public func DelayHideSubtitle(line: scnDialogLineData, duration: Float) {
@@ -108,6 +121,11 @@ public class AudiowareSystem extends ScriptableSystem {
         let preset = IntEnum<Preset>(value);
         LOG(s"on player preset changed (\(ToString(preset))): AudiowareSystem");
         SetPlayerPreset(preset);
+    }
+    protected cb func OnSwim(value: Int32) -> Bool {
+        let state = IntEnum<gamePSMSwimming>(value);
+        let diving = Equals(state, gamePSMSwimming.Diving);
+        SetPlayerPreset(diving ? Preset.Underwater : Preset.None);
     }
 
     public final static func GetInstance(game: GameInstance) -> ref<AudiowareSystem> {
