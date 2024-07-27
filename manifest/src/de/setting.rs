@@ -78,6 +78,7 @@ impl From<Settings> for StreamingSoundSettings {
                 .volume
                 .map(|x| Value::<Volume>::Fixed(Volume::Amplitude(x)))
                 .unwrap_or(Value::<Volume>::Fixed(Volume::Amplitude(1.))),
+            fade_in_tween: value.tween.map(Into::into),
             ..Default::default()
         }
     }
@@ -116,15 +117,20 @@ mod tests {
         }
     }
 
-    #[test_case(r##"id:
+    #[test_case(r##"settings:
     start_time: 120ms"## ; "start time")]
-    #[test_case(r##"id:
+    #[test_case(r##"settings:
     start_time: 120ms
     volume: 0.5"## ; "start time + volume")]
-    #[test_case(r##"id:
+    #[test_case(r##"settings:
     tween:
         duration: 1s
         InPowf: 0.5"## ; "tween")]
+    #[test_case(r##"settings:
+    start_time: 5s
+    tween:
+        duration: 9s
+        InPowi: 2"## ; "complex settings")]
     fn settings(yaml: &str) {
         let settings = serde_yaml::from_str::<HashMap<String, Settings>>(yaml);
         dbg!("{}", &settings);

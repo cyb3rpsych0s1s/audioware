@@ -145,3 +145,36 @@ private func LogPositions(entity: ref<Entity>, name: String) {
     LogQuaternion(orientation, "world orientation");
     FTLog(AsRef(s"============"));
 }
+
+/// Game.TestOtis();
+public static exec func TestOtis(game: GameInstance) {
+    GameInstance.GetAudioSystem(game).Play(n"situation_scribe", GetPlayer(game).GetEntityID(), n"V");
+    
+    let callback = new OtisReplyCallback();
+    callback.player = GetPlayer(game);
+    GameInstance
+        .GetDelaySystem(GetGameInstance())
+        .DelayCallback(callback, 3.0);
+}
+
+public class OtisReplyCallback extends DelayCallback {
+    public let player: wref<PlayerPuppet>;
+    public func Call() -> Void {
+        if !IsDefined(this.player) { return; }
+        let game = this.player.GetGame();
+        let emitterID: EntityID;
+        let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(this.player);
+        emitterID = target.GetEntityID();
+        if !GameInstance.GetAudioSystem(game).IsRegisteredEmitter(emitterID) {
+            GameInstance.GetAudioSystem(game).RegisterEmitter(emitterID);
+        }
+        GameInstance.GetAudioSystem(game).PlayOnEmitter(n"monologue_otis", emitterID, n"Otis");
+    }
+}
+
+/// Game.TestAmbience();
+public static exec func TestAmbience(game: GameInstance) {
+    let weather = GameInstance.GetWeatherSystem(game);
+    weather.SetWeather(n"24h_weather_rain", 20.0, 9u);
+    GameInstance.GetAudioSystem(game).Play(n"milles_feuilles");
+}
