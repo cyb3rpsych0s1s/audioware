@@ -1,6 +1,5 @@
 use std::fmt;
 
-use red4ext_rs::NativeRepr;
 use serde::Deserialize;
 
 #[derive(Debug, Default, Clone, Copy, Deserialize, PartialEq, Eq, Hash)]
@@ -25,6 +24,22 @@ impl fmt::Display for PlayerGender {
     }
 }
 
-unsafe impl NativeRepr for PlayerGender {
+#[cfg(not(test))]
+unsafe impl red4ext_rs::NativeRepr for PlayerGender {
     const NAME: &'static str = "Codeware.Localization.PlayerGender";
+}
+
+#[cfg(not(test))]
+impl TryFrom<red4ext_rs::types::CName> for PlayerGender {
+    type Error = crate::ConversionError;
+
+    fn try_from(value: red4ext_rs::types::CName) -> Result<Self, Self::Error> {
+        match value.as_str().to_lowercase().as_str() {
+            "fem" | "female" => Ok(Self::Female),
+            "male" => Ok(Self::Female),
+            v => Err(crate::ConversionError::InvalidGender {
+                value: v.to_string(),
+            }),
+        }
+    }
 }
