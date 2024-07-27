@@ -52,7 +52,7 @@ impl From<Settings> for StaticSoundSettings {
             start_position: value
                 .start_position
                 .map(|x| PlaybackPosition::Seconds(x.as_secs_f64()))
-                .unwrap_or(PlaybackPosition::default()),
+                .unwrap_or_default(),
             volume: value
                 .volume
                 .map(|x| Value::<Volume>::Fixed(Volume::Amplitude(x)))
@@ -73,7 +73,7 @@ impl From<Settings> for StreamingSoundSettings {
             start_position: value
                 .start_position
                 .map(|x| PlaybackPosition::Seconds(x.as_secs_f64()))
-                .unwrap_or(PlaybackPosition::default()),
+                .unwrap_or_default(),
             volume: value
                 .volume
                 .map(|x| Value::<Volume>::Fixed(Volume::Amplitude(x)))

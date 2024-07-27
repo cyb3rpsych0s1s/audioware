@@ -1,6 +1,11 @@
 module Audioware
 
 @addMethod(AudioSystem)
+public func IsRegisteredEmitter(entityID: EntityID) -> Bool {
+    return IsRegisteredEmitter(entityID);
+}
+
+@addMethod(AudioSystem)
 public func RegisterEmitter(entityID: EntityID, opt emitterName: CName) -> Void {
     RegisterEmitter(entityID, emitterName);
     AudiowareService.GetInstance().AddTarget(EntityTarget.ID(entityID));

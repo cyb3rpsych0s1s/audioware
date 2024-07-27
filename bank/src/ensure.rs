@@ -14,7 +14,10 @@ use kira::sound::{
 use red4ext_rs::types::{CName, CNamePool};
 use snafu::ensure;
 
-use crate::{error::validation::*, Id};
+use crate::{
+    error::validation::{self, *},
+    Id,
+};
 
 use super::{
     conflict::{Conflict, Conflictual},
@@ -113,6 +116,7 @@ pub fn ensure_valid_audio(
     m: &Mod,
     usage: Usage,
     settings: Option<&Settings>,
+    captions: Option<&[Caption]>,
 ) -> Result<Either<StaticSoundData, StreamingSoundData<FromFileError>>, Error> {
     use snafu::ResultExt;
     let filepath = m.as_ref().join(path.as_ref());
@@ -137,6 +141,9 @@ pub fn ensure_valid_audio(
         }
     };
     ensure_valid_audio_settings(&data, settings)?;
+    if let Some(captions) = captions {
+        ensure_valid_jingle_captions(&data, settings, captions)?;
+    }
     Ok(data)
 }
 
@@ -157,6 +164,42 @@ pub fn ensure_valid_audio_settings(
                     why: "greater than audio duration"
                 }
             );
+        }
+    }
+    Ok(())
+}
+
+pub fn ensure_valid_jingle_captions(
+    audio: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
+    settings: Option<&Settings>,
+    captions: &[Caption],
+) -> Result<(), Error> {
+    if !captions.is_empty() {
+        let duration = match audio {
+            Either::Left(x) => x.duration(),
+            Either::Right(x) => x.duration(),
+        }
+        .as_secs_f32();
+        for (idx, caption) in captions.iter().enumerate() {
+            if caption.starts >= duration {
+                return Err(Error::from(validation::Error::InvalidAudioCaption {
+                    which: "starts".to_string(),
+                    why: format!("greater than audio duration (captions[{idx}])"),
+                }));
+            }
+        }
+        let mut previous_starts = captions[0].starts;
+        for (idx, caption) in captions.iter().enumerate().skip(1) {
+            if previous_starts >= caption.starts {
+                return Err(Error::from(validation::Error::InvalidAudioCaption {
+                    which: "starts".to_string(),
+                    why: format!(
+                        "unordered sequence (captions[{idx}] and captions[{}])",
+                        idx - 1
+                    ),
+                }));
+            }
+            previous_starts = caption.starts;
         }
     }
     Ok(())
@@ -226,7 +269,7 @@ fn ensure<'a, K: PartialEq + Eq + Hash + Clone + Into<Key> + Conflictual>(
 where
     HashSet<Id>: Conflict<K>,
 {
-    let data = ensure_valid_audio(&path, m, usage, settings.as_ref())?;
+    let data = ensure_valid_audio(&path, m, usage, settings.as_ref(), None)?;
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = match usage {
         Usage::InMemory => Id::InMemory(key.clone().into()),
@@ -369,7 +412,32 @@ pub fn ensure_music<'a>(
 ) -> Result<(), Error> {
     ensure_key_unique(k)?;
     let Audio { file, settings } = v.into();
-    ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref())?;
+    ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref(), None)?;
+    let c_string = std::ffi::CString::new(k).expect("CString::new failed");
+    let cname = CNamePool::add_cstr(&c_string);
+    let key = UniqueKey(cname);
+    ensure_key_no_conflict(&key, k, set)?;
+    let id: Id = Id::OnDemand(crate::Usage::Streaming(
+        crate::Key::Unique(key.clone()),
+        m.as_ref().join(file),
+    ));
+    if let Some(settings) = settings {
+        ensure_store_settings::<UniqueKey>(&key, settings, smap)?;
+    }
+    ensure_store_id(id, set)?;
+    Ok(())
+}
+
+pub fn ensure_jingles<'a>(
+    k: &'a str,
+    v: Jingle,
+    m: &Mod,
+    set: &'a mut HashSet<Id>,
+    smap: &'a mut HashMap<UniqueKey, Settings>,
+) -> Result<(), Error> {
+    ensure_key_unique(k)?;
+    let Audio { file, settings } = (&v).into();
+    ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref(), v.captions())?;
     let c_string = std::ffi::CString::new(k).expect("CString::new failed");
     let cname = CNamePool::add_cstr(&c_string);
     let key = UniqueKey(cname);

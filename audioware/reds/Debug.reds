@@ -71,6 +71,9 @@ public static exec func TestAudioSystemPlayOnEmitter(game: GameInstance, name: S
 
     let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
     emitterID = target.GetEntityID();
+    if !GameInstance.GetAudioSystem(game).IsRegisteredEmitter(emitterID) {
+        GameInstance.GetAudioSystem(game).RegisterEmitter(emitterID);
+    }
 
     GameInstance.GetAudioSystem(game).PlayOnEmitter(cname, emitterID, n"Jean-Michel");
 }

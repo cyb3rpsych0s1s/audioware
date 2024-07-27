@@ -32,6 +32,7 @@ pub struct Manifest {
     pub onos: Option<HashMap<String, Ono>>,
     pub voices: Option<HashMap<String, Voice>>,
     pub music: Option<HashMap<String, Music>>,
+    pub jingles: Option<HashMap<String, Jingle>>,
 }
 
 #[derive(Debug, Deserialize)]

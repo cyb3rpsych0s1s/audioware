@@ -238,7 +238,7 @@ impl Engine {
         if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
             propagate_subtitles(
                 sound_name,
-                entity_id.into(),
+                entity_id,
                 emitter_name,
                 line_type.unwrap_or_default(),
                 duration,
@@ -378,7 +378,7 @@ impl Engine {
         }
         propagate_subtitles(
             sound_name,
-            entity_id.into(),
+            entity_id,
             emitter_name,
             ScnDialogLineType::default(),
             duration,

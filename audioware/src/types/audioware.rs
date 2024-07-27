@@ -4,7 +4,7 @@ use audioware_manifest::ScnDialogLineType;
 use kira::tween::{Easing, Tween};
 use red4ext_rs::{
     class_kind::Scripted,
-    types::{CName, EntityId, IScriptable, Opt, Ref},
+    types::{CName, EntityId, IScriptable, Ref},
     NativeRepr, RttiSystem, ScriptClass,
 };
 

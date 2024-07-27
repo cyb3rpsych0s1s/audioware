@@ -54,6 +54,8 @@ pub mod validation {
             which: &'static str,
             why: &'static str,
         },
+        #[snafu(display("invalid audio caption"), visibility(pub(crate)))]
+        InvalidAudioCaption { which: String, why: String },
         #[snafu(display("cannot store data: {id}"), visibility(pub(crate)))]
         CannotStoreData { id: Id, path: String },
         #[snafu(display("cannot store subtitle"), visibility(pub(crate)))]

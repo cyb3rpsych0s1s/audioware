@@ -433,6 +433,23 @@ impl Banks {
                         };
                     }
                 }
+                if let Some(jingles) = manifest.jingles {
+                    for (key, value) in jingles {
+                        match ensure_jingles(
+                            key.as_str(),
+                            value,
+                            &m,
+                            &mut ids,
+                            &mut unique_settings,
+                        ) {
+                            Ok(x) => x,
+                            Err(e) => {
+                                errors.push(e);
+                                continue;
+                            }
+                        };
+                    }
+                }
             }
         }
 
