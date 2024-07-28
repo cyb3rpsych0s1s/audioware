@@ -1,3 +1,6 @@
+use cpal::BufferSize;
+use kira::manager::backend::cpal::CpalBackend;
+use kira::manager::backend::cpal::CpalBackendSettings;
 use kira::sound::PlaybackState;
 use rayon::iter::IntoParallelRefMutIterator;
 use rayon::iter::ParallelBridge;
@@ -10,7 +13,7 @@ use std::{
 
 use super::id::HandleId;
 use kira::{
-    manager::{AudioManager, AudioManagerSettings, DefaultBackend},
+    manager::{AudioManager, AudioManagerSettings},
     sound::{static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError},
     tween::Tween,
 };
@@ -44,11 +47,16 @@ static STREAMS: Lazy<Mutex<HashMap<HandleId, StreamingSoundHandle<FromFileError>
 
 impl Manager {
     pub fn try_lock<'a>() -> Result<MutexGuard<'a, AudioManager>, InternalError> {
-        static INSTANCE: OnceLock<Mutex<AudioManager<DefaultBackend>>> = OnceLock::new();
+        static INSTANCE: OnceLock<Mutex<AudioManager<CpalBackend>>> = OnceLock::new();
         INSTANCE
             .get_or_init(|| {
-                let manager = AudioManager::new(AudioManagerSettings::default())
-                    .expect("instantiate audio manager");
+                let mut backend_settings = CpalBackendSettings::default();
+                backend_settings.buffer_size = BufferSize::Fixed(512);
+                let manager = AudioManager::new(AudioManagerSettings {
+                    backend_settings,
+                    ..Default::default()
+                })
+                .expect("instantiate audio manager");
                 Mutex::new(manager)
             })
             .try_lock()

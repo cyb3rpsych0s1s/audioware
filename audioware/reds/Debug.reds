@@ -36,6 +36,8 @@ public static exec func TestDefineSubtitles(game: GameInstance) {
 }
 
 /// Game.TestAudioSystemPlay("dimanche_aux_goudes");
+/// Game.TestAudioSystemPlay("dok_mai_gab_jeh_gan");
+/// Game.TestAudioSystemPlay("ton");
 public static exec func TestAudioSystemPlay(game: GameInstance, name: String) {
     let cname = StringToName(name);
     GameInstance.GetAudioSystem(game).Play(cname);
