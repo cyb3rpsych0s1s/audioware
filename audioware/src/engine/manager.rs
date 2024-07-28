@@ -1,7 +1,10 @@
+use audioware_bank::Banks;
+use audioware_bank::Id;
 use cpal::BufferSize;
 use kira::manager::backend::cpal::CpalBackend;
 use kira::manager::backend::cpal::CpalBackendSettings;
 use kira::sound::PlaybackState;
+use kira::OutputDestination;
 use rayon::iter::IntoParallelRefMutIterator;
 use rayon::iter::ParallelBridge;
 use rayon::iter::ParallelIterator;
@@ -20,6 +23,7 @@ use kira::{
 use once_cell::sync::Lazy;
 use red4ext_rs::types::{CName, EntityId};
 
+use crate::error::Error;
 use crate::error::InternalError;
 
 pub struct Manager;
@@ -63,6 +67,45 @@ impl Manager {
             .map_err(|_| InternalError::Contention {
                 origin: "audio manager",
             })
+    }
+    pub fn play_and_store(
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        destination: Option<OutputDestination>,
+        tween: Option<Tween>,
+    ) -> Result<f32, Error> {
+        match Banks::data(id) {
+            either::Either::Left(mut data) => {
+                if tween.is_some() {
+                    data.settings.fade_in_tween = tween;
+                }
+                let duration = data.duration().as_secs_f32();
+                let handle = if let Some(destination) = destination {
+                    manager.play(data.output_destination(destination))
+                } else {
+                    manager.play(data)
+                }?;
+                let mut storage = StaticStorage::try_lock()?;
+                storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
+                Ok(duration)
+            }
+            either::Either::Right(mut data) => {
+                if tween.is_some() {
+                    data.settings.fade_in_tween = tween;
+                }
+                let duration = data.duration().as_secs_f32();
+                let handle = if let Some(destination) = destination {
+                    manager.play(data.output_destination(destination))
+                } else {
+                    manager.play(data)
+                }?;
+                let mut storage = StreamStorage::try_lock()?;
+                storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
+                Ok(duration)
+            }
+        }
     }
 }
 

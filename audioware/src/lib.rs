@@ -16,6 +16,7 @@ use utils::{plog_error, plog_info, plog_warn};
 mod engine;
 mod error;
 mod hooks;
+mod macros;
 mod states;
 mod types;
 mod utils;

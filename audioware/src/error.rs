@@ -1,5 +1,5 @@
 use audioware_manifest::ConversionError;
-use kira::ResourceLimitReached;
+use kira::{manager::error::PlaySoundError, sound::FromFileError, ResourceLimitReached};
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
@@ -10,7 +10,7 @@ pub enum Error {
     #[snafu(display("Internal error: {source}"))]
     Internal { source: InternalError },
     #[snafu(display("Engine error: {source}"))]
-    Engine { source: ResourceLimitReached },
+    Engine { source: EngineError },
     #[snafu(display("Scene error: {source}"))]
     Scene { source: SceneError },
 }
@@ -24,9 +24,18 @@ pub enum InternalError {
 }
 
 #[derive(Debug, Snafu)]
+pub enum EngineError {
+    #[snafu(display("Resource limit error: {source}"))]
+    Limit { source: ResourceLimitReached },
+    #[snafu(display("Play sound error: {source}"))]
+    Sound { source: PlaySoundError<()> },
+    FromFile {
+        source: PlaySoundError<FromFileError>,
+    },
+}
+
+#[derive(Debug, Snafu)]
 pub enum SceneError {
-    #[snafu(display("Only V can be registered as the listener."))]
-    InvalidListener,
     #[snafu(display("V cannot be registered as an emitter."))]
     InvalidEmitter,
 }
@@ -45,12 +54,30 @@ impl From<ConversionError> for Error {
 
 impl From<ResourceLimitReached> for Error {
     fn from(source: ResourceLimitReached) -> Self {
-        Self::Engine { source }
+        Self::Engine {
+            source: EngineError::Limit { source },
+        }
     }
 }
 
 impl From<SceneError> for Error {
     fn from(source: SceneError) -> Self {
         Self::Scene { source }
+    }
+}
+
+impl From<PlaySoundError<()>> for Error {
+    fn from(source: PlaySoundError<()>) -> Self {
+        Self::Engine {
+            source: EngineError::Sound { source },
+        }
+    }
+}
+
+impl From<PlaySoundError<FromFileError>> for Error {
+    fn from(source: PlaySoundError<FromFileError>) -> Self {
+        Self::Engine {
+            source: EngineError::FromFile { source },
+        }
     }
 }

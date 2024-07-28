@@ -38,9 +38,7 @@ pub struct Scene {
 
 impl Scene {
     pub fn setup(manager: &mut AudioManager, main: &TrackHandle) -> Result<(), Error> {
-        let mut scene = manager
-            .add_spatial_scene(SpatialSceneSettings::default())
-            .map_err(|source| Error::Engine { source })?;
+        let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
         let listener = scene.add_listener(
             Vec3::ZERO,
             Quat::IDENTITY,
@@ -103,9 +101,7 @@ impl Scene {
         let position = entity.get_world_position();
         let mut scene = Self::try_lock_scene()?;
         let mut emitters = Self::try_lock_emitters()?;
-        let emitter = scene
-            .add_emitter(position, EmitterSettings::default())
-            .map_err(|source| Error::Engine { source })?;
+        let emitter = scene.add_emitter(position, EmitterSettings::default())?;
         emitters.insert(EmitterId::new(entity_id, emitter_name), emitter);
         log::info!(
             Audioware::env(),

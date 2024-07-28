@@ -1,6 +1,5 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, ScnDialogLineType, SpokenLocale, WrittenLocale};
-use id::HandleId;
 use red4ext_rs::{
     log,
     types::{CName, EntityId, GameInstance, Opt, Ref},
@@ -9,6 +8,7 @@ use red4ext_rs::{
 
 use crate::{
     error::Error,
+    macros::{ok_or_return, some_or_return},
     states::State,
     types::{
         propagate_subtitles, AsAudioSystem, AsGameInstance, AudiowareTween, LocalizationPackage,
@@ -30,8 +30,6 @@ pub use eq::EqPass;
 pub use eq::Preset;
 pub use manager::Manage;
 pub use manager::Manager;
-pub use manager::StaticStorage;
-pub use manager::StreamStorage;
 pub use scene::Scene;
 pub use tracks::Tracks;
 
@@ -106,63 +104,23 @@ impl Engine {
             }
         };
         let spoken = SpokenLocale::get();
-        let gender = match PlayerGender::try_from(gender) {
-            Ok(x) => x,
-            Err(e) => {
-                log::error!(Audioware::env(), "Play over the phone: {e}");
-                return;
-            }
-        };
-        let id = match Banks::try_get(&event_name, &spoken, Some(&gender)) {
-            Ok(x) => x,
-            Err(e) => {
-                log::error!(Audioware::env(), "Unable to get sound ID: {e}");
-                return;
-            }
-        };
-        #[allow(unused_assignments)]
-        let mut duration: f32 = 3.0;
-        match Banks::data(id) {
-            either::Either::Left(data) => {
-                duration = data.duration().as_secs_f32();
-                let handle = manager.play(data).unwrap();
-                match StaticStorage::try_lock() {
-                    Ok(mut x) => {
-                        x.insert(HandleId::new(id, None, Some(emitter_name)), handle);
-                    }
-                    Err(e) => {
-                        log::error!(Audioware::env(), "Unable to store static sound handle: {e}");
-                    }
-                }
-            }
-            either::Either::Right(data) => {
-                duration = data.duration().as_secs_f32();
-                let handle = manager.play(data).unwrap();
-                match StreamStorage::try_lock() {
-                    Ok(mut x) => {
-                        x.insert(HandleId::new(id, None, Some(emitter_name)), handle);
-                    }
-                    Err(e) => {
-                        log::error!(
-                            Audioware::env(),
-                            "Unable to store streaming sound handle: {e}"
-                        );
-                    }
-                }
-            }
-        }
-        log::info!(
-            Audioware::env(),
-            "about to call propagate subtitle ({})",
-            emitter_name
+        let gender = ok_or_return!(PlayerGender::try_from(gender), "Play over the phone");
+        let id = ok_or_return!(
+            Banks::try_get(&event_name, &spoken, Some(&gender)),
+            "Unable to get sound ID"
         );
-        propagate_subtitles(
-            event_name,
-            todo!(),
-            emitter_name,
-            ScnDialogLineType::Holocall,
-            duration,
+        let _duration = ok_or_return!(
+            Manager::play_and_store(&mut manager, id, None, Some(emitter_name), None, None),
+            "Unable to store sound handle"
         );
+        // FIXME:
+        // propagate_subtitles(
+        //     event_name,
+        //     todo!(),
+        //     emitter_name,
+        //     ScnDialogLineType::Holocall,
+        //     duration,
+        // );
     }
     /// play sound
     pub fn play(
@@ -172,68 +130,21 @@ impl Engine {
         line_type: Opt<ScnDialogLineType>,
         tween: Ref<AudiowareTween>,
     ) {
-        let mut manager = match Manager::try_lock() {
-            Ok(x) => x,
-            Err(e) => {
-                log::error!(Audioware::env(), "Unable to get audio manager: {e}");
-                return;
-            }
-        };
+        let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
         let spoken = SpokenLocale::get();
         let gender = PlayerGender::get();
         let entity_id = entity_id.into_option();
         let emitter_name = emitter_name.into_option();
-        let id = match Banks::try_get(&sound_name, &spoken, gender.as_ref()) {
-            Ok(x) => x,
-            Err(e) => {
-                log::error!(Audioware::env(), "Unable to get sound ID: {e}");
-                return;
-            }
-        };
+        let id = ok_or_return!(
+            Banks::try_get(&sound_name, &spoken, gender.as_ref()),
+            "Unable to get sound ID"
+        );
+
         // TODO: output destination
         let tween = tween.into_tween();
-        #[allow(unused_assignments)]
-        let mut duration: f32 = 3.0;
-        match Banks::data(id) {
-            either::Either::Left(mut data) => {
-                if tween.is_some() {
-                    data.settings.fade_in_tween = tween;
-                }
-                duration = data.duration().as_secs_f32();
-                let handle = manager.play(data).unwrap();
-                match StaticStorage::try_lock() {
-                    Ok(mut x) => {
-                        x.insert(HandleId::new(id, entity_id, emitter_name), handle);
-                    }
-                    Err(e) => {
-                        log::error!(Audioware::env(), "Unable to store static sound handle: {e}");
-                    }
-                }
-            }
-            either::Either::Right(mut data) => {
-                if tween.is_some() {
-                    data.settings.fade_in_tween = tween;
-                }
-                duration = data.duration().as_secs_f32();
-                let handle = manager.play(data).unwrap();
-                match StreamStorage::try_lock() {
-                    Ok(mut x) => {
-                        x.insert(HandleId::new(id, entity_id, emitter_name), handle);
-                    }
-                    Err(e) => {
-                        log::error!(
-                            Audioware::env(),
-                            "Unable to store streaming sound handle: {e}"
-                        );
-                    }
-                }
-            }
-        }
-        log::info!(
-            Audioware::env(),
-            "about to call propagate subtitle ({:?}, {:?})",
-            entity_id,
-            emitter_name
+        let duration = ok_or_return!(
+            Manager::play_and_store(&mut manager, id, entity_id, emitter_name, None, tween),
+            "Unable to store sound handle"
         );
         if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
             propagate_subtitles(
@@ -313,76 +224,31 @@ impl Engine {
         emitter_name: CName,
         tween: Ref<AudiowareTween>,
     ) {
-        let mut manager = match Manager::try_lock() {
-            Ok(x) => x,
-            Err(e) => {
-                log::error!(Audioware::env(), "Unable to get audio manager: {e}");
-                return;
-            }
-        };
+        let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
         let spoken = SpokenLocale::get();
         let written = WrittenLocale::get();
         let gender = PlayerGender::get();
-        let id = match Banks::try_get(&sound_name, &spoken, gender.as_ref()) {
-            Ok(x) => x,
-            Err(e) => {
-                log::error!(Audioware::env(), "Unable to get sound ID: {e}");
-                return;
-            }
-        };
-        let destination = match Scene::output_destination(&entity_id) {
-            Some(x) => x,
-            None => {
-                log::error!(
-                    Audioware::env(),
-                    "Entity is not registered as emitter: {entity_id:?}"
-                );
-                return;
-            }
-        };
-        let mut duration: f32 = 3.0;
+        let id = ok_or_return!(
+            Banks::try_get(&sound_name, &spoken, gender.as_ref()),
+            "Unable to get sound ID"
+        );
+        let destination = some_or_return!(
+            Scene::output_destination(&entity_id),
+            "Entity is not registered as emitter",
+            entity_id
+        );
         let tween = tween.into_tween();
-        match Banks::data(id) {
-            either::Either::Left(mut data) => {
-                if tween.is_some() {
-                    data.settings.fade_in_tween = tween;
-                }
-                duration = data.duration().as_secs_f32();
-                let handle = manager.play(data.output_destination(destination)).unwrap();
-                match StaticStorage::try_lock() {
-                    Ok(mut x) => {
-                        x.insert(
-                            HandleId::new(id, Some(entity_id), Some(emitter_name)),
-                            handle,
-                        );
-                    }
-                    Err(e) => {
-                        log::error!(Audioware::env(), "Unable to store static sound handle: {e}");
-                    }
-                }
-            }
-            either::Either::Right(mut data) => {
-                if tween.is_some() {
-                    data.settings.fade_in_tween = tween;
-                }
-                duration = data.duration().as_secs_f32();
-                let handle = manager.play(data.output_destination(destination)).unwrap();
-                match StreamStorage::try_lock() {
-                    Ok(mut x) => {
-                        x.insert(
-                            HandleId::new(id, Some(entity_id), Some(emitter_name)),
-                            handle,
-                        );
-                    }
-                    Err(e) => {
-                        log::error!(
-                            Audioware::env(),
-                            "Unable to store streaming sound handle: {e}"
-                        );
-                    }
-                }
-            }
-        }
+        let duration = ok_or_return!(
+            Manager::play_and_store(
+                &mut manager,
+                id,
+                Some(entity_id),
+                Some(emitter_name),
+                Some(destination),
+                tween,
+            ),
+            "Unable to store sound handle"
+        );
         propagate_subtitles(
             sound_name,
             entity_id,
@@ -415,16 +281,12 @@ impl Engine {
             return;
         }
         let tracks = Tracks::get();
-        match tracks.reverb.try_lock() {
-            Ok(ref mut x) => x.set_volume(kira::Volume::Amplitude(value as f64), IMMEDIATELY),
-            Err(e) => log::error!(Audioware::env(), "Unable to set reverb volume: {e}"),
-        }
+        let mut reverb = ok_or_return!(tracks.reverb.try_lock(), "Unable to set reverb volume");
+        reverb.set_volume(kira::Volume::Amplitude(value as f64), IMMEDIATELY);
     }
     pub fn set_player_preset(value: Preset) {
         let tracks = Tracks::get();
-        match tracks.v.eq.try_lock() {
-            Ok(ref mut x) => x.set_preset(value),
-            Err(e) => log::error!(Audioware::env(), "Unable to set EQ preset: {e}"),
-        }
+        let mut eq = ok_or_return!(tracks.v.eq.try_lock(), "Unable to set EQ preset");
+        eq.set_preset(value);
     }
 }
