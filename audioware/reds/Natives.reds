@@ -35,13 +35,13 @@ private native func SetPlayerReverb(value: Float) -> Void;
 private native func SetPlayerPreset(value: Preset) -> Void;
 
 public native func PlayOverThePhone(eventName: CName, emitterName: CName, gender: CName) -> Void;
-public native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt tween: ref<AudiowareTween>) -> Void;
-public native func Stop(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<AudiowareTween>) -> Void;
-public native func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<AudiowareTween>, opt switchValueTween: ref<AudiowareTween>) -> Void;
+public native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, line: scnDialogLineType, tween: ref<AudiowareTween>) -> Void;
+public native func Stop(eventName: CName, opt entityID: EntityID, opt emitterName: CName, tween: ref<AudiowareTween>) -> Void;
+public native func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, switchNameTween: ref<AudiowareTween>, switchValueTween: ref<AudiowareTween>) -> Void;
 public native func Pause(opt tween: ref<AudiowareTween>) -> Void;
 public native func Resume(opt tween: ref<AudiowareTween>) -> Void;
 
-public native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<AudiowareTween>) -> Void;
+public native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, tween: ref<AudiowareTween>) -> Void;
 public native func StopOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<AudiowareTween>) -> Void;
 
 enum GameState {

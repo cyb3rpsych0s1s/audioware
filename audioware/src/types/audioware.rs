@@ -4,9 +4,12 @@ use audioware_manifest::ScnDialogLineType;
 use kira::tween::{Easing, Tween};
 use red4ext_rs::{
     class_kind::Scripted,
-    types::{CName, EntityId, IScriptable, Ref},
-    NativeRepr, RttiSystem, ScriptClass,
+    log,
+    types::{CName, EntityId, Ref},
+    NativeRepr, PluginOps, RttiSystem, ScriptClass,
 };
+
+use crate::Audioware;
 
 pub fn propagate_subtitles(
     reaction: CName,
@@ -39,27 +42,28 @@ pub fn propagate_subtitles(
 #[repr(i64)]
 pub enum AudiowareEasing {
     #[default]
-    InPowi = 0,
-    OutPowi = 1,
-    InOutPowi = 2,
+    InPowf = 0,
+    OutPowf = 1,
+    InOutPowf = 2,
 }
 unsafe impl NativeRepr for AudiowareEasing {
     const NAME: &'static str = "AudiowareEasing";
 }
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct AudiowareTween {
-    base: IScriptable,
-    /// delay before starting: in milliseconds
-    start_time: u32,
-    /// tween duration: in milliseconds
-    duration: u32,
+    /// delay before starting: in seconds
+    start_time: f32,
+    /// tween duration: in seconds
+    duration: f32,
 }
 unsafe impl ScriptClass for AudiowareTween {
     type Kind = Scripted;
     const NAME: &'static str = "AudiowareTween";
 }
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct AudiowareLinearTween {
     base: AudiowareTween,
@@ -69,13 +73,14 @@ unsafe impl ScriptClass for AudiowareLinearTween {
     const NAME: &'static str = "AudiowareLinearTween";
 }
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct AudiowareElasticTween {
     base: AudiowareTween,
     /// tween curve
     easing: AudiowareEasing,
     /// tween curve intensity
-    value: i32,
+    value: f32,
 }
 unsafe impl ScriptClass for AudiowareElasticTween {
     type Kind = Scripted;
@@ -92,47 +97,81 @@ impl ToTween for Ref<AudiowareTween> {
             return None;
         }
         if self.is_a::<AudiowareLinearTween>() {
-            return Some(
-                unsafe { self.cast::<AudiowareLinearTween>().unwrap().fields() }
-                    .unwrap()
-                    .into(),
-            );
+            return self
+                .clone()
+                .cast::<AudiowareLinearTween>()
+                .unwrap()
+                .into_tween();
         }
         if self.is_a::<AudiowareElasticTween>() {
-            return Some(
-                unsafe { self.cast::<AudiowareElasticTween>().unwrap().fields() }
-                    .unwrap()
-                    .into(),
-            );
+            return self
+                .clone()
+                .cast::<AudiowareElasticTween>()
+                .unwrap()
+                .into_tween();
         }
         None
     }
 }
 
-impl<'a> From<&'a AudiowareLinearTween> for Tween {
-    fn from(value: &'a AudiowareLinearTween) -> Self {
-        Self {
-            start_time: kira::StartTime::Delayed(Duration::from_millis(
-                value.base.start_time as u64,
-            )),
-            duration: Duration::from_millis(value.base.start_time as u64),
-            easing: Easing::Linear,
+impl ToTween for Ref<AudiowareLinearTween> {
+    fn into_tween(self) -> Option<Tween> {
+        if self.is_null() {
+            return None;
         }
+        let value = unsafe { self.fields() }.unwrap();
+        let start_time = if value.base.start_time.is_finite() {
+            value.base.start_time
+        } else {
+            log::error!(Audioware::env(), "start_time must be finite");
+            0.
+        };
+        let duration = if value.base.duration.is_finite() {
+            value.base.duration
+        } else {
+            log::error!(Audioware::env(), "duration must be finite");
+            0.
+        };
+        Some(Tween {
+            start_time: kira::StartTime::Delayed(Duration::from_secs_f32(start_time)),
+            duration: Duration::from_secs_f32(duration),
+            easing: Easing::Linear,
+        })
     }
 }
 
-impl<'a> From<&'a AudiowareElasticTween> for Tween {
-    fn from(value: &'a AudiowareElasticTween) -> Self {
-        Self {
-            start_time: kira::StartTime::Delayed(Duration::from_millis(
-                value.base.start_time as u64,
-            )),
-            duration: Duration::from_millis(value.base.start_time as u64),
-            easing: match value.easing {
-                AudiowareEasing::InPowi => Easing::InPowi(value.value),
-                AudiowareEasing::OutPowi => Easing::OutPowi(value.value),
-                AudiowareEasing::InOutPowi => Easing::InOutPowi(value.value),
-            },
+impl ToTween for Ref<AudiowareElasticTween> {
+    fn into_tween(self) -> Option<Tween> {
+        if self.is_null() {
+            return None;
         }
+        let value = unsafe { self.fields() }.unwrap();
+        let start_time = if value.base.start_time.is_finite() {
+            value.base.start_time
+        } else {
+            log::error!(Audioware::env(), "start_time must be finite");
+            0.
+        };
+        let duration = if value.base.duration.is_finite() {
+            value.base.duration
+        } else {
+            log::error!(Audioware::env(), "duration must be finite");
+            0.
+        };
+        let easing_value = if value.value.is_finite() {
+            value.value
+        } else {
+            log::error!(Audioware::env(), "easing value must be finite");
+            0.
+        };
+        Some(Tween {
+            start_time: kira::StartTime::Delayed(Duration::from_secs_f32(start_time)),
+            duration: Duration::from_secs_f32(duration),
+            easing: match value.easing {
+                AudiowareEasing::InPowf => Easing::InPowf(easing_value as f64),
+                AudiowareEasing::OutPowf => Easing::OutPowf(easing_value as f64),
+                AudiowareEasing::InOutPowf => Easing::InOutPowf(easing_value as f64),
+            },
+        })
     }
 }

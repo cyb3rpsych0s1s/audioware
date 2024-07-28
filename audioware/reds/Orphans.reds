@@ -1,21 +1,21 @@
 enum AudiowareEasing {
-    InPowi = 0,
-    OutPowi = 1,
-    InOutPowi = 2,
+    InPowf = 0,
+    OutPowf = 1,
+    InOutPowf = 2,
 }
 
 public abstract class AudiowareTween extends IScriptable {
-    /// delay before starting: in milliseconds
-    public let startTime: Uint32;
-    /// tween duration: in milliseconds
-    public let duration: Uint32;
-    public func StartTime() -> Uint32 { return this.startTime; }
-    public func Duration() -> Uint32  { return this.duration;  }
+    /// delay before starting: in seconds
+    public let startTime: Float;
+    /// tween duration: in seconds
+    public let duration: Float;
+    public func StartTime() -> Float { return this.startTime; }
+    public func Duration() -> Float  { return this.duration;  }
 }
 public class AudiowareLinearTween extends AudiowareTween {
-    static public func Immediate(duration: Uint32) -> ref<AudiowareLinearTween> {
+    static public func Immediate(duration: Float) -> ref<AudiowareLinearTween> {
         let me = new AudiowareLinearTween();
-        me.startTime = 0u;
+        me.startTime = 0.;
         me.duration = duration;
         return me;
     }
@@ -24,27 +24,27 @@ public class AudiowareElasticTween extends AudiowareTween {
     /// tween curve
     public let easing: AudiowareEasing;
     /// tween curve intensity
-    public let value: Int32;
+    public let value: Float;
     public func Easing() -> AudiowareEasing { return this.easing; }
-    public func Value() -> Int32            { return this.value;  }
-    static public func Immediate(duration: Uint32, value: Int32, easing: AudiowareEasing) -> ref<AudiowareElasticTween> {
+    public func Value() -> Float            { return this.value;  }
+    static public func Immediate(duration: Float, value: Float, easing: AudiowareEasing) -> ref<AudiowareElasticTween> {
         let me = new AudiowareElasticTween();
-        me.startTime = 0u;
+        me.startTime = 0.;
         me.duration = duration;
         me.easing = easing;
         me.value = value;
         return me;
     }
-    static public func ImmediateIn(duration: Uint32, value: Int32) -> ref<AudiowareElasticTween> {
-        let me = AudiowareElasticTween.Immediate(duration, value, AudiowareEasing.InPowi);
+    static public func ImmediateIn(duration: Float, value: Float) -> ref<AudiowareElasticTween> {
+        let me = AudiowareElasticTween.Immediate(duration, value, AudiowareEasing.InPowf);
         return me;
     }
-    static public func ImmediateOut(duration: Uint32, value: Int32) -> ref<AudiowareElasticTween> {
-        let me = AudiowareElasticTween.Immediate(duration, value, AudiowareEasing.OutPowi);
+    static public func ImmediateOut(duration: Float, value: Float) -> ref<AudiowareElasticTween> {
+        let me = AudiowareElasticTween.Immediate(duration, value, AudiowareEasing.OutPowf);
         return me;
     }
-    static public func ImmediateInOut(duration: Uint32, value: Int32) -> ref<AudiowareElasticTween> {
-        let me = AudiowareElasticTween.Immediate(duration, value, AudiowareEasing.InOutPowi);
+    static public func ImmediateInOut(duration: Float, value: Float) -> ref<AudiowareElasticTween> {
+        let me = AudiowareElasticTween.Immediate(duration, value, AudiowareEasing.InOutPowf);
         return me;
     }
 }

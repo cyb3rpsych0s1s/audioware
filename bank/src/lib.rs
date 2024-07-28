@@ -355,7 +355,7 @@ impl Banks {
                 ) {
                     Ok(x) => {
                         manifest = x;
-                    },
+                    }
                     Err(e) => {
                         errors.push(e.into());
                         continue;

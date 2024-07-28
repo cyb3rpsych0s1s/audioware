@@ -35,10 +35,25 @@ public static exec func TestDefineSubtitles(game: GameInstance) {
     FTLog(AsRef(text));
 }
 
-/// Game.TestAudioSystemPlay("ono_v_effort_short");
-/// Game.TestAudioSystemPlay("nah_everything_is_all_good");
-/// Game.TestAudioSystemPlay("as_if_I_didnt_know_already");
+/// Game.TestAudioSystemPlay("dimanche_aux_goudes");
 public static exec func TestAudioSystemPlay(game: GameInstance, name: String) {
+    let cname = StringToName(name);
+    GameInstance.GetAudioSystem(game).Play(cname);
+}
+
+/// Game.TestAudioSystemStopSmoothly("dimanche_aux_goudes");
+public static exec func TestAudioSystemStopSmoothly(game: GameInstance, name: String) {
+    let cname = StringToName(name);
+    let tween = AudiowareLinearTween.Immediate(5.);
+    let nope: EntityID;
+    let none: CName;
+    GameInstance.GetAudioSystem(game).Stop(cname, nope, none, tween);
+}
+
+/// Game.TestAudioSystemPlayOnV("ono_v_effort_short");
+/// Game.TestAudioSystemPlayOnV("nah_everything_is_all_good");
+/// Game.TestAudioSystemPlayOnV("as_if_I_didnt_know_already");
+public static exec func TestAudioSystemPlayOnV(game: GameInstance, name: String) {
     let cname = StringToName(name);
     let player = GetPlayer(game);
     GameInstance.GetAudioSystem(game).Play(cname, player.GetEntityID(), n"V");
