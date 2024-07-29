@@ -110,17 +110,17 @@ impl Engine {
             "Unable to get sound ID"
         );
         let _duration = ok_or_return!(
-            Manager::play_and_store(&mut manager, id, None, Some(emitter_name), None, None),
+            Manager::play_and_store(
+                &mut manager,
+                id,
+                None,
+                Some(emitter_name),
+                Some(Tracks::holocall_destination()),
+                None
+            ),
             "Unable to store sound handle"
         );
-        // FIXME:
-        // propagate_subtitles(
-        //     event_name,
-        //     todo!(),
-        //     emitter_name,
-        //     ScnDialogLineType::Holocall,
-        //     duration,
-        // );
+        // TODO: handle convo?
     }
     /// play sound
     pub fn play(

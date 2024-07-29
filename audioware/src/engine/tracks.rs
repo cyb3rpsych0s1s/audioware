@@ -5,6 +5,7 @@ use kira::{
     effect::reverb::ReverbBuilder,
     manager::AudioManager,
     track::{TrackBuilder, TrackHandle},
+    OutputDestination,
 };
 use v::V;
 
@@ -53,5 +54,8 @@ impl Tracks {
     }
     pub fn get() -> &'static Tracks {
         TRACKS.get().unwrap()
+    }
+    pub fn holocall_destination() -> OutputDestination {
+        (&Tracks::get().holocall.main).into()
     }
 }
