@@ -13,13 +13,14 @@ crate-type = ["cdylib"]
 [dependencies]
 audioware-bank.workspace = true
 audioware-manifest.workspace = true
-cpal = "0.15.3"
+cpal = "0.15"
 either.workspace = true
-glam = { version = "0.27.0", features = ["mint"] }
+glam = { version = "0.28", features = ["mint"] }
 kira.workspace = true
 mint = { version = "0.5" }
-once_cell = "1.19.0"
+once_cell = "1.19"
 rayon.workspace = true
 red4ext-rs.workspace = true
+rust-ini = "0.21"
 snafu.workspace = true
 snowflake.workspace = true

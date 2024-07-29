@@ -28,8 +28,6 @@ mod sound_play_vo;
 pub use sound_play_vo::*;
 mod vector4;
 pub use vector4::*;
-mod voice_event;
-pub use voice_event::*;
 mod world_position;
 pub use world_position::*;
 mod world_transform;

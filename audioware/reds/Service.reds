@@ -25,9 +25,12 @@ class AudiowareService extends ScriptableService {
         this.handler = GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Entity/Uninitialize", this, n"OnDespawn")
             .AddTarget(EntityTarget.Type(n"PlayerPuppet"));
+
+        this.RegisterOnLoad();
     }
 
     private cb func OnUninitialize() {
+        this.UnregisterOnUninitialize();
         this.handler = null;
     }
 
@@ -83,11 +86,26 @@ class AudiowareService extends ScriptableService {
         this.handler.RemoveTarget(target);
     }
 
-    public func BufferSize() -> Int32 { return EnumInt(this.config.bufferSize); }
-
     public static func GetInstance() -> ref<AudiowareService> {
         return GameInstance
         .GetScriptableServiceContainer()
         .GetService(n"Audioware.AudiowareService") as AudiowareService;
+    }
+
+    // audio config
+
+    @if(ModuleExists("ModSettingsModule"))
+    private func RegisterOnLoad() { ModSettings.RegisterListenerToModifications(this); }
+    @if(ModuleExists("ModSettingsModule"))
+    private func UnregisterOnUninitialize() { ModSettings.UnregisterListenerToModifications(this); }
+
+    @if(!ModuleExists("ModSettingsModule"))
+    private func RegisterOnLoad() -> Void {}
+    @if(!ModuleExists("ModSettingsModule"))
+    private func UnregisterOnUninitialize() -> Void {}
+    
+    public func OnModSettingsChange() { this.RefreshConfig(); }
+    public func RefreshConfig() -> Void {
+        this.config = new AudiowareConfig();
     }
 }

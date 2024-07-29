@@ -14,7 +14,6 @@ mod offsets {
     
     // events handler
     pub(super) const SOUND_PLAY_VO_HANDLER: u32 = 0x9E0C26F5; // 0x1409C20DC
-    pub(super) const VOICE_PLAY_HANDLER: u32    = 0x5D241BD5; // 0x142472608
     pub(super) const DIALOG_LINE_HANDLER: u32   = 0x10E71E89; // 0x1409C12A8
     pub(super) const DIALOG_LINE_END_HANDLER: u32= 0x6F24331; // 0x141188BF4
 }
@@ -30,4 +29,3 @@ pub mod switch;
 pub mod dialog_line;
 pub mod dialog_line_end;
 pub mod sound_play_vo;
-pub mod voice_play_event;

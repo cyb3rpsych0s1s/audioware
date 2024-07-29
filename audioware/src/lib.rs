@@ -55,11 +55,10 @@ impl Audioware {
         );
     }
 
-    fn load_engine(env: &SdkEnv) -> Result<(), Error> {
+    fn load_engine(env: &SdkEnv) {
         if let Err(e) = Engine::setup() {
             log::error!(env, "Unable to load engine: {e}");
         }
-        Ok(())
     }
 
     fn attach_hooks(env: &SdkEnv) {
@@ -77,7 +76,6 @@ impl Audioware {
             dialog_line::attach_hook(env);
             dialog_line_end::attach_hook(env);
             sound_play_vo::attach_hook(env);
-            voice_play_event::attach_hook(env);
         }
     }
 }
@@ -91,9 +89,7 @@ impl Plugin for Audioware {
         GameState::set(GameState::Load);
         Self::register_listeners(env);
         Self::load_banks(env);
-        if let Err(e) = Self::load_engine(env) {
-            log::error!(env, "Unable to load engine: {e}");
-        }
+        Self::load_engine(env);
         Self::attach_hooks(env);
     }
 

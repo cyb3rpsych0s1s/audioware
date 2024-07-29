@@ -142,7 +142,7 @@ pub fn ensure_valid_audio(
     };
     ensure_valid_audio_settings(&data, settings)?;
     if let Some(captions) = captions {
-        ensure_valid_jingle_captions(&data, settings, captions)?;
+        ensure_valid_jingle_captions(&data, captions)?;
     }
     Ok(data)
 }
@@ -171,7 +171,6 @@ pub fn ensure_valid_audio_settings(
 
 pub fn ensure_valid_jingle_captions(
     audio: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
-    settings: Option<&Settings>,
     captions: &[Caption],
 ) -> Result<(), Error> {
     if !captions.is_empty() {

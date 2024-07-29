@@ -70,13 +70,13 @@ where
     }
 }
 
-fn try_get_folder(folder: impl AsRef<Path>) -> Result<PathBuf, Error> {
+pub fn try_get_folder(folder: impl AsRef<Path>) -> Result<PathBuf, Error> {
     let current_folder = std::env::current_exe().context(BinaryLocationSnafu)?;
     Ok(current_folder
         .parent()
-        .context(NoFolderSnafu { folder: "plugins" })?
+        .context(NoFolderSnafu { folder: "x64" })?
         .parent()
-        .context(NoFolderSnafu { folder: "red4ext" })?
+        .context(NoFolderSnafu { folder: "bin" })?
         .parent()
         .context(NoFolderSnafu {
             folder: "Cyberpunk 2077",

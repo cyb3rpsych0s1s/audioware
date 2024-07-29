@@ -8,6 +8,8 @@ use kira::OutputDestination;
 use rayon::iter::IntoParallelRefMutIterator;
 use rayon::iter::ParallelBridge;
 use rayon::iter::ParallelIterator;
+use red4ext_rs::log;
+use red4ext_rs::PluginOps;
 use std::ops::DerefMut;
 use std::{
     collections::HashMap,
@@ -23,10 +25,10 @@ use kira::{
 use once_cell::sync::Lazy;
 use red4ext_rs::types::{CName, EntityId};
 
-use crate::config::buffer_size;
 use crate::config::AudiowareBufferSize;
 use crate::error::Error;
 use crate::error::InternalError;
+use crate::Audioware;
 
 pub struct Manager;
 
@@ -57,10 +59,14 @@ impl Manager {
         INSTANCE
             .get_or_init(|| {
                 let mut backend_settings = CpalBackendSettings::default();
-                if let Some(buffer_size) = buffer_size() {
-                    if buffer_size != AudiowareBufferSize::Auto {
-                        backend_settings.buffer_size = BufferSize::Fixed(buffer_size as u32);
-                    }
+                let buffer_size = AudiowareBufferSize::read_ini();
+                if buffer_size != AudiowareBufferSize::Auto {
+                    backend_settings.buffer_size = BufferSize::Fixed(buffer_size as u32);
+                    log::info!(
+                        Audioware::env(),
+                        "buffer size read from .ini: {}",
+                        buffer_size as u32
+                    );
                 }
                 let manager = AudioManager::new(AudioManagerSettings {
                     backend_settings,

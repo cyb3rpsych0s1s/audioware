@@ -23,10 +23,14 @@ pub enum Error {
     },
 }
 
-#[derive(Debug, Snafu)]
+#[derive(Debug, Snafu, PartialEq)]
 pub enum ConversionError {
     #[snafu(display("invalid locale: {value}"), visibility(pub))]
     InvalidLocale { value: String },
     #[snafu(display("invalid gender: {value}"), visibility(pub))]
     InvalidGender { value: String },
+    #[snafu(display("invalid buffer size: {value}"), visibility(pub))]
+    InvalidBufferSize { value: String },
+    #[snafu(display("missing buffer size"), visibility(pub))]
+    MissingBufferSize,
 }
