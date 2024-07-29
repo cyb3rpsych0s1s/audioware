@@ -63,6 +63,7 @@ impl Audioware {
     }
 
     fn attach_hooks(env: &SdkEnv) {
+        // native methods
         load_save_in_game::attach_hook(env);
         on_transform_updated::attach_hook(env);
         parameter::attach_hook(env);
@@ -70,6 +71,14 @@ impl Audioware {
         play_on_emitter::attach_hook(env);
         stop::attach_hook(env);
         switch::attach_hook(env);
+        // native event handlers
+        #[cfg(debug_assertions)]
+        {
+            dialog_line::attach_hook(env);
+            dialog_line_end::attach_hook(env);
+            sound_play_vo::attach_hook(env);
+            voice_play_event::attach_hook(env);
+        }
     }
 }
 

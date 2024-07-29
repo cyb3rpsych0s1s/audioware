@@ -7,8 +7,12 @@ use red4ext_rs::{
 
 mod audio_system;
 pub use audio_system::*;
+mod dialog_line;
+pub use dialog_line::*;
 mod entity;
 pub use entity::*;
+mod event;
+pub use event::*;
 mod fixed_point;
 pub use fixed_point::*;
 mod game_object;
@@ -20,8 +24,12 @@ mod puppet;
 pub use puppet::*;
 mod quaternion;
 pub use quaternion::*;
+mod sound_play_vo;
+pub use sound_play_vo::*;
 mod vector4;
 pub use vector4::*;
+mod voice_event;
+pub use voice_event::*;
 mod world_position;
 pub use world_position::*;
 mod world_transform;
