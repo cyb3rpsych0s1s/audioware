@@ -2,6 +2,7 @@ module Audioware
 
 class AudiowareService extends ScriptableService {
     private let handler: ref<CallbackSystemHandler>;
+    private let config: ref<AudiowareConfig>;
 
     private cb func OnLoad() {
         // game session state
@@ -81,6 +82,8 @@ class AudiowareService extends ScriptableService {
     public func RemoveTarget(target: ref<CallbackSystemTarget>) {
         this.handler.RemoveTarget(target);
     }
+
+    public func BufferSize() -> Int32 { return EnumInt(this.config.bufferSize); }
 
     public static func GetInstance() -> ref<AudiowareService> {
         return GameInstance

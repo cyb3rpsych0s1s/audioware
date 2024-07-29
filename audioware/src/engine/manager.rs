@@ -23,6 +23,8 @@ use kira::{
 use once_cell::sync::Lazy;
 use red4ext_rs::types::{CName, EntityId};
 
+use crate::config::buffer_size;
+use crate::config::AudiowareBufferSize;
 use crate::error::Error;
 use crate::error::InternalError;
 
@@ -55,7 +57,11 @@ impl Manager {
         INSTANCE
             .get_or_init(|| {
                 let mut backend_settings = CpalBackendSettings::default();
-                backend_settings.buffer_size = BufferSize::Fixed(512);
+                if let Some(buffer_size) = buffer_size() {
+                    if buffer_size != AudiowareBufferSize::Auto {
+                        backend_settings.buffer_size = BufferSize::Fixed(buffer_size as u32);
+                    }
+                }
                 let manager = AudioManager::new(AudioManagerSettings {
                     backend_settings,
                     ..Default::default()

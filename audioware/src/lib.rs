@@ -13,6 +13,7 @@ use states::{GameState, State};
 use types::{AsAudioSystem, AudioSystem, GameObject, Vector4};
 use utils::{plog_error, plog_info, plog_warn};
 
+mod config;
 mod engine;
 mod error;
 mod hooks;
