@@ -8,7 +8,7 @@ hooks! {
 
 #[allow(clippy::missing_transmute_annotations)]
 pub fn attach_hook(env: &SdkEnv) {
-    let addr = addr_hashes::resolve(super::offsets::SOUND_PLAY_VO_HANDLER);
+    let addr = addr_hashes::resolve(crate::hooks::offsets::SOUND_PLAY_VO_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
     log::info!(env, "attached hook for SoundPlayVO event handler");

@@ -12,7 +12,8 @@ hooks! {
 
 #[allow(clippy::missing_transmute_annotations)]
 pub fn attach_hook(env: &SdkEnv) {
-    let addr = addr_hashes::resolve(super::offsets::STOP_TAGGED_SOUNDS_OR_SOUND_PARAMETER_HANDLER);
+    let addr =
+        addr_hashes::resolve(crate::hooks::offsets::STOP_TAGGED_SOUNDS_OR_SOUND_PARAMETER_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
     log::info!(

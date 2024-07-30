@@ -2,7 +2,7 @@ use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, PluginOps, SdkEnv}
 use std::mem;
 
 use crate::{
-    types::{Event, SoundSwitch, StopSound},
+    types::{Event, PlaySound, StopSound},
     Audioware,
 };
 
@@ -12,10 +12,10 @@ hooks! {
 
 #[allow(clippy::missing_transmute_annotations)]
 pub fn attach_hook(env: &SdkEnv) {
-    let addr = addr_hashes::resolve(super::offsets::STOP_OR_SWITCH_SOUND_HANDLER);
+    let addr = addr_hashes::resolve(crate::hooks::offsets::PLAY_OR_STOP_SOUND_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for StopSound/SoundSwitch event handler");
+    log::info!(env, "attached hook for PlaySound/StopSound event handler");
 }
 
 #[allow(unused_variables)]
@@ -26,17 +26,23 @@ unsafe extern "C" fn detour(
 ) {
     if !a2.is_null() {
         let event = unsafe { &*a2 };
-        if event.as_ref().as_serializable().is_a::<SoundSwitch>() {
-            let &SoundSwitch {
-                switch_name,
-                switch_value,
+        if event.as_ref().as_serializable().is_a::<PlaySound>() {
+            let &PlaySound {
+                sound_name,
+                emitter_name,
+                audio_tag,
+                seek_time,
+                play_unique,
                 ..
-            } = unsafe { mem::transmute::<&Event, &SoundSwitch>(event) };
+            } = unsafe { mem::transmute::<&Event, &PlaySound>(event) };
             log::info!(
                 Audioware::env(),
-                "intercepted SoundSwitch:
-- switch_name: {switch_name}
-- switch_value: {switch_value}",
+                "intercepted PlaySound:
+- sound_name: {sound_name}
+- emitter_name: {emitter_name}
+- audio_tag: {audio_tag}
+- seek_time: {seek_time}
+- play_unique: {play_unique}",
             );
         } else if event.as_ref().as_serializable().is_a::<StopSound>() {
             let &StopSound { sound_name, .. } =
@@ -54,7 +60,7 @@ unsafe extern "C" fn detour(
             );
         }
     } else {
-        log::info!(Audioware::env(), "intercepted StopSound/SoundSwitch (null)");
+        log::info!(Audioware::env(), "intercepted PlaySound/StopSound (null)");
     }
 
     cb(a1, a2);
