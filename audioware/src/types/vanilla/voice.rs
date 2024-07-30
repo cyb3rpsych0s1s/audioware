@@ -102,6 +102,7 @@ unsafe impl NativeRepr for VoGruntType {
     const NAME: &'static str = "VoGruntType";
 }
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum VoGruntInterruptMode {

@@ -31,7 +31,7 @@ unsafe extern "C" fn detour(
                 switch_name,
                 switch_value,
                 ..
-            } = unsafe { mem::transmute(event) };
+            } = unsafe { mem::transmute::<&Event, &SoundSwitch>(event) };
             log::info!(
                 Audioware::env(),
                 "intercepted SoundSwitch:
@@ -39,7 +39,8 @@ unsafe extern "C" fn detour(
 - switch_value: {switch_value}",
             );
         } else if event.as_ref().as_serializable().is_a::<StopSound>() {
-            let &StopSound { sound_name, .. } = unsafe { mem::transmute(event) };
+            let &StopSound { sound_name, .. } =
+                unsafe { mem::transmute::<&Event, &StopSound>(event) };
             log::info!(
                 Audioware::env(),
                 "intercepted StopSound:

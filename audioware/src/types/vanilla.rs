@@ -32,6 +32,7 @@ mod vector4;
 pub use vector4::*;
 mod voice;
 pub use voice::*;
+mod weapon;
 mod world_position;
 pub use world_position::*;
 mod world_transform;

@@ -122,3 +122,30 @@ impl AsRef<IScriptable> for SetParameterOnEmitter {
         self.base.as_ref()
     }
 }
+
+const PADDING_41: usize = 0x48 - 0x41;
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct SetListenerOverride {
+    base: Event,
+    pub enable: bool,        // 40
+    unk41: [u8; PADDING_41], // 41
+}
+
+unsafe impl ScriptClass for SetListenerOverride {
+    type Kind = Native;
+    const NAME: &'static str = "gameaudioeventsSetListenerOverride";
+}
+
+impl AsRef<Event> for SetListenerOverride {
+    fn as_ref(&self) -> &Event {
+        &self.base
+    }
+}
+
+impl AsRef<IScriptable> for SetListenerOverride {
+    fn as_ref(&self) -> &IScriptable {
+        self.base.as_ref()
+    }
+}

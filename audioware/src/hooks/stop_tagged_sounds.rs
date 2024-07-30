@@ -30,7 +30,8 @@ unsafe extern "C" fn detour(
     if !a2.is_null() {
         let event = unsafe { &*a2 };
         if event.as_ref().as_serializable().is_a::<StopTaggedSounds>() {
-            let &StopTaggedSounds { audio_tag, .. } = unsafe { mem::transmute(event) };
+            let &StopTaggedSounds { audio_tag, .. } =
+                unsafe { mem::transmute::<&Event, &StopTaggedSounds>(event) };
             log::info!(
                 Audioware::env(),
                 "intercepted StopTaggedSounds:
@@ -41,7 +42,7 @@ unsafe extern "C" fn detour(
                 parameter_name,
                 parameter_value,
                 ..
-            } = unsafe { mem::transmute(event) };
+            } = unsafe { mem::transmute::<&Event, &SoundParameter>(event) };
             // this one fires repeatedly
             if parameter_name.as_str() != "player_health" {
                 log::info!(

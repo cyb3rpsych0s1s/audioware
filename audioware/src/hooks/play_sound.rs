@@ -34,7 +34,7 @@ unsafe extern "C" fn detour(
                 seek_time,
                 play_unique,
                 ..
-            } = unsafe { mem::transmute(event) };
+            } = unsafe { mem::transmute::<&Event, &PlaySound>(event) };
             log::info!(
                 Audioware::env(),
                 "intercepted PlaySound:
@@ -45,7 +45,8 @@ unsafe extern "C" fn detour(
 - play_unique: {play_unique}",
             );
         } else if event.as_ref().as_serializable().is_a::<StopSound>() {
-            let &StopSound { sound_name, .. } = unsafe { mem::transmute(event) };
+            let &StopSound { sound_name, .. } =
+                unsafe { mem::transmute::<&Event, &StopSound>(event) };
             log::info!(
                 Audioware::env(),
                 "intercepted StopSound:
