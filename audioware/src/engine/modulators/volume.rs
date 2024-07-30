@@ -1,9 +1,13 @@
 mod car_radio;
+pub use car_radio::*;
 mod dialogue;
 pub use dialogue::*;
 mod music;
+pub use music::*;
 mod radioport;
+pub use radioport::*;
 mod sfx;
+pub use sfx::*;
 
 macro_rules! impl_volume {
     ($struct:ident, $name:literal) => {

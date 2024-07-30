@@ -44,6 +44,8 @@ public native func Resume(opt tween: ref<AudiowareTween>) -> Void;
 public native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<AudiowareTween>) -> Void;
 public native func StopOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<AudiowareTween>) -> Void;
 
+private native func SetVolume(setting: CName, value: Int32) -> Void;
+
 enum GameState {
     Load = 0,
     Menu = 1,

@@ -1,5 +1,9 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, ScnDialogLineType, SpokenLocale, WrittenLocale};
+use kira::{tween::Value, Volume};
+use modulators::{
+    CarRadioVolume, DialogueVolume, MusicVolume, Parameter, RadioportVolume, SfxVolume,
+};
 use red4ext_rs::{
     log,
     types::{CName, EntityId, GameInstance, Opt, Ref},
@@ -288,5 +292,49 @@ impl Engine {
         let tracks = Tracks::get();
         let mut eq = ok_or_return!(tracks.v.eq.try_lock(), "Unable to set EQ preset");
         eq.set_preset(value);
+    }
+    pub fn set_volume(setting: CName, value: i32) {
+        if value < 0 || value > 100 {
+            log::error!(Audioware::env(), "Volume must be between 0 and 100");
+            return;
+        }
+        let volume = Volume::Amplitude(value as f64 / 100.);
+        let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
+        match setting.as_str() {
+            "MasterVolume" => manager.main_track().set_volume(volume, IMMEDIATELY),
+            "SfxVolume" => {
+                ok_or_return!(
+                    SfxVolume::update(volume, IMMEDIATELY),
+                    "Unable to set SfxVolume"
+                );
+            }
+            "DialogueVolume" => {
+                ok_or_return!(
+                    DialogueVolume::update(volume, IMMEDIATELY),
+                    "Unable to set DialogueVolume"
+                );
+            }
+            "MusicVolume" => {
+                ok_or_return!(
+                    MusicVolume::update(volume, IMMEDIATELY),
+                    "Unable to set MusicVolume"
+                );
+            }
+            "CarRadioVolume" => {
+                ok_or_return!(
+                    CarRadioVolume::update(volume, IMMEDIATELY),
+                    "Unable to set CarRadioVolume"
+                );
+            }
+            "RadioportVolume" => {
+                ok_or_return!(
+                    RadioportVolume::update(volume, IMMEDIATELY),
+                    "Unable to set RadioportVolume"
+                );
+            }
+            _ => {
+                log::error!(Audioware::env(), "Unknown setting: {setting}");
+            }
+        };
     }
 }

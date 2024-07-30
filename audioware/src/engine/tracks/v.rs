@@ -7,7 +7,10 @@ use kira::{
 };
 
 use crate::{
-    engine::eq::{HighPass, LowPass, EQ},
+    engine::{
+        eq::{HighPass, LowPass, EQ},
+        modulators::{DialogueVolume, Parameter, SfxVolume},
+    },
     error::Error,
 };
 
@@ -34,12 +37,18 @@ impl V {
             .routes(TrackRoutes::new().with_route(reverb, 0.)),
         )?;
 
-        let vocal =
-            manager.add_sub_track(TrackBuilder::new().routes(TrackRoutes::parent(&main)))?;
+        let vocal = manager.add_sub_track(
+            TrackBuilder::new()
+                .routes(TrackRoutes::parent(&main))
+                .with_effect(DialogueVolume::effect()?),
+        )?;
         let mental =
             manager.add_sub_track(TrackBuilder::new().routes(TrackRoutes::parent(&main)))?;
-        let emissive =
-            manager.add_sub_track(TrackBuilder::new().routes(TrackRoutes::parent(&main)))?;
+        let emissive = manager.add_sub_track(
+            TrackBuilder::new()
+                .routes(TrackRoutes::parent(&main))
+                .with_effect(SfxVolume::effect()?),
+        )?;
 
         Ok(V {
             main,

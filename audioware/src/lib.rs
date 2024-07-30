@@ -140,6 +140,7 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.StopOnEmitter", Engine::stop_on_emitter)),
             GlobalExport(global!(c"Audioware.SetPlayerReverb", set_player_reverb)),
             GlobalExport(global!(c"Audioware.SetPlayerPreset", set_player_preset)),
+            GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play))
         ]
     }

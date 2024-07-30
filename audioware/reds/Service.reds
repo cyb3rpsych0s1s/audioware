@@ -3,6 +3,7 @@ module Audioware
 class AudiowareService extends ScriptableService {
     private let handler: ref<CallbackSystemHandler>;
     private let config: ref<AudiowareConfig>;
+    private let isPreGame: Bool;
 
     private cb func OnLoad() {
         // game session state
@@ -35,6 +36,7 @@ class AudiowareService extends ScriptableService {
     }
 
     private cb func OnSessionChange(event: ref<GameSessionEvent>) {
+        this.isPreGame = event.IsPreGame();
         switch event.GetEventName() {
             case n"Session/BeforeStart":
                 LOG("on session before start: AudiowareService");
@@ -108,4 +110,6 @@ class AudiowareService extends ScriptableService {
     public func RefreshConfig() -> Void {
         this.config = new AudiowareConfig();
     }
+
+    public func IsPreGame() -> Bool { return this.isPreGame; }
 }

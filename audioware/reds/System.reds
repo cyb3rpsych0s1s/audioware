@@ -3,6 +3,7 @@ module Audioware
 public native func TestPlay() -> Void;
 
 public class AudiowareSystem extends ScriptableSystem {
+    private let settingsListener: ref<VolumeSettingsListener>;
     private let menuListener: ref<CallbackHandle>;
     private let playerReverbListener: ref<CallbackHandle>;
     private let playerPresetListener: ref<CallbackHandle>;
@@ -24,6 +25,9 @@ public class AudiowareSystem extends ScriptableSystem {
         .RegisterListenerFloat(definitions.Audioware_Settings.PlayerReverb, this, n"OnPlayerReverb", false);
         this.playerPresetListener = audio
         .RegisterListenerInt(definitions.Audioware_Settings.PlayerPreset, this, n"OnPlayerPreset", false);
+
+        this.settingsListener = new VolumeSettingsListener();
+        this.settingsListener.Initialize(this.GetGameInstance());
     }
     private func OnDetach() -> Void {
         LOG("on detach: AudiowareSystem");
@@ -53,6 +57,7 @@ public class AudiowareSystem extends ScriptableSystem {
             let psm: ref<IBlackboard> = player.GetPlayerStateMachineBlackboard();
             this.swimListener = psm.RegisterListenerInt(GetAllBlackboardDefs().PlayerStateMachine.Swimming, this, n"OnSwim", true);
         }
+        this.settingsListener.Start();
     }
     private final func OnPlayerDetach(request: ref<PlayerDetachRequest>) -> Void {
         LOG("on player detach: AudiowareSystem");
@@ -63,6 +68,8 @@ public class AudiowareSystem extends ScriptableSystem {
             let psm: ref<IBlackboard> = player.GetPlayerStateMachineBlackboard();
             psm.UnregisterListenerInt(GetAllBlackboardDefs().PlayerStateMachine.Swimming, this.swimListener);
         }
+
+        this.settingsListener = null;
     }
 
     public func DelayHideSubtitle(line: scnDialogLineData, duration: Float) {
