@@ -11,8 +11,6 @@ use v::V;
 
 use crate::error::{Error, InternalError};
 
-use super::modulators::{Parameter, VolumeModulator};
-
 mod holocall;
 mod v;
 
@@ -26,7 +24,6 @@ pub struct Tracks {
 
 impl Tracks {
     pub fn setup(manager: &mut AudioManager) -> Result<(), Error> {
-        VolumeModulator::setup(manager)?;
         // TODO: AmbienceTrack::init(manager)?;
 
         let reverb = manager.add_sub_track({

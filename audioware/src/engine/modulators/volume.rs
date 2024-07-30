@@ -1,74 +1,78 @@
-use std::{
-    ffi,
-    sync::{Mutex, MutexGuard, OnceLock},
-};
+mod master;
+pub use master::*;
+mod car_radio;
+mod dialogue;
+mod music;
+mod radioport;
+mod sfx;
 
-use kira::{
-    effect::{volume_control::VolumeControlBuilder, EffectBuilder},
-    manager::AudioManager,
-    modulator::tweener::{TweenerBuilder, TweenerHandle},
-    tween::{ModulatorMapping, Tween, Value},
-    Volume,
-};
-use red4ext_rs::types::CNamePool;
+macro_rules! impl_volume {
+    ($struct:ident, $name:literal) => {
+        const MODULATOR_NAME: &str = $name;
 
-use crate::error::InternalError;
+        static MODULATOR: std::sync::OnceLock<
+            std::sync::Mutex<kira::modulator::tweener::TweenerHandle>,
+        > = std::sync::OnceLock::new();
 
-use super::Parameter;
+        pub struct $struct;
 
-const MODULATOR_NAME: &str = "Audioware:Volume";
+        impl $struct {
+            fn set_once(handle: kira::modulator::tweener::TweenerHandle) {
+                MODULATOR
+                    .set(std::sync::Mutex::new(handle))
+                    .expect("store tweener handle once")
+            }
+            pub fn try_lock<'a>() -> Result<
+                std::sync::MutexGuard<'a, kira::modulator::tweener::TweenerHandle>,
+                $crate::error::InternalError,
+            > {
+                MODULATOR.get().unwrap().try_lock().map_err(|_| {
+                    $crate::error::InternalError::Contention {
+                        origin: MODULATOR_NAME,
+                    }
+                })
+            }
+        }
 
-static MODULATOR: OnceLock<Mutex<TweenerHandle>> = OnceLock::new();
+        impl $crate::engine::modulators::Parameter for $struct {
+            type Value = kira::Volume;
 
-pub struct VolumeModulator;
+            fn setup(
+                manager: &mut kira::manager::AudioManager,
+            ) -> Result<(), $crate::error::Error> {
+                let handle = manager.add_modulator(kira::modulator::tweener::TweenerBuilder {
+                    initial_value: 100., // TODO: retrieve from game audio settings
+                })?;
+                Self::set_once(handle);
+                Ok(())
+            }
 
-impl VolumeModulator {
-    fn set_once(handle: TweenerHandle) {
-        CNamePool::add_cstr(
-            ffi::CString::new(MODULATOR_NAME)
-                .expect("internally defined")
-                .as_c_str(),
-        );
-        MODULATOR
-            .set(Mutex::new(handle))
-            .expect("store tweener handle once")
-    }
-    pub fn try_lock<'a>() -> Result<MutexGuard<'a, TweenerHandle>, InternalError> {
-        MODULATOR
-            .get()
-            .unwrap()
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: MODULATOR_NAME,
-            })
-    }
+            fn effect() -> Result<impl kira::effect::EffectBuilder, $crate::error::Error> {
+                use std::ops::Deref;
+                Ok(kira::effect::volume_control::VolumeControlBuilder::new(
+                    kira::tween::Value::<kira::Volume>::from_modulator(
+                        $struct::try_lock()?.deref(),
+                        kira::tween::ModulatorMapping {
+                            input_range: (0.0, 100.0),
+                            output_range: (
+                                kira::Volume::Amplitude(0.0),
+                                kira::Volume::Amplitude(100.0),
+                            ),
+                            clamp_bottom: true,
+                            clamp_top: true,
+                        },
+                    ),
+                ))
+            }
+
+            fn update(
+                value: Self::Value,
+                tween: kira::tween::Tween,
+            ) -> Result<bool, $crate::error::Error> {
+                Self::try_lock()?.set(value.as_amplitude(), tween);
+                Ok(true)
+            }
+        }
+    };
 }
-
-impl Parameter for VolumeModulator {
-    type Value = Volume;
-    fn setup(manager: &mut AudioManager) -> Result<(), crate::Error> {
-        let handle = manager.add_modulator(TweenerBuilder { initial_value: 50. })?;
-        Self::set_once(handle);
-        Ok(())
-    }
-
-    fn update(value: Volume, tween: Tween) -> Result<bool, crate::Error> {
-        Self::try_lock()?.set(value.as_decibels(), tween);
-        Ok(true)
-    }
-
-    fn effect() -> Result<impl EffectBuilder, crate::Error> {
-        Ok(VolumeControlBuilder::new(Value::from_modulator(
-            &*Self::try_lock()?,
-            ModulatorMapping {
-                input_range: (0.0, 100.0),
-                output_range: (
-                    Volume::Decibels(Volume::MIN_DECIBELS),
-                    Volume::Decibels(70.),
-                ),
-                clamp_bottom: true,
-                clamp_top: true,
-            },
-        )))
-    }
-}
+pub(super) use impl_volume;

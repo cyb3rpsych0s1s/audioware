@@ -26,6 +26,8 @@ use once_cell::sync::Lazy;
 use red4ext_rs::types::{CName, EntityId};
 
 use crate::config::AudiowareBufferSize;
+use crate::engine::modulators::MasterVolume;
+use crate::engine::modulators::Parameter;
 use crate::error::Error;
 use crate::error::InternalError;
 use crate::Audioware;
@@ -54,7 +56,7 @@ static STREAMS: Lazy<Mutex<HashMap<HandleId, StreamingSoundHandle<FromFileError>
     Lazy::new(Default::default);
 
 impl Manager {
-    pub fn try_lock<'a>() -> Result<MutexGuard<'a, AudioManager>, InternalError> {
+    pub fn try_lock<'a>() -> Result<MutexGuard<'a, AudioManager>, Error> {
         static INSTANCE: OnceLock<Mutex<AudioManager<CpalBackend>>> = OnceLock::new();
         INSTANCE
             .get_or_init(|| {
@@ -68,16 +70,20 @@ impl Manager {
                         buffer_size as u32
                     );
                 }
-                let manager = AudioManager::new(AudioManagerSettings {
+                let mut manager = AudioManager::new(AudioManagerSettings {
                     backend_settings,
                     ..Default::default()
                 })
                 .expect("instantiate audio manager");
+                MasterVolume::setup(&mut manager).expect("set master volume");
                 Mutex::new(manager)
             })
             .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: "audio manager",
+            .map_err(|_| {
+                InternalError::Contention {
+                    origin: "audio manager",
+                }
+                .into()
             })
     }
     pub fn play_and_store(

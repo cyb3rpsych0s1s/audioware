@@ -1,7 +1,6 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::{Engine, Preset};
-use error::Error;
 use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log,
