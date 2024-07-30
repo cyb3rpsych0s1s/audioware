@@ -1,6 +1,6 @@
 use red4ext_rs::{
     class_kind::Native,
-    types::{CName, Cruid},
+    types::{CName, Cruid, IScriptable},
     NativeRepr, ScriptClass,
 };
 
@@ -25,6 +25,33 @@ pub struct DialogLineEnd {
 unsafe impl ScriptClass for DialogLineEnd {
     const NAME: &'static str = "gameaudioeventsDialogLineEnd";
     type Kind = Native;
+}
+
+const PADDING_4C: usize = 0x50 - 0x4C;
+
+#[repr(C)]
+pub struct StopDialogLine {
+    base: Event,
+    pub string_id: Cruid,    // 40
+    pub fade_out: f32,       // 48
+    unk4c: [u8; PADDING_4C], // 4C
+}
+
+unsafe impl ScriptClass for StopDialogLine {
+    const NAME: &'static str = "gameaudioeventsStopDialogLine";
+    type Kind = Native;
+}
+
+impl AsRef<Event> for StopDialogLine {
+    fn as_ref(&self) -> &Event {
+        &self.base
+    }
+}
+
+impl AsRef<IScriptable> for StopDialogLine {
+    fn as_ref(&self) -> &IScriptable {
+        self.base.as_ref()
+    }
 }
 
 const PADDING_A: usize = 0x10 - 0xA;

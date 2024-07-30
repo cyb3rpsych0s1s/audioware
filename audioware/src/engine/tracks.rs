@@ -1,5 +1,6 @@
 use std::sync::{Mutex, OnceLock};
 
+use ambience::Ambience;
 use holocall::Holocall;
 use kira::{
     effect::reverb::ReverbBuilder,
@@ -11,6 +12,7 @@ use v::V;
 
 use crate::error::{Error, InternalError};
 
+mod ambience;
 mod holocall;
 mod v;
 
@@ -20,6 +22,7 @@ pub struct Tracks {
     pub reverb: Mutex<TrackHandle>,
     pub v: V,
     pub holocall: Holocall,
+    pub ambience: Ambience,
 }
 
 impl Tracks {
@@ -34,12 +37,14 @@ impl Tracks {
 
         let v = V::setup(manager, &reverb)?;
         let holocall = Holocall::setup(manager)?;
+        let ambience = Ambience::setup(manager)?;
 
         TRACKS
             .set(Tracks {
                 reverb: Mutex::new(reverb),
                 v,
                 holocall,
+                ambience,
             })
             .map_err(|_| {
                 Error::from(InternalError::Init {

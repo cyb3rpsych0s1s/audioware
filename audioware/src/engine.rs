@@ -1,6 +1,6 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, ScnDialogLineType, SpokenLocale, WrittenLocale};
-use kira::{tween::Value, Volume};
+use kira::Volume;
 use modulators::{
     CarRadioVolume, DialogueVolume, MusicVolume, Parameter, RadioportVolume, SfxVolume,
 };
@@ -294,7 +294,7 @@ impl Engine {
         eq.set_preset(value);
     }
     pub fn set_volume(setting: CName, value: i32) {
-        if value < 0 || value > 100 {
+        if !(0..=100).contains(&value) {
             log::error!(Audioware::env(), "Volume must be between 0 and 100");
             return;
         }
