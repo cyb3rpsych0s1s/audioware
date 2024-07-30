@@ -1,7 +1,6 @@
-mod master;
-pub use master::*;
 mod car_radio;
 mod dialogue;
+pub use dialogue::*;
 mod music;
 mod radioport;
 mod sfx;

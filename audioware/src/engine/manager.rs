@@ -26,7 +26,7 @@ use once_cell::sync::Lazy;
 use red4ext_rs::types::{CName, EntityId};
 
 use crate::config::AudiowareBufferSize;
-use crate::engine::modulators::MasterVolume;
+use crate::engine::modulators::DialogueVolume;
 use crate::engine::modulators::Parameter;
 use crate::error::Error;
 use crate::error::InternalError;
@@ -75,7 +75,7 @@ impl Manager {
                     ..Default::default()
                 })
                 .expect("instantiate audio manager");
-                MasterVolume::setup(&mut manager).expect("set master volume");
+                DialogueVolume::setup(&mut manager).expect("setup dialogue volume");
                 Mutex::new(manager)
             })
             .try_lock()

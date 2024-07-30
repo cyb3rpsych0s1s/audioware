@@ -7,8 +7,12 @@ use kira::{
 };
 
 use crate::{
-    engine::eq::{
-        HighPass, LowPass, EQ, EQ_HIGH_PASS_PHONE_CUTOFF, EQ_LOW_PASS_PHONE_CUTOFF, EQ_RESONANCE,
+    engine::{
+        eq::{
+            HighPass, LowPass, EQ, EQ_HIGH_PASS_PHONE_CUTOFF, EQ_LOW_PASS_PHONE_CUTOFF,
+            EQ_RESONANCE,
+        },
+        modulators::{DialogueVolume, Parameter},
     },
     error::Error,
 };
@@ -35,7 +39,7 @@ impl Holocall {
                     .cutoff(EQ_HIGH_PASS_PHONE_CUTOFF)
                     .resonance(EQ_RESONANCE),
             );
-            builder
+            builder.with_effect(DialogueVolume::effect()?)
         })?;
         Ok(Holocall {
             main: holocall,
