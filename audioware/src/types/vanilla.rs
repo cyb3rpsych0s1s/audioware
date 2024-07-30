@@ -11,6 +11,8 @@ mod dialog_line;
 pub use dialog_line::*;
 mod entity;
 pub use entity::*;
+mod emitter_event;
+pub use emitter_event::*;
 mod event;
 pub use event::*;
 mod fixed_point;

@@ -75,6 +75,9 @@ impl Audioware {
             dialog_line::attach_hook(env);
             dialog_line_end::attach_hook(env);
             sound_play_vo::attach_hook(env);
+            play_sound_on_emitter::attach_hook(env);
+            stop_sound_on_emitter::attach_hook(env);
+            set_parameter_on_emitter::attach_hook(env);
         }
     }
 }
