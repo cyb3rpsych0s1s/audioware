@@ -26,6 +26,8 @@ mod offsets {
     pub(super) const STOP_SOUND_ON_EMITTER_HANDLER: u32     = 0x2B7F217B; // 0x1424726A8
     pub(super) const PLAY_SOUND_ON_EMITTER_HANDLER: u32     = 0x2808216B; // 0x142472658
     pub(super) const SET_PARAMETER_ON_EMITTER_HANDLER: u32  = 0x932B2299; // 0x142472680
+    pub(super) const VOICE_EVENT_HANDLER: u32               = 0xEBB01A67; // 0x1408C1A9C
+    pub(super) const VOICE_PLAYED_EVENT_HANDLER: u32        = 0x2F42185;  // 0x1409C12B0
 }
 
 pub mod load_save_in_game;
@@ -48,3 +50,5 @@ pub mod stop_dialog_line;
 pub mod stop_sound;
 pub mod stop_sound_on_emitter;
 pub mod stop_tagged_sounds;
+pub mod voice_event;
+pub mod voice_played_event;

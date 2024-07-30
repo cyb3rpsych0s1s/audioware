@@ -84,6 +84,8 @@ impl Audioware {
             play_sound_on_emitter::attach_hook(env);
             stop_sound_on_emitter::attach_hook(env);
             set_parameter_on_emitter::attach_hook(env);
+            voice_event::attach_hook(env);
+            voice_played_event::attach_hook(env);
         }
     }
 }
