@@ -38,7 +38,7 @@ macro_rules! impl_volume {
         }
 
         impl $crate::engine::modulators::Parameter for $struct {
-            type Value = kira::Volume;
+            type Value = f64;
 
             fn setup(
                 manager: &mut kira::manager::AudioManager,
@@ -59,7 +59,7 @@ macro_rules! impl_volume {
                             input_range: (0.0, 100.0),
                             output_range: (
                                 kira::Volume::Amplitude(0.0),
-                                kira::Volume::Amplitude(100.0),
+                                kira::Volume::Amplitude(1.0),
                             ),
                             clamp_bottom: true,
                             clamp_top: true,
@@ -72,7 +72,7 @@ macro_rules! impl_volume {
                 value: Self::Value,
                 tween: kira::tween::Tween,
             ) -> Result<bool, $crate::error::Error> {
-                Self::try_lock()?.set(value.as_amplitude(), tween);
+                Self::try_lock()?.set(value, tween);
                 Ok(true)
             }
         }

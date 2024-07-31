@@ -23,7 +23,7 @@ public class VolumeSettingsListener extends ConfigVarListener {
                 case n"CarRadioVolume":
                 case n"RadioportVolume":
                     let settings = GameInstance.GetSettingsSystem(this.game);
-                    let setting = (settings.GetGroup(groupPath).GetVar(varName) as ConfigVarInt).GetValue();
+                    let setting: Double = Cast<Double>((settings.GetGroup(groupPath).GetVar(varName) as ConfigVarInt).GetValue());
                     LOG(s"value: \(ToString(setting)), groupPath: \(NameToString(groupPath)), varName: \(NameToString(varName)), varType: \(ToString(varType)), reason: \(ToString(reason))");
                     SetVolume(varName, setting);
                     break;

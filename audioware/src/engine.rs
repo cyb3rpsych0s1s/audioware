@@ -2,7 +2,7 @@ use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, ScnDialogLineType, SpokenLocale, WrittenLocale};
 use kira::Volume;
 use modulators::{
-    CarRadioVolume, DialogueVolume, MusicVolume, Parameter, RadioportVolume, SfxVolume,
+    CarRadioVolume, DialogueVolume, MusicVolume, Parameter, RadioportVolume, ReverbMix, SfxVolume,
 };
 use red4ext_rs::{
     log,
@@ -275,59 +275,61 @@ impl Engine {
             log::error!(Audioware::env(), "{e}");
         }
     }
-    pub fn set_player_reverb(value: f32) {
+    pub fn set_reverb_mix(value: f32) {
         if !(0. ..=1.).contains(&value) {
             log::error!(
                 Audioware::env(),
-                "reverb must be between 0. and 1. (inclusive)"
+                "reverb mix must be between 0. and 1. (inclusive)"
             );
             return;
         }
-        let tracks = Tracks::get();
-        let mut reverb = ok_or_return!(tracks.reverb.try_lock(), "Unable to set reverb volume");
-        reverb.set_volume(kira::Volume::Amplitude(value as f64), IMMEDIATELY);
+        ok_or_return!(
+            ReverbMix::update(value, IMMEDIATELY),
+            "Unable to set reverb mix"
+        );
     }
     pub fn set_player_preset(value: Preset) {
         let tracks = Tracks::get();
         let mut eq = ok_or_return!(tracks.v.eq.try_lock(), "Unable to set EQ preset");
         eq.set_preset(value);
     }
-    pub fn set_volume(setting: CName, value: i32) {
-        if !(0..=100).contains(&value) {
-            log::error!(Audioware::env(), "Volume must be between 0 and 100");
+    pub fn set_volume(setting: CName, value: f64) {
+        if !(0.0..=100.0).contains(&value) {
+            log::error!(Audioware::env(), "Volume must be between 0. and 100.");
             return;
         }
-        let volume = Volume::Amplitude(value as f64 / 100.);
         let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
         match setting.as_str() {
-            "MasterVolume" => manager.main_track().set_volume(volume, IMMEDIATELY),
+            "MasterVolume" => manager
+                .main_track()
+                .set_volume(Volume::Amplitude(value / 100.), IMMEDIATELY),
             "SfxVolume" => {
                 ok_or_return!(
-                    SfxVolume::update(volume, IMMEDIATELY),
+                    SfxVolume::update(value, IMMEDIATELY),
                     "Unable to set SfxVolume"
                 );
             }
             "DialogueVolume" => {
                 ok_or_return!(
-                    DialogueVolume::update(volume, IMMEDIATELY),
+                    DialogueVolume::update(value, IMMEDIATELY),
                     "Unable to set DialogueVolume"
                 );
             }
             "MusicVolume" => {
                 ok_or_return!(
-                    MusicVolume::update(volume, IMMEDIATELY),
+                    MusicVolume::update(value, IMMEDIATELY),
                     "Unable to set MusicVolume"
                 );
             }
             "CarRadioVolume" => {
                 ok_or_return!(
-                    CarRadioVolume::update(volume, IMMEDIATELY),
+                    CarRadioVolume::update(value, IMMEDIATELY),
                     "Unable to set CarRadioVolume"
                 );
             }
             "RadioportVolume" => {
                 ok_or_return!(
-                    RadioportVolume::update(volume, IMMEDIATELY),
+                    RadioportVolume::update(value, IMMEDIATELY),
                     "Unable to set RadioportVolume"
                 );
             }

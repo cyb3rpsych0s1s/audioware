@@ -31,7 +31,7 @@ private native func SetPlayerGender(gender: PlayerGender) -> Void;
 private native func UnsetPlayerGender() -> Void;
 private native func SetGameLocales(spoken: CName, written: CName) -> Void;
 
-private native func SetPlayerReverb(value: Float) -> Void;
+private native func SetReverbMix(value: Float) -> Void;
 private native func SetPlayerPreset(value: Preset) -> Void;
 
 public native func PlayOverThePhone(eventName: CName, emitterName: CName, gender: CName) -> Void;
@@ -44,7 +44,7 @@ public native func Resume(opt tween: ref<AudiowareTween>) -> Void;
 public native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<AudiowareTween>) -> Void;
 public native func StopOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<AudiowareTween>) -> Void;
 
-private native func SetVolume(setting: CName, value: Int32) -> Void;
+private native func SetVolume(setting: CName, value: Double) -> Void;
 
 enum GameState {
     Load = 0,

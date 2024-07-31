@@ -1,6 +1,6 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
-use engine::{Engine, Preset};
+use engine::Engine;
 use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log,
@@ -146,8 +146,11 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.Switch", Engine::switch)),
             GlobalExport(global!(c"Audioware.PlayOnEmitter", Engine::play_on_emitter)),
             GlobalExport(global!(c"Audioware.StopOnEmitter", Engine::stop_on_emitter)),
-            GlobalExport(global!(c"Audioware.SetPlayerReverb", set_player_reverb)),
-            GlobalExport(global!(c"Audioware.SetPlayerPreset", set_player_preset)),
+            GlobalExport(global!(c"Audioware.SetReverbMix", Engine::set_reverb_mix)),
+            GlobalExport(global!(
+                c"Audioware.SetPlayerPreset",
+                Engine::set_player_preset
+            )),
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play))
         ]
@@ -341,12 +344,4 @@ fn scan_globals(func_name: &str) {
             log::info!(env, "global => {} ({})", g.name(), g.short_name());
         }
     }
-}
-
-fn set_player_reverb(value: f32) {
-    Engine::set_player_reverb(value);
-}
-
-fn set_player_preset(value: Preset) {
-    Engine::set_player_preset(value);
 }

@@ -4,6 +4,8 @@ use crate::error::Error;
 
 mod volume;
 pub use volume::*;
+mod reverb;
+pub use reverb::*;
 
 pub trait Parameter {
     type Value;

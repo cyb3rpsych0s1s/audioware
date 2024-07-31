@@ -121,8 +121,8 @@ public class AudiowareSystem extends ScriptableSystem {
         }
     }
     protected cb func OnPlayerReverb(value: Float) -> Bool {
-        LOG(s"on player reverb changed (\(ToString(value))): AudiowareSystem");
-        SetPlayerReverb(value);
+        LOG(s"on reverb mix changed (\(ToString(value))): AudiowareSystem");
+        SetReverbMix(value);
     }
     protected cb func OnPlayerPreset(value: Int32) -> Bool {
         let preset = IntEnum<Preset>(value);
