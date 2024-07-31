@@ -113,13 +113,6 @@ public static exec func TestAudioSystemPlayOverThePhone(game: GameInstance, name
     GameInstance.GetAudioSystem(game).PlayOverThePhone(cname, n"Vik", n"Male");
 }
 
-/// Game.TestAudioSystemParameter("Audioware:Reverb", 1.0);
-/// Game.TestAudioSystemParameter("Audioware:Reverb", 0.0);
-public static exec func TestAudioSystemParameter(game: GameInstance, name: String, value: Float) {
-    let cname = StringToName(name);
-    GameInstance.GetAudioSystem(game).Parameter(cname, value);
-}
-
 /// Game.TestPlayRustOnly();
 public static exec func TestPlayRustOnly(game: GameInstance) {
     TestPlay();

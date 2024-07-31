@@ -64,6 +64,7 @@ impl Audioware {
 
     fn attach_hooks(env: &SdkEnv) {
         // native methods
+        global_parameter::attach_hook(env);
         load_save_in_game::attach_hook(env);
         on_transform_updated::attach_hook(env);
         parameter::attach_hook(env);

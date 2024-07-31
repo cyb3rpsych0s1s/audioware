@@ -2,6 +2,7 @@
 mod offsets {
     // AudioSystem
     pub(super) const PARAMETER: u32                         = 0x7A491F19; // 0x14244FE90
+    pub(super) const GLOBAL_PARAMETER: u32                  = 0x4BA8216A; // 0x140E43ABC
     pub(super) const PLAY: u32                              = 0xCDB11D0E; // 0x140974F58
     pub(super) const PLAY_ON_EMITTER: u32                   = 0x48D20A5;  // 0x141C01EF0
     pub(super) const STOP: u32                              = 0xD2781D1E; // 0x1424503F8
@@ -30,6 +31,7 @@ mod offsets {
     pub(super) const VOICE_PLAYED_EVENT_HANDLER: u32        = 0x2F42185;  // 0x1409C12B0
 }
 
+pub mod global_parameter;
 pub mod load_save_in_game;
 pub mod on_transform_updated;
 pub mod parameter;
