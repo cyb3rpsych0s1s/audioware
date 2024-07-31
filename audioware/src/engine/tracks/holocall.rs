@@ -1,39 +1,30 @@
-use std::sync::Mutex;
-
 use kira::{
-    effect::filter::{FilterBuilder, FilterHandle, FilterMode},
+    effect::filter::{FilterBuilder, FilterMode},
     manager::AudioManager,
     track::{TrackBuilder, TrackHandle},
+    OutputDestination,
 };
 
 use crate::{
     engine::{
-        eq::{
-            HighPass, LowPass, EQ, EQ_HIGH_PASS_PHONE_CUTOFF, EQ_LOW_PASS_PHONE_CUTOFF,
-            EQ_RESONANCE,
-        },
+        eq::{EQ_HIGH_PASS_PHONE_CUTOFF, EQ_LOW_PASS_PHONE_CUTOFF, EQ_RESONANCE},
         modulators::{DialogueVolume, Parameter},
     },
     error::Error,
 };
 
-pub struct Holocall {
-    pub main: TrackHandle,
-    pub eq: Mutex<EQ>,
-}
+pub struct Holocall(pub TrackHandle);
 
 impl Holocall {
     pub fn setup(manager: &mut AudioManager) -> Result<Self, Error> {
-        let holocall_lowpass: FilterHandle;
-        let holocall_highpass: FilterHandle;
-        let holocall = manager.add_sub_track({
+        let track = manager.add_sub_track({
             let mut builder = TrackBuilder::new();
-            holocall_lowpass = builder.add_effect(
+            builder.add_effect(
                 FilterBuilder::default()
                     .cutoff(EQ_LOW_PASS_PHONE_CUTOFF)
                     .resonance(EQ_RESONANCE),
             );
-            holocall_highpass = builder.add_effect(
+            builder.add_effect(
                 FilterBuilder::default()
                     .mode(FilterMode::HighPass)
                     .cutoff(EQ_HIGH_PASS_PHONE_CUTOFF)
@@ -41,12 +32,12 @@ impl Holocall {
             );
             builder.with_effect(DialogueVolume::effect()?)
         })?;
-        Ok(Holocall {
-            main: holocall,
-            eq: Mutex::new(EQ {
-                lowpass: LowPass(holocall_lowpass),
-                highpass: HighPass(holocall_highpass),
-            }),
-        })
+        Ok(Self(track))
+    }
+}
+
+impl<'a> From<&'a Holocall> for OutputDestination {
+    fn from(value: &'a Holocall) -> Self {
+        (&value.0).into()
     }
 }

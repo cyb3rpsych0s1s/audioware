@@ -288,9 +288,9 @@ impl Engine {
             "Unable to set reverb mix"
         );
     }
-    pub fn set_player_preset(value: Preset) {
+    pub fn set_preset(value: Preset) {
         let tracks = Tracks::get();
-        let mut eq = ok_or_return!(tracks.v.eq.try_lock(), "Unable to set EQ preset");
+        let mut eq = ok_or_return!(tracks.environment.try_eq(), "Unable to set EQ preset");
         eq.set_preset(value);
     }
     pub fn set_volume(setting: CName, value: f64) {

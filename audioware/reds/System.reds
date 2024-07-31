@@ -127,12 +127,12 @@ public class AudiowareSystem extends ScriptableSystem {
     protected cb func OnPlayerPreset(value: Int32) -> Bool {
         let preset = IntEnum<Preset>(value);
         LOG(s"on player preset changed (\(ToString(preset))): AudiowareSystem");
-        SetPlayerPreset(preset);
+        SetPreset(preset);
     }
     protected cb func OnSwim(value: Int32) -> Bool {
         let state = IntEnum<gamePSMSwimming>(value);
         let diving = Equals(state, gamePSMSwimming.Diving);
-        SetPlayerPreset(diving ? Preset.Underwater : Preset.None);
+        SetPreset(diving ? Preset.Underwater : Preset.None);
     }
 
     public final static func GetInstance(game: GameInstance) -> ref<AudiowareSystem> {

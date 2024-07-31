@@ -1,51 +1,71 @@
 use std::sync::OnceLock;
 
-use ambience::Ambience;
+use car_radio::CarRadio;
+use dialogue::Dialogue;
+use environment::Environment;
 use holocall::Holocall;
-use kira::{
-    manager::AudioManager,
-    track::{TrackBuilder, TrackHandle},
-    OutputDestination,
-};
+use kira::{manager::AudioManager, OutputDestination};
+use music::Music;
+use radioport::Radioport;
+use sfx::Sfx;
 use v::V;
 
 use crate::error::{Error, InternalError};
 
-use super::modulators::{Parameter, ReverbMix};
+use super::modulators::Parameter;
 
-mod ambience;
+mod environment;
+
+mod car_radio;
+mod dialogue;
+mod music;
+mod radioport;
+mod sfx;
+
 mod holocall;
 mod v;
 
 static TRACKS: OnceLock<Tracks> = OnceLock::new();
 
 pub struct Tracks {
-    pub reverb: TrackHandle,
+    // should be renamed 'environment' ?
+    // tracks affected by reverb mix + preset (underwater)
+    #[allow(dead_code, reason = "reverb track handle must be held")]
+    pub environment: Environment,
+    // audioware tracks
     pub v: V,
     pub holocall: Holocall,
-    pub ambience: Ambience,
+    // vanilla tracks
+    pub sfx: Sfx,
+    pub radioport: Radioport,
+    pub music: Music,
+    pub dialogue: Dialogue,
+    pub car_radio: CarRadio,
 }
 
 impl Tracks {
     pub fn setup(manager: &mut AudioManager) -> Result<(), Error> {
-        // TODO: AmbienceTrack::init(manager)?;
+        let environment = Environment::setup(manager)?;
 
-        let reverb = manager.add_sub_track({
-            let mut builder = TrackBuilder::new();
-            builder.add_effect(ReverbMix::effect()?);
-            builder
-        })?;
+        let sfx = Sfx::setup(manager, environment.reverb())?;
+        let radioport = Radioport::setup(manager)?;
+        let music = Music::setup(manager)?;
+        let dialogue = Dialogue::setup(manager, environment.reverb())?;
+        let car_radio = CarRadio::setup(manager)?;
 
-        let v = V::setup(manager, &reverb)?;
+        let v = V::setup(manager, environment.reverb())?;
         let holocall = Holocall::setup(manager)?;
-        let ambience = Ambience::setup(manager)?;
 
         TRACKS
             .set(Tracks {
-                reverb,
+                environment,
+                sfx,
+                radioport,
+                music,
+                dialogue,
+                car_radio,
                 v,
                 holocall,
-                ambience,
             })
             .map_err(|_| {
                 Error::from(InternalError::Init {
@@ -59,6 +79,6 @@ impl Tracks {
         TRACKS.get().unwrap()
     }
     pub fn holocall_destination() -> OutputDestination {
-        (&Tracks::get().holocall.main).into()
+        (&Tracks::get().holocall).into()
     }
 }

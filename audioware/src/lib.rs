@@ -1,3 +1,5 @@
+#![feature(lint_reasons)]
+
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::Engine;
@@ -147,10 +149,7 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.PlayOnEmitter", Engine::play_on_emitter)),
             GlobalExport(global!(c"Audioware.StopOnEmitter", Engine::stop_on_emitter)),
             GlobalExport(global!(c"Audioware.SetReverbMix", Engine::set_reverb_mix)),
-            GlobalExport(global!(
-                c"Audioware.SetPlayerPreset",
-                Engine::set_player_preset
-            )),
+            GlobalExport(global!(c"Audioware.SetPreset", Engine::set_preset)),
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play))
         ]

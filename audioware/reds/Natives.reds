@@ -32,7 +32,7 @@ private native func UnsetPlayerGender() -> Void;
 private native func SetGameLocales(spoken: CName, written: CName) -> Void;
 
 private native func SetReverbMix(value: Float) -> Void;
-private native func SetPlayerPreset(value: Preset) -> Void;
+private native func SetPreset(value: Preset) -> Void;
 
 public native func PlayOverThePhone(eventName: CName, emitterName: CName, gender: CName) -> Void;
 public native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt tween: ref<AudiowareTween>) -> Void;
