@@ -13,3 +13,17 @@ pub trait Parameter {
     fn effect() -> Result<impl EffectBuilder, Error>;
     fn update(value: Self::Value, tween: Tween) -> Result<bool, Error>;
 }
+
+pub struct Modulators;
+
+impl Modulators {
+    pub fn setup(manager: &mut AudioManager) -> Result<(), Error> {
+        ReverbMix::setup(manager)?;
+        SfxVolume::setup(manager)?;
+        DialogueVolume::setup(manager)?;
+        MusicVolume::setup(manager)?;
+        CarRadioVolume::setup(manager)?;
+        RadioportVolume::setup(manager)?;
+        Ok(())
+    }
+}

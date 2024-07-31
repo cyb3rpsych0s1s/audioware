@@ -28,12 +28,8 @@ use once_cell::sync::Lazy;
 use red4ext_rs::types::{CName, EntityId};
 
 use crate::config::AudiowareBufferSize;
-use crate::engine::modulators::CarRadioVolume;
-use crate::engine::modulators::DialogueVolume;
-use crate::engine::modulators::MusicVolume;
+use crate::engine::modulators::Modulators;
 use crate::engine::modulators::Parameter;
-use crate::engine::modulators::RadioportVolume;
-use crate::engine::modulators::SfxVolume;
 use crate::error::Error;
 use crate::error::InternalError;
 use crate::Audioware;
@@ -81,11 +77,7 @@ impl Manager {
                     ..Default::default()
                 })
                 .expect("instantiate audio manager");
-                SfxVolume::setup(&mut manager).expect("setup sfx volume");
-                DialogueVolume::setup(&mut manager).expect("setup dialogue volume");
-                MusicVolume::setup(&mut manager).expect("setup music volume");
-                CarRadioVolume::setup(&mut manager).expect("setup car radio volume");
-                RadioportVolume::setup(&mut manager).expect("setup radioport volume");
+                Modulators::setup(&mut manager).expect("modulators");
                 Mutex::new(manager)
             })
             .try_lock()
