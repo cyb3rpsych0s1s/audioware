@@ -230,7 +230,6 @@ impl Engine {
     ) {
         let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
         let spoken = SpokenLocale::get();
-        let written = WrittenLocale::get();
         let gender = PlayerGender::get();
         let id = ok_or_return!(
             Banks::try_get(&sound_name, &spoken, gender.as_ref()),

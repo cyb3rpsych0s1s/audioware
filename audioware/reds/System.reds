@@ -28,6 +28,7 @@ public class AudiowareSystem extends ScriptableSystem {
 
         this.settingsListener = new VolumeSettingsListener();
         this.settingsListener.Initialize(this.GetGameInstance());
+        this.settingsListener.Start();
     }
     private func OnDetach() -> Void {
         LOG("on detach: AudiowareSystem");
@@ -57,7 +58,6 @@ public class AudiowareSystem extends ScriptableSystem {
             let psm: ref<IBlackboard> = player.GetPlayerStateMachineBlackboard();
             this.swimListener = psm.RegisterListenerInt(GetAllBlackboardDefs().PlayerStateMachine.Swimming, this, n"OnSwim", true);
         }
-        this.settingsListener.Start();
     }
     private final func OnPlayerDetach(request: ref<PlayerDetachRequest>) -> Void {
         LOG("on player detach: AudiowareSystem");
