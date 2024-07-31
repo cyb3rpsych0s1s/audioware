@@ -22,9 +22,9 @@ public class AudiowareSystem extends ScriptableSystem {
         .RegisterListenerBool(definitions.UI_System.IsInMenu, this, n"OnInMenu");
         let audio: ref<IBlackboard> = system.Get(definitions.Audioware_Settings);
         this.playerReverbListener = audio
-        .RegisterListenerFloat(definitions.Audioware_Settings.PlayerReverb, this, n"OnPlayerReverb", false);
+        .RegisterListenerFloat(definitions.Audioware_Settings.ReverbMix, this, n"OnPlayerReverb", false);
         this.playerPresetListener = audio
-        .RegisterListenerInt(definitions.Audioware_Settings.PlayerPreset, this, n"OnPlayerPreset", false);
+        .RegisterListenerInt(definitions.Audioware_Settings.AudioPreset, this, n"OnPlayerPreset", false);
 
         this.settingsListener = new VolumeSettingsListener();
         this.settingsListener.Initialize(this.GetGameInstance());
@@ -42,10 +42,10 @@ public class AudiowareSystem extends ScriptableSystem {
         }
         let audio: ref<IBlackboard> = system.Get(definitions.Audioware_Settings);
         if IsDefined(this.playerReverbListener) {
-            audio.UnregisterListenerFloat(definitions.Audioware_Settings.PlayerReverb, this.playerReverbListener);
+            audio.UnregisterListenerFloat(definitions.Audioware_Settings.ReverbMix, this.playerReverbListener);
         }
         if IsDefined(this.playerPresetListener) {
-            audio.UnregisterListenerInt(definitions.Audioware_Settings.PlayerPreset, this.playerPresetListener);
+            audio.UnregisterListenerInt(definitions.Audioware_Settings.AudioPreset, this.playerPresetListener);
         }
     }
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {

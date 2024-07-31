@@ -211,7 +211,7 @@ public static exec func TestAmbience(game: GameInstance) {
 public static exec func TestReverb(game: GameInstance, reverb: Float) {
     GameInstance.GetBlackboardSystem(game)
     .Get(GetAllBlackboardDefs().Audioware_Settings)
-    .SetFloat(GetAllBlackboardDefs().Audioware_Settings.PlayerReverb, reverb, true);
+    .SetFloat(GetAllBlackboardDefs().Audioware_Settings.ReverbMix, reverb, true);
 }
 
 /// Game.TestPreset("None");
@@ -232,5 +232,5 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
     }
     GameInstance.GetBlackboardSystem(game)
     .Get(GetAllBlackboardDefs().Audioware_Settings)
-    .SetInt(GetAllBlackboardDefs().Audioware_Settings.PlayerPreset, value, true);
+    .SetInt(GetAllBlackboardDefs().Audioware_Settings.AudioPreset, value, true);
 }
