@@ -42,8 +42,11 @@ impl V {
                 .routes(TrackRoutes::parent(&main))
                 .with_effect(DialogueVolume::effect()?),
         )?;
-        let mental =
-            manager.add_sub_track(TrackBuilder::new().routes(TrackRoutes::parent(&main)))?;
+        let mental = manager.add_sub_track(
+            TrackBuilder::new()
+                .routes(TrackRoutes::parent(&main))
+                .with_effect(SfxVolume::effect()?),
+        )?;
         let emissive = manager.add_sub_track(
             TrackBuilder::new()
                 .routes(TrackRoutes::parent(&main))
