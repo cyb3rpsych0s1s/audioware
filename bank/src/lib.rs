@@ -186,7 +186,7 @@ impl Banks {
     pub fn data(id: &Id) -> Either<StaticSoundData, StreamingSoundData<FromFileError>> {
         let settings = Self::settings(id);
         match id {
-            Id::OnDemand(Usage::Static(_, path)) => {
+            Id::OnDemand(Usage::Static(_, path), ..) => {
                 let data = StaticSoundData::from_file(path)
                     .expect("static sound data has already been validated");
                 if let Some(settings) = settings {
@@ -195,7 +195,7 @@ impl Banks {
                 }
                 Either::Left(data)
             }
-            Id::OnDemand(Usage::Streaming(_, path)) => {
+            Id::OnDemand(Usage::Streaming(_, path), ..) => {
                 let data = StreamingSoundData::from_file(path)
                     .expect("streaming sound data has already been validated");
                 if let Some(settings) = settings {
@@ -207,7 +207,7 @@ impl Banks {
                 Either::Right(data)
             }
             // in-memory sound data already embed settings
-            Id::InMemory(Key::Unique(key)) => Either::Left(
+            Id::InMemory(Key::Unique(key), ..) => Either::Left(
                 UNIQUES
                     .get()
                     .expect("insertion guarantees")
@@ -215,7 +215,7 @@ impl Banks {
                     .expect("insertion guarantees")
                     .clone(),
             ),
-            Id::InMemory(Key::Gender(key)) => Either::Left(
+            Id::InMemory(Key::Gender(key), ..) => Either::Left(
                 GENDERS
                     .get()
                     .expect("insertion guarantees")
@@ -223,7 +223,7 @@ impl Banks {
                     .expect("insertion guarantees")
                     .clone(),
             ),
-            Id::InMemory(Key::Locale(key)) => Either::Left(
+            Id::InMemory(Key::Locale(key), ..) => Either::Left(
                 LOCALES
                     .get()
                     .expect("insertion guarantees")
@@ -231,7 +231,7 @@ impl Banks {
                     .expect("insertion guarantees")
                     .clone(),
             ),
-            Id::InMemory(Key::Both(key)) => Either::Left(
+            Id::InMemory(Key::Both(key), ..) => Either::Left(
                 MULTIS
                     .get()
                     .expect("insertion guarantees")
@@ -243,7 +243,7 @@ impl Banks {
     }
     fn settings(id: &Id) -> Option<Either<StaticSoundSettings, StreamingSoundSettings>> {
         match id {
-            Id::OnDemand(Usage::Static(key, _)) => match key {
+            Id::OnDemand(Usage::Static(key, _), ..) => match key {
                 Key::Unique(key) => UNI_SET.get().and_then(|x| {
                     x.get(key)
                         .cloned()
@@ -269,7 +269,7 @@ impl Banks {
                         .map(Either::Left)
                 }),
             },
-            Id::OnDemand(Usage::Streaming(key, _)) => match key {
+            Id::OnDemand(Usage::Streaming(key, ..), ..) => match key {
                 Key::Unique(key) => UNI_SET.get().and_then(|x| {
                     x.get(key)
                         .cloned()
@@ -296,7 +296,7 @@ impl Banks {
                 }),
             },
             // settings are already stored in-memory
-            Id::InMemory(_) => None,
+            Id::InMemory(..) => None,
         }
     }
     pub fn setup() -> Initialization {
@@ -458,8 +458,8 @@ impl Banks {
         let lengths = ids.iter().fold((0, 0, 0), |acc, x| {
             let (mut odsta, mut odstr, mut imsta) = acc;
             match x {
-                Id::OnDemand(Usage::Static(..)) => odsta += 1,
-                Id::OnDemand(Usage::Streaming(..)) => odstr += 1,
+                Id::OnDemand(Usage::Static(..), ..) => odsta += 1,
+                Id::OnDemand(Usage::Streaming(..), ..) => odstr += 1,
                 Id::InMemory(..) => imsta += 1,
             }
             (odsta, odstr, imsta)

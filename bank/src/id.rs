@@ -1,6 +1,6 @@
 use std::{hash::Hash, path::PathBuf};
 
-use audioware_manifest::{Locale, PlayerGender};
+use audioware_manifest::{Locale, PlayerGender, Source};
 use red4ext_rs::types::CName;
 
 use super::{BothKey, GenderKey, Key, LocaleKey, UniqueKey};
@@ -8,8 +8,8 @@ use super::{BothKey, GenderKey, Key, LocaleKey, UniqueKey};
 /// special type whose audio data is guaranteed to both exist in banks and be valid
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Id {
-    OnDemand(Usage),
-    InMemory(Key),
+    OnDemand(Usage, Source),
+    InMemory(Key, Source),
 }
 
 impl Hash for Id {
@@ -22,8 +22,8 @@ impl Hash for Id {
 impl std::fmt::Display for Id {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Id::OnDemand(usage) => write!(f, "|on-demand| {}", usage),
-            Id::InMemory(key) => write!(f, "|in-memory| {}", key),
+            Id::OnDemand(usage, ..) => write!(f, "|on-demand| {}", usage),
+            Id::InMemory(key, ..) => write!(f, "|in-memory| {}", key),
         }
     }
 }
@@ -31,9 +31,9 @@ impl std::fmt::Display for Id {
 impl AsRef<CName> for Id {
     fn as_ref(&self) -> &CName {
         match self {
-            Id::InMemory(key)
-            | Id::OnDemand(Usage::Static(key, _))
-            | Id::OnDemand(Usage::Streaming(key, _)) => match key {
+            Id::InMemory(key, ..)
+            | Id::OnDemand(Usage::Static(key, _), ..)
+            | Id::OnDemand(Usage::Streaming(key, _), ..) => match key {
                 Key::Unique(UniqueKey(key))
                 | Key::Gender(GenderKey(key, _))
                 | Key::Locale(LocaleKey(key, _))
@@ -46,8 +46,9 @@ impl AsRef<CName> for Id {
 impl AsRef<Key> for Id {
     fn as_ref(&self) -> &Key {
         match self {
-            Id::OnDemand(Usage::Static(key, _)) | Id::OnDemand(Usage::Streaming(key, _)) => key,
-            Id::InMemory(key) => key,
+            Id::OnDemand(Usage::Static(key, _), ..)
+            | Id::OnDemand(Usage::Streaming(key, _), ..) => key,
+            Id::InMemory(key, ..) => key,
         }
     }
 }
@@ -55,8 +56,8 @@ impl AsRef<Key> for Id {
 impl PartialEq<(&CName, &Locale, &PlayerGender)> for Id {
     fn eq(&self, other: &(&CName, &Locale, &PlayerGender)) -> bool {
         match self {
-            Id::OnDemand(usage) => usage.eq(other),
-            Id::InMemory(key) => key.eq(other),
+            Id::OnDemand(usage, ..) => usage.eq(other),
+            Id::InMemory(key, ..) => key.eq(other),
         }
     }
 }

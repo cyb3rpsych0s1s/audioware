@@ -17,6 +17,7 @@ use std::{
 };
 
 use super::id::HandleId;
+use super::ToOutputDestination;
 use kira::{
     manager::{AudioManager, AudioManagerSettings},
     sound::{static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError},
@@ -111,7 +112,7 @@ impl Manager {
                 let handle = if let Some(destination) = destination {
                     manager.play(data.output_destination(destination))
                 } else {
-                    manager.play(data)
+                    manager.play(data.output_destination(id.output_destination()))
                 }?;
                 let mut storage = StaticStorage::try_lock()?;
                 storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
@@ -125,7 +126,7 @@ impl Manager {
                 let handle = if let Some(destination) = destination {
                     manager.play(data.output_destination(destination))
                 } else {
-                    manager.play(data)
+                    manager.play(data.output_destination(id.output_destination()))
                 }?;
                 let mut storage = StreamStorage::try_lock()?;
                 storage.insert(HandleId::new(id, entity_id, emitter_name), handle);

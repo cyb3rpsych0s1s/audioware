@@ -218,7 +218,7 @@ pub fn ensure_store_data<T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     ensure!(
         store.insert(key.clone(), value).is_none(),
         CannotStoreDataSnafu {
-            id: Id::InMemory(key.into()),
+            key,
             path: path.as_ref().display().to_string()
         }
     );
@@ -264,6 +264,7 @@ fn ensure<'a, K: PartialEq + Eq + Hash + Clone + Into<Key> + Conflictual>(
     set: &'a mut HashSet<Id>,
     map: &'a mut HashMap<K, StaticSoundData>,
     smap: &'a mut HashMap<K, Settings>,
+    source: Source,
 ) -> Result<(), Error>
 where
     HashSet<Id>: Conflict<K>,
@@ -271,15 +272,15 @@ where
     let data = ensure_valid_audio(&path, m, usage, settings.as_ref(), None)?;
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = match usage {
-        Usage::InMemory => Id::InMemory(key.clone().into()),
-        Usage::OnDemand => Id::OnDemand(crate::Usage::Static(
-            key.clone().into(),
-            m.as_ref().join(path.clone()),
-        )),
-        Usage::Streaming => Id::OnDemand(crate::Usage::Streaming(
-            key.clone().into(),
-            m.as_ref().join(path.clone()),
-        )),
+        Usage::InMemory => Id::InMemory(key.clone().into(), source),
+        Usage::OnDemand => Id::OnDemand(
+            crate::Usage::Static(key.clone().into(), m.as_ref().join(path.clone())),
+            source,
+        ),
+        Usage::Streaming => Id::OnDemand(
+            crate::Usage::Streaming(key.clone().into(), m.as_ref().join(path.clone())),
+            source,
+        ),
     };
     if usage == Usage::InMemory {
         ensure_store_data(key, data.left().unwrap(), settings, &path, map)?;
@@ -306,7 +307,18 @@ pub fn ensure_sfx<'a>(
     let c_string = std::ffi::CString::new(k).expect("CString::new failed");
     let cname = CNamePool::add_cstr(&c_string);
     let key = UniqueKey(cname);
-    ensure(k, key, file, m, usage, settings, set, map, smap)?;
+    ensure(
+        k,
+        key,
+        file,
+        m,
+        usage,
+        settings,
+        set,
+        map,
+        smap,
+        Source::Sfx,
+    )?;
     Ok(())
 }
 
@@ -325,7 +337,18 @@ pub fn ensure_ono<'a>(
     let mut key: GenderKey;
     for (gender, Audio { file, settings }) in genders {
         key = GenderKey(cname, gender);
-        ensure(k, key, file, m, usage, settings.clone(), set, map, smap)?;
+        ensure(
+            k,
+            key,
+            file,
+            m,
+            usage,
+            settings.clone(),
+            set,
+            map,
+            smap,
+            Source::Ono,
+        )?;
     }
     Ok(())
 }
@@ -370,6 +393,7 @@ pub fn ensure_voice<'a>(
                     set,
                     simple,
                     simple_settings,
+                    Source::Voices,
                 )?;
             }
         }
@@ -394,6 +418,7 @@ pub fn ensure_voice<'a>(
                         set,
                         complex,
                         complex_settings,
+                        Source::Voices,
                     )?;
                 }
             }
@@ -416,10 +441,10 @@ pub fn ensure_music<'a>(
     let cname = CNamePool::add_cstr(&c_string);
     let key = UniqueKey(cname);
     ensure_key_no_conflict(&key, k, set)?;
-    let id: Id = Id::OnDemand(crate::Usage::Streaming(
-        crate::Key::Unique(key.clone()),
-        m.as_ref().join(file),
-    ));
+    let id: Id = Id::OnDemand(
+        crate::Usage::Streaming(crate::Key::Unique(key.clone()), m.as_ref().join(file)),
+        Source::Music,
+    );
     if let Some(settings) = settings {
         ensure_store_settings::<UniqueKey>(&key, settings, smap)?;
     }
@@ -441,10 +466,10 @@ pub fn ensure_jingles<'a>(
     let cname = CNamePool::add_cstr(&c_string);
     let key = UniqueKey(cname);
     ensure_key_no_conflict(&key, k, set)?;
-    let id: Id = Id::OnDemand(crate::Usage::Streaming(
-        crate::Key::Unique(key.clone()),
-        m.as_ref().join(file),
-    ));
+    let id: Id = Id::OnDemand(
+        crate::Usage::Streaming(crate::Key::Unique(key.clone()), m.as_ref().join(file)),
+        Source::Jingle,
+    );
     if let Some(settings) = settings {
         ensure_store_settings::<UniqueKey>(&key, settings, smap)?;
     }

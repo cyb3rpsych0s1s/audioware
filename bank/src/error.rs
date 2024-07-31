@@ -31,7 +31,7 @@ pub mod registry {
 pub mod validation {
     use snafu::Snafu;
 
-    use crate::Id;
+    use crate::{Id, Key};
 
     #[derive(Debug, Snafu)]
     pub enum Error {
@@ -56,8 +56,8 @@ pub mod validation {
         },
         #[snafu(display("invalid audio caption"), visibility(pub(crate)))]
         InvalidAudioCaption { which: String, why: String },
-        #[snafu(display("cannot store data: {id}"), visibility(pub(crate)))]
-        CannotStoreData { id: Id, path: String },
+        #[snafu(display("cannot store data: {key}"), visibility(pub(crate)))]
+        CannotStoreData { key: Key, path: String },
         #[snafu(display("cannot store subtitle"), visibility(pub(crate)))]
         CannotStoreSubtitle,
         #[snafu(display("cannot store audio settings"), visibility(pub(crate)))]

@@ -1,6 +1,6 @@
-use audioware_bank::Banks;
-use audioware_manifest::{PlayerGender, ScnDialogLineType, SpokenLocale, WrittenLocale};
-use kira::Volume;
+use audioware_bank::{Banks, Id};
+use audioware_manifest::{PlayerGender, ScnDialogLineType, Source, SpokenLocale, WrittenLocale};
+use kira::{OutputDestination, Volume};
 use modulators::{
     CarRadioVolume, DialogueVolume, MusicVolume, Parameter, RadioportVolume, ReverbMix, SfxVolume,
 };
@@ -143,7 +143,6 @@ impl Engine {
             "Unable to get sound ID"
         );
 
-        // TODO: output destination
         let tween = tween.into_tween();
         let duration = ok_or_return!(
             Manager::play_and_store(&mut manager, id, entity_id, emitter_name, None, tween),
@@ -336,5 +335,24 @@ impl Engine {
                 log::error!(Audioware::env(), "Unknown setting: {setting}");
             }
         };
+    }
+}
+
+pub trait ToOutputDestination {
+    fn output_destination(&self) -> OutputDestination;
+}
+
+impl ToOutputDestination for Id {
+    fn output_destination(&self) -> OutputDestination {
+        match self {
+            Id::OnDemand(_, source) | Id::InMemory(_, source) => match source {
+                Source::Sfx => (&Tracks::get().sfx).into(),
+                Source::Ono => (&Tracks::get().sfx).into(),
+                Source::Voices => (&Tracks::get().dialogue).into(),
+                Source::Playlist => (&Tracks::get().radioport).into(),
+                Source::Music => (&Tracks::get().music).into(),
+                Source::Jingle => (&Tracks::get().car_radio).into(),
+            },
+        }
     }
 }
