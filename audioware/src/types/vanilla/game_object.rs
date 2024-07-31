@@ -46,7 +46,7 @@ impl AsGameObject for Ref<GameObject> {
     fn is_player(&self) -> bool {
         let rtti = RttiSystem::get();
         let cls = rtti.get_class(CName::new(GameObject::NAME)).unwrap();
-        let method = cls.get_method(CName::new("IsPlayer")).ok().unwrap();
+        let method = cls.get_method(CName::new("IsPlayer;")).ok().unwrap();
         method
             .as_function()
             .execute::<_, bool>(unsafe { self.instance() }.map(AsRef::as_ref), ())
