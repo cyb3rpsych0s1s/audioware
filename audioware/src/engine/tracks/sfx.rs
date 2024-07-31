@@ -9,7 +9,7 @@ use crate::{
     error::Error,
 };
 
-pub struct Sfx(pub TrackHandle);
+pub struct Sfx(TrackHandle);
 
 impl Sfx {
     pub fn setup(manager: &mut AudioManager, reverb: &TrackHandle) -> Result<Self, Error> {
@@ -19,6 +19,12 @@ impl Sfx {
                 .with_effect(SfxVolume::effect()?),
         )?;
         Ok(Self(track))
+    }
+}
+
+impl AsRef<TrackHandle> for Sfx {
+    fn as_ref(&self) -> &TrackHandle {
+        &self.0
     }
 }
 

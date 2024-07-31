@@ -9,7 +9,7 @@ use crate::{
     error::Error,
 };
 
-pub struct Dialogue(pub TrackHandle);
+pub struct Dialogue(TrackHandle);
 
 impl Dialogue {
     pub fn setup(manager: &mut AudioManager, reverb: &TrackHandle) -> Result<Self, Error> {
@@ -19,6 +19,12 @@ impl Dialogue {
                 .with_effect(DialogueVolume::effect()?),
         )?;
         Ok(Self(track))
+    }
+}
+
+impl AsRef<TrackHandle> for Dialogue {
+    fn as_ref(&self) -> &TrackHandle {
+        &self.0
     }
 }
 

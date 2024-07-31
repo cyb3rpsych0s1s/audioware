@@ -9,13 +9,19 @@ use crate::{
     error::Error,
 };
 
-pub struct CarRadio(pub TrackHandle);
+pub struct CarRadio(TrackHandle);
 
 impl CarRadio {
     pub fn setup(manager: &mut AudioManager) -> Result<Self, Error> {
         let track =
             manager.add_sub_track(TrackBuilder::new().with_effect(CarRadioVolume::effect()?))?;
         Ok(Self(track))
+    }
+}
+
+impl AsRef<TrackHandle> for CarRadio {
+    fn as_ref(&self) -> &TrackHandle {
+        &self.0
     }
 }
 

@@ -76,7 +76,7 @@ impl Tracks {
         Ok(())
     }
     pub fn get() -> &'static Tracks {
-        TRACKS.get().unwrap()
+        TRACKS.get().expect("tracks should be initialized")
     }
     pub fn holocall_destination() -> OutputDestination {
         (&Tracks::get().holocall).into()

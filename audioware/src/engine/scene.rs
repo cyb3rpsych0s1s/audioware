@@ -11,7 +11,6 @@ use kira::{
         listener::{ListenerHandle, ListenerSettings},
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
-    track::TrackHandle,
     OutputDestination,
 };
 use red4ext_rs::{
@@ -26,7 +25,7 @@ use crate::{
     Audioware,
 };
 
-use super::{effects::IMMEDIATELY, id::EmitterId};
+use super::{effects::IMMEDIATELY, id::EmitterId, Tracks};
 
 static SCENE: OnceLock<Scene> = OnceLock::new();
 
@@ -37,12 +36,12 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn setup(manager: &mut AudioManager, main: &TrackHandle) -> Result<(), Error> {
+    pub fn setup(manager: &mut AudioManager, tracks: &Tracks) -> Result<(), Error> {
         let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
         let listener = scene.add_listener(
             Vec3::ZERO,
             Quat::IDENTITY,
-            ListenerSettings::default().track(main),
+            ListenerSettings::default().track(tracks.sfx.as_ref()),
         )?;
         SCENE
             .set(Scene {

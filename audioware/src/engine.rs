@@ -41,10 +41,9 @@ pub struct Engine;
 
 impl Engine {
     pub(crate) fn setup() -> Result<(), Error> {
-        // SAFETY: initialization order matters
         let mut manager = Manager::try_lock()?;
         Tracks::setup(&mut manager)?;
-        Scene::setup(&mut manager, &Tracks::get().v.main)?;
+        Scene::setup(&mut manager, Tracks::get())?;
         Ok(())
     }
     pub fn define_subtitles(package: Ref<LocalizationPackage>) {

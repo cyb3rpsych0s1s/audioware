@@ -13,7 +13,7 @@ use crate::{
     error::Error,
 };
 
-pub struct Holocall(pub TrackHandle);
+pub struct Holocall(TrackHandle);
 
 impl Holocall {
     pub fn setup(manager: &mut AudioManager) -> Result<Self, Error> {
@@ -33,6 +33,12 @@ impl Holocall {
             builder.with_effect(DialogueVolume::effect()?)
         })?;
         Ok(Self(track))
+    }
+}
+
+impl AsRef<TrackHandle> for Holocall {
+    fn as_ref(&self) -> &TrackHandle {
+        &self.0
     }
 }
 
