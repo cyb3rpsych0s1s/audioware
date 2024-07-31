@@ -115,7 +115,7 @@ impl Banks {
         }
         out
     }
-    pub fn subtitles<'a>(locale: WrittenLocale) -> Vec<(CName, (String, String))> {
+    pub fn subtitles(locale: WrittenLocale) -> Vec<(CName, (String, String))> {
         let simple_package = LOC_SUB
             .get()
             .map(|x| x.package(locale.into_inner()))

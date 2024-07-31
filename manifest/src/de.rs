@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash, path::PathBuf};
+use std::{collections::HashMap, fmt, hash::Hash, path::PathBuf};
 
 use crate::ScnDialogLineType;
 use semver::Version;
@@ -161,6 +161,22 @@ pub enum Subtitle {
 pub struct DialogLine {
     pub msg: String,
     pub line: ScnDialogLineType,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Source {
+    Sfx,
+    Ono,
+    Voices,
+    Playlist,
+    Music,
+    Jingle,
+}
+
+impl fmt::Display for Source {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self)
+    }
 }
 
 #[cfg(test)]
