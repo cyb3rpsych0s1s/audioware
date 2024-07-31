@@ -66,6 +66,7 @@ protected cb func OnMenuItemActivated(index: Int32, target: ref<ListItemControll
     return wrappedMethod(index, target);
 }
 
+/// whenever game volume audio settings change
 public class VolumeSettingsListener extends ConfigVarListener {
     private let game: GameInstance;
 
@@ -79,8 +80,8 @@ public class VolumeSettingsListener extends ConfigVarListener {
     }
 
     protected cb func OnVarModified(groupPath: CName, varName: CName, varType: ConfigVarType, reason: ConfigChangeReason) {
-        LOG(s"groupPath: \(NameToString(groupPath)), varName: \(NameToString(varName)), varType: \(ToString(varType)), reason: \(ToString(reason))");
         if Equals(groupPath, n"/audio/volume") && Equals(reason, ConfigChangeReason.Accepted) {
+            LOG(s"groupPath: \(NameToString(groupPath)), varName: \(NameToString(varName)), varType: \(ToString(varType)), reason: \(ToString(reason))");
             switch varName {
                 case n"MasterVolume":
                 case n"SfxVolume":
