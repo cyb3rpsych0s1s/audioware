@@ -2,6 +2,8 @@ import Audioware.LocalizationPackage
 import Audioware.TestPlay
 import Audioware.StopOnEmitter
 import Codeware.Localization.*
+import Audioware.Audioware_SettingsDef
+import Audioware.Preset
 
 /// Game.TestRegisterEmitter()
 public static exec func TestRegisterEmitter(game: GameInstance) {
@@ -187,4 +189,48 @@ public static exec func TestAmbience(game: GameInstance) {
     let weather = GameInstance.GetWeatherSystem(game);
     weather.SetWeather(n"24h_weather_rain", 20.0, 9u);
     GameInstance.GetAudioSystem(game).Play(n"milles_feuilles");
+}
+
+/// Game.TestAudioSystemPlayOnV("feature_parameter_intro");
+/// Game.TestReverb(1.0);
+/// Game.TestAudioSystemPlayOnV("feature_parameter_reverb");
+/// Game.TestAudioSystemPlayOnV("feature_parameter_noreverb");
+/// Game.TestAudioSystemPlay("feel_good_inc");
+/// Game.TestAudioSystemStopSmoothly("feel_good_inc");
+/// Game.TestReverb(0.0);
+/// Game.TestAudioSystemPlayOnV("feature_parameter_preset");
+/// Game.TestPreset("Underwater");
+/// Game.TestAudioSystemPlayOnV("feature_parameter_underwater");
+/// Game.TestPreset("OnThePhone");
+/// Game.TestAudioSystemPlayOnV("feature_parameter_onthephone");
+/// Game.TestPreset("None");
+/// Game.TestAudioSystemPlayOnV("feature_parameter_outro");
+
+/// Game.TestReverb(1.0);
+/// Game.TestReverb(0.0);
+public static exec func TestReverb(game: GameInstance, reverb: Float) {
+    GameInstance.GetBlackboardSystem(game)
+    .Get(GetAllBlackboardDefs().Audioware_Settings)
+    .SetFloat(GetAllBlackboardDefs().Audioware_Settings.PlayerReverb, reverb, true);
+}
+
+/// Game.TestPreset("None");
+/// Game.TestPreset("Underwater");
+/// Game.TestPreset("OnThePhone");
+public static exec func TestPreset(game: GameInstance, preset: String) {
+    let value: Int32;
+    switch preset {
+        case "OnThePhone":
+            value = EnumInt<Preset>(Preset.OnThePhone);
+            break;
+        case "Underwater":
+            value = EnumInt<Preset>(Preset.Underwater);
+            break;
+        default:
+            value = EnumInt<Preset>(Preset.None);
+            break;
+    }
+    GameInstance.GetBlackboardSystem(game)
+    .Get(GetAllBlackboardDefs().Audioware_Settings)
+    .SetInt(GetAllBlackboardDefs().Audioware_Settings.PlayerPreset, value, true);
 }
