@@ -1,7 +1,7 @@
 use red4ext_rs::{
     class_kind::Native,
     types::{CName, IScriptable, LocalizationString, Ref},
-    ScriptClass,
+    RttiSystem, ScriptClass,
 };
 
 use super::{ECustomCameraTarget, GamePlayerSocket, RedTagList, RenderSceneLayerMask};
@@ -35,5 +35,21 @@ impl AsRef<IScriptable> for GameObject {
     #[inline]
     fn as_ref(&self) -> &IScriptable {
         &self.base
+    }
+}
+
+pub trait AsGameObject {
+    fn is_player(&self) -> bool;
+}
+
+impl AsGameObject for Ref<GameObject> {
+    fn is_player(&self) -> bool {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(GameObject::NAME)).unwrap();
+        let method = cls.get_method(CName::new("IsPlayer")).ok().unwrap();
+        method
+            .as_function()
+            .execute::<_, bool>(unsafe { self.instance() }.map(AsRef::as_ref), ())
+            .unwrap()
     }
 }

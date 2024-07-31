@@ -15,8 +15,8 @@ use crate::{
     macros::{ok_or_return, some_or_return},
     states::State,
     types::{
-        propagate_subtitles, AsAudioSystem, AsGameInstance, AudiowareTween, LocalizationPackage,
-        Subtitle, ToTween,
+        propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, AudiowareTween,
+        GameObject, LocalizationPackage, Subtitle, ToTween,
     },
     Audioware,
 };
@@ -342,6 +342,19 @@ pub trait ToOutputDestination {
     fn output_destination(&self) -> OutputDestination;
 }
 
+pub enum Context<'a> {
+    Unknown { id: &'a Id },
+    Entity { id: &'a Id, entity_id: &'a EntityId },
+}
+impl<'a> Context<'a> {
+    pub fn new(id: &'a Id, entity_id: Option<&'a EntityId>) -> Self {
+        match entity_id {
+            Some(entity_id) => Self::Entity { id, entity_id },
+            None => Self::Unknown { id },
+        }
+    }
+}
+
 impl ToOutputDestination for Id {
     fn output_destination(&self) -> OutputDestination {
         match self {
@@ -353,6 +366,32 @@ impl ToOutputDestination for Id {
                 Source::Music => (&Tracks::get().music).into(),
                 Source::Jingle => (&Tracks::get().car_radio).into(),
             },
+        }
+    }
+}
+
+impl<'a> ToOutputDestination for Context<'a> {
+    fn output_destination(&self) -> OutputDestination {
+        match self {
+            Context::Unknown { id } => id.output_destination(),
+            Context::Entity { id, entity_id } => {
+                let game = GameInstance::new();
+                let entity = GameInstance::find_entity_by_id(game, **entity_id);
+                if let Some(go) = entity.cast::<GameObject>() {
+                    if go.is_player() {
+                        match id {
+                            Id::OnDemand(_, source) | Id::InMemory(_, source) => {
+                                if let Some(destination) =
+                                    Tracks::get().v.output_destination(source)
+                                {
+                                    return destination;
+                                }
+                            }
+                        };
+                    }
+                }
+                id.output_destination()
+            }
         }
     }
 }
