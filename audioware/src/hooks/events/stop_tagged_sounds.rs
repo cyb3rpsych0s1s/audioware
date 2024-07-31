@@ -45,7 +45,7 @@ unsafe extern "C" fn detour(
                 ..
             } = unsafe { mem::transmute::<&Event, &SoundParameter>(event) };
             // this one fires repeatedly
-            if parameter_name.as_str() != "player_health" {
+            if parameter_name.as_str() != "g_player_health" {
                 log::info!(
                     Audioware::env(),
                     "intercepted SoundParameter:
