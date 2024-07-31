@@ -36,7 +36,7 @@ impl TryFrom<red4ext_rs::types::CName> for PlayerGender {
     fn try_from(value: red4ext_rs::types::CName) -> Result<Self, Self::Error> {
         match value.as_str().to_lowercase().as_str() {
             "fem" | "female" => Ok(Self::Female),
-            "male" => Ok(Self::Female),
+            "male" => Ok(Self::Male),
             v => Err(crate::ConversionError::InvalidGender {
                 value: v.to_string(),
             }),
