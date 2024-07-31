@@ -1,8 +1,8 @@
 use std::sync::OnceLock;
 
+use ambience::Ambience;
 use car_radio::CarRadio;
 use dialogue::Dialogue;
-use environment::Environment;
 use holocall::Holocall;
 use kira::{manager::AudioManager, OutputDestination};
 use music::Music;
@@ -12,9 +12,7 @@ use v::V;
 
 use crate::error::{Error, InternalError};
 
-use super::modulators::Parameter;
-
-mod environment;
+mod ambience;
 
 mod car_radio;
 mod dialogue;
@@ -28,10 +26,8 @@ mod v;
 static TRACKS: OnceLock<Tracks> = OnceLock::new();
 
 pub struct Tracks {
-    // should be renamed 'environment' ?
-    // tracks affected by reverb mix + preset (underwater)
-    #[allow(dead_code, reason = "reverb track handle must be held")]
-    pub environment: Environment,
+    // tracks affected by reverb mix + preset (e.g. underwater)
+    pub ambience: Ambience,
     // audioware tracks
     pub v: V,
     pub holocall: Holocall,
@@ -45,20 +41,20 @@ pub struct Tracks {
 
 impl Tracks {
     pub fn setup(manager: &mut AudioManager) -> Result<(), Error> {
-        let environment = Environment::setup(manager)?;
+        let ambience = Ambience::setup(manager)?;
 
-        let sfx = Sfx::setup(manager, environment.reverb())?;
+        let sfx = Sfx::setup(manager, &ambience)?;
         let radioport = Radioport::setup(manager)?;
         let music = Music::setup(manager)?;
-        let dialogue = Dialogue::setup(manager, environment.reverb())?;
+        let dialogue = Dialogue::setup(manager, &ambience)?;
         let car_radio = CarRadio::setup(manager)?;
 
-        let v = V::setup(manager, environment.reverb())?;
+        let v = V::setup(manager, &ambience)?;
         let holocall = Holocall::setup(manager)?;
 
         TRACKS
             .set(Tracks {
-                environment,
+                ambience,
                 sfx,
                 radioport,
                 music,

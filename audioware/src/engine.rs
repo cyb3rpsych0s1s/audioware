@@ -288,7 +288,7 @@ impl Engine {
     }
     pub fn set_preset(value: Preset) {
         let tracks = Tracks::get();
-        let mut eq = ok_or_return!(tracks.environment.try_eq(), "Unable to set EQ preset");
+        let mut eq = ok_or_return!(tracks.ambience.try_eq(), "Unable to set EQ preset");
         eq.set_preset(value);
     }
     pub fn set_volume(setting: CName, value: f64) {

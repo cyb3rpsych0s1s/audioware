@@ -10,6 +10,8 @@ use crate::{
     error::Error,
 };
 
+use super::ambience::Ambience;
+
 pub struct V {
     pub vocal: TrackHandle,
     pub mental: TrackHandle,
@@ -17,17 +19,23 @@ pub struct V {
 }
 
 impl V {
-    pub fn setup(manager: &mut AudioManager, reverb: &TrackHandle) -> Result<Self, Error> {
+    pub fn setup(manager: &mut AudioManager, ambience: &Ambience) -> Result<Self, Error> {
         let vocal = manager.add_sub_track(
             TrackBuilder::new()
-                .routes(TrackRoutes::new().with_route(reverb, 0.25))
+                .routes(
+                    TrackRoutes::parent(ambience.environmental())
+                        .with_route(ambience.reverb(), 0.25),
+                )
                 .with_effect(DialogueVolume::effect()?),
         )?;
         let mental =
             manager.add_sub_track(TrackBuilder::new().with_effect(DialogueVolume::effect()?))?;
         let emissive = manager.add_sub_track(
             TrackBuilder::new()
-                .routes(TrackRoutes::new().with_route(reverb, 0.25))
+                .routes(
+                    TrackRoutes::parent(ambience.environmental())
+                        .with_route(ambience.reverb(), 0.25),
+                )
                 .with_effect(SfxVolume::effect()?),
         )?;
 

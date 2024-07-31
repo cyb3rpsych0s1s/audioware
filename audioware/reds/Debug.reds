@@ -206,6 +206,14 @@ public static exec func TestAmbience(game: GameInstance) {
 /// Game.TestPreset("None");
 /// Game.TestAudioSystemPlayOnV("feature_parameter_outro");
 
+/// Game.TestAudioSystemPlayOnV("feature_fail");
+/// Game.TestPreset("Underwater");
+/// Game.TestAudioSystemPlayOnV("feature_repeat");
+/// Game.TestPreset("OnThePhone");
+/// Game.TestAudioSystemPlayOnV("feature_repeat");
+/// Game.TestPreset("None");
+/// Game.TestAudioSystemPlayOnV("feature_repeat");
+
 /// Game.TestReverb(1.0);
 /// Game.TestReverb(0.0);
 public static exec func TestReverb(game: GameInstance, reverb: Float) {
