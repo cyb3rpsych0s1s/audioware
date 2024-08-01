@@ -204,6 +204,11 @@ fn test_play() {
 }
 
 fn test_static() {
+    // CallbackSystemTarget => native: true, size: 0x40, value holder size: 0x0, align: 0x4, parent: IScriptable
+    scan_repr("CallbackSystemTarget");
+    // EntityTarget => native: true, size: 0x68, value holder size: 0x0, align: 0x4, parent: CallbackSystemTarget
+    scan_repr("EntityTarget");
+
     let env = Audioware::env();
     let from = Vector4 {
         x: 0.,
@@ -274,10 +279,6 @@ fn test_get_player() {
     };
 }
 
-fn set_game_state(after: GameState) {
-    GameState::set(after);
-}
-
 fn set_game_locales(spoken: CName, written: CName) {
     let env = Audioware::env();
     let (spoken, written): (SpokenLocale, WrittenLocale) = (
@@ -344,4 +345,22 @@ fn scan_globals(func_name: &str) {
             log::info!(env, "global => {} ({})", g.name(), g.short_name());
         }
     }
+}
+
+#[cfg(debug_assertions)]
+#[allow(dead_code)]
+fn scan_repr(cls_name: &str) {
+    let env = Audioware::env();
+    let rtti = RttiSystem::get();
+    let cls = rtti.get_class(CName::new(cls_name)).unwrap();
+    log::info!(
+        env,
+        "{} => native: {}, size: {:#02X}, value holder size: {:#02X}, align: {:#02X}, parent: {}",
+        cls.name(),
+        cls.flags().is_native(),
+        cls.size(),
+        cls.holder_size(),
+        cls.alignment(),
+        cls.base().map(|x| x.name()).unwrap_or_default()
+    );
 }

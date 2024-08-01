@@ -64,18 +64,28 @@ impl Engine {
             log::error!(Audioware::env(), "couldn't clear emitters in scene: {e}");
         }
     }
-    pub fn register_emitter(entity_id: EntityId, emitter_name: Opt<CName>) {
+    /// Register an audio emitter to spatial scene.
+    ///
+    /// ⚠️ Returns `true` if already registered.
+    pub fn register_emitter(entity_id: EntityId, emitter_name: Opt<CName>) -> bool {
         if let Err(e) = Scene::register_emitter(entity_id, emitter_name.into_option()) {
             log::error!(Audioware::env(), "couldn't register emitter to scene: {e}");
+            return false;
         }
+        true
     }
-    pub fn unregister_emitter(entity_id: EntityId) {
+    /// Unregister an audio emitter from spatial scene.
+    ///
+    /// ⚠️ Returns `true` if already unregistered (or never registered).
+    pub fn unregister_emitter(entity_id: EntityId) -> bool {
         if let Err(e) = Scene::unregister_emitter(&entity_id) {
             log::error!(
                 Audioware::env(),
                 "couldn't unregister emitter from scene: {e}"
             );
+            return false;
         }
+        true
     }
     pub fn is_registered_emitter(entity_id: EntityId) -> bool {
         Scene::is_registered_emitter(&entity_id)

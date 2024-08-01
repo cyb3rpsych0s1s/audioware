@@ -1,7 +1,12 @@
 module Audioware
 
+enum Registration {
+    Failed = 0,
+    Ready = 1,
+    Postponed = 2,
+}
+
 class AudiowareService extends ScriptableService {
-    private let handler: ref<CallbackSystemHandler>;
     private let config: ref<AudiowareConfig>;
 
     private cb func OnLoad() {
@@ -20,18 +25,20 @@ class AudiowareService extends ScriptableService {
             .RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionChange");
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Session/End", this, n"OnSessionChange");
-        
-        // spatial scene
-        this.handler = GameInstance.GetCallbackSystem()
-            .RegisterCallback(n"Entity/Uninitialize", this, n"OnDespawn")
-            .AddTarget(EntityTarget.Type(n"PlayerPuppet"));
+
+        GameInstance.GetCallbackSystem()
+            .UnregisterCallback(n"Entity/Uninitialize", this, n"OnDespawn");
+        GameInstance.GetCallbackSystem()
+            .UnregisterCallback(n"Entity/Attached", this, n"OnSpawn");
 
         this.RegisterOnLoad();
     }
 
+    private cb func OnDespawn(event: ref<EntityLifecycleEvent>) {}
+    private cb func OnSpawn(event: ref<EntityLifecycleEvent>) {}
+
     private cb func OnUninitialize() {
         this.UnregisterOnUninitialize();
-        this.handler = null;
     }
 
     private cb func OnSessionChange(event: ref<GameSessionEvent>) {
@@ -67,23 +74,6 @@ class AudiowareService extends ScriptableService {
             default:
                 break;
         }
-    }
-
-    private cb func OnDespawn(event: ref<EntityLifecycleEvent>) {
-        let entity = event.GetEntity();
-        if !IsDefined(entity) { return; }
-        if !entity.IsA(n"PlayerPuppet") {
-            LOG("on emitter despawn: AudiowareService");
-            UnregisterEmitter(entity.GetEntityID());
-        } else { LOG("on player despawn: AudiowareService"); }
-    }
-
-    public func AddTarget(target: ref<CallbackSystemTarget>) {
-        this.handler.AddTarget(target);
-    }
-
-    public func RemoveTarget(target: ref<CallbackSystemTarget>) {
-        this.handler.RemoveTarget(target);
     }
 
     public static func GetInstance() -> ref<AudiowareService> {

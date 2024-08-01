@@ -1,4 +1,3 @@
-use audioware_manifest::PlayerGender;
 use glam::{Quat, Vec3};
 use red4ext_rs::{
     class_kind::Native,
@@ -54,12 +53,6 @@ impl AsRef<IScriptable> for Entity {
     }
 }
 
-impl Entity {
-    pub fn template_path_gender(&self) -> PlayerGender {
-        todo!()
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum EntityStatus {
@@ -89,72 +82,68 @@ impl AsEntity for Ref<Entity> {
         unsafe { self.instance() }.unwrap().entity_id
     }
     fn get_world_position(&self) -> Vector4 {
-        let attached = unsafe { self.instance() }
-            .map(|x| x.status == EntityStatus::Attached)
-            .unwrap_or(false);
-        if !attached {
-            return Vec3::ZERO.into();
-        }
         let rtti = RttiSystem::get();
         let cls = rtti.get_class(CName::new(Entity::NAME)).unwrap();
         let method: &Method = cls.get_method(CName::new("GetWorldPosition")).ok().unwrap();
-        method
-            .as_function()
-            .execute::<_, Vector4>(unsafe { self.instance() }.map(AsRef::as_ref), ())
-            .unwrap()
+        match unsafe { self.instance() } {
+            Some(x) if x.status == EntityStatus::Attached => {
+                return method
+                    .as_function()
+                    .execute::<_, Vector4>(Some(x.as_ref()), ())
+                    .unwrap()
+            }
+            _ => Vec3::ZERO.into(),
+        }
     }
 
     fn get_world_forward(&self) -> Vector4 {
-        let attached = unsafe { self.instance() }
-            .map(|x| x.status == EntityStatus::Attached)
-            .unwrap_or(false);
-        if !attached {
-            return Vec3::NEG_Z.into();
-        }
         let rtti = RttiSystem::get();
         let cls = rtti.get_class(CName::new(Entity::NAME)).unwrap();
         let method: &Method = cls.get_method(CName::new("GetWorldForward")).ok().unwrap();
-        method
-            .as_function()
-            .execute::<_, Vector4>(unsafe { self.instance() }.map(AsRef::as_ref), ())
-            .unwrap()
+        match unsafe { self.instance() } {
+            Some(x) if x.status == EntityStatus::Attached => {
+                return method
+                    .as_function()
+                    .execute::<_, Vector4>(Some(x.as_ref()), ())
+                    .unwrap()
+            }
+            _ => Vec3::NEG_Z.into(),
+        }
     }
 
     fn get_world_orientation(&self) -> Quaternion {
-        let attached = unsafe { self.instance() }
-            .map(|x| x.status == EntityStatus::Attached)
-            .unwrap_or(false);
-        if !attached {
-            return Quat::IDENTITY.into();
-        }
         let rtti = RttiSystem::get();
         let cls = rtti.get_class(CName::new(Entity::NAME)).unwrap();
         let method: &Method = cls
             .get_method(CName::new("GetWorldOrientation"))
             .ok()
             .unwrap();
-        method
-            .as_function()
-            .execute::<_, Quaternion>(unsafe { self.instance() }.map(AsRef::as_ref), ())
-            .unwrap()
+        match unsafe { self.instance() } {
+            Some(x) if x.status == EntityStatus::Attached => {
+                return method
+                    .as_function()
+                    .execute::<_, Quaternion>(Some(x.as_ref()), ())
+                    .unwrap()
+            }
+            _ => Quat::IDENTITY.into(),
+        }
     }
 
     fn get_world_transform(&self) -> WorldTransform {
-        let attached = unsafe { self.instance() }
-            .map(|x| x.status == EntityStatus::Attached)
-            .unwrap_or(false);
-        if !attached {
-            return WorldTransform::default();
-        }
         let rtti = RttiSystem::get();
         let cls = rtti.get_class(CName::new(Entity::NAME)).unwrap();
         let method: &Method = cls
             .get_method(CName::new("GetWorldTransform;"))
             .ok()
             .unwrap();
-        method
-            .as_function()
-            .execute::<_, WorldTransform>(unsafe { self.instance() }.map(AsRef::as_ref), ())
-            .unwrap()
+        match unsafe { self.instance() } {
+            Some(x) if x.status == EntityStatus::Attached => {
+                return method
+                    .as_function()
+                    .execute::<_, WorldTransform>(Some(x.as_ref()), ())
+                    .unwrap()
+            }
+            _ => WorldTransform::default(),
+        }
     }
 }

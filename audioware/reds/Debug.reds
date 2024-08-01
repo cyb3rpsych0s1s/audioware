@@ -1,9 +1,5 @@
-import Audioware.LocalizationPackage
-import Audioware.TestPlay
-import Audioware.StopOnEmitter
 import Codeware.Localization.*
-import Audioware.Audioware_SettingsDef
-import Audioware.Preset
+import Audioware.*
 
 /// Game.TestRegisterEmitter()
 public static exec func TestRegisterEmitter(game: GameInstance) {
@@ -241,4 +237,10 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
     GameInstance.GetBlackboardSystem(game)
     .Get(GetAllBlackboardDefs().Audioware_Settings)
     .SetInt(GetAllBlackboardDefs().Audioware_Settings.AudioPreset, value, true);
+}
+
+/// Game.TestAutoRegisterEmitters("VendingMachine");
+public static exec func TestAutoRegisterEmitters(game: GameInstance, className: String) {
+    let cname = StringToName(className);
+    GameInstance.GetAudioSystem(game).AutoRegisterEmitters(cname);
 }

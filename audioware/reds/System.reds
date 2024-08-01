@@ -3,6 +3,9 @@ module Audioware
 public native func TestPlay() -> Void;
 
 public class AudiowareSystem extends ScriptableSystem {
+    private let attached: ref<CallbackSystemHandler>;
+    private let uninitialize: ref<CallbackSystemHandler>;
+
     private let settingsListener: ref<VolumeSettingsListener>;
     private let menuListener: ref<CallbackHandle>;
     private let playerReverbListener: ref<CallbackHandle>;
@@ -29,9 +32,23 @@ public class AudiowareSystem extends ScriptableSystem {
         this.settingsListener = new VolumeSettingsListener();
         this.settingsListener.Initialize(this.GetGameInstance());
         this.settingsListener.Start();
+        
+        // spatial scene
+        this.uninitialize = GameInstance.GetCallbackSystem()
+            .RegisterCallback(n"Entity/Uninitialize", this, n"OnDespawn")
+            .AddTarget(EntityTarget.Type(n"PlayerPuppet"));
+
+        this.attached = GameInstance.GetCallbackSystem()
+            .RegisterCallback(n"Entity/Attached", this, n"OnSpawn")
+            // note: not specifying a target will trigger callback for each possible entity in-game
+            .AddTarget(EntityTarget.Type(n"PlayerPuppet"));
     }
     private func OnDetach() -> Void {
         LOG("on detach: AudiowareSystem");
+        this.attached.Unregister();
+        this.uninitialize.Unregister();
+        this.attached = null;
+        this.uninitialize = null;
         this.CancelHideSubtitle();
         let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
         let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
@@ -107,6 +124,136 @@ public class AudiowareSystem extends ScriptableSystem {
             .GetDelaySystem(this.GetGameInstance())
             .DelayCallback(callback, this.subtitleRemaining);
         }
+    }
+
+    public func IsValidEmitter(recordID: TweakDBID) -> Bool {
+        let record = TweakDBInterface.GetRecord(recordID);
+        if !IsDefined(record) {
+            return false;
+        }
+        let id = record.GetID();
+        let invalid = [
+            t"Character.Player_Puppet_Base",
+            t"Character.Player_Puppet_Inventory",
+            t"Character.Player_Puppet_Menu",
+            t"Character.Player_Puppet_Photomode",
+            t"Character.Player_Replacer_Puppet_Base"
+        ];
+        return !ArrayContains(invalid, id);
+    }
+
+    public func IsValidEmitter(entityID: EntityID) -> Bool {
+        let game = GetGameInstance();
+        let entity = GameInstance.FindEntityByID(game, entityID);
+        if !IsDefined(entity) {
+            return false;
+        }
+        return NotEquals(entityID, GetPlayer(game).GetEntityID());
+    }
+
+    public func IsValidEmitter(className: CName) -> Bool {
+        return NotEquals(className, n"PlayerPuppet")
+        && Reflection.GetClass(className).IsA(n"gameObject");
+    }
+
+    public func AutoRegisterEmitters(recordID: TweakDBID) -> Bool {
+        let display = TDBID.ToStringDEBUG(recordID);
+        if !this.IsValidEmitter(recordID) {
+            WARN(s"invalid emitter record ID (\(display))");
+            return false;
+        }
+        AudiowareSystem.GetInstance(GetGameInstance())
+        .attached.AddTarget(EntityTarget.RecordID(recordID));
+        return true;
+    }
+
+    public func AutoRegisterEmitters(className: CName) -> Bool {
+        let display = NameToString(className);
+        if !this.IsValidEmitter(className) {
+            WARN(s"invalid emitter class (\(display))");
+            return false;
+        }
+        AudiowareSystem.GetInstance(GetGameInstance())
+        .attached.AddTarget(EntityTarget.Type(className));
+        return true;
+    }
+
+    public func StopAutoRegisterEmitters(recordID: TweakDBID) {
+        let display = TDBID.ToStringDEBUG(recordID);
+        if !this.IsValidEmitter(recordID) {
+            WARN(s"invalid emitter record ID (\(display))");
+            return;
+        }
+        AudiowareSystem.GetInstance(GetGameInstance())
+        .attached.RemoveTarget(EntityTarget.RecordID(recordID));
+    }
+
+    public func StopAutoRegisterEmitters(className: CName) {
+        let display = NameToString(className);
+        if !this.IsValidEmitter(className) {
+            WARN(s"invalid emitter class (\(display))");
+            return;
+        }
+        AudiowareSystem.GetInstance(GetGameInstance())
+        .attached.RemoveTarget(EntityTarget.Type(className));
+    }
+
+    public func RegisterEmitter(entityID: EntityID, opt emitterName: CName) -> Registration {
+        let display = EntityID.ToDebugString(entityID);
+
+        if !this.IsValidEmitter(entityID) {
+            WARN(s"invalid emitter entity ID (\(display))");
+            return Registration.Failed;
+        }
+
+        // if already spawned
+        let entity = GameInstance.FindEntityByID(GetGameInstance(), entityID);
+        if IsDefined(entity) {
+            let registered = RegisterEmitter(entityID, emitterName);
+            if !registered {
+                ERR(s"failed to register emitter entity ID (\(display))");
+                return Registration.Failed;
+            }
+            AudiowareSystem.GetInstance(GetGameInstance())
+            .uninitialize.AddTarget(EntityTarget.ID(entityID));
+            return Registration.Ready;
+        }
+
+        // otherwise
+        AudiowareSystem.GetInstance(GetGameInstance())
+        .attached.AddTarget(EntityTarget.ID(entityID));
+        return Registration.Postponed;
+    }
+
+    public func UnregisterEmitter(entityID: EntityID) -> Void {
+        UnregisterEmitter(entityID);
+        this.uninitialize.RemoveTarget(EntityTarget.ID(entityID));
+    }
+
+    private cb func OnSpawn(event: ref<EntityLifecycleEvent>) {
+        let entity = event.GetEntity();
+        if !IsDefined(entity) { return; }
+        let id = entity.GetEntityID();
+        let display = EntityID.ToDebugString(id);
+        LOG(s"on emitter spawn: AudiowareSystem (\(display))");
+        // ignore EntityTarget placeholder, we only care about emitters here
+        if !entity.IsA(n"PlayerPuppet") {
+            if IsRegisteredEmitter(id) {
+                return;
+            }
+            let registered = RegisterEmitter(id);
+            if registered { this.uninitialize.AddTarget(EntityTarget.ID(id)); }
+            LOG(s"on emitter registered: AudiowareSystem (\(display))");
+        }
+    }
+
+    private cb func OnDespawn(event: ref<EntityLifecycleEvent>) {
+        let entity = event.GetEntity();
+        if !IsDefined(entity) { return; }
+        if !entity.IsA(n"PlayerPuppet") {
+            LOG("on emitter despawn: AudiowareSystem");
+            UnregisterEmitter(entity.GetEntityID());
+        } else { LOG("on player despawn: AudiowareSystem"); }
     }
 
     protected cb func OnInMenu(value: Bool) -> Bool {

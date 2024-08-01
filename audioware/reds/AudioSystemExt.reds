@@ -2,20 +2,15 @@ module Audioware
 
 @addMethod(AudioSystem)
 public func IsRegisteredEmitter(entityID: EntityID) -> Bool {
-    return IsRegisteredEmitter(entityID);
+    let registered = IsRegisteredEmitter(entityID);
+    return registered;
 }
 
 @addMethod(AudioSystem)
-public func RegisterEmitter(entityID: EntityID, opt emitterName: CName) -> Void {
-    RegisterEmitter(entityID, emitterName);
-    AudiowareService.GetInstance().AddTarget(EntityTarget.ID(entityID));
-}
+public func RegisterEmitter(entityID: EntityID, opt emitterName: CName) -> Void { AudiowareSystem.GetInstance(GetGameInstance()).RegisterEmitter(entityID, emitterName); }
 
 @addMethod(AudioSystem)
-public func UnregisterEmitter(entityID: EntityID) -> Void {
-    UnregisterEmitter(entityID);
-    AudiowareService.GetInstance().RemoveTarget(EntityTarget.ID(entityID));
-}
+public func UnregisterEmitter(entityID: EntityID) -> Void { AudiowareSystem.GetInstance(GetGameInstance()).UnregisterEmitter(entityID); }
 
 @addMethod(AudioSystem)
 public func EmittersCount() -> Int32 = EmittersCount();
@@ -49,3 +44,15 @@ public func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CNa
 public func StopOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<AudiowareTween>) -> Void {
     StopOnEmitter(eventName, entityID, emitterName, tween);
 }
+
+@addMethod(AudioSystem)
+public func AutoRegisterEmitters(recordID: TweakDBID) -> Bool { return AudiowareSystem.GetInstance(GetGameInstance()).AutoRegisterEmitters(recordID); }
+
+@addMethod(AudioSystem)
+public func AutoRegisterEmitters(className: CName) -> Bool { return AudiowareSystem.GetInstance(GetGameInstance()).AutoRegisterEmitters(className); }
+
+@addMethod(AudioSystem)
+public func StopAutoRegisterEmitters(recordID: TweakDBID) { AudiowareSystem.GetInstance(GetGameInstance()).StopAutoRegisterEmitters(recordID); }
+
+@addMethod(AudioSystem)
+public func StopAutoRegisterEmitters(className: CName) { AudiowareSystem.GetInstance(GetGameInstance()).StopAutoRegisterEmitters(className); }

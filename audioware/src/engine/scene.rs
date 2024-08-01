@@ -27,6 +27,8 @@ use crate::{
 
 use super::{effects::IMMEDIATELY, id::EmitterId, Tracks};
 
+mod emitters;
+
 static SCENE: OnceLock<Scene> = OnceLock::new();
 
 pub struct Scene {
@@ -97,6 +99,11 @@ impl Scene {
         }
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, entity_id);
+        if entity.is_null() {
+            return Err(Error::Scene {
+                source: SceneError::InvalidEmitter,
+            });
+        }
         let position = entity.get_world_position();
         let mut scene = Self::try_lock_scene()?;
         let mut emitters = Self::try_lock_emitters()?;
@@ -131,9 +138,11 @@ impl Scene {
     pub fn sync_emitters() -> Result<(), Error> {
         let mut entity: Ref<Entity>;
         let mut position: Vector4;
+        let mut game: GameInstance;
         if let Ok(mut emitters) = Self::try_lock_emitters() {
             for (k, v) in emitters.iter_mut() {
-                entity = GameInstance::find_entity_by_id(GameInstance::new(), *k.entity_id());
+                game = GameInstance::new();
+                entity = GameInstance::find_entity_by_id(game, *k.entity_id());
                 if entity.is_null() {
                     continue;
                 }

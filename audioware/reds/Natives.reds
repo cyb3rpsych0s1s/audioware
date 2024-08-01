@@ -21,8 +21,8 @@ private native func PLogError(msg: String) -> Void;
 
 private native func Shutdown() -> Void;
 
-private native func RegisterEmitter(emitterID: EntityID, opt emitterName: CName) -> Void;
-private native func UnregisterEmitter(emitterID: EntityID) -> Void;
+private native func RegisterEmitter(emitterID: EntityID, opt emitterName: CName) -> Bool;
+private native func UnregisterEmitter(emitterID: EntityID) -> Bool;
 private native func EmittersCount() -> Int32;
 private native func IsRegisteredEmitter(entityID: EntityID) -> Bool;
 

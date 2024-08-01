@@ -1,4 +1,10 @@
-use red4ext_rs::{call, class_kind::Scripted, log, types::Ref, PluginOps, ScriptClass};
+use red4ext_rs::{
+    call,
+    class_kind::{Native, Scripted},
+    log,
+    types::{CName, Class, EntityId, IScriptable, Ref, ResRef, TweakDbId},
+    PluginOps, ScriptClass,
+};
 
 use crate::Audioware;
 
@@ -19,4 +25,31 @@ impl Subtitle for Ref<LocalizationPackage> {
             log::error!(env, "failed to call LocalizationPackage.Subtitle: {e}");
         }
     }
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct CallbackSystemTarget {
+    base: IScriptable,
+}
+unsafe impl ScriptClass for CallbackSystemTarget {
+    type Kind = Native;
+    const NAME: &'static str = "CallbackSystemTarget";
+}
+
+const PADDING_68: usize = 0x68 - 0x40;
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct EntityTarget {
+    base: CallbackSystemTarget,
+    entity_id: EntityId,       // 0x40
+    entity_type: *const Class, // 0x48
+    record_id: TweakDbId,      // 0x50
+    template_path: ResRef,     // 0x58
+    appearance_name: CName,    // 0x60
+}
+unsafe impl ScriptClass for EntityTarget {
+    type Kind = Native;
+    const NAME: &'static str = "EntityTarget";
 }
