@@ -4,7 +4,8 @@ public native func TestPlay() -> Void;
 
 public class AudiowareSystem extends ScriptableSystem {
     private let attached: ref<CallbackSystemHandler>;
-    private let uninitialize: ref<CallbackSystemHandler>;
+    private let detachedOnce: ref<CallbackSystemHandler>;
+    private let attachedOnce: ref<CallbackSystemHandler>;
 
     private let settingsListener: ref<VolumeSettingsListener>;
     private let menuListener: ref<CallbackHandle>;
@@ -34,22 +35,31 @@ public class AudiowareSystem extends ScriptableSystem {
         this.settingsListener.Start();
         
         // spatial scene
-        this.uninitialize = GameInstance.GetCallbackSystem()
-            .RegisterCallback(n"Entity/Detach", this, n"OnDespawn")
-            .AddTarget(EntityTarget.Type(n"PlayerPuppet"));
 
+        // use only with EntityID
+        this.detachedOnce = GameInstance.GetCallbackSystem()
+            .RegisterCallback(n"Entity/Detach", this, n"OnDespawn")
+            .AddTarget(EntityTarget.Type(n"PlayerPuppet"))
+            .SetRunMode(CallbackRunMode.OncePerTarget);
+
+        // used for types and record IDs
         this.attached = GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Entity/Attached", this, n"OnSpawn")
             // note: not specifying a target will trigger callback for each possible entity in-game
+            .AddTarget(EntityTarget.Type(n"PlayerPuppet"));
+
+        // use only with EntityID
+        this.attachedOnce = GameInstance.GetCallbackSystem()
+            .RegisterCallback(n"Entity/Attached", this, n"OnSpawn")
             .AddTarget(EntityTarget.Type(n"PlayerPuppet"))
             .SetRunMode(CallbackRunMode.OncePerTarget);
     }
     private func OnDetach() -> Void {
         LOG("on detach: AudiowareSystem");
         this.attached.Unregister();
-        this.uninitialize.Unregister();
+        this.detachedOnce.Unregister();
         this.attached = null;
-        this.uninitialize = null;
+        this.detachedOnce = null;
         this.CancelHideSubtitle();
         let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
         let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
@@ -211,18 +221,18 @@ public class AudiowareSystem extends ScriptableSystem {
                 ERR(s"failed to register emitter entity ID (\(display))");
                 return Registration.Failed;
             }
-            this.uninitialize.AddTarget(EntityTarget.ID(entityID));
+            this.detachedOnce.AddTarget(EntityTarget.ID(entityID));
             return Registration.Ready;
         }
 
         // otherwise
-        this.attached.AddTarget(EntityTarget.ID(entityID));
+        this.attachedOnce.AddTarget(EntityTarget.ID(entityID));
         return Registration.Postponed;
     }
 
     public func UnregisterEmitter(entityID: EntityID) -> Void {
         UnregisterEmitter(entityID);
-        this.uninitialize.RemoveTarget(EntityTarget.ID(entityID));
+        this.detachedOnce.RemoveTarget(EntityTarget.ID(entityID));
     }
 
     private cb func OnSpawn(event: ref<EntityLifecycleEvent>) {
@@ -239,7 +249,7 @@ public class AudiowareSystem extends ScriptableSystem {
             if !already {
                 let registered = RegisterEmitter(id);
                 if registered {
-                    this.uninitialize.AddTarget(EntityTarget.ID(id));
+                    this.detachedOnce.AddTarget(EntityTarget.ID(id));
                     LOG(s"on emitter registered: AudiowareSystem (\(display))");
                 }
             }
@@ -258,8 +268,6 @@ public class AudiowareSystem extends ScriptableSystem {
                 LOG(s"on emitter despawn while registered: AudiowareSystem (\(display))");
                 let unregistered = UnregisterEmitter(id);
                 LOG(s"on emitter despawn + unregistered?[\(ToString(unregistered))]: AudiowareSystem (\(display))");
-                // this.uninitialize.RemoveTarget(EntityTarget.ID(id));
-                LOG(s"on emitter despawn + unregistered + untracked: AudiowareSystem (\(display))");
             }
         } else { LOG("on player despawn: AudiowareSystem"); }
     }

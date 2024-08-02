@@ -312,7 +312,7 @@ pub fn ensure_sfx<'a>(
         key,
         file,
         m,
-        usage,
+        usage.unwrap_or(Usage::InMemory),
         settings,
         set,
         map,

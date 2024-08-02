@@ -39,7 +39,7 @@ pub struct Manifest {
 pub struct UsableAudio {
     #[serde(flatten)]
     pub audio: Audio,
-    pub usage: Usage,
+    pub usage: Option<Usage>,
 }
 
 #[derive(Debug, Deserialize, Clone)]

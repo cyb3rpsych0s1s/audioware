@@ -138,7 +138,7 @@ impl Scene {
         Ok(())
     }
     pub fn sync_emitters() -> Result<(), Error> {
-        log::info!(Audioware::env(), "syncing emitters positions...");
+        // log::info!(Audioware::env(), "syncing emitters positions...");
         let mut entity: Ref<Entity>;
         let mut position: Vector4;
         if let Ok(mut emitters) = Self::try_lock_emitters() {
@@ -151,7 +151,7 @@ impl Scene {
                 v.set_position(position, IMMEDIATELY);
             }
         }
-        log::info!(Audioware::env(), "synced emitters positions!");
+        // log::info!(Audioware::env(), "synced emitters positions!");
         Ok(())
     }
     pub fn sync_listener() -> Result<(), Error> {

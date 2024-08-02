@@ -20,7 +20,7 @@ impl From<&Sfx> for Usage {
             Sfx::Inline(_) => Usage::InMemory,
             Sfx::Nested {
                 props: UsableAudio { usage, .. },
-            } => *usage,
+            } => usage.unwrap_or(Usage::InMemory),
         }
     }
 }
@@ -33,7 +33,7 @@ impl From<Sfx> for UsableAudio {
                     file,
                     settings: None,
                 },
-                usage: Usage::InMemory,
+                usage: Some(Usage::InMemory),
             },
             Sfx::Nested { props } => props,
         }

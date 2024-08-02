@@ -46,10 +46,16 @@ public func StopOnEmitter(eventName: CName, entityID: EntityID, emitterName: CNa
 }
 
 @addMethod(AudioSystem)
-public func AutoRegisterEmitters(recordID: TweakDBID) -> Bool { return AudiowareSystem.GetInstance(GetGameInstance()).AutoRegisterEmitters(recordID); }
+public func AutoRegisterEmitters(recordID: TweakDBID) -> Bool {
+    let registered = AudiowareSystem.GetInstance(GetGameInstance()).AutoRegisterEmitters(recordID);
+    return registered;
+}
 
 @addMethod(AudioSystem)
-public func AutoRegisterEmitters(className: CName) -> Bool { return AudiowareSystem.GetInstance(GetGameInstance()).AutoRegisterEmitters(className); }
+public func AutoRegisterEmitters(className: CName) -> Bool {
+    let registered = AudiowareSystem.GetInstance(GetGameInstance()).AutoRegisterEmitters(className);
+    return registered;
+}
 
 @addMethod(AudioSystem)
 public func StopAutoRegisterEmitters(recordID: TweakDBID) { AudiowareSystem.GetInstance(GetGameInstance()).StopAutoRegisterEmitters(recordID); }

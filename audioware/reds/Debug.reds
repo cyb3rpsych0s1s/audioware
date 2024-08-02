@@ -245,24 +245,65 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
 public static exec func TestAutoRegisterEmitters(game: GameInstance, className: String) {
     let cname = StringToName(className);
     GameInstance.GetAudioSystem(game).AutoRegisterEmitters(cname);
+    let callback = new DelayedJackpot();
+    callback.player = GetPlayer(game);
+    GameInstance.GetDelaySystem(game).DelayCallback(callback, 1.0, true);
 }
 
-@wrapMethod(ReactionManagerComponent)
-protected cb func OnPlayerProximityStartEvent(evt: ref<PlayerProximityStartEvent>) -> Bool {
-    let out = wrappedMethod(evt);
-    if out {
-        let owner = this.m_owner_id;
-        let entity = GameInstance.FindEntityByID(GetGameInstance(), owner);
-        if IsDefined(entity) {
-            if entity.IsA(n"VendingMachine")
-            && GameInstance.GetAudioSystem(GetGameInstance())
-            .IsRegisteredEmitter(owner) {
-                let jackpot = RandRange(1, 6);
-                let jackpotString = s"jackpot_0\(ToString(jackpot))";
-                let jackpotCName = StringToName(jackpotString);
-                GameInstance.GetAudioSystem(GetGameInstance()).PlayOnEmitter(jackpotCName, owner, n"VendingMachine");
-            }
+public class DelayedJackpot extends DelayCallback {
+    public let player: wref<PlayerPuppet>;
+    public func Call() -> Void {
+        if !IsDefined(this.player) { return; }
+        let targets = UglyFuncToGetClosestVendingMachines(this.player);
+        let game = this.player.GetGame();
+        let size = ArraySize(targets);
+        FTLog(s"found \(ToString(size)) vending machine(s)");
+        for target in targets {
+            // let's say we have audios named like: jackpot_01, jackpot_02, ..., jackpot_06
+            let idx = RandRange(1, 6);
+            let string = s"jackpot_0\(ToString(idx))";
+            let sound = StringToName(string);
+            let registered = GameInstance.GetAudioSystem(game).IsRegisteredEmitter(target.GetEntityID());
+            FTLog(s"about to play \(string) on \(EntityID.ToDebugString(target.GetEntityID())) with name \(NameToString(target.GetName())) (registered: \(ToString(registered)))");
+            GameInstance.GetAudioSystem(game).PlayOnEmitter(sound, target.GetEntityID(), n"V", AudiowareLinearTween.Immediate(0.4));
         }
+        let duration = RandRangeF(1.2, 3.6);
+        let callback = new DelayedJackpot();
+        callback.player = this.player;
+        GameInstance.GetDelaySystem(this.player.GetGame()).DelayCallback(callback, duration, true);
     }
-    return out;
+}
+
+private func UglyFuncToGetClosestVendingMachines(player: wref<PlayerPuppet>) -> array<ref<VendingMachine>> {
+    let game = player.GetGame();
+    let i: Int32;
+    let range = 5.0;
+    let searchQuery: TargetSearchQuery;
+    let target: ref<VendingMachine>;
+    let targetParts: array<TS_TargetPartInfo>;
+    let targetingComponent: ref<TargetingComponent>;
+    let targets: array<ref<VendingMachine>>;
+    searchQuery.testedSet = TargetingSet.Complete;
+    searchQuery.searchFilter = TSF_Any(TSFMV.Obj_Device);
+    searchQuery.maxDistance = range;
+    searchQuery.filterObjectByDistance = range > 0.00;
+    searchQuery.includeSecondaryTargets = false;
+    searchQuery.ignoreInstigator = false;
+    GameInstance.GetTargetingSystem(game).GetTargetParts(player, searchQuery, targetParts);
+    i = 0;
+    while i < ArraySize(targetParts) {
+        targetingComponent = TS_TargetPartInfo.GetComponent(targetParts[i]);
+        if !IsDefined(targetingComponent) {
+        } else {
+            target = targetingComponent.GetEntity() as VendingMachine;
+            if !IsDefined(target) {
+            } else {
+            if !ArrayContains(targets, target) {
+                ArrayPush(targets, target);
+            };
+            };
+        };
+        i += 1;
+    };
+    return targets;
 }
