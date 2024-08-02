@@ -175,7 +175,18 @@ pub enum Source {
 
 impl fmt::Display for Source {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self)
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Sfx => "sfx",
+                Self::Ono => "onos",
+                Self::Voices => "voices",
+                Self::Playlist => "playlist",
+                Self::Music => "music",
+                Self::Jingle => "jingles",
+            }
+        )
     }
 }
 

@@ -26,16 +26,8 @@ class AudiowareService extends ScriptableService {
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Session/End", this, n"OnSessionChange");
 
-        GameInstance.GetCallbackSystem()
-            .UnregisterCallback(n"Entity/Uninitialize", this, n"OnDespawn");
-        GameInstance.GetCallbackSystem()
-            .UnregisterCallback(n"Entity/Attached", this, n"OnSpawn");
-
         this.RegisterOnLoad();
     }
-
-    private cb func OnDespawn(event: ref<EntityLifecycleEvent>) {}
-    private cb func OnSpawn(event: ref<EntityLifecycleEvent>) {}
 
     private cb func OnUninitialize() {
         this.UnregisterOnUninitialize();

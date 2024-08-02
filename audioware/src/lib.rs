@@ -205,9 +205,9 @@ fn test_play() {
 
 fn test_static() {
     // CallbackSystemTarget => native: true, size: 0x40, value holder size: 0x0, align: 0x4, parent: IScriptable
-    scan_repr("CallbackSystemTarget");
+    #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("CallbackSystemTarget");
     // EntityTarget => native: true, size: 0x68, value holder size: 0x0, align: 0x4, parent: CallbackSystemTarget
-    scan_repr("EntityTarget");
+    #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("EntityTarget");
 
     let env = Audioware::env();
     let from = Vector4 {

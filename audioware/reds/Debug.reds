@@ -80,9 +80,11 @@ public static exec func TestAudioSystemSwitch(game: GameInstance, prev: String, 
 /// Game.TestAudioSystemPlayOnEmitter("god_love_us");
 /// Game.TestAudioSystemPlayOnEmitter("coco_caline");
 /// Game.TestAudioSystemPlayOnEmitter("copacabana");
-public static exec func TestAudioSystemPlayOnEmitter(game: GameInstance, name: String) {
-    let cname = StringToName(name);
+/// Game.TestAudioSystemPlayOnEmitter("jackpot_01", "Vending Machine");
+public static exec func TestAudioSystemPlayOnEmitter(game: GameInstance, soundName: String, opt emitterName: CName) {
+    let soundCName = StringToName(soundName);
     let emitterID: EntityID;
+    let emitterCName: CName = IsNameValid(emitterName) ? emitterName : n"Unknown name";
 
     let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
     emitterID = target.GetEntityID();
@@ -90,7 +92,7 @@ public static exec func TestAudioSystemPlayOnEmitter(game: GameInstance, name: S
         GameInstance.GetAudioSystem(game).RegisterEmitter(emitterID);
     }
 
-    GameInstance.GetAudioSystem(game).PlayOnEmitter(cname, emitterID, n"Jean-Michel");
+    GameInstance.GetAudioSystem(game).PlayOnEmitter(soundCName, emitterID, emitterCName);
 }
 
 /// Game.TestAudioSystemStopOnEmitter("coco_caline");
@@ -243,4 +245,24 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
 public static exec func TestAutoRegisterEmitters(game: GameInstance, className: String) {
     let cname = StringToName(className);
     GameInstance.GetAudioSystem(game).AutoRegisterEmitters(cname);
+}
+
+@wrapMethod(ReactionManagerComponent)
+protected cb func OnPlayerProximityStartEvent(evt: ref<PlayerProximityStartEvent>) -> Bool {
+    let out = wrappedMethod(evt);
+    if out {
+        let owner = this.m_owner_id;
+        let entity = GameInstance.FindEntityByID(GetGameInstance(), owner);
+        if IsDefined(entity) {
+            if entity.IsA(n"VendingMachine")
+            && GameInstance.GetAudioSystem(GetGameInstance())
+            .IsRegisteredEmitter(owner) {
+                let jackpot = RandRange(1, 6);
+                let jackpotString = s"jackpot_0\(ToString(jackpot))";
+                let jackpotCName = StringToName(jackpotString);
+                GameInstance.GetAudioSystem(GetGameInstance()).PlayOnEmitter(jackpotCName, owner, n"VendingMachine");
+            }
+        }
+    }
+    return out;
 }

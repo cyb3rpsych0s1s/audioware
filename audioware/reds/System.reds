@@ -35,13 +35,14 @@ public class AudiowareSystem extends ScriptableSystem {
         
         // spatial scene
         this.uninitialize = GameInstance.GetCallbackSystem()
-            .RegisterCallback(n"Entity/Uninitialize", this, n"OnDespawn")
+            .RegisterCallback(n"Entity/Detach", this, n"OnDespawn")
             .AddTarget(EntityTarget.Type(n"PlayerPuppet"));
 
         this.attached = GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Entity/Attached", this, n"OnSpawn")
             // note: not specifying a target will trigger callback for each possible entity in-game
-            .AddTarget(EntityTarget.Type(n"PlayerPuppet"));
+            .AddTarget(EntityTarget.Type(n"PlayerPuppet"))
+            .SetRunMode(CallbackRunMode.OncePerTarget);
     }
     private func OnDetach() -> Void {
         LOG("on detach: AudiowareSystem");
@@ -162,8 +163,7 @@ public class AudiowareSystem extends ScriptableSystem {
             WARN(s"invalid emitter record ID (\(display))");
             return false;
         }
-        AudiowareSystem.GetInstance(GetGameInstance())
-        .attached.AddTarget(EntityTarget.RecordID(recordID));
+        this.attached.AddTarget(EntityTarget.RecordID(recordID));
         return true;
     }
 
@@ -173,8 +173,7 @@ public class AudiowareSystem extends ScriptableSystem {
             WARN(s"invalid emitter class (\(display))");
             return false;
         }
-        AudiowareSystem.GetInstance(GetGameInstance())
-        .attached.AddTarget(EntityTarget.Type(className));
+        this.attached.AddTarget(EntityTarget.Type(className));
         return true;
     }
 
@@ -184,8 +183,7 @@ public class AudiowareSystem extends ScriptableSystem {
             WARN(s"invalid emitter record ID (\(display))");
             return;
         }
-        AudiowareSystem.GetInstance(GetGameInstance())
-        .attached.RemoveTarget(EntityTarget.RecordID(recordID));
+        this.attached.RemoveTarget(EntityTarget.RecordID(recordID));
     }
 
     public func StopAutoRegisterEmitters(className: CName) {
@@ -194,8 +192,7 @@ public class AudiowareSystem extends ScriptableSystem {
             WARN(s"invalid emitter class (\(display))");
             return;
         }
-        AudiowareSystem.GetInstance(GetGameInstance())
-        .attached.RemoveTarget(EntityTarget.Type(className));
+        this.attached.RemoveTarget(EntityTarget.Type(className));
     }
 
     public func RegisterEmitter(entityID: EntityID, opt emitterName: CName) -> Registration {
@@ -214,14 +211,12 @@ public class AudiowareSystem extends ScriptableSystem {
                 ERR(s"failed to register emitter entity ID (\(display))");
                 return Registration.Failed;
             }
-            AudiowareSystem.GetInstance(GetGameInstance())
-            .uninitialize.AddTarget(EntityTarget.ID(entityID));
+            this.uninitialize.AddTarget(EntityTarget.ID(entityID));
             return Registration.Ready;
         }
 
         // otherwise
-        AudiowareSystem.GetInstance(GetGameInstance())
-        .attached.AddTarget(EntityTarget.ID(entityID));
+        this.attached.AddTarget(EntityTarget.ID(entityID));
         return Registration.Postponed;
     }
 
@@ -235,15 +230,19 @@ public class AudiowareSystem extends ScriptableSystem {
         if !IsDefined(entity) { return; }
         let id = entity.GetEntityID();
         let display = EntityID.ToDebugString(id);
-        LOG(s"on emitter spawn: AudiowareSystem (\(display))");
+        if !entity.IsA(n"PlayerPuppet") {
+            LOG(s"on emitter spawn: AudiowareSystem (\(display))");
+        }
         // ignore EntityTarget placeholder, we only care about emitters here
         if !entity.IsA(n"PlayerPuppet") {
-            if IsRegisteredEmitter(id) {
-                return;
+            let already = IsRegisteredEmitter(id);
+            if !already {
+                let registered = RegisterEmitter(id);
+                if registered {
+                    this.uninitialize.AddTarget(EntityTarget.ID(id));
+                    LOG(s"on emitter registered: AudiowareSystem (\(display))");
+                }
             }
-            let registered = RegisterEmitter(id);
-            if registered { this.uninitialize.AddTarget(EntityTarget.ID(id)); }
-            LOG(s"on emitter registered: AudiowareSystem (\(display))");
         }
     }
 
@@ -251,8 +250,17 @@ public class AudiowareSystem extends ScriptableSystem {
         let entity = event.GetEntity();
         if !IsDefined(entity) { return; }
         if !entity.IsA(n"PlayerPuppet") {
-            LOG("on emitter despawn: AudiowareSystem");
-            UnregisterEmitter(entity.GetEntityID());
+            let id = entity.GetEntityID();
+            let display = EntityID.ToDebugString(id);
+            LOG(s"on emitter despawn: AudiowareSystem (\(display))");
+            let registered = IsRegisteredEmitter(id);
+            if registered {
+                LOG(s"on emitter despawn while registered: AudiowareSystem (\(display))");
+                let unregistered = UnregisterEmitter(id);
+                LOG(s"on emitter despawn + unregistered?[\(ToString(unregistered))]: AudiowareSystem (\(display))");
+                // this.uninitialize.RemoveTarget(EntityTarget.ID(id));
+                LOG(s"on emitter despawn + unregistered + untracked: AudiowareSystem (\(display))");
+            }
         } else { LOG("on player despawn: AudiowareSystem"); }
     }
 

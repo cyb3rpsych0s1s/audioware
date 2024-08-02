@@ -118,6 +118,7 @@ impl Scene {
         Ok(())
     }
     pub fn unregister_emitter(entity_id: &EntityId) -> Result<(), Error> {
+        log::info!(Audioware::env(), "unregistering emitter: {:?}", entity_id);
         let mut emitters = Self::try_lock_emitters()?;
         let id = emitters
             .keys()
@@ -126,6 +127,7 @@ impl Scene {
         if let Some(id) = id {
             emitters.remove(&id);
         }
+        log::info!(Audioware::env(), "unregistered emitter: {:?}", entity_id);
         Ok(())
     }
     pub fn emitters_count() -> Result<usize, Error> {
@@ -136,13 +138,12 @@ impl Scene {
         Ok(())
     }
     pub fn sync_emitters() -> Result<(), Error> {
+        log::info!(Audioware::env(), "syncing emitters positions...");
         let mut entity: Ref<Entity>;
         let mut position: Vector4;
-        let mut game: GameInstance;
         if let Ok(mut emitters) = Self::try_lock_emitters() {
             for (k, v) in emitters.iter_mut() {
-                game = GameInstance::new();
-                entity = GameInstance::find_entity_by_id(game, *k.entity_id());
+                entity = GameInstance::find_entity_by_id(GameInstance::new(), *k.entity_id());
                 if entity.is_null() {
                     continue;
                 }
@@ -150,6 +151,7 @@ impl Scene {
                 v.set_position(position, IMMEDIATELY);
             }
         }
+        log::info!(Audioware::env(), "synced emitters positions!");
         Ok(())
     }
     pub fn sync_listener() -> Result<(), Error> {
