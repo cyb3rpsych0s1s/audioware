@@ -241,10 +241,91 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
     .SetInt(GetAllBlackboardDefs().Audioware_Settings.AudioPreset, value, true);
 }
 
+/// ⚠️ use native classname
+///
 /// Game.TestAutoRegisterEmitters("VendingMachine");
+/// Game.TestAutoRegisterEmitters("vehicleCarBaseObject");
+/// Game.TestAutoRegisterEmitters("vehicleBaseObject");
 public static exec func TestAutoRegisterEmitters(game: GameInstance, className: String) {
     let cname = StringToName(className);
     GameInstance.GetAudioSystem(game).AutoRegisterEmitters(cname);
+}
+
+/// Game.TestCarAssistant();
+public static exec func TestCarAssistant(game: GameInstance) {
+    // let's turn any car in the vicinity as an audio emitter
+    GameInstance.GetAudioSystem(game).AutoRegisterEmitters(n"vehicleBaseObject");
+    let callback = new StandsCloseToCar();
+    callback.player = GetPlayer(game);
+    callback.lastChecked = GameInstance.GetTimeSystem(game).GetGameTimeStamp();
+    callback.lastGreeted = 0.0;
+    GameInstance.GetDelaySystem(game).DelayCallback(callback, 1.0, true);
+}
+
+public class StandsCloseToCar extends DelayCallback {
+    public let player: wref<PlayerPuppet>;
+    public let lastChecked: Float;
+    public let lastGreeted: Float;
+    private func Reschedule(game: GameInstance, checked: Float, greeted: Float) {
+        let callback = new StandsCloseToCar();
+        callback.player = this.player;
+        callback.lastChecked = checked;
+        callback.lastGreeted = greeted;
+        GameInstance.GetDelaySystem(game).DelayCallback(callback, 2.0, true);
+    }
+    public func Call() -> Void {
+        if !IsDefined(this.player) { return; }
+        let game = this.player.GetGame();
+        let now = GameInstance.GetTimeSystem(game).GetGameTimeStamp();
+        FTLog(s"check car proximity: \(ToString(now))");
+        // greeted less than 5sec ago
+        if this.lastGreeted + 5.0 > now
+        // is not looking at owned car from 5m or less
+        || !IsLookingAtOwnCar(this.player)
+        // is already inside car
+        || VehicleSystem.IsPlayerInVehicle(game) {
+            this.Reschedule(game, now, this.lastGreeted);
+        } else {
+            let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(this.player);
+            let id = target.GetEntityID();
+            FTLog(s"V's vehicle entityID: \(EntityID.ToDebugString(id))");
+            // let's say we have audios named like: car_assistant_01, car_assistant_02, ..., car_assistant_05
+            let idx = RandRange(1, 5);
+            let string = s"car_assistant_0\(ToString(idx))";
+            let sound = StringToName(string);
+            GameInstance.GetAudioSystem(game)
+            .PlayOnEmitter(sound, target.GetEntityID(), n"Car Assistant");
+
+            this.Reschedule(game, now, now);
+        }
+    }
+}
+
+private func IsLookingAtOwnCar(player: wref<PlayerPuppet>) -> Bool {
+    let game = player.GetGame();
+    // what players currently looks at
+    let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(player);
+    // if this is a vehicle
+    if target.IsVehicle() {
+        let vehicle: wref<VehicleObject> = target as VehicleObject;
+        FTLog(s"currently looking at a vehicle");
+        // if this is V's vehicle
+        if vehicle.IsPlayerActiveVehicle() {
+            FTLog(s"got V's vehicle");
+            let distance = Vector4.Distance(vehicle.GetWorldPosition(), player.GetWorldPosition());
+            // if it's close enough
+            if distance < 5.0 {
+                FTLog(s"V's vehicle less than 5m away");
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/// Game.TestDelayedJackpot();
+public static exec func TestDelayedJackpot(game: GameInstance) {
+    GameInstance.GetAudioSystem(game).AutoRegisterEmitters(n"VendingMachine");
     let callback = new DelayedJackpot();
     callback.player = GetPlayer(game);
     GameInstance.GetDelaySystem(game).DelayCallback(callback, 1.0, true);
