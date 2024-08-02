@@ -364,3 +364,11 @@ fn scan_repr(cls_name: &str) {
         cls.base().map(|x| x.name()).unwrap_or_default()
     );
 }
+
+#[cfg(debug_assertions)]
+#[allow(dead_code)]
+fn whoami(cname_hash: u64) {
+    let env = Audioware::env();
+    let cname = CName::from(cname_hash);
+    log::info!(env, "whoami: {}", cname.as_str());
+}
