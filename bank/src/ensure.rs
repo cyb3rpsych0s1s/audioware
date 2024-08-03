@@ -109,6 +109,23 @@ pub fn ensure_manifest_no_duplicates(manifest: &Manifest) -> Result<(), Error> {
     Ok(())
 }
 
+/// ensure audio file [`Path`](std::path::Path) is located inside [`Mod`] depot.
+pub fn ensure_located_in_depot(
+    file: &impl AsRef<std::path::Path>,
+    folder: &Mod,
+) -> Result<(), Error> {
+    let arg = std::fs::canonicalize(folder)?;
+    let path = arg.join(file);
+    if !path.starts_with(arg) {
+        return Err(Error::Validation {
+            source: validation::Error::AudioOutsideDepot {
+                path: path.display().to_string(),
+            },
+        });
+    }
+    Ok(())
+}
+
 /// ensure [`Path`](std::path::Path) contains valid audio (based on usage)
 #[inline]
 pub fn ensure_valid_audio(
@@ -120,6 +137,7 @@ pub fn ensure_valid_audio(
 ) -> Result<Either<StaticSoundData, StreamingSoundData<FromFileError>>, Error> {
     use snafu::ResultExt;
     let filepath = m.as_ref().join(path.as_ref());
+    ensure_located_in_depot(path, m)?;
     let data = match usage {
         Usage::OnDemand | Usage::InMemory => {
             let data = StaticSoundData::from_file(filepath).context(InvalidAudioSnafu {

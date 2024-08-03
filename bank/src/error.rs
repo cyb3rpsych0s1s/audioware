@@ -44,6 +44,8 @@ pub mod validation {
             visibility(pub(crate))
         )]
         ConflictingKey { cname: String },
+        #[snafu(display("audio outside depot: {path}"), visibility(pub(crate)))]
+        AudioOutsideDepot { path: String },
         #[snafu(display("cannot load audio: {path}"), visibility(pub(crate)))]
         InvalidAudio {
             path: String,
@@ -64,6 +66,8 @@ pub mod validation {
         CannotStoreSettings,
         #[snafu(display("cannot store id: {id}"), visibility(pub(crate)))]
         CannotStoreAgnosticId { id: Id },
+        #[snafu(display("IO: {source}"), visibility(pub(crate)))]
+        IO { source: std::io::Error },
     }
 }
 
@@ -82,5 +86,11 @@ impl From<self::validation::Error> for self::Error {
 impl From<audioware_manifest::Error> for self::Error {
     fn from(source: audioware_manifest::Error) -> Self {
         Self::Manifest { source }
+    }
+}
+
+impl From<std::io::Error> for self::Error {
+    fn from(source: std::io::Error) -> Self {
+        Self::from(validation::Error::IO { source })
     }
 }
