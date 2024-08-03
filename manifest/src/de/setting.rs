@@ -1,6 +1,10 @@
 use std::time::Duration;
 
-use kira::{sound::Region, tween::Tween, StartTime, Volume};
+use kira::{
+    sound::{PlaybackRate, Region},
+    tween::Tween,
+    StartTime, Volume,
+};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -12,7 +16,41 @@ pub struct Settings {
     pub volume: Option<f64>,
     pub panning: Option<f64>,
     pub loop_region: Option<Region>,
+    #[serde(deserialize_with = "factor_or_semitones", default)]
+    pub playback_rate: Option<PlaybackRate>,
     pub tween: Option<Interpolation>,
+}
+
+fn factor_or_semitones<'de, D>(deserializer: D) -> Result<Option<PlaybackRate>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: Option<&str> = Deserialize::deserialize(deserializer)?;
+    if let Some(s) = s {
+        let s = s.trim();
+        if s.starts_with('x') || s.starts_with('X') {
+            return Ok(Some(PlaybackRate::Factor(
+                s[1..].trim().parse().map_err(serde::de::Error::custom)?,
+            )));
+        }
+        if s.ends_with('♯') {
+            return Ok(Some(PlaybackRate::Semitones(
+                s[..s.len() - 1]
+                    .trim()
+                    .parse()
+                    .map_err(serde::de::Error::custom)?,
+            )));
+        }
+        if s.ends_with('♭') {
+            return Ok(Some(PlaybackRate::Semitones(
+                -s[1..].trim().parse().map_err(serde::de::Error::custom)?,
+            )));
+        }
+        return Err(serde::de::Error::custom(format!(
+            "invalid factor or semitone: {s}"
+        )));
+    }
+    Ok(None)
 }
 
 #[derive(Debug, Deserialize, Clone)]
