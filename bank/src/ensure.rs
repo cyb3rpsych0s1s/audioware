@@ -183,6 +183,15 @@ pub fn ensure_valid_audio_settings(
                 }
             );
         }
+        if let Some(panning) = settings.panning {
+            ensure!(
+                (0.0..=1.0).contains(&panning),
+                InvalidAudioSettingSnafu {
+                    which: "panning",
+                    why: "must be a value between 0.0 and 1.0 (inclusive)"
+                }
+            );
+        }
     }
     Ok(())
 }

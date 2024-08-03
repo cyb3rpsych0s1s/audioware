@@ -1,12 +1,6 @@
 use std::time::Duration;
 
-use kira::{
-    sound::{
-        static_sound::StaticSoundSettings, streaming::StreamingSoundSettings, PlaybackPosition,
-    },
-    tween::{Tween, Value},
-    StartTime, Volume,
-};
+use kira::{tween::Tween, StartTime, Volume};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -16,6 +10,7 @@ pub struct Settings {
     #[serde(with = "humantime_serde", default)]
     pub start_position: Option<Duration>,
     pub volume: Option<f64>,
+    pub panning: Option<f64>,
     pub tween: Option<Interpolation>,
 }
 
@@ -42,47 +37,38 @@ impl From<Interpolation> for Tween {
     }
 }
 
-impl From<Settings> for StaticSoundSettings {
-    fn from(value: Settings) -> Self {
-        Self {
-            start_time: value
-                .start_time
-                .map(StartTime::Delayed)
-                .unwrap_or(StartTime::Immediate),
-            start_position: value
-                .start_position
-                .map(|x| PlaybackPosition::Seconds(x.as_secs_f64()))
-                .unwrap_or_default(),
-            volume: value
-                .volume
-                .map(|x| Value::<Volume>::Fixed(Volume::Amplitude(x)))
-                .unwrap_or(Value::<Volume>::Fixed(Volume::Amplitude(1.))),
-            fade_in_tween: value.tween.map(Into::into),
-            ..Default::default()
+macro_rules! impl_from_settings {
+    ($into:path) => {
+        impl From<self::Settings> for $into {
+            fn from(value: self::Settings) -> Self {
+                Self {
+                    start_time: value
+                        .start_time
+                        .map(::kira::StartTime::Delayed)
+                        .unwrap_or(::kira::StartTime::Immediate),
+                    start_position: value
+                        .start_position
+                        .map(|x| ::kira::sound::PlaybackPosition::Seconds(x.as_secs_f64()))
+                        .unwrap_or_default(),
+                    volume: value
+                        .volume
+                        .map(|x| ::kira::tween::Value::<Volume>::Fixed(Volume::Amplitude(x)))
+                        .unwrap_or(::kira::tween::Value::<Volume>::Fixed(Volume::Amplitude(1.))),
+                    panning: value
+                        .panning
+                        .map(f64::from)
+                        .map(Into::into)
+                        .unwrap_or(::kira::tween::Value::Fixed(0.5)),
+                    fade_in_tween: value.tween.map(Into::into),
+                    ..Default::default()
+                }
+            }
         }
-    }
+    };
 }
 
-impl From<Settings> for StreamingSoundSettings {
-    fn from(value: Settings) -> Self {
-        Self {
-            start_time: value
-                .start_time
-                .map(StartTime::Delayed)
-                .unwrap_or(StartTime::Immediate),
-            start_position: value
-                .start_position
-                .map(|x| PlaybackPosition::Seconds(x.as_secs_f64()))
-                .unwrap_or_default(),
-            volume: value
-                .volume
-                .map(|x| Value::<Volume>::Fixed(Volume::Amplitude(x)))
-                .unwrap_or(Value::<Volume>::Fixed(Volume::Amplitude(1.))),
-            fade_in_tween: value.tween.map(Into::into),
-            ..Default::default()
-        }
-    }
-}
+impl_from_settings!(kira::sound::static_sound::StaticSoundSettings);
+impl_from_settings!(kira::sound::streaming::StreamingSoundSettings);
 
 #[cfg(test)]
 mod tests {
