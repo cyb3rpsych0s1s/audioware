@@ -18,7 +18,7 @@ pub struct Settings {
     pub loop_region: Option<Region>,
     #[serde(deserialize_with = "factor_or_semitones", default)]
     pub playback_rate: Option<PlaybackRate>,
-    pub tween: Option<Interpolation>,
+    pub fade_in_tween: Option<Interpolation>,
 }
 
 fn factor_or_semitones<'de, D>(deserializer: D) -> Result<Option<PlaybackRate>, D::Error>
@@ -98,7 +98,7 @@ macro_rules! impl_from_settings {
                         .map(f64::from)
                         .map(Into::into)
                         .unwrap_or(::kira::tween::Value::Fixed(0.5)),
-                    fade_in_tween: value.tween.map(Into::into),
+                    fade_in_tween: value.fade_in_tween.map(Into::into),
                     ..Default::default()
                 }
             }
@@ -148,12 +148,12 @@ mod tests {
     start_time: 120ms
     volume: 0.5"## ; "start time + volume")]
     #[test_case(r##"settings:
-    tween:
+    fade_in_tween:
         duration: 1s
-        InPowf: 0.5"## ; "tween")]
+        InPowf: 0.5"## ; "fade_in_tween")]
     #[test_case(r##"settings:
     start_time: 5s
-    tween:
+    fade_in_tween:
         duration: 9s
         InPowi: 2"## ; "complex settings")]
     fn settings(yaml: &str) {
