@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use kira::{tween::Tween, StartTime, Volume};
+use kira::{sound::Region, tween::Tween, StartTime, Volume};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -11,6 +11,7 @@ pub struct Settings {
     pub start_position: Option<Duration>,
     pub volume: Option<f64>,
     pub panning: Option<f64>,
+    pub loop_region: Option<Region>,
     pub tween: Option<Interpolation>,
 }
 

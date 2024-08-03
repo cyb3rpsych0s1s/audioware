@@ -10,7 +10,7 @@ use kira::{
     sound::{
         static_sound::{StaticSoundData, StaticSoundSettings},
         streaming::{StreamingSoundData, StreamingSoundSettings},
-        FromFileError,
+        EndPosition, FromFileError, PlaybackPosition,
     },
     Volume,
 };
@@ -173,11 +173,11 @@ pub fn ensure_valid_audio_settings(
     settings: Option<&Settings>,
 ) -> Result<(), Error> {
     if let Some(settings) = settings {
+        let duration = match audio {
+            Either::Left(x) => x.duration().as_secs_f64(),
+            Either::Right(x) => x.duration().as_secs_f64(),
+        };
         if let Some(start_position) = settings.start_position.map(|x| x.as_secs_f64()) {
-            let duration = match audio {
-                Either::Left(x) => x.duration().as_secs_f64(),
-                Either::Right(x) => x.duration().as_secs_f64(),
-            };
             ensure!(
                 start_position < duration,
                 InvalidAudioSettingSnafu {
@@ -201,6 +201,33 @@ pub fn ensure_valid_audio_settings(
                 InvalidAudioSettingSnafu {
                     which: "volume",
                     why: "audio should not be louder than 85.0 dB"
+                }
+            );
+        }
+        if let Some(region) = settings.loop_region {
+            let start: f64 = match (region.start, audio) {
+                (PlaybackPosition::Seconds(seconds), _) => seconds,
+                (PlaybackPosition::Samples(samples), Either::Left(data)) => {
+                    samples as f64 / data.sample_rate as f64
+                }
+                // no sample rate method, so returns start of audio
+                (PlaybackPosition::Samples(_), Either::Right(_)) => 0.0,
+            };
+            let end: f64 = match (region.end, audio) {
+                (EndPosition::EndOfAudio, Either::Left(_)) => duration,
+                (EndPosition::EndOfAudio, Either::Right(_)) => duration,
+                (EndPosition::Custom(PlaybackPosition::Seconds(x)), _) => x,
+                (EndPosition::Custom(PlaybackPosition::Samples(samples)), Either::Left(data)) => {
+                    samples as f64 / data.sample_rate as f64
+                }
+                // no sample rate method, so returns end of audio
+                (EndPosition::Custom(PlaybackPosition::Samples(_)), Either::Right(_)) => duration,
+            };
+            ensure!(
+                start >= 0.0 && end > 0.0 && start < duration && end <= duration && start < end,
+                InvalidAudioSettingSnafu {
+                    which: "loop_region",
+                    why: "must be within audio duration and starts before it ends"
                 }
             );
         }
