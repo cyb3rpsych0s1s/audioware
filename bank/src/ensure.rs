@@ -6,10 +6,13 @@ use std::{
 
 use audioware_manifest::*;
 use either::Either;
-use kira::sound::{
-    static_sound::{StaticSoundData, StaticSoundSettings},
-    streaming::{StreamingSoundData, StreamingSoundSettings},
-    FromFileError,
+use kira::{
+    sound::{
+        static_sound::{StaticSoundData, StaticSoundSettings},
+        streaming::{StreamingSoundData, StreamingSoundSettings},
+        FromFileError,
+    },
+    Volume,
 };
 use red4ext_rs::types::{CName, CNamePool};
 use snafu::ensure;
@@ -189,6 +192,15 @@ pub fn ensure_valid_audio_settings(
                 InvalidAudioSettingSnafu {
                     which: "panning",
                     why: "must be a value between 0.0 and 1.0 (inclusive)"
+                }
+            );
+        }
+        if let Some(volume) = settings.volume {
+            ensure!(
+                Volume::Amplitude(volume).as_decibels() <= 85.0,
+                InvalidAudioSettingSnafu {
+                    which: "volume",
+                    why: "audio should not be louder than 85.0 dB"
                 }
             );
         }
