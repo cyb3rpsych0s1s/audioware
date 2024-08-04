@@ -208,6 +208,8 @@ fn test_static() {
     #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("CallbackSystemTarget");
     // EntityTarget => native: true, size: 0x68, value holder size: 0x0, align: 0x4, parent: CallbackSystemTarget
     #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("EntityTarget");
+    #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("WorldPosition");
+    #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("WorldPosition");
 
     let env = Audioware::env();
     let from = Vector4 {
