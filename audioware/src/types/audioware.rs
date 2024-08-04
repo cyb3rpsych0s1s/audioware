@@ -1,9 +1,9 @@
-use std::time::Duration;
+use std::{cell::Cell, time::Duration};
 
 use audioware_manifest::ScnDialogLineType;
 use kira::tween::{Easing, Tween};
 use red4ext_rs::{
-    class_kind::Scripted,
+    class_kind::{Native, Scripted},
     log,
     types::{CName, EntityId, Ref},
     NativeRepr, PluginOps, RttiSystem, ScriptClass,
@@ -174,4 +174,18 @@ impl ToTween for Ref<AudiowareElasticTween> {
             },
         })
     }
+}
+
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct OneStruct {
+    pub value: Cell<f32>,
+}
+
+unsafe impl NativeRepr for OneStruct {
+    const NAME: &'static str = "OneStruct";
+}
+unsafe impl ScriptClass for OneStruct {
+    type Kind = Native;
+    const NAME: &'static str = "OneStruct";
 }
