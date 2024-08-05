@@ -1,4 +1,5 @@
 import Audioware.AudiowareSystem
+import Audioware.EmitterSettings
 
 @addMethod(GameInstance)
 public static func GetAudioSystemExt(game: GameInstance) -> AudioSystemExt {
@@ -13,7 +14,7 @@ public native struct AudioSystemExt {
     public static native func PlayOverThePhone(self: AudioSystemExt, eventName: CName, emitterName: CName, gender: CName) -> Void;
     
     // spatial scene
-    public static func RegisterEmitter(self: AudioSystemExt, entityID: EntityID, opt emitterName: CName) -> Void { AudiowareSystem.GetInstance(GetGameInstance()).RegisterEmitter(entityID, emitterName); }
+    public static func RegisterEmitter(self: AudioSystemExt, entityID: EntityID, opt emitterName: CName, opt emitterSettings: EmitterSettings) -> Void { AudiowareSystem.GetInstance(GetGameInstance()).RegisterEmitter(entityID, emitterName, emitterSettings); }
     public static func UnregisterEmitter(self: AudioSystemExt, entityID: EntityID) -> Void { AudiowareSystem.GetInstance(GetGameInstance()).UnregisterEmitter(entityID); }
     public static func IsValidEmitter(self: AudioSystemExt, className: CName) -> Bool { return AudiowareSystem.GetInstance(GetGameInstance()).IsValidEmitter(className); }
     public static native func IsRegisteredEmitter(self: AudioSystemExt, entityID: EntityID) -> Bool;

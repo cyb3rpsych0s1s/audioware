@@ -91,7 +91,11 @@ impl Scene {
                 origin: "spatial scene emitters handles",
             })
     }
-    pub fn register_emitter(entity_id: EntityId, emitter_name: Option<CName>) -> Result<(), Error> {
+    pub fn register_emitter(
+        entity_id: EntityId,
+        emitter_name: Option<CName>,
+        emitter_settings: Option<EmitterSettings>,
+    ) -> Result<(), Error> {
         if !entity_id.is_defined() {
             return Err(Error::Scene {
                 source: SceneError::InvalidEmitter,
@@ -107,7 +111,7 @@ impl Scene {
         let position = entity.get_world_position();
         let mut scene = Self::try_lock_scene()?;
         let mut emitters = Self::try_lock_emitters()?;
-        let emitter = scene.add_emitter(position, EmitterSettings::default())?;
+        let emitter = scene.add_emitter(position, emitter_settings.unwrap_or_default())?;
         emitters.insert(EmitterId::new(entity_id, emitter_name), emitter);
         log::info!(
             Audioware::env(),

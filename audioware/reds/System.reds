@@ -167,7 +167,7 @@ public class AudiowareSystem extends ScriptableSystem {
         && Reflection.GetClass(className).IsA(n"gameObject");
     }
 
-    public func RegisterEmitter(entityID: EntityID, opt emitterName: CName) -> Registration {
+    public func RegisterEmitter(entityID: EntityID, opt emitterName: CName, opt emitterSettings: EmitterSettings) -> Registration {
         let display = EntityID.ToDebugString(entityID);
 
         if !this.IsValidEmitter(entityID) {
@@ -178,7 +178,7 @@ public class AudiowareSystem extends ScriptableSystem {
         // if already spawned
         let entity = GameInstance.FindEntityByID(GetGameInstance(), entityID);
         if IsDefined(entity) {
-            let registered = RegisterEmitter(entityID, emitterName);
+            let registered = RegisterEmitter(entityID, emitterName, emitterSettings);
             if !registered {
                 ERR(s"failed to register emitter entity ID (\(display))");
                 return Registration.Failed;

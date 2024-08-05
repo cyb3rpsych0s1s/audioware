@@ -7,7 +7,7 @@ use crate::Audioware;
 
 use super::AudiowareEasing;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[repr(C)]
 pub struct AudiowareTween {
     /// delay before starting: in seconds
@@ -20,7 +20,7 @@ unsafe impl ScriptClass for AudiowareTween {
     const NAME: &'static str = "AudiowareTween";
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[repr(C)]
 pub struct AudiowareLinearTween {
     base: AudiowareTween,
@@ -30,7 +30,7 @@ unsafe impl ScriptClass for AudiowareLinearTween {
     const NAME: &'static str = "AudiowareLinearTween";
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[repr(C)]
 pub struct AudiowareElasticTween {
     base: AudiowareTween,
@@ -130,5 +130,55 @@ impl ToTween for Ref<AudiowareElasticTween> {
                 AudiowareEasing::InOutPowf => Easing::InOutPowf(easing_value as f64),
             },
         })
+    }
+}
+
+pub trait ToEasing {
+    fn into_easing(self) -> Option<Easing>;
+}
+
+impl ToEasing for Ref<AudiowareLinearTween> {
+    fn into_easing(self) -> Option<Easing> {
+        if self.is_null() {
+            return None;
+        }
+        Some(Easing::Linear)
+    }
+}
+
+impl ToEasing for Ref<AudiowareElasticTween> {
+    fn into_easing(self) -> Option<Easing> {
+        if self.is_null() {
+            return None;
+        }
+        let fields = unsafe { self.fields() }.unwrap();
+        Some(match fields.easing {
+            AudiowareEasing::InPowf => Easing::InPowf(fields.value as f64),
+            AudiowareEasing::OutPowf => Easing::OutPowf(fields.value as f64),
+            AudiowareEasing::InOutPowf => Easing::InOutPowf(fields.value as f64),
+        })
+    }
+}
+
+impl ToEasing for Ref<AudiowareTween> {
+    fn into_easing(self) -> Option<Easing> {
+        if self.is_null() {
+            return None;
+        }
+        if self.is_a::<AudiowareLinearTween>() {
+            return self
+                .clone()
+                .cast::<AudiowareLinearTween>()
+                .unwrap()
+                .into_easing();
+        }
+        if self.is_a::<AudiowareElasticTween>() {
+            return self
+                .clone()
+                .cast::<AudiowareElasticTween>()
+                .unwrap()
+                .into_easing();
+        }
+        None
     }
 }

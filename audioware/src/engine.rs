@@ -15,8 +15,8 @@ use crate::{
     macros::{ok_or_return, some_or_return},
     states::State,
     types::{
-        propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, AudiowareTween,
-        GameObject, LocalizationPackage, Subtitle, ToTween,
+        propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, AudiowareEmitterSettings,
+        AudiowareTween, GameObject, LocalizationPackage, Subtitle, ToTween,
     },
     Audioware,
 };
@@ -67,8 +67,16 @@ impl Engine {
     /// Register an audio emitter to spatial scene.
     ///
     /// ⚠️ Returns `true` if already registered.
-    pub fn register_emitter(entity_id: EntityId, emitter_name: Opt<CName>) -> bool {
-        if let Err(e) = Scene::register_emitter(entity_id, emitter_name.into_option()) {
+    pub fn register_emitter(
+        entity_id: EntityId,
+        emitter_name: Opt<CName>,
+        emitter_settings: Opt<AudiowareEmitterSettings>,
+    ) -> bool {
+        if let Err(e) = Scene::register_emitter(
+            entity_id,
+            emitter_name.into_option(),
+            emitter_settings.into_option().map(Into::into),
+        ) {
             log::error!(Audioware::env(), "couldn't register emitter to scene: {e}");
             return false;
         }
