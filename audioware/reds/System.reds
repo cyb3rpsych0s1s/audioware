@@ -167,44 +167,6 @@ public class AudiowareSystem extends ScriptableSystem {
         && Reflection.GetClass(className).IsA(n"gameObject");
     }
 
-    public func AutoRegisterEmitters(recordID: TweakDBID) -> Bool {
-        let display = TDBID.ToStringDEBUG(recordID);
-        if !this.IsValidEmitter(recordID) {
-            WARN(s"invalid emitter record ID (\(display))");
-            return false;
-        }
-        this.attached.AddTarget(EntityTarget.RecordID(recordID));
-        return true;
-    }
-
-    public func AutoRegisterEmitters(className: CName) -> Bool {
-        let display = NameToString(className);
-        if !this.IsValidEmitter(className) {
-            WARN(s"invalid emitter class (\(display))");
-            return false;
-        }
-        this.attached.AddTarget(EntityTarget.Type(className));
-        return true;
-    }
-
-    public func StopAutoRegisterEmitters(recordID: TweakDBID) {
-        let display = TDBID.ToStringDEBUG(recordID);
-        if !this.IsValidEmitter(recordID) {
-            WARN(s"invalid emitter record ID (\(display))");
-            return;
-        }
-        this.attached.RemoveTarget(EntityTarget.RecordID(recordID));
-    }
-
-    public func StopAutoRegisterEmitters(className: CName) {
-        let display = NameToString(className);
-        if !this.IsValidEmitter(className) {
-            WARN(s"invalid emitter class (\(display))");
-            return;
-        }
-        this.attached.RemoveTarget(EntityTarget.Type(className));
-    }
-
     public func RegisterEmitter(entityID: EntityID, opt emitterName: CName) -> Registration {
         let display = EntityID.ToDebugString(entityID);
 

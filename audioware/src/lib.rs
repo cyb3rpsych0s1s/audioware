@@ -3,17 +3,22 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::Engine;
+use ext::AudioSystemExt;
 use hooks::*;
 use red4ext_rs::{
-    call, export_plugin_symbols, exports, global, log, methods, static_methods, types::{CName, GameEngine, IScriptable, Opt}, wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr
+    call, export_plugin_symbols, exports, global, log, static_methods,
+    types::{CName, GameEngine, Opt},
+    wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
+    RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
-use types::{AsAudioSystem, AudioSystem, GameObject, MyNativeClass, OneStruct, Vector4};
+use types::{AsAudioSystem, AudioSystem, GameObject, Vector4};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod config;
 mod engine;
 mod error;
+mod ext;
 mod hooks;
 mod macros;
 mod states;
@@ -150,13 +155,18 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetPreset", Engine::set_preset)),
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play)),
-            ClassExport::<OneStruct>::builder()
-                .static_methods(static_methods![c"SetValue" => OneStruct::set_value])
+            ClassExport::<AudioSystemExt>::builder()
+                .static_methods(static_methods![
+                    c"Play" => AudioSystemExt::play,
+                    c"Stop" => AudioSystemExt::stop,
+                    // c"Switch" => AudioSystemExt::switch,
+                    c"PlayOverThePhone" => AudioSystemExt::play_over_the_phone,
+                    c"IsRegisteredEmitter" => AudioSystemExt::is_registered_emitter,
+                    c"EmittersCount" => AudioSystemExt::emitters_count,
+                    c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
+                    c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
+                ])
                 .build(),
-            ClassExport::<MyNativeClass>::builder().methods(methods![
-                c"TestMyNativeClass" => MyNativeClass::test,
-            ]).base(IScriptable::NAME).build(),
-            GlobalExport(global!(c"TestOneStruct", test_one_struct)),
         ]
     }
 }
@@ -381,8 +391,4 @@ fn whoami(cname_hash: u64) {
     let env = Audioware::env();
     let cname = CName::from(cname_hash);
     log::info!(env, "whoami: {}", cname.as_str());
-}
-
-fn test_one_struct(s: OneStruct) {
-    crate::utils::info(&format!("{:#?}", s));
 }

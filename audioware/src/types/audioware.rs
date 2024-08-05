@@ -1,11 +1,11 @@
-use std::{cell::Cell, time::Duration};
+use std::time::Duration;
 
 use audioware_manifest::ScnDialogLineType;
 use kira::tween::{Easing, Tween};
 use red4ext_rs::{
-    class_kind::{Native, Scripted},
+    class_kind::Scripted,
     log,
-    types::{CName, EntityId, IScriptable, Ref},
+    types::{CName, EntityId, Ref},
     NativeRepr, PluginOps, RttiSystem, ScriptClass,
 };
 
@@ -173,42 +173,5 @@ impl ToTween for Ref<AudiowareElasticTween> {
                 AudiowareEasing::InOutPowf => Easing::InOutPowf(easing_value as f64),
             },
         })
-    }
-}
-
-#[derive(Debug, Default, Clone)]
-#[repr(C)]
-pub struct OneStruct {
-    pub value: Cell<f32>,
-}
-
-unsafe impl NativeRepr for OneStruct {
-    const NAME: &'static str = "OneStruct";
-}
-unsafe impl ScriptClass for OneStruct {
-    type Kind = Native;
-    const NAME: &'static str = "OneStruct";
-}
-
-impl OneStruct {
-    pub fn set_value(self, value: f32) {
-        crate::utils::info(format!("hello from OneStruct::set_value({value})"));
-    }
-}
-
-#[derive(Debug, Default, Clone)]
-#[repr(C)]
-pub struct MyNativeClass {
-    base: IScriptable,
-}
-
-unsafe impl ScriptClass for MyNativeClass {
-    type Kind = Native;
-    const NAME: &'static str = "MyNativeClass";
-}
-
-impl MyNativeClass {
-    pub fn test(&self, value: i32) {
-        crate::utils::info(format!("hello from MyNativeClass::test({value})"));
     }
 }
