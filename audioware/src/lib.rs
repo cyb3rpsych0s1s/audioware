@@ -5,10 +5,10 @@ use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::Engine;
 use hooks::*;
 use red4ext_rs::{
-    call, export_plugin_symbols, exports, global, log, types::{CName, GameEngine, Opt}, wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr
+    call, export_plugin_symbols, exports, global, log, methods, static_methods, types::{CName, GameEngine, IScriptable, Opt}, wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator, RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr
 };
 use states::{GameState, State};
-use types::{AsAudioSystem, AudioSystem, GameObject, OneStruct, Vector4};
+use types::{AsAudioSystem, AudioSystem, GameObject, MyNativeClass, OneStruct, Vector4};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod config;
@@ -150,7 +150,12 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetPreset", Engine::set_preset)),
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play)),
-            ClassExport::<OneStruct>::builder().build(),
+            ClassExport::<OneStruct>::builder()
+                .static_methods(static_methods![c"SetValue" => OneStruct::set_value])
+                .build(),
+            ClassExport::<MyNativeClass>::builder().methods(methods![
+                c"TestMyNativeClass" => MyNativeClass::test,
+            ]).base(IScriptable::NAME).build(),
             GlobalExport(global!(c"TestOneStruct", test_one_struct)),
         ]
     }
@@ -207,10 +212,12 @@ fn test_static() {
     #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("CallbackSystemTarget");
     // EntityTarget => native: true, size: 0x68, value holder size: 0x0, align: 0x4, parent: CallbackSystemTarget
     #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("EntityTarget");
-    // WorldPosition => native: true, size: 0xC, value holder size: 0x0, align: 0x4, parent: None   
+    // WorldPosition => native: true, size: 0xC, value holder size: 0x0, align: 0x4, parent: None
     #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("WorldPosition");
     // e.g. static => SetX (SetX)
     #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("WorldPosition");
+    // e.g. static => FindEntityByID (FindEntityByID)
+    #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("ScriptGameInstance");
 
     let env = Audioware::env();
     let from = Vector4 {

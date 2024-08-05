@@ -5,7 +5,7 @@ use kira::tween::{Easing, Tween};
 use red4ext_rs::{
     class_kind::{Native, Scripted},
     log,
-    types::{CName, EntityId, Ref},
+    types::{CName, EntityId, IScriptable, Ref},
     NativeRepr, PluginOps, RttiSystem, ScriptClass,
 };
 
@@ -188,4 +188,27 @@ unsafe impl NativeRepr for OneStruct {
 unsafe impl ScriptClass for OneStruct {
     type Kind = Native;
     const NAME: &'static str = "OneStruct";
+}
+
+impl OneStruct {
+    pub fn set_value(self, value: f32) {
+        crate::utils::info(format!("hello from OneStruct::set_value({value})"));
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct MyNativeClass {
+    base: IScriptable,
+}
+
+unsafe impl ScriptClass for MyNativeClass {
+    type Kind = Native;
+    const NAME: &'static str = "MyNativeClass";
+}
+
+impl MyNativeClass {
+    pub fn test(&self, value: i32) {
+        crate::utils::info(format!("hello from MyNativeClass::test({value})"));
+    }
 }
