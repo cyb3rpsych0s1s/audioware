@@ -5,7 +5,7 @@ use red4ext_rs::{
 
 use super::PlayerPuppet;
 
-/// `public static native func FindEntityByID(self: GameInstance, entityId: EntityID) -> ref<Entity>`
+/// `public static func GetPlayer(gameInstance: GameInstance) -> ref<PlayerPuppet>`
 pub fn get_player(game: GameInstance) -> Ref<PlayerPuppet> {
     let rtti = RttiSystem::get();
     let methods = rtti.get_global_functions();
