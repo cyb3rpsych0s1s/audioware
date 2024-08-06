@@ -85,7 +85,7 @@ macro_rules! impl_from_settings {
                     start_time: value
                         .start_time
                         .map(::kira::StartTime::Delayed)
-                        .unwrap_or(::kira::StartTime::Immediate),
+                        .unwrap_or_default(),
                     start_position: value
                         .start_position
                         .map(|x| ::kira::sound::PlaybackPosition::Seconds(x.as_secs_f64()))
@@ -93,13 +93,15 @@ macro_rules! impl_from_settings {
                     volume: value
                         .volume
                         .map(|x| ::kira::tween::Value::<Volume>::Fixed(Volume::Amplitude(x)))
-                        .unwrap_or(::kira::tween::Value::<Volume>::Fixed(Volume::Amplitude(1.))),
+                        .unwrap_or_default(),
                     panning: value
                         .panning
                         .map(f64::from)
                         .map(Into::into)
-                        .unwrap_or(::kira::tween::Value::Fixed(0.5)),
+                        .unwrap_or_default(),
                     fade_in_tween: value.fade_in_tween.map(Into::into),
+                    loop_region: value.loop_region,
+                    playback_rate: value.playback_rate.map(Into::into).unwrap_or_default(),
                     ..Default::default()
                 }
             }
