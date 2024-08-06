@@ -12,3 +12,5 @@
 .env
 /audioware-copy
 /release-audioware
+checksum.txt
+rustc-ice-*.txt

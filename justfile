@@ -15,6 +15,7 @@ redscript_repo_dir  := join(justfile_directory(), "audioware", "reds")
 red4ext_deploy_dir    := join("red4ext", "plugins", plugin_name)
 redscript_deploy_dir  := join("r6", "scripts", capitalize(plugin_name))
 red_cache_dir         := join("r6", "cache")
+red4ext_logs_dir      := join("red4ext", "logs")
 
 # cli
 zoltan_exe            := env_var_or_default("ZOLTAN_EXE", "")
@@ -44,13 +45,17 @@ now:
 
 # 📦 build Rust RED4Ext plugin
 build PROFILE='debug' TO=game_dir: (setup join(TO, red4ext_deploy_dir))
-  @'{{ if PROFILE == "release" { `cargo +nightly build --release` } else { `cargo +nightly build` } }}'
+  @'{{ if PROFILE == "release" { `cargo build --release` } else { `cargo build` } }}'
   @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just now
 
 alias b := build
 
 dev: (build) reload
+
+lldb TO=game_dir: dev
+  @just copy '{{ join(red4ext_bin_dir, "debug", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
+  @just now
 
 ci TO: (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
 
@@ -78,34 +83,62 @@ uninstall FROM=game_dir:
 
 # 🎨 lint code
 format:
-  @cargo +nightly fmt
+  @cargo fmt
 
 # 🎨 lint code
 @lint:
-  cargo +nightly clippy --fix --allow-dirty --allow-staged
-  cargo +nightly fix --allow-dirty --allow-staged
+  cargo clippy --fix --allow-dirty --allow-staged
+  cargo fix --allow-dirty --allow-staged
   just format
 
 alias l := lint
 
 qa:
-  @cargo +nightly clippy -- -D warnings
-  @cargo +nightly fix
-  @cargo +nightly fmt --check
+  @cargo clippy -- -D warnings
+  @cargo fix
+  @cargo fmt --check
 
 test:
-  @cargo +nightly test
+  cargo test --workspace --exclude audioware --exclude audioware-bank
 
 alias t := test
 
 check:
-  @cargo +nightly check --all
+  @cargo check --all
 
 alias c := check
 
 @doc:
-  cargo +nightly doc --open --no-deps
+  cargo doc --open --no-deps
 
 # TODO: finish updating all patterns
 offsets:
   {{zoltan_exe}} '.\addresses.hpp' '{{ join(game_dir, "bin", "x64", "Cyberpunk2077.exe") }}' -f 'std=c++23' --rust-output '.\addresses.rs'
+
+checksum TO:
+  Get-FileHash -Path "{{TO}}" -Algorithm SHA256 | Select-Object -ExpandProperty Hash
+
+@log TO=game_dir:
+  $folder = '{{ join(TO, red4ext_logs_dir) }}'; \
+  $files = Get-ChildItem -Path $folder -Filter "audioware-*.log"; \
+  $logs = @(); \
+  foreach ($file in $files) { \
+    if ($file.Name -match "audioware-(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2})") { \
+      $dateString = "$($matches[1])-$($matches[2])-$($matches[3]) $($matches[4]):$($matches[5]):$($matches[6])"; \
+      $date = [datetime]::ParseExact($dateString, "yyyy-MM-dd HH:mm:ss", $null); \
+      $logs += [PSCustomObject]@{ \
+        File = $file.FullName; \
+        Date = $date; \
+      } \
+    } \
+  } \
+  $latest = $logs | Sort-Object Date -Descending | Select-Object -First 1; \
+  if ($latest) { \
+    Write-Output "The most recent log file is: $($latest.File)"; \
+    Get-Content -Path $latest.File -Wait; \
+  } else { \
+    Write-Output "No log files found."; \
+  }
+
+smash FROM=game_dir:
+  {{ join(justfile_directory(), "community", "redscript-cli.exe") }} decompile -f -i '{{ join(FROM, red_cache_dir, "final.redscripts") }}' -o '{{ join(justfile_directory(), "..", "dump_smasher") }}'

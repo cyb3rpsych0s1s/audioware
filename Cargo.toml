@@ -1,11 +1,11 @@
 [workspace]
-members = ["audioware", "sys", "macros", "mem"]
+members = ["manifest", "bank", "audioware"]
 resolver = "2"
 
 [workspace.package]
-version = "0.5.1"
+version = "1.0.0"
 edition = "2021"
-rust-version = "1.76"
+rust-version = "1.79.0"
 
 [profile.release]
 lto = "thin"
@@ -13,20 +13,13 @@ strip = true
 codegen-units = 1
 
 [workspace.dependencies]
-anyhow = "1"
-audioware-macros = { path = "macros" }
-audioware-mem = { path = "mem" }
-audioware-sys = { path = "sys" }
-cxx = "1"
-fixed-map = { version = "0.9.3", features = ["serde"] }
-glam = { version = "0.26.0", features = ["mint"] }
-kira = "0.8.7"
-lazy_static = "1.4.0"
-memoffset = "0.9.0"
-mint = "0.5.9"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs.git", rev = "766da96", features = ["macros"] }
-retour = "0.3.1"
-serde = { version = "1.0", features = ["derive"] }
-static_assertions = "1.1.0"
-strum = "0.26"
-strum_macros = "0.26"
+audioware-manifest = { path = "manifest" }
+audioware-bank = { path = "bank" }
+either = "1.13"
+kira = { version = "0.9", features = ["serde"] }
+rayon = "1.10"
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "6d69537" }
+# red4ext-rs-bindings = { git = "https://github.com/jac3km4/red4ext-rs-bindings", rev = "v0.3.0" }
+serde = "1.0"
+snafu = "0.8"
+snowflake = "1.2"
