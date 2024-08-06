@@ -9,7 +9,6 @@ use crate::Audioware;
 /// engine audio backend buffer size
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 #[repr(i64)]
-#[allow(dead_code)]
 pub enum AudiowareBufferSize {
     #[default]
     Auto = 0,
