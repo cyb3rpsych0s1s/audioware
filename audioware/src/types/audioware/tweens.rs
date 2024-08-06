@@ -1,78 +1,69 @@
 use std::time::Duration;
 
-use kira::tween::{Easing, Tween};
 use red4ext_rs::{class_kind::Scripted, log, types::Ref, PluginOps, ScriptClass};
 
 use crate::Audioware;
 
-use super::AudiowareEasing;
+use super::Easing;
 
 #[derive(Debug, PartialEq)]
 #[repr(C)]
-pub struct AudiowareTween {
+pub struct Tween {
     /// delay before starting: in seconds
     start_time: f32,
     /// tween duration: in seconds
     duration: f32,
 }
-unsafe impl ScriptClass for AudiowareTween {
+unsafe impl ScriptClass for Tween {
     type Kind = Scripted;
-    const NAME: &'static str = "AudiowareTween";
+    const NAME: &'static str = "Audioware.Tween";
 }
 
 #[derive(Debug, PartialEq)]
 #[repr(C)]
-pub struct AudiowareLinearTween {
-    base: AudiowareTween,
+pub struct LinearTween {
+    base: Tween,
 }
-unsafe impl ScriptClass for AudiowareLinearTween {
+unsafe impl ScriptClass for LinearTween {
     type Kind = Scripted;
-    const NAME: &'static str = "AudiowareLinearTween";
+    const NAME: &'static str = "Audioware.LinearTween";
 }
 
 #[derive(Debug, PartialEq)]
 #[repr(C)]
-pub struct AudiowareElasticTween {
-    base: AudiowareTween,
+pub struct ElasticTween {
+    base: Tween,
     /// tween curve
-    easing: AudiowareEasing,
+    easing: Easing,
     /// tween curve intensity
     value: f32,
 }
-unsafe impl ScriptClass for AudiowareElasticTween {
+unsafe impl ScriptClass for ElasticTween {
     type Kind = Scripted;
-    const NAME: &'static str = "AudiowareElasticTween";
+    const NAME: &'static str = "Audioware.ElasticTween";
 }
 
 pub trait ToTween {
-    fn into_tween(self) -> Option<Tween>;
+    fn into_tween(self) -> Option<kira::tween::Tween>;
 }
 
-impl ToTween for Ref<AudiowareTween> {
-    fn into_tween(self) -> Option<Tween> {
+impl ToTween for Ref<Tween> {
+    fn into_tween(self) -> Option<kira::tween::Tween> {
         if self.is_null() {
             return None;
         }
-        if self.is_a::<AudiowareLinearTween>() {
-            return self
-                .clone()
-                .cast::<AudiowareLinearTween>()
-                .unwrap()
-                .into_tween();
+        if self.is_a::<LinearTween>() {
+            return self.clone().cast::<LinearTween>().unwrap().into_tween();
         }
-        if self.is_a::<AudiowareElasticTween>() {
-            return self
-                .clone()
-                .cast::<AudiowareElasticTween>()
-                .unwrap()
-                .into_tween();
+        if self.is_a::<ElasticTween>() {
+            return self.clone().cast::<ElasticTween>().unwrap().into_tween();
         }
         None
     }
 }
 
-impl ToTween for Ref<AudiowareLinearTween> {
-    fn into_tween(self) -> Option<Tween> {
+impl ToTween for Ref<LinearTween> {
+    fn into_tween(self) -> Option<kira::tween::Tween> {
         if self.is_null() {
             return None;
         }
@@ -89,16 +80,16 @@ impl ToTween for Ref<AudiowareLinearTween> {
             log::error!(Audioware::env(), "duration must be finite");
             0.
         };
-        Some(Tween {
+        Some(kira::tween::Tween {
             start_time: kira::StartTime::Delayed(Duration::from_secs_f32(start_time)),
             duration: Duration::from_secs_f32(duration),
-            easing: Easing::Linear,
+            easing: kira::tween::Easing::Linear,
         })
     }
 }
 
-impl ToTween for Ref<AudiowareElasticTween> {
-    fn into_tween(self) -> Option<Tween> {
+impl ToTween for Ref<ElasticTween> {
+    fn into_tween(self) -> Option<kira::tween::Tween> {
         if self.is_null() {
             return None;
         }
@@ -121,63 +112,55 @@ impl ToTween for Ref<AudiowareElasticTween> {
             log::error!(Audioware::env(), "easing value must be finite");
             0.
         };
-        Some(Tween {
+        Some(kira::tween::Tween {
             start_time: kira::StartTime::Delayed(Duration::from_secs_f32(start_time)),
             duration: Duration::from_secs_f32(duration),
             easing: match value.easing {
-                AudiowareEasing::InPowf => Easing::InPowf(easing_value as f64),
-                AudiowareEasing::OutPowf => Easing::OutPowf(easing_value as f64),
-                AudiowareEasing::InOutPowf => Easing::InOutPowf(easing_value as f64),
+                Easing::InPowf => kira::tween::Easing::InPowf(easing_value as f64),
+                Easing::OutPowf => kira::tween::Easing::OutPowf(easing_value as f64),
+                Easing::InOutPowf => kira::tween::Easing::InOutPowf(easing_value as f64),
             },
         })
     }
 }
 
 pub trait ToEasing {
-    fn into_easing(self) -> Option<Easing>;
+    fn into_easing(self) -> Option<kira::tween::Easing>;
 }
 
-impl ToEasing for Ref<AudiowareLinearTween> {
-    fn into_easing(self) -> Option<Easing> {
+impl ToEasing for Ref<LinearTween> {
+    fn into_easing(self) -> Option<kira::tween::Easing> {
         if self.is_null() {
             return None;
         }
-        Some(Easing::Linear)
+        Some(kira::tween::Easing::Linear)
     }
 }
 
-impl ToEasing for Ref<AudiowareElasticTween> {
-    fn into_easing(self) -> Option<Easing> {
+impl ToEasing for Ref<ElasticTween> {
+    fn into_easing(self) -> Option<kira::tween::Easing> {
         if self.is_null() {
             return None;
         }
         let fields = unsafe { self.fields() }.unwrap();
         Some(match fields.easing {
-            AudiowareEasing::InPowf => Easing::InPowf(fields.value as f64),
-            AudiowareEasing::OutPowf => Easing::OutPowf(fields.value as f64),
-            AudiowareEasing::InOutPowf => Easing::InOutPowf(fields.value as f64),
+            Easing::InPowf => kira::tween::Easing::InPowf(fields.value as f64),
+            Easing::OutPowf => kira::tween::Easing::OutPowf(fields.value as f64),
+            Easing::InOutPowf => kira::tween::Easing::InOutPowf(fields.value as f64),
         })
     }
 }
 
-impl ToEasing for Ref<AudiowareTween> {
-    fn into_easing(self) -> Option<Easing> {
+impl ToEasing for Ref<Tween> {
+    fn into_easing(self) -> Option<kira::tween::Easing> {
         if self.is_null() {
             return None;
         }
-        if self.is_a::<AudiowareLinearTween>() {
-            return self
-                .clone()
-                .cast::<AudiowareLinearTween>()
-                .unwrap()
-                .into_easing();
+        if self.is_a::<LinearTween>() {
+            return self.clone().cast::<LinearTween>().unwrap().into_easing();
         }
-        if self.is_a::<AudiowareElasticTween>() {
-            return self
-                .clone()
-                .cast::<AudiowareElasticTween>()
-                .unwrap()
-                .into_easing();
+        if self.is_a::<ElasticTween>() {
+            return self.clone().cast::<ElasticTween>().unwrap().into_easing();
         }
         None
     }

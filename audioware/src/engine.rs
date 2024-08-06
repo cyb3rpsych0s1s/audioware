@@ -16,7 +16,7 @@ use crate::{
     states::State,
     types::{
         propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, AudiowareEmitterSettings,
-        AudiowareTween, GameObject, LocalizationPackage, Subtitle, ToTween,
+        GameObject, LocalizationPackage, Subtitle, ToTween, Tween,
     },
     Audioware,
 };
@@ -149,7 +149,7 @@ impl Engine {
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         line_type: Opt<ScnDialogLineType>,
-        tween: Ref<AudiowareTween>,
+        tween: Ref<Tween>,
     ) {
         let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
         let spoken = SpokenLocale::get();
@@ -180,7 +180,7 @@ impl Engine {
         event_name: CName,
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
-        tween: Ref<AudiowareTween>,
+        tween: Ref<Tween>,
     ) {
         let entity_id = entity_id.into_option();
         let emitter_name = emitter_name.into_option();
@@ -198,12 +198,12 @@ impl Engine {
             log::error!(Audioware::env(), "{e}");
         }
     }
-    pub fn pause(tween: Ref<AudiowareTween>) {
+    pub fn pause(tween: Ref<Tween>) {
         if let Err(e) = Manager::pause(tween.into_tween()) {
             log::error!(Audioware::env(), "{e}");
         }
     }
-    pub fn resume(tween: Ref<AudiowareTween>) {
+    pub fn resume(tween: Ref<Tween>) {
         if let Err(e) = Manager::resume(tween.into_tween()) {
             log::error!(Audioware::env(), "{e}");
         }
@@ -213,8 +213,8 @@ impl Engine {
         switch_value: CName,
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
-        switch_name_tween: Ref<AudiowareTween>,
-        switch_value_tween: Ref<AudiowareTween>,
+        switch_name_tween: Ref<Tween>,
+        switch_value_tween: Ref<Tween>,
     ) {
         let prev = Banks::exists(&switch_name);
         let next = Banks::exists(&switch_value);
@@ -242,7 +242,7 @@ impl Engine {
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        tween: Ref<AudiowareTween>,
+        tween: Ref<Tween>,
     ) {
         let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
         let spoken = SpokenLocale::get();
@@ -280,7 +280,7 @@ impl Engine {
         event_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        tween: Ref<AudiowareTween>,
+        tween: Ref<Tween>,
     ) {
         if let Err(e) = Manager::stop_by(
             &event_name,

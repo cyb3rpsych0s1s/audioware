@@ -56,7 +56,7 @@ public native struct EmitterDistances {
 
 public native struct EmitterSettings {
     let distances: EmitterDistances;
-    let attenuationFunction: ref<AudiowareTween>;
+    let attenuationFunction: ref<Tween>;
     let enableSpatialization: Bool = true;
     let persistUntilSoundsFinish: Bool = false;
 }

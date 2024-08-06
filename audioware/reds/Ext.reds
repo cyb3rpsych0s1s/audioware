@@ -1,5 +1,6 @@
 import Audioware.AudiowareSystem
 import Audioware.EmitterSettings
+import Audioware.Tween
 
 @addMethod(GameInstance)
 public static func GetAudioSystemExt(game: GameInstance) -> AudioSystemExt {
@@ -8,9 +9,9 @@ public static func GetAudioSystemExt(game: GameInstance) -> AudioSystemExt {
 
 public native struct AudioSystemExt {
     // enhanced SDK
-    public static native func Play(self: AudioSystemExt, eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt tween: ref<AudiowareTween>) -> Void;
-    public static native func Stop(self: AudioSystemExt, eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<AudiowareTween>) -> Void
-    // public static native func Switch(self: AudioSystemExt, switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<AudiowareTween>, opt switchValueTween: ref<AudiowareTween>) -> Void;
+    public static native func Play(self: AudioSystemExt, eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt tween: ref<Tween>) -> Void;
+    public static native func Stop(self: AudioSystemExt, eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void
+    // public static native func Switch(self: AudioSystemExt, switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueTween: ref<Tween>) -> Void;
     public static native func PlayOverThePhone(self: AudioSystemExt, eventName: CName, emitterName: CName, gender: CName) -> Void;
     
     // spatial scene
@@ -19,6 +20,6 @@ public native struct AudioSystemExt {
     public static func IsValidEmitter(self: AudioSystemExt, className: CName) -> Bool { return AudiowareSystem.GetInstance(GetGameInstance()).IsValidEmitter(className); }
     public static native func IsRegisteredEmitter(self: AudioSystemExt, entityID: EntityID) -> Bool;
     public static native func EmittersCount(self: AudioSystemExt) -> Int32;
-    public static native func PlayOnEmitter(self: AudioSystemExt, eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<AudiowareTween>) -> Void;
-    public static native func StopOnEmitter(self: AudioSystemExt, eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<AudiowareTween>) -> Void;
+    public static native func PlayOnEmitter(self: AudioSystemExt, eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
+    public static native func StopOnEmitter(self: AudioSystemExt, eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
 }

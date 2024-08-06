@@ -35,14 +35,14 @@ private native func SetReverbMix(value: Float) -> Void;
 private native func SetPreset(value: Preset) -> Void;
 
 public native func PlayOverThePhone(eventName: CName, emitterName: CName, gender: CName) -> Void;
-public native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt tween: ref<AudiowareTween>) -> Void;
-public native func Stop(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<AudiowareTween>) -> Void;
-public native func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<AudiowareTween>, opt switchValueTween: ref<AudiowareTween>) -> Void;
-public native func Pause(opt tween: ref<AudiowareTween>) -> Void;
-public native func Resume(opt tween: ref<AudiowareTween>) -> Void;
+public native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt tween: ref<Tween>) -> Void;
+public native func Stop(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void;
+public native func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueTween: ref<Tween>) -> Void;
+public native func Pause(opt tween: ref<Tween>) -> Void;
+public native func Resume(opt tween: ref<Tween>) -> Void;
 
-public native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<AudiowareTween>) -> Void;
-public native func StopOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<AudiowareTween>) -> Void;
+public native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
+public native func StopOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
 
 private native func SetVolume(setting: CName, value: Double) -> Void;
 

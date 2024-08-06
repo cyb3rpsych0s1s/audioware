@@ -5,7 +5,7 @@ use red4ext_rs::{
     NativeRepr, ScriptClass,
 };
 
-use crate::{engine::Engine, types::AudiowareTween};
+use crate::{engine::Engine, types::Tween};
 
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
@@ -27,7 +27,7 @@ impl AudioSystemExt {
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         line_type: Opt<ScnDialogLineType>,
-        tween: Ref<AudiowareTween>,
+        tween: Ref<Tween>,
     ) {
         Engine::play(sound_name, entity_id, emitter_name, line_type, tween);
     }
@@ -36,7 +36,7 @@ impl AudioSystemExt {
         event_name: CName,
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
-        tween: Ref<AudiowareTween>,
+        tween: Ref<Tween>,
     ) {
         Engine::stop(event_name, entity_id, emitter_name, tween);
     }
@@ -47,8 +47,8 @@ impl AudioSystemExt {
         switch_value: CName,
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
-        switch_name_tween: Ref<AudiowareTween>,
-        switch_value_tween: Ref<AudiowareTween>,
+        switch_name_tween: Ref<Tween>,
+        switch_value_tween: Ref<Tween>,
     ) {
         Engine::switch(
             switch_name,
@@ -74,7 +74,7 @@ impl AudioSystemExt {
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        tween: Ref<AudiowareTween>,
+        tween: Ref<Tween>,
     ) {
         Engine::play_on_emitter(sound_name, entity_id, emitter_name, tween);
     }
@@ -83,7 +83,7 @@ impl AudioSystemExt {
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        tween: Ref<AudiowareTween>,
+        tween: Ref<Tween>,
     ) {
         Engine::stop_on_emitter(sound_name, entity_id, emitter_name, tween);
     }
