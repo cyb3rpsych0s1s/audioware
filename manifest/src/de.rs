@@ -25,14 +25,30 @@ pub use sfx::*;
 pub use voice::*;
 
 /// allows modder to describe audio files, subtitles and settings.
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub struct Manifest {
     pub version: Version,
     pub sfx: Option<HashMap<String, Sfx>>,
     pub onos: Option<HashMap<String, Ono>>,
     pub voices: Option<HashMap<String, Voice>>,
     pub music: Option<HashMap<String, Music>>,
+    #[doc(hidden)]
+    pub playlist: Option<HashMap<String, Playlist>>,
+    #[doc(hidden)]
     pub jingles: Option<HashMap<String, Jingle>>,
+}
+
+// until proper implementations for 'playlist' and 'jingles' are added
+impl fmt::Debug for Manifest {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Manifest")
+            .field("version", &self.version)
+            .field("sfx", &self.sfx)
+            .field("onos", &self.onos)
+            .field("voices", &self.voices)
+            .field("music", &self.music)
+            .finish_non_exhaustive()
+    }
 }
 
 #[derive(Debug, Deserialize)]
