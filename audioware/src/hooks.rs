@@ -41,5 +41,5 @@ pub mod play_on_emitter;
 pub mod stop;
 pub mod switch;
 
-mod events;
-pub use events::*;
+#[allow(dead_code)]
+pub mod events;

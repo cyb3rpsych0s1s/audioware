@@ -22,7 +22,6 @@ impl AsRef<IScriptable> for AudioSystem {
     }
 }
 
-#[allow(dead_code)]
 pub trait AsAudioSystem {
     fn play(&self, event_name: CName, entity_id: Opt<EntityId>, emitter_name: Opt<CName>);
     fn stop(&self, event_name: CName, entity_id: Opt<EntityId>, emitter_name: Opt<CName>);

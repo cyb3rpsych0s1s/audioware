@@ -1,22 +1,33 @@
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
+#[snafu(visibility(pub(crate)))]
 pub enum Error {
-    #[snafu(display("unable to read binary location"), visibility(pub))]
+    /// Binary is not located where expected.
+    #[snafu(display("unable to read binary location"))]
     BinaryLocation { source: std::io::Error },
-    #[snafu(
-        display("unable to locate parent folder (expected '{folder}')"),
-        visibility(pub)
-    )]
+    /// Missing folder.
+    #[snafu(display("unable to locate parent folder (expected '{folder}')"))]
     NoFolder { folder: &'static str },
-    #[snafu(display("cannot read folder: {depot}"), visibility(pub))]
+    /// An error occured while reading a [Depot](crate::Depot) folder.
+    #[snafu(display("cannot read folder: {depot}"))]
     CannotReadDepot { depot: String },
-    #[snafu(display("cannot read file: {manifest}"), visibility(pub))]
+    #[snafu(
+        display("cannot read file: {manifest}"),
+        visibility(pub),
+        context(suffix(false))
+    )]
+    /// An error occured while reading a [Manifest](crate::Manifest) file.
     CannotReadManifest {
         manifest: String,
         source: std::io::Error,
     },
-    #[snafu(display("cannot parse file: {manifest}\n{source}"), visibility(pub))]
+    #[snafu(
+        display("cannot parse file: {manifest}\n{source}"),
+        visibility(pub),
+        context(suffix(false))
+    )]
+    /// An error occured while parsing a [Manifest](crate::Manifest) file.
     CannotParseManifest {
         manifest: String,
         source: serde_yaml::Error,
@@ -25,12 +36,16 @@ pub enum Error {
 
 #[derive(Debug, Snafu, PartialEq)]
 pub enum ConversionError {
-    #[snafu(display("invalid locale: {value}"), visibility(pub))]
+    /// Cyberpunk 2077 does not support this [`Locale`](crate::Locale).
+    #[snafu(display("invalid locale: {value}"))]
     InvalidLocale { value: String },
-    #[snafu(display("invalid gender: {value}"), visibility(pub))]
+    /// Cyberpunk 2077 does not support this [`PlayerGender`](crate::PlayerGender).
+    #[snafu(display("invalid gender: {value}"))]
     InvalidGender { value: String },
-    #[snafu(display("invalid buffer size: {value}"), visibility(pub))]
+    /// Audio stream buffer size is invalid.
+    #[snafu(display("invalid buffer size: {value}"))]
     InvalidBufferSize { value: String },
-    #[snafu(display("missing buffer size"), visibility(pub))]
+    /// Audio stream buffer size is missing.
+    #[snafu(display("missing buffer size"))]
     MissingBufferSize,
 }

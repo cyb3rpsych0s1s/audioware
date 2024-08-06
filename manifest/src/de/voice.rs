@@ -1,3 +1,5 @@
+//! Voices definitions, either gender-based or plural-based.
+
 use std::{collections::HashMap, path::PathBuf};
 
 use either::Either;

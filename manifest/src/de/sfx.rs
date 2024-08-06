@@ -1,3 +1,5 @@
+//! SFX definitions.
+
 use std::path::PathBuf;
 
 use serde::Deserialize;

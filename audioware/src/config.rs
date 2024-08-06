@@ -1,16 +1,17 @@
 use std::path::PathBuf;
 
-use audioware_manifest::{try_get_folder, ConversionError};
+use audioware_manifest::{error::ConversionError, try_get_folder};
 use ini::Ini;
 use red4ext_rs::{log, PluginOps};
 
 use crate::Audioware;
 
-/// engine audio backend buffer size
+/// Engine audio backend buffer size.
+///
+/// See `cpal` [BufferSize](https://docs.rs/cpal/latest/cpal/enum.BufferSize.html).
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 #[repr(i64)]
-#[allow(dead_code)]
-pub enum AudiowareBufferSize {
+pub enum BufferSize {
     #[default]
     Auto = 0,
     Option64 = 64,
@@ -20,8 +21,8 @@ pub enum AudiowareBufferSize {
     Option1024 = 1024,
 }
 
-impl AudiowareBufferSize {
-    pub fn read_ini() -> AudiowareBufferSize {
+impl BufferSize {
+    pub fn read_ini() -> BufferSize {
         if let Ok(ini_filepath) = try_get_ini() {
             if let Ok(conf) = Ini::load_from_file(ini_filepath) {
                 match conf.try_into() {
@@ -37,11 +38,11 @@ impl AudiowareBufferSize {
                 };
             }
         }
-        AudiowareBufferSize::Auto
+        BufferSize::Auto
     }
 }
 
-impl TryFrom<Ini> for AudiowareBufferSize {
+impl TryFrom<Ini> for BufferSize {
     type Error = ConversionError;
 
     fn try_from(conf: Ini) -> Result<Self, Self::Error> {
@@ -67,7 +68,7 @@ impl TryFrom<Ini> for AudiowareBufferSize {
     }
 }
 
-fn try_get_ini() -> Result<PathBuf, audioware_manifest::Error> {
+fn try_get_ini() -> Result<PathBuf, audioware_manifest::error::Error> {
     try_get_folder(
         PathBuf::from("red4ext")
             .join("plugins")

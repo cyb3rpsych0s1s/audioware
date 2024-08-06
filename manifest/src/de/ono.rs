@@ -1,3 +1,5 @@
+//! Onomatopeia definitions.
+
 use std::collections::HashMap;
 
 use serde::Deserialize;

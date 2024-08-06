@@ -1,9 +1,11 @@
+//! Used with [Codeware Localization](https://github.com/psiberx/cp2077-codeware/wiki#localization).
+
 use fixed_map::Key;
 use serde::{Deserialize, Serialize};
 
 use core::fmt;
 
-/// locale currently used for e.g. subtitles and UI texts.
+/// Locale currently used for e.g. subtitles and UI texts.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct SpokenLocale(Locale);
 
@@ -27,13 +29,13 @@ impl PartialEq<Locale> for SpokenLocale {
 
 #[cfg(not(test))]
 impl TryFrom<red4ext_rs::types::CName> for SpokenLocale {
-    type Error = crate::ConversionError;
+    type Error = crate::error::ConversionError;
     fn try_from(value: red4ext_rs::types::CName) -> Result<Self, Self::Error> {
         Ok(Self(Locale::try_from(value)?))
     }
 }
 
-/// locale currently set for e.g. voices and dialogs.
+/// Locale currently set for e.g. voices and dialogs.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct WrittenLocale(Locale);
 
@@ -63,12 +65,13 @@ impl PartialEq<WrittenLocale> for Locale {
 
 #[cfg(not(test))]
 impl TryFrom<red4ext_rs::types::CName> for WrittenLocale {
-    type Error = crate::ConversionError;
+    type Error = crate::error::ConversionError;
     fn try_from(value: red4ext_rs::types::CName) -> Result<Self, Self::Error> {
         Ok(Self(Locale::try_from(value)?))
     }
 }
 
+/// See [NativeDB](https://nativedb.red4ext.com/scnDialogLineLanguage).
 #[derive(
     Debug,
     Default,

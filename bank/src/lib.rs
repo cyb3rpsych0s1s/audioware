@@ -5,7 +5,7 @@ use std::{
 };
 
 use audioware_manifest::{
-    CannotParseManifestSnafu, CannotReadManifestSnafu, Depot, DialogLine, Locale, Manifest,
+    error::CannotParseManifest, error::CannotReadManifest, Depot, DialogLine, Locale, Manifest,
     PlayerGender, R6Audioware, REDmod, Settings, SpokenLocale, WrittenLocale,
 };
 use either::Either;
@@ -339,7 +339,7 @@ impl Banks {
         for m in mods {
             let paths = m.manifests_paths();
             for ref path in paths {
-                file = match std::fs::read(path).context(CannotReadManifestSnafu {
+                file = match std::fs::read(path).context(CannotReadManifest {
                     manifest: path.display().to_string(),
                 }) {
                     Ok(x) => x,
@@ -349,7 +349,7 @@ impl Banks {
                     }
                 };
                 match serde_yaml::from_slice::<Manifest>(file.as_slice()).context(
-                    CannotParseManifestSnafu {
+                    CannotParseManifest {
                         manifest: path.display().to_string(),
                     },
                 ) {

@@ -44,7 +44,7 @@ macro_rules! impl_volume {
                 manager: &mut kira::manager::AudioManager,
             ) -> Result<(), $crate::error::Error> {
                 let handle = manager.add_modulator(kira::modulator::tweener::TweenerBuilder {
-                    initial_value: 100., // TODO: retrieve from game audio settings
+                    initial_value: 100., // here, RTTI hasn't loaded yet
                 })?;
                 Self::set_once(handle);
                 Ok(())

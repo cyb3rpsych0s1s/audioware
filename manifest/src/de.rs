@@ -1,3 +1,5 @@
+//! Manifest definitions.
+
 use std::{collections::HashMap, fmt, hash::Hash, path::PathBuf};
 
 use crate::ScnDialogLineType;
@@ -25,16 +27,33 @@ pub use sfx::*;
 pub use voice::*;
 
 /// allows modder to describe audio files, subtitles and settings.
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub struct Manifest {
     pub version: Version,
     pub sfx: Option<HashMap<String, Sfx>>,
     pub onos: Option<HashMap<String, Ono>>,
     pub voices: Option<HashMap<String, Voice>>,
     pub music: Option<HashMap<String, Music>>,
+    #[doc(hidden)]
+    pub playlist: Option<HashMap<String, Playlist>>,
+    #[doc(hidden)]
     pub jingles: Option<HashMap<String, Jingle>>,
 }
 
+// until proper implementations for 'playlist' and 'jingles' are added
+impl fmt::Debug for Manifest {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Manifest")
+            .field("version", &self.version)
+            .field("sfx", &self.sfx)
+            .field("onos", &self.onos)
+            .field("voices", &self.voices)
+            .field("music", &self.music)
+            .finish_non_exhaustive()
+    }
+}
+
+/// [`Audio`] with optional [`Usage`].
 #[derive(Debug, Deserialize)]
 pub struct UsableAudio {
     #[serde(flatten)]
@@ -42,6 +61,7 @@ pub struct UsableAudio {
     pub usage: Option<Usage>,
 }
 
+/// Audio file path with optional [`Settings`].
 #[derive(Debug, Deserialize, Clone)]
 pub struct Audio {
     pub file: PathBuf,
@@ -86,6 +106,7 @@ impl From<(PathBuf, Option<&Settings>)> for Audio {
     }
 }
 
+/// Convert file paths into audios.
 pub fn paths_into_audios<K: PartialEq + Eq + Hash>(
     value: HashMap<K, PathBuf>,
     settings: Option<Settings>,
@@ -121,6 +142,7 @@ pub fn any_audios_into_audios<K: PartialEq + Eq + Hash>(
 }
 
 impl Audio {
+    /// Merge nested and parent settings.
     pub fn merge_settings(&mut self, parent: Settings) {
         match &mut self.settings {
             Some(me) => {
@@ -138,7 +160,7 @@ impl Audio {
     }
 }
 
-/// describes usage made of audio.
+/// Describes usage made of audio.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Usage {
@@ -163,6 +185,7 @@ pub struct DialogLine {
     pub line: ScnDialogLineType,
 }
 
+/// Manifest sources.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Source {
     Sfx,

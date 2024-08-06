@@ -7,6 +7,21 @@ public class VolumeSettingsListener extends ConfigVarListener {
     public func Initialize(game: GameInstance) {
         LOG("initialize VolumeSettingsListener");
         this.game = game;
+
+        // update settings for Audioware, which loads way earlier
+        let settings = GameInstance.GetSettingsSystem(this.game);
+        let setting: Double;
+        for name in [
+            n"MasterVolume",
+            n"SfxVolume",
+            n"DialogueVolume",
+            n"MusicVolume",
+            n"CarRadioVolume",
+            n"RadioportVolume"
+        ] {
+            setting = Cast<Double>((settings.GetGroup(n"/audio/volume").GetVar(name) as ConfigVarInt).GetValue());
+            SetVolume(name, setting);
+        }
     }
 
     public func Start() {
@@ -41,7 +56,7 @@ public native struct EmitterDistances {
 
 public native struct EmitterSettings {
     let distances: EmitterDistances;
-    let attenuationFunction: ref<AudiowareTween>;
+    let attenuationFunction: ref<Tween>;
     let enableSpatialization: Bool = true;
     let persistUntilSoundsFinish: Bool = false;
 }

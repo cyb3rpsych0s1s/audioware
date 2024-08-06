@@ -1,5 +1,8 @@
+//! Cyberpunk 2077 dialog line types.
+
 use serde::Deserialize;
 
+/// See [NativeDB](https://nativedb.red4ext.com/scnDialogLineType).
 #[repr(u32)]
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
 pub enum ScnDialogLineType {

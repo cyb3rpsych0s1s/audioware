@@ -2,13 +2,13 @@ use core::fmt;
 
 use red4ext_rs::{class_kind::Native, types::Ref, NativeRepr, ScriptClass};
 
-use super::{AudiowareTween, ToEasing};
+use super::{ToEasing, Tween};
 
 #[derive(Default)]
 #[repr(C)]
 pub struct AudiowareEmitterSettings {
     pub distances: AudiowareEmitterDistances,
-    pub attenuation_function: Ref<AudiowareTween>,
+    pub attenuation_function: Ref<Tween>,
     pub enable_spatialization: bool,
     pub persist_until_sounds_finish: bool,
 }

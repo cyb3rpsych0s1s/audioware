@@ -43,7 +43,7 @@ public static exec func TestAudioSystemPlay(game: GameInstance, name: String) {
 /// Game.TestAudioSystemStopSmoothly("dimanche_aux_goudes");
 public static exec func TestAudioSystemStopSmoothly(game: GameInstance, name: String) {
     let cname = StringToName(name);
-    let tween = AudiowareLinearTween.Immediate(5.);
+    let tween = LinearTween.Immediate(5.);
     let nope: EntityID;
     let none: CName;
     GameInstance.GetAudioSystemExt(game).Stop(cname, nope, none, tween);
