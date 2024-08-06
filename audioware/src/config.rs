@@ -9,7 +9,7 @@ use crate::Audioware;
 /// engine audio backend buffer size
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 #[repr(i64)]
-pub enum AudiowareBufferSize {
+pub enum BufferSize {
     #[default]
     Auto = 0,
     Option64 = 64,
@@ -19,8 +19,8 @@ pub enum AudiowareBufferSize {
     Option1024 = 1024,
 }
 
-impl AudiowareBufferSize {
-    pub fn read_ini() -> AudiowareBufferSize {
+impl BufferSize {
+    pub fn read_ini() -> BufferSize {
         if let Ok(ini_filepath) = try_get_ini() {
             if let Ok(conf) = Ini::load_from_file(ini_filepath) {
                 match conf.try_into() {
@@ -36,11 +36,11 @@ impl AudiowareBufferSize {
                 };
             }
         }
-        AudiowareBufferSize::Auto
+        BufferSize::Auto
     }
 }
 
-impl TryFrom<Ini> for AudiowareBufferSize {
+impl TryFrom<Ini> for BufferSize {
     type Error = ConversionError;
 
     fn try_from(conf: Ini) -> Result<Self, Self::Error> {

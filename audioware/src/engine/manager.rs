@@ -1,6 +1,5 @@
 use audioware_bank::Banks;
 use audioware_bank::Id;
-use cpal::BufferSize;
 use kira::manager::backend::cpal::CpalBackend;
 use kira::manager::backend::cpal::CpalBackendSettings;
 use kira::sound::PlaybackState;
@@ -27,7 +26,7 @@ use kira::{
 use once_cell::sync::Lazy;
 use red4ext_rs::types::{CName, EntityId};
 
-use crate::config::AudiowareBufferSize;
+use crate::config::BufferSize;
 use crate::engine::modulators::Modulators;
 use crate::error::Error;
 use crate::error::InternalError;
@@ -62,9 +61,9 @@ impl Manager {
         INSTANCE
             .get_or_init(|| {
                 let mut backend_settings = CpalBackendSettings::default();
-                let buffer_size = AudiowareBufferSize::read_ini();
-                if buffer_size != AudiowareBufferSize::Auto {
-                    backend_settings.buffer_size = BufferSize::Fixed(buffer_size as u32);
+                let buffer_size = BufferSize::read_ini();
+                if buffer_size != BufferSize::Auto {
+                    backend_settings.buffer_size = cpal::BufferSize::Fixed(buffer_size as u32);
                     log::info!(
                         Audioware::env(),
                         "buffer size read from .ini: {}",
