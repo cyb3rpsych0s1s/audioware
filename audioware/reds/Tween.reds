@@ -8,9 +8,9 @@ enum Easing {
 
 public abstract class Tween extends IScriptable {
     /// delay before starting: in seconds
-    private let startTime: Float;
+    public let startTime: Float;
     /// tween duration: in seconds
-    private let duration: Float;
+    public let duration: Float;
     public func StartTime() -> Float { return this.startTime; }
     public func Duration() -> Float  { return this.duration;  }
 }
@@ -24,11 +24,11 @@ public class LinearTween extends Tween {
 }
 public class ElasticTween extends Tween {
     /// tween curve
-    private let easing: Easing;
+    public let easing: Easing;
     /// tween curve intensity
-    private let value: Float;
+    public let value: Float;
     public func Easing() -> Easing { return this.easing; }
-    public func Value() -> Float            { return this.value;  }
+    public func Value() -> Float   { return this.value;  }
     static public func Immediate(duration: Float, value: Float, easing: Easing) -> ref<ElasticTween> {
         let me = new ElasticTween();
         me.startTime = 0.;
