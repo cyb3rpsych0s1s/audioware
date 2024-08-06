@@ -11,8 +11,6 @@ public abstract class Tween extends IScriptable {
     public let startTime: Float;
     /// tween duration: in seconds
     public let duration: Float;
-    public func StartTime() -> Float { return this.startTime; }
-    public func Duration() -> Float  { return this.duration;  }
 }
 public class LinearTween extends Tween {
     static public func Immediate(duration: Float) -> ref<LinearTween> {
@@ -27,8 +25,6 @@ public class ElasticTween extends Tween {
     public let easing: Easing;
     /// tween curve intensity
     public let value: Float;
-    public func Easing() -> Easing { return this.easing; }
-    public func Value() -> Float   { return this.value;  }
     static public func Immediate(duration: Float, value: Float, easing: Easing) -> ref<ElasticTween> {
         let me = new ElasticTween();
         me.startTime = 0.;
