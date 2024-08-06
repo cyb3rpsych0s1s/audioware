@@ -6,7 +6,9 @@ use red4ext_rs::{log, PluginOps};
 
 use crate::Audioware;
 
-/// engine audio backend buffer size
+/// Engine audio backend buffer size.
+/// 
+/// See `cpal` [BufferSize](https://docs.rs/cpal/latest/cpal/enum.BufferSize.html).
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 #[repr(i64)]
 pub enum BufferSize {
