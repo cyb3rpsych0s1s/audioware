@@ -27,6 +27,7 @@ impl Subtitle for Ref<LocalizationPackage> {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 #[repr(C)]
 pub struct CallbackSystemTarget {
@@ -37,8 +38,10 @@ unsafe impl ScriptClass for CallbackSystemTarget {
     const NAME: &'static str = "CallbackSystemTarget";
 }
 
+#[allow(dead_code)]
 const PADDING_68: usize = 0x68 - 0x40;
 
+#[allow(dead_code)]
 #[derive(Debug)]
 #[repr(C)]
 pub struct EntityTarget {

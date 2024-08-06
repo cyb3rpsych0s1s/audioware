@@ -29,7 +29,6 @@ use red4ext_rs::types::{CName, EntityId};
 
 use crate::config::AudiowareBufferSize;
 use crate::engine::modulators::Modulators;
-use crate::engine::modulators::Parameter;
 use crate::error::Error;
 use crate::error::InternalError;
 use crate::Audioware;
@@ -178,6 +177,7 @@ impl Manager {
             .stop_by(event_name, entity_id, emitter_name, tween);
         Ok(())
     }
+    #[allow(dead_code)]
     pub fn stop_for(
         &mut self,
         entity_id: &EntityId,

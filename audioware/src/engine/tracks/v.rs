@@ -14,6 +14,7 @@ use super::ambience::Ambience;
 
 pub struct V {
     pub vocal: TrackHandle,
+    #[allow(dead_code)]
     pub mental: TrackHandle,
     pub emissive: TrackHandle,
 }

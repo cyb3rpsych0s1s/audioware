@@ -5,6 +5,7 @@ use kira::{
     StartTime,
 };
 
+#[allow(dead_code)]
 pub const SMOOTHLY: Tween = Tween {
     start_time: StartTime::Immediate,
     duration: Duration::from_millis(200),

@@ -41,9 +41,8 @@ impl From<&Jingle> for Audio {
             },
             Jingle::Nested {
                 file,
-                captions,
-                line,
                 settings,
+                ..
             } => Self {
                 file: file.clone(),
                 settings: settings.clone(),
