@@ -1,29 +1,30 @@
 # Getting started
 
-## Manifest
+Audioware is a native plugin to play custom audios in Cyberpunk 2077, *without* REDmod.
 
-First of all, audio files path and associated metadata (subtitles, settings, etc) must be properly defined in a manifest.
+## ↘️ Install
 
-Your mod's manifest and audio assets can be located either:
-- under `<game-folder>\mods\<mod-name>`
-- or `<game folder>\r6\audioware\<mod name>`
+- grab [Audioware latest release](https://github.com/cyb3rpsych0s1s/audioware/releases/latest) and unzip it in root game folder.
+- make sure you have [Codeware 1.11.1+](https://github.com/psiberx/cp2077-codeware/releases) and [TweakXL 1.10.2+](https://github.com/psiberx/cp2077-tweak-xl/releases) installed.
 
-`Audioware`'s manifest is very similar to [REDmod](https://wiki.redmodding.org/cyberpunk-2077-modding/for-mod-creators/modding-tools/redmod/audio-modding#audio-modding-manually)'s, except that it uses `YAML` format instead of `JSON`.
+## 📄 Define audios
 
+Create a folder e.g. `MyMod` for your mod, located either:
+- under `mods\MyMod`
+- or `r6\audioware\MyMod`
+but not both !
+
+Create a manifest e.g. `audios.yml`.
+    
 In its simplest form, here's how it looks like:
-
-```yaml
+```yml
 version: 1.0.0
 sfx:
-  my_custom_sfx: my-custom-sfx.wav
+  my_custom_audio: some.mp3 # accepts most common formats like .wav / .ogg / etc
 ```
 
-## Use in-game
+## ⏯️ Use in-game
 
-As simple as:
-```swift reds
-@addMethod(PlayerPuppet)
-public func TestAudioware() -> Void {
-    Game.GetAudioSystem(this.GetGame()).Play(n"my_custom_sfx");
-}
+```swift
+GameInstance.GetAudioSystem(game).Play(n"my_custom_audio");
 ```

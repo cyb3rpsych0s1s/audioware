@@ -2,4 +2,4 @@
 
 Welcome to audioware book !
 
-- [Getting started](./getting-started.md)
+- [Getting started](./GETTING-STARTED.md)
