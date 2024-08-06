@@ -78,20 +78,20 @@ impl Audioware {
         // native event handlers
         #[cfg(debug_assertions)]
         {
-            dialog_line::attach_hook(env);
-            dialog_line_end::attach_hook(env);
-            sound_play_vo::attach_hook(env);
-            play_sound::attach_hook(env);
-            stop_sound::attach_hook(env);
-            sound_switch::attach_hook(env);
+            crate::hooks::events::dialog_line::attach_hook(env);
+            crate::hooks::events::dialog_line_end::attach_hook(env);
+            crate::hooks::events::sound_play_vo::attach_hook(env);
+            crate::hooks::events::play_sound::attach_hook(env);
+            crate::hooks::events::stop_sound::attach_hook(env);
+            crate::hooks::events::sound_switch::attach_hook(env);
             // sound_parameter::attach_hook(env); // ❌
-            stop_tagged_sounds::attach_hook(env);
-            stop_dialog_line::attach_hook(env);
-            play_sound_on_emitter::attach_hook(env);
-            stop_sound_on_emitter::attach_hook(env);
-            set_parameter_on_emitter::attach_hook(env);
-            voice_event::attach_hook(env);
-            voice_played_event::attach_hook(env);
+            crate::hooks::events::stop_tagged_sounds::attach_hook(env);
+            crate::hooks::events::stop_dialog_line::attach_hook(env);
+            crate::hooks::events::play_sound_on_emitter::attach_hook(env);
+            crate::hooks::events::stop_sound_on_emitter::attach_hook(env);
+            crate::hooks::events::set_parameter_on_emitter::attach_hook(env);
+            crate::hooks::events::voice_event::attach_hook(env);
+            crate::hooks::events::voice_played_event::attach_hook(env);
         }
     }
 }
