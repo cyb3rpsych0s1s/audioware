@@ -1,5 +1,3 @@
-#![feature(lint_reasons)]
-
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::Engine;
