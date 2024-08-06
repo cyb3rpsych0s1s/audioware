@@ -10,15 +10,13 @@ Currently in its infancy, further information will be provided at a later time.
 
 - [x] automatically registers voices audio files with their localized subtitles from file in YAML format.
 - [x] allows playing sounds **without** [REDmod](https://wiki.redmodding.org/cyberpunk-2077-modding/for-mod-creators/modding-tools/redmod/audio-modding#audio-modding-manually).
-- [x] seamlessly integrates with vanilla `AudioSystem`, but currently restricted to:
-      - `Play`
-      - `Stop`
-      - `Switch`
+- [x] seamlessly integrates with vanilla `AudioSystem`, and provide enhanced audio capabilities with `AudioSystemExt`.
 - [x] update reverb via blackboard
 - [x] update player EQ preset via blackboard (`None` / `OnThePhone` / `Underwater`)
 - [x] convenience method for NPC to talk over the phone, e.g.:
 ```swift
-GameInstance.GetAudioSystem(game).PlayOverThePhone(n"some_custom_dialog_for_vik", n"Vik");
+//                         ⮦ notice 'Ext' extension here
+GameInstance.GetAudioSystemExt(game).PlayOverThePhone(n"some_custom_dialog_for_vik", n"Vik");
 ```
 
 ### dependent features
