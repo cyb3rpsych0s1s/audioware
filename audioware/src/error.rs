@@ -1,4 +1,4 @@
-use audioware_manifest::ConversionError;
+use audioware_manifest::error::ConversionError;
 use kira::{manager::error::PlaySoundError, sound::FromFileError, ResourceLimitReached};
 use snafu::Snafu;
 

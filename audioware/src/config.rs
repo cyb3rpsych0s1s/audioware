@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use audioware_manifest::{try_get_folder, ConversionError};
+use audioware_manifest::{error::ConversionError, try_get_folder};
 use ini::Ini;
 use red4ext_rs::{log, PluginOps};
 
@@ -67,7 +67,7 @@ impl TryFrom<Ini> for AudiowareBufferSize {
     }
 }
 
-fn try_get_ini() -> Result<PathBuf, audioware_manifest::Error> {
+fn try_get_ini() -> Result<PathBuf, audioware_manifest::error::Error> {
     try_get_folder(
         PathBuf::from("red4ext")
             .join("plugins")

@@ -1,3 +1,5 @@
+//! Music definitions.
+
 use serde::Deserialize;
 
 use super::{AnyAudio, Audio};

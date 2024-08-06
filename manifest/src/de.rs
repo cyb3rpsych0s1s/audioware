@@ -1,3 +1,5 @@
+//! Manifest definitions.
+
 use std::{collections::HashMap, fmt, hash::Hash, path::PathBuf};
 
 use crate::ScnDialogLineType;
@@ -51,6 +53,7 @@ impl fmt::Debug for Manifest {
     }
 }
 
+/// [`Audio`] with optional [`Usage`].
 #[derive(Debug, Deserialize)]
 pub struct UsableAudio {
     #[serde(flatten)]
@@ -58,6 +61,7 @@ pub struct UsableAudio {
     pub usage: Option<Usage>,
 }
 
+/// Audio file path with optional [`Settings`].
 #[derive(Debug, Deserialize, Clone)]
 pub struct Audio {
     pub file: PathBuf,
@@ -102,6 +106,7 @@ impl From<(PathBuf, Option<&Settings>)> for Audio {
     }
 }
 
+/// Convert file paths into audios.
 pub fn paths_into_audios<K: PartialEq + Eq + Hash>(
     value: HashMap<K, PathBuf>,
     settings: Option<Settings>,
@@ -137,6 +142,7 @@ pub fn any_audios_into_audios<K: PartialEq + Eq + Hash>(
 }
 
 impl Audio {
+    /// Merge nested and parent settings.
     pub fn merge_settings(&mut self, parent: Settings) {
         match &mut self.settings {
             Some(me) => {
@@ -154,7 +160,7 @@ impl Audio {
     }
 }
 
-/// describes usage made of audio.
+/// Describes usage made of audio.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Usage {
@@ -179,6 +185,7 @@ pub struct DialogLine {
     pub line: ScnDialogLineType,
 }
 
+/// Manifest sources.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Source {
     Sfx,
