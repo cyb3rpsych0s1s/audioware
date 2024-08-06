@@ -67,15 +67,15 @@ impl ToTween for Ref<LinearTween> {
         if self.is_null() {
             return None;
         }
-        let value = unsafe { self.fields() }.unwrap();
-        let start_time = if value.base.start_time.is_finite() {
-            value.base.start_time
+        let fields = unsafe { self.fields() }.unwrap();
+        let start_time = if fields.base.start_time.is_finite() {
+            fields.base.start_time
         } else {
             log::error!(Audioware::env(), "start_time must be finite");
             0.
         };
-        let duration = if value.base.duration.is_finite() {
-            value.base.duration
+        let duration = if fields.base.duration.is_finite() {
+            fields.base.duration
         } else {
             log::error!(Audioware::env(), "duration must be finite");
             0.
@@ -93,21 +93,21 @@ impl ToTween for Ref<ElasticTween> {
         if self.is_null() {
             return None;
         }
-        let value = unsafe { self.fields() }.unwrap();
-        let start_time = if value.base.start_time.is_finite() {
-            value.base.start_time
+        let fields = unsafe { self.fields() }.unwrap();
+        let start_time = if fields.base.start_time.is_finite() {
+            fields.base.start_time
         } else {
             log::error!(Audioware::env(), "start_time must be finite");
             0.
         };
-        let duration = if value.base.duration.is_finite() {
-            value.base.duration
+        let duration = if fields.base.duration.is_finite() {
+            fields.base.duration
         } else {
             log::error!(Audioware::env(), "duration must be finite");
             0.
         };
-        let easing_value = if value.value.is_finite() {
-            value.value
+        let easing_value = if fields.value.is_finite() {
+            fields.value
         } else {
             log::error!(Audioware::env(), "easing value must be finite");
             0.
@@ -115,7 +115,7 @@ impl ToTween for Ref<ElasticTween> {
         Some(kira::tween::Tween {
             start_time: kira::StartTime::Delayed(Duration::from_secs_f32(start_time)),
             duration: Duration::from_secs_f32(duration),
-            easing: match value.easing {
+            easing: match fields.easing {
                 Easing::InPowf => kira::tween::Easing::InPowf(easing_value as f64),
                 Easing::OutPowf => kira::tween::Easing::OutPowf(easing_value as f64),
                 Easing::InOutPowf => kira::tween::Easing::InOutPowf(easing_value as f64),
