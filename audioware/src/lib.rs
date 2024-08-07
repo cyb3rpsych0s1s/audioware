@@ -10,10 +10,7 @@ use red4ext_rs::{
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
-use types::{
-    AsAudioSystem, AudioSystem, AudiowareEmitterDistances, AudiowareEmitterSettings, GameObject,
-    Vector4,
-};
+use types::{AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings, GameObject, Vector4};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod config;
@@ -112,8 +109,8 @@ impl Plugin for Audioware {
     #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
     fn exports() -> impl Exportable {
         exports![
-            ClassExport::<AudiowareEmitterDistances>::builder().build(),
-            ClassExport::<AudiowareEmitterSettings>::builder().build(),
+            ClassExport::<EmitterDistances>::builder().build(),
+            ClassExport::<EmitterSettings>::builder().build(),
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
             GlobalExport(global!(c"Audioware.PLogError", plog_error)),

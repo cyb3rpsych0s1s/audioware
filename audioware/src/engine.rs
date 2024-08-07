@@ -15,7 +15,7 @@ use crate::{
     macros::{ok_or_return, some_or_return},
     states::State,
     types::{
-        propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, AudiowareEmitterSettings,
+        propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, EmitterSettings,
         GameObject, LocalizationPackage, Subtitle, ToTween, Tween,
     },
     Audioware,
@@ -70,7 +70,7 @@ impl Engine {
     pub fn register_emitter(
         entity_id: EntityId,
         emitter_name: Opt<CName>,
-        emitter_settings: Opt<AudiowareEmitterSettings>,
+        emitter_settings: Opt<EmitterSettings>,
     ) -> bool {
         if let Err(e) = Scene::register_emitter(
             entity_id,
