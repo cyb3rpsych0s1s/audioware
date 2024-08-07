@@ -18,7 +18,7 @@ mod offsets {
     pub(super) const PLAY_OR_STOP_SOUND_HANDLER: u32        = 0x297D0DEA; // 0x141D1FB8C
     pub(super) const STOP_OR_SWITCH_SOUND_HANDLER: u32      = 0x58A80EED; // 0x141D1FB98 / 0x141D1FB8C
     pub(super) const SOUND_SWITCH_HANDLER: u32              = 0x58AD0EEE; // 0x141D1FBB0 / 0x141D1FB98
-    pub(super) const STOP_TAGGED_SOUNDS_OR_SOUND_PARAMETER_HANDLER: u32 = 0x29820DEB; // 0x141D1FBA4
+    pub(super) const STOP_TAGGED_SOUNDS_OR_SOUND_PARAMETER_HANDLER: u32 = 0xDBD14617; // 0x140E17C14 // ❌
     #[allow(dead_code)]
     pub(super) const SOUND_PARAMETER_HANDLER: u32           = 0x58CD0EF6; // 0x141D1FBBC / 0x141D1FBA4 // ❌
     pub(super) const SOUND_PLAY_VO_HANDLER: u32             = 0x9E0C26F5; // 0x1409C20DC
