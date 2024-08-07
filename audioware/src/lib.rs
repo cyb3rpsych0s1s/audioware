@@ -78,11 +78,11 @@ impl Audioware {
             crate::hooks::events::dialog_line::attach_hook(env);
             crate::hooks::events::dialog_line_end::attach_hook(env);
             crate::hooks::events::sound_play_vo::attach_hook(env);
-            crate::hooks::events::play_sound::attach_hook(env);
-            crate::hooks::events::stop_sound::attach_hook(env);
+            // crate::hooks::events::play_sound::attach_hook(env);
+            // crate::hooks::events::stop_sound::attach_hook(env);
             crate::hooks::events::sound_switch::attach_hook(env);
-            // sound_parameter::attach_hook(env); // ❌
-            crate::hooks::events::stop_tagged_sounds::attach_hook(env);
+            // // sound_parameter::attach_hook(env); // ❌
+            // crate::hooks::events::stop_tagged_sounds::attach_hook(env);
             crate::hooks::events::stop_dialog_line::attach_hook(env);
             crate::hooks::events::play_sound_on_emitter::attach_hook(env);
             crate::hooks::events::stop_sound_on_emitter::attach_hook(env);
