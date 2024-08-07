@@ -162,7 +162,7 @@ impl Plugin for Audioware {
                 .static_methods(static_methods![
                     c"Play" => AudioSystemExt::play,
                     c"Stop" => AudioSystemExt::stop,
-                    // c"Switch" => AudioSystemExt::switch,
+                    c"Switch" => AudioSystemExt::switch,
                     c"PlayOverThePhone" => AudioSystemExt::play_over_the_phone,
                     c"IsRegisteredEmitter" => AudioSystemExt::is_registered_emitter,
                     c"EmittersCount" => AudioSystemExt::emitters_count,
