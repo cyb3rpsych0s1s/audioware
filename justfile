@@ -142,3 +142,15 @@ checksum TO:
 
 smash FROM=game_dir:
   {{ join(justfile_directory(), "community", "redscript-cli.exe") }} decompile -f -i '{{ join(FROM, red_cache_dir, "final.redscripts") }}' -o '{{ join(justfile_directory(), "..", "dump_smasher") }}'
+
+# 📖 read book directly
+@read:
+    cd book; mdbook build --open
+
+# 🖊️  book with live hot reload
+@draft:
+    cd book; mdbook watch --open
+
+# 📕 assemble book (for release in CI)
+@assemble:
+    cd book; mdbook build
