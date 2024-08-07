@@ -38,15 +38,17 @@ impl Parameter for ReverbMix {
 
     fn effect() -> Result<impl EffectBuilder, crate::error::Error> {
         use std::ops::Deref;
-        Ok(ReverbBuilder::new().mix(Value::<f64>::from_modulator(
-            Self::try_lock()?.deref(),
-            ModulatorMapping {
-                input_range: (0.0, 1.0),
-                output_range: (0.0, 1.0),
-                clamp_bottom: true,
-                clamp_top: true,
-            },
-        )))
+        Ok(ReverbBuilder::new()
+            .stereo_width(1.0)
+            .mix(Value::<f64>::from_modulator(
+                Self::try_lock()?.deref(),
+                ModulatorMapping {
+                    input_range: (0.0, 1.0),
+                    output_range: (0.0, 1.0),
+                    clamp_bottom: true,
+                    clamp_top: true,
+                },
+            )))
     }
 
     fn update(value: Self::Value, tween: Tween) -> Result<bool, crate::error::Error> {
