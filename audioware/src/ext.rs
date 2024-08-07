@@ -40,7 +40,6 @@ impl AudioSystemExt {
     ) {
         Engine::stop(event_name, entity_id, emitter_name, tween);
     }
-    #[allow(dead_code)]
     pub fn switch(
         self,
         switch_name: CName,
