@@ -10,7 +10,10 @@ use red4ext_rs::{
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State};
-use types::{AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings, GameObject, Vector4};
+use types::{
+    Args, AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings, GameObject, LoopRegion,
+    Vector4,
+};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod config;
@@ -111,6 +114,8 @@ impl Plugin for Audioware {
         exports![
             ClassExport::<EmitterDistances>::builder().build(),
             ClassExport::<EmitterSettings>::builder().build(),
+            ClassExport::<LoopRegion>::builder().build(),
+            ClassExport::<Args>::builder().build(),
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
             GlobalExport(global!(c"Audioware.PLogError", plog_error)),
