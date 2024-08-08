@@ -155,7 +155,7 @@ impl AsRef<IScriptable> for SoundParameter {
 #[repr(C)]
 pub struct MusicEvent {
     base: Event,
-    event_name: CName, // 40
+    pub event_name: CName, // 40
 }
 
 unsafe impl ScriptClass for MusicEvent {

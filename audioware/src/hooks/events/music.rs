@@ -21,7 +21,12 @@ unsafe extern "C" fn detour(
     cb: unsafe extern "C" fn(a1: *mut IScriptable, a2: *mut MusicEvent),
 ) {
     if !a2.is_null() {
-        log::info!(Audioware::env(), "intercepted MusicEvent",);
+        let &MusicEvent { event_name, .. } = unsafe { &*a2 };
+        log::info!(
+            Audioware::env(),
+            "intercepted MusicEvent:
+- event_name: {event_name}",
+        );
     } else {
         log::info!(Audioware::env(), "intercepted MusicEvent (null)");
     }
