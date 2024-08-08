@@ -75,10 +75,13 @@ impl Audioware {
         play_on_emitter::attach_hook(env);
         stop::attach_hook(env);
         switch::attach_hook(env);
-        // sound_parameter::attach_hook(env); // ❌
         // native event handlers
         #[cfg(debug_assertions)]
         {
+            // sound_parameter::attach_hook(env); // redundant with global_parameter
+            crate::hooks::events::surface::attach_hook(env);
+            crate::hooks::events::dive::attach_hook(env);
+            crate::hooks::events::emerge::attach_hook(env);
             crate::hooks::events::dialog_line::attach_hook(env);
             crate::hooks::events::dialog_line_end::attach_hook(env);
             crate::hooks::events::sound_play_vo::attach_hook(env);

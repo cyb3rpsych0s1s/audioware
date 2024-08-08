@@ -30,6 +30,9 @@ mod offsets {
     pub(super) const SET_PARAMETER_ON_EMITTER_HANDLER: u32  = 0x932B2299; // 0x142472680
     pub(super) const VOICE_EVENT_HANDLER: u32               = 0xEBB01A67; // 0x1408C1A9C
     pub(super) const VOICE_PLAYED_EVENT_HANDLER: u32        = 0x2F42185;  // 0x1409C12B0
+    pub(super) const SURFACE_EVENT_HANDLER: u32             = 0xF1D03EE5; // 0x1411889FC
+    pub(super) const DIVE_EVENT_HANDLER: u32                = 0x636D3C63; // 0x141188AA4
+    pub(super) const EMERGE_EVENT_HANDLER: u32              = 0x66603DFD; // 0x141188954
 }
 
 pub mod global_parameter;
