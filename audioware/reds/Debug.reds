@@ -239,3 +239,10 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
     .Get(GetAllBlackboardDefs().Audioware_Settings)
     .SetInt(GetAllBlackboardDefs().Audioware_Settings.AudioPreset, value, true);
 }
+
+/// Game.TestBuilderPattern();
+public static exec func TestBuilderPattern(game: GameInstance) {
+    let builder = ArgsBuilder.Create().SetStartPosition(1.0);
+    let args = builder.Build();
+    FTLog(AsRef(s"is defined ArgsExt: \(ToString(IsDefined(args)))"));
+}

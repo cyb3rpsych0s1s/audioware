@@ -3,9 +3,10 @@ use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::Engine;
 use ext::AudioSystemExt;
 use hooks::*;
+use maybe::{ArgsBuilder, ArgsExt};
 use red4ext_rs::{
-    call, export_plugin_symbols, exports, global, log, static_methods,
-    types::{CName, GameEngine, Opt},
+    call, export_plugin_symbols, exports, global, log, methods, static_methods,
+    types::{CName, GameEngine, IScriptable, Opt},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
@@ -22,6 +23,7 @@ mod error;
 mod ext;
 mod hooks;
 mod macros;
+mod maybe;
 mod states;
 mod types;
 mod utils;
@@ -176,6 +178,20 @@ impl Plugin for Audioware {
                     c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
                 ])
                 .build(),
+            ClassExport::<ArgsExt>::builder()
+                .base(IScriptable::NAME)
+                .build(),
+            ClassExport::<ArgsBuilder>::builder()
+                .base(IScriptable::NAME)
+                .static_methods(static_methods![
+                    c"Create" => ArgsBuilder::create
+                ])
+                .methods(methods![
+                    c"SetStartPosition" => ArgsBuilder::set_start_position,
+                    c"SetVolume" => ArgsBuilder::set_volume,
+                    c"Build" => ArgsBuilder::build,
+                ])
+                .build()
         ]
     }
 }

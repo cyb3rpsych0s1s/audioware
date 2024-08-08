@@ -43,3 +43,11 @@ public native struct Args {
         return self;
     }
 }
+
+public native class ArgsBuilder {
+    public native static func Create() -> ref<ArgsBuilder>;
+    public native func SetStartPosition(value: Float) -> ref<ArgsBuilder>;
+    public native func Build() -> ref<ArgsExt>;
+}
+
+public native class ArgsExt {}
