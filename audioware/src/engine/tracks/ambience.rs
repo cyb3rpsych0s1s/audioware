@@ -14,6 +14,7 @@ use crate::{
     error::{Error, InternalError},
 };
 
+/// Sub-track to provide reverb and environmental effects.
 pub struct Ambience {
     reverb: TrackHandle,
     environmental: TrackHandle,
