@@ -6,6 +6,7 @@ pub mod set_parameter_on_emitter;
 // pub mod sound_parameter; // ❌
 pub mod dive;
 pub mod emerge;
+pub mod music;
 pub mod sound_play_vo;
 pub mod sound_switch;
 pub mod stop_dialog_line;
