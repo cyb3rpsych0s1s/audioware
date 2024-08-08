@@ -12,7 +12,9 @@ protected cb func OnDeathScreenDelayEvent(evt: ref<DeathMenuDelayEvent>) -> Bool
 @wrapMethod(GameObject)
 protected cb func OnWillDieSoonEventEvent(evt: ref<WillDieSoonEvent>) -> Bool {
     LOG(s"on will die soon: \(EntityID.ToDebugString(this.GetEntityID()))");
-    UnregisterEmitter(this.GetEntityID());
+    if !this.IsPlayer() {
+        UnregisterEmitter(this.GetEntityID());
+    }
     wrappedMethod(evt);
 }
 
@@ -20,7 +22,9 @@ protected cb func OnWillDieSoonEventEvent(evt: ref<WillDieSoonEvent>) -> Bool {
 @wrapMethod(ScriptedPuppet)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     LOG(s"on death: \(EntityID.ToDebugString(this.GetEntityID()))");
-    UnregisterEmitter(this.GetEntityID());
+    if !this.IsPlayer() {
+        UnregisterEmitter(this.GetEntityID());
+    }
     return wrappedMethod(evt);
 }
 
