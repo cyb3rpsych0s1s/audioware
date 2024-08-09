@@ -3,9 +3,10 @@ use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::Engine;
 use ext::AudioSystemExt;
 use hooks::*;
+use maybe::{ArgsBuilder, ArgsExt, RegionExt};
 use red4ext_rs::{
-    call, export_plugin_symbols, exports, global, log, static_methods,
-    types::{CName, GameEngine, Opt},
+    call, export_plugin_symbols, exports, global, log, methods, static_methods,
+    types::{CName, GameEngine, IScriptable, Opt},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
@@ -22,6 +23,7 @@ mod error;
 mod ext;
 mod hooks;
 mod macros;
+mod maybe;
 mod states;
 mod types;
 mod utils;
@@ -165,8 +167,9 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play)),
             ClassExport::<AudioSystemExt>::builder()
-                .static_methods(static_methods![
-                    c"Play" => AudioSystemExt::play,
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    final c"Play" => AudioSystemExt::play,
                     c"Stop" => AudioSystemExt::stop,
                     c"Switch" => AudioSystemExt::switch,
                     c"PlayOverThePhone" => AudioSystemExt::play_over_the_phone,
@@ -176,6 +179,32 @@ impl Plugin for Audioware {
                     c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
                 ])
                 .build(),
+            ClassExport::<RegionExt>::builder()
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    c"SetStart" => RegionExt::set_start,
+                    c"SetEnd" => RegionExt::set_end,
+                ])
+                .build(),
+            ClassExport::<ArgsExt>::builder()
+                .base(IScriptable::NAME)
+                .build(),
+            ClassExport::<ArgsBuilder>::builder()
+                .base(IScriptable::NAME)
+                .static_methods(static_methods![
+                    c"Create" => ArgsBuilder::create
+                ])
+                .methods(methods![
+                    c"SetStartPosition" => ArgsBuilder::set_start_position,
+                    c"SetLoopRegionStarts" => ArgsBuilder::set_loop_region_starts,
+                    c"SetLoopRegionEnds" => ArgsBuilder::set_loop_region_ends,
+                    c"SetVolume" => ArgsBuilder::set_volume,
+                    c"SetFadeInTween" => ArgsBuilder::set_fade_in_tween,
+                    c"SetPanning" => ArgsBuilder::set_panning,
+                    c"SetPlaybackRate" => ArgsBuilder::set_playback_rate,
+                    c"Build" => ArgsBuilder::build,
+                ])
+                .build()
         ]
     }
 }

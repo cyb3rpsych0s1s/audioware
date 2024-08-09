@@ -239,3 +239,22 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
     .Get(GetAllBlackboardDefs().Audioware_Settings)
     .SetInt(GetAllBlackboardDefs().Audioware_Settings.AudioPreset, value, true);
 }
+
+/// Game.TestBuilderPattern("still_dre");
+public static exec func TestBuilderPattern(game: GameInstance) {
+    let builder: ref<ArgsBuilder> = ArgsBuilder.Create(); // builder is a mutable ref
+    builder.SetFadeInTween(ElasticTween.ImmediateIn(5.0, 0.25));
+    builder.SetPanning(0.3);
+    builder.SetPlaybackRate(1.1);
+    builder.SetVolume(0.9);
+    // also e.g.
+    // builder.SetStartPosition(1.0);
+    // builder.SetLoopRegionStarts(10.0);
+    // builder.SetLoopRegionEnds(20.0);
+
+    let args: ref<ArgsExt> = builder.Build(); // once built it returns a new immutable ref with different type
+    
+    GameInstance
+    .GetAudioSystemExt(game)
+    .Play(n"still_dre", GetPlayer(game).GetEntityID(), n"V", scnDialogLineType.Regular, args);
+}
