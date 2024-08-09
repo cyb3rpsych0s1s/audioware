@@ -3,18 +3,16 @@ use kira::sound::PlaybackPosition;
 use red4ext_rs::{
     class_kind::Native,
     log,
-    types::{CName, EntityId, Opt, Ref},
-    NativeRepr, PluginOps, ScriptClass,
+    types::{CName, EntityId, IScriptable, Opt, Ref},
+    PluginOps, ScriptClass,
 };
 
 use crate::{engine::Engine, maybe::ArgsExt, types::Tween, Audioware};
 
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
-pub struct AudioSystemExt;
-
-unsafe impl NativeRepr for AudioSystemExt {
-    const NAME: &'static str = "AudioSystemExt";
+pub struct AudioSystemExt {
+    base: IScriptable,
 }
 
 unsafe impl ScriptClass for AudioSystemExt {
@@ -24,17 +22,7 @@ unsafe impl ScriptClass for AudioSystemExt {
 
 impl AudioSystemExt {
     pub fn play(
-        self,
-        sound_name: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
-        line_type: Opt<ScnDialogLineType>,
-        tween: Ref<Tween>,
-    ) {
-        Engine::play(sound_name, entity_id, emitter_name, line_type, tween);
-    }
-    pub fn play_with(
-        self,
+        &self,
         sound_name: CName,
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
@@ -44,7 +32,7 @@ impl AudioSystemExt {
         Engine::play_with(sound_name, entity_id, emitter_name, line_type, ext);
     }
     pub fn stop(
-        self,
+        &self,
         event_name: CName,
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
@@ -53,7 +41,7 @@ impl AudioSystemExt {
         Engine::stop(event_name, entity_id, emitter_name, tween);
     }
     pub fn switch(
-        self,
+        &self,
         switch_name: CName,
         switch_value: CName,
         entity_id: Opt<EntityId>,
@@ -70,18 +58,18 @@ impl AudioSystemExt {
             switch_value_tween,
         );
     }
-    pub fn play_over_the_phone(self, event_name: CName, emitter_name: CName, gender: CName) {
+    pub fn play_over_the_phone(&self, event_name: CName, emitter_name: CName, gender: CName) {
         Engine::play_over_the_phone(event_name, emitter_name, gender);
     }
     #[allow(clippy::wrong_self_convention)]
-    pub fn is_registered_emitter(self, entity_id: EntityId) -> bool {
+    pub fn is_registered_emitter(&self, entity_id: EntityId) -> bool {
         Engine::is_registered_emitter(entity_id)
     }
-    pub fn emitters_count(self) -> i32 {
+    pub fn emitters_count(&self) -> i32 {
         Engine::emitters_count()
     }
     pub fn play_on_emitter(
-        self,
+        &self,
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
@@ -90,7 +78,7 @@ impl AudioSystemExt {
         Engine::play_on_emitter(sound_name, entity_id, emitter_name, tween);
     }
     pub fn stop_on_emitter(
-        self,
+        &self,
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,

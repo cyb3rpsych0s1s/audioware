@@ -256,5 +256,5 @@ public static exec func TestBuilderPattern(game: GameInstance) {
     
     GameInstance
     .GetAudioSystemExt(game)
-    .PlayWith(n"still_dre", GetPlayer(game).GetEntityID(), n"V", scnDialogLineType.Regular, args);
+    .Play(n"still_dre", GetPlayer(game).GetEntityID(), n"V", scnDialogLineType.Regular, args);
 }

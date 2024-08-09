@@ -167,9 +167,9 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play)),
             ClassExport::<AudioSystemExt>::builder()
-                .static_methods(static_methods![
-                    c"Play" => AudioSystemExt::play,
-                    c"PlayWith" => AudioSystemExt::play_with,
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    final c"Play" => AudioSystemExt::play,
                     c"Stop" => AudioSystemExt::stop,
                     c"Switch" => AudioSystemExt::switch,
                     c"PlayOverThePhone" => AudioSystemExt::play_over_the_phone,
