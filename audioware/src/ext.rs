@@ -165,7 +165,7 @@ macro_rules! impl_merge_args {
                     self = self.fade_in_tween(fade_in_tween);
                 }
                 if let Some(panning) = fields.panning {
-                    if panning >= 0.0 && panning <= 1.0 {
+                    if (0.0..=1.0).contains(&panning) {
                         self = self.panning(panning);
                     } else {
                         log::warn!(
