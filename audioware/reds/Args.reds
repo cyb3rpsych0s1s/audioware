@@ -44,10 +44,21 @@ public native struct Args {
     }
 }
 
+public native class RegionExt {
+    public native func SetStart(value: Float);
+    public native func SetEnd(value: Float);
+}
+
 public native class ArgsBuilder {
     public native static func Create() -> ref<ArgsBuilder>;
-    public native func SetStartPosition(value: Float) -> ref<ArgsBuilder>;
+    public native func SetStartPosition(value: Float);
+    public native func SetLoopRegionStarts(value: Float);
+    public native func SetLoopRegionEnds(value: Float);
+    public native func SetVolume(value: Float);
+    public native func SetFadeInTween(value: ref<Tween>);
+    public native func SetPanning(value: Float);
+    public native func SetPlaybackRate(value: Float);
     public native func Build() -> ref<ArgsExt>;
 }
 
-public native class ArgsExt {}
+public native importonly class ArgsExt {}

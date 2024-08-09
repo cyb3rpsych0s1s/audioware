@@ -1,6 +1,7 @@
 import Audioware.AudiowareSystem
 import Audioware.EmitterSettings
 import Audioware.Tween
+import Audioware.ArgsExt
 
 @addMethod(GameInstance)
 public static func GetAudioSystemExt(game: GameInstance) -> AudioSystemExt {
@@ -10,6 +11,7 @@ public static func GetAudioSystemExt(game: GameInstance) -> AudioSystemExt {
 public native struct AudioSystemExt {
     // enhanced SDK
     public static native func Play(self: AudioSystemExt, eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt tween: ref<Tween>) -> Void;
+    public static native func PlayWith(self: AudioSystemExt, eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt ext: ref<ArgsExt>) -> Void;
     public static native func Stop(self: AudioSystemExt, eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void
     public static native func Switch(self: AudioSystemExt, switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueTween: ref<Tween>) -> Void;
     public static native func PlayOverThePhone(self: AudioSystemExt, eventName: CName, emitterName: CName, gender: CName) -> Void;

@@ -13,6 +13,7 @@ use red4ext_rs::{
 use crate::{
     error::Error,
     macros::{ok_or_return, some_or_return},
+    maybe::ArgsExt,
     states::State,
     types::{
         propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, EmitterSettings,
@@ -164,6 +165,37 @@ impl Engine {
         let tween = tween.into_tween();
         let duration = ok_or_return!(
             Manager::play_and_store(&mut manager, id, entity_id, emitter_name, None, tween),
+            "Unable to store sound handle"
+        );
+        if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
+            propagate_subtitles(
+                sound_name,
+                entity_id,
+                emitter_name,
+                line_type.unwrap_or_default(),
+                duration,
+            )
+        }
+    }
+    pub fn play_with(
+        sound_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        line_type: Opt<ScnDialogLineType>,
+        ext: Ref<ArgsExt>,
+    ) {
+        let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
+        let spoken = SpokenLocale::get();
+        let gender = PlayerGender::get();
+        let entity_id = entity_id.into_option();
+        let emitter_name = emitter_name.into_option();
+        let id = ok_or_return!(
+            Banks::try_get(&sound_name, &spoken, gender.as_ref()),
+            "Unable to get sound ID"
+        );
+
+        let duration = ok_or_return!(
+            Manager::play_and_store_with(&mut manager, id, entity_id, emitter_name, None, ext),
             "Unable to store sound handle"
         );
         if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {

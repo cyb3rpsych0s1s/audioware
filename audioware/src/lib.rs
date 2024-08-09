@@ -3,7 +3,7 @@ use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::Engine;
 use ext::AudioSystemExt;
 use hooks::*;
-use maybe::{ArgsBuilder, ArgsExt};
+use maybe::{ArgsBuilder, ArgsExt, RegionExt};
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log, methods, static_methods,
     types::{CName, GameEngine, IScriptable, Opt},
@@ -169,6 +169,7 @@ impl Plugin for Audioware {
             ClassExport::<AudioSystemExt>::builder()
                 .static_methods(static_methods![
                     c"Play" => AudioSystemExt::play,
+                    c"PlayWith" => AudioSystemExt::play_with,
                     c"Stop" => AudioSystemExt::stop,
                     c"Switch" => AudioSystemExt::switch,
                     c"PlayOverThePhone" => AudioSystemExt::play_over_the_phone,
@@ -176,6 +177,13 @@ impl Plugin for Audioware {
                     c"EmittersCount" => AudioSystemExt::emitters_count,
                     c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
                     c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
+                ])
+                .build(),
+            ClassExport::<RegionExt>::builder()
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    c"SetStart" => RegionExt::set_start,
+                    c"SetEnd" => RegionExt::set_end,
                 ])
                 .build(),
             ClassExport::<ArgsExt>::builder()
@@ -188,7 +196,12 @@ impl Plugin for Audioware {
                 ])
                 .methods(methods![
                     c"SetStartPosition" => ArgsBuilder::set_start_position,
+                    c"SetLoopRegionStarts" => ArgsBuilder::set_loop_region_starts,
+                    c"SetLoopRegionEnds" => ArgsBuilder::set_loop_region_ends,
                     c"SetVolume" => ArgsBuilder::set_volume,
+                    c"SetFadeInTween" => ArgsBuilder::set_fade_in_tween,
+                    c"SetPanning" => ArgsBuilder::set_panning,
+                    c"SetPlaybackRate" => ArgsBuilder::set_playback_rate,
                     c"Build" => ArgsBuilder::build,
                 ])
                 .build()

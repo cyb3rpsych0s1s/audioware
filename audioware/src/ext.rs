@@ -1,11 +1,13 @@
 use audioware_manifest::ScnDialogLineType;
+use kira::sound::PlaybackPosition;
 use red4ext_rs::{
     class_kind::Native,
+    log,
     types::{CName, EntityId, Opt, Ref},
-    NativeRepr, ScriptClass,
+    NativeRepr, PluginOps, ScriptClass,
 };
 
-use crate::{engine::Engine, types::Tween};
+use crate::{engine::Engine, maybe::ArgsExt, types::Tween, Audioware};
 
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
@@ -30,6 +32,16 @@ impl AudioSystemExt {
         tween: Ref<Tween>,
     ) {
         Engine::play(sound_name, entity_id, emitter_name, line_type, tween);
+    }
+    pub fn play_with(
+        self,
+        sound_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        line_type: Opt<ScnDialogLineType>,
+        ext: Ref<ArgsExt>,
+    ) {
+        Engine::play_with(sound_name, entity_id, emitter_name, line_type, ext);
     }
     pub fn stop(
         self,
@@ -87,3 +99,101 @@ impl AudioSystemExt {
         Engine::stop_on_emitter(sound_name, entity_id, emitter_name, tween);
     }
 }
+
+pub trait MergeArgs {
+    fn merge_args(self, ext: &Ref<ArgsExt>) -> Self;
+}
+
+macro_rules! impl_merge_args {
+    ($into:path) => {
+        impl MergeArgs for $into {
+            fn merge_args(mut self, ext: &Ref<ArgsExt>) -> Self {
+                if ext.is_null() {
+                    return self;
+                }
+                let fields = unsafe { ext.fields() }.unwrap();
+                if let Some(start_position) = fields.start_position {
+                    match start_position {
+                        PlaybackPosition::Seconds(x) => {
+                            if x < self.duration().as_secs_f64() {
+                                self = self.start_position(PlaybackPosition::Seconds(x));
+                            }
+                        }
+                        PlaybackPosition::Samples(_) => {
+                            log::warn!(
+                                Audioware::env(),
+                                "Setting start position in samples is not supported."
+                            );
+                        }
+                    };
+                }
+                if let Some(loop_region) = fields.loop_region {
+                    match (loop_region.start, loop_region.end) {
+                        (
+                            PlaybackPosition::Seconds(start),
+                            kira::sound::EndPosition::EndOfAudio,
+                        ) => {
+                            if start > 0. && start < self.duration().as_secs_f64() {
+                                self = self.loop_region(kira::sound::Region {
+                                    start: PlaybackPosition::Seconds(start),
+                                    end: kira::sound::EndPosition::EndOfAudio,
+                                });
+                            }
+                        }
+                        (
+                            PlaybackPosition::Seconds(start),
+                            kira::sound::EndPosition::Custom(PlaybackPosition::Seconds(end)),
+                        ) => {
+                            if start >= 0.0
+                                && start < self.duration().as_secs_f64()
+                                && end > 0.0
+                                && end <= self.duration().as_secs_f64()
+                                && start < end
+                            {
+                                self = self.loop_region(kira::sound::Region {
+                                    start: PlaybackPosition::Seconds(start),
+                                    end: kira::sound::EndPosition::Custom(
+                                        PlaybackPosition::Seconds(end),
+                                    ),
+                                });
+                            }
+                        }
+                        _ => {
+                            log::warn!(
+                                Audioware::env(),
+                                "Setting loop region in samples is not supported."
+                            );
+                        }
+                    }
+                }
+                if let Some(volume) = fields.volume {
+                    if volume.as_decibels() <= 85.0 {
+                        self = self.volume(volume);
+                    } else {
+                        log::warn!(Audioware::env(), "Volume must not be higher than 85 dB.");
+                    }
+                }
+                if let Some(fade_in_tween) = fields.fade_in_tween {
+                    self = self.fade_in_tween(fade_in_tween);
+                }
+                if let Some(panning) = fields.panning {
+                    if panning >= 0.0 && panning <= 1.0 {
+                        self = self.panning(panning);
+                    } else {
+                        log::warn!(
+                            Audioware::env(),
+                            "Panning must be between 0.0 and 1.0 (inclusive)."
+                        );
+                    }
+                }
+                if let Some(playback_rate) = fields.playback_rate {
+                    self = self.playback_rate(playback_rate);
+                }
+                self
+            }
+        }
+    };
+}
+
+impl_merge_args!(kira::sound::static_sound::StaticSoundData);
+impl_merge_args!(kira::sound::streaming::StreamingSoundData<kira::sound::FromFileError>);

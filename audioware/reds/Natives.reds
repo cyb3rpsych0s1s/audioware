@@ -2,7 +2,7 @@ module Audioware
 
 import Codeware.Localization.PlayerGender
 
-private static func LOG(msg: String) {
+public static func LOG(msg: String) {
     FTLog(AsRef(msg));
     PLog(msg);
 }
