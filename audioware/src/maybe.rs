@@ -18,12 +18,12 @@ use crate::{
 
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
-pub struct RegionExt {
+pub struct AudioRegion {
     starts: Cell<Option<f32>>,
     ends: Cell<Option<f32>>,
 }
 
-impl RegionExt {
+impl AudioRegion {
     pub fn set_start(&self, value: f32) {
         self.starts.set(Some(value));
     }
@@ -32,17 +32,17 @@ impl RegionExt {
     }
 }
 
-unsafe impl NativeRepr for RegionExt {
-    const NAME: &'static str = "Audioware.RegionExt";
+unsafe impl NativeRepr for AudioRegion {
+    const NAME: &'static str = "Audioware.AudioRegion";
 }
 
-unsafe impl ScriptClass for RegionExt {
+unsafe impl ScriptClass for AudioRegion {
     type Kind = Native;
     const NAME: &'static str = <Self as NativeRepr>::NAME;
 }
 
-impl From<RegionExt> for kira::sound::Region {
-    fn from(value: RegionExt) -> Self {
+impl From<AudioRegion> for kira::sound::Region {
+    fn from(value: AudioRegion) -> Self {
         Self {
             start: if let Some(starts) = value.starts.get() {
                 PlaybackPosition::Seconds(starts as f64)
@@ -60,7 +60,7 @@ impl From<RegionExt> for kira::sound::Region {
 
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
-pub struct ArgsBuilder {
+pub struct AudioSettingsExtBuilder {
     base: IScriptable,
     start_position: Cell<Option<f32>>,
     loop_region_starts: Cell<Option<f32>>,
@@ -75,12 +75,12 @@ pub struct ArgsBuilder {
     playback_rate: Cell<Option<f32>>,
 }
 
-unsafe impl ScriptClass for ArgsBuilder {
+unsafe impl ScriptClass for AudioSettingsExtBuilder {
     type Kind = Native;
-    const NAME: &'static str = "Audioware.ArgsBuilder";
+    const NAME: &'static str = "Audioware.AudioSettingsExtBuilder";
 }
 
-impl ArgsBuilder {
+impl AudioSettingsExtBuilder {
     pub fn create() -> Ref<Self> {
         Ref::<Self>::new().unwrap_or_default()
     }
@@ -137,8 +137,8 @@ impl ArgsBuilder {
         self.playback_rate.set(Some(value));
         log::info!(Audioware::env(), "set playback_rate to {value}");
     }
-    pub fn build(&self) -> Ref<ArgsExt> {
-        Ref::<ArgsExt>::new_with(|x| {
+    pub fn build(&self) -> Ref<AudioSettingsExt> {
+        Ref::<AudioSettingsExt>::new_with(|x| {
             log::info!(Audioware::env(), "build...");
             if let Some(start_position) = self.start_position.get() {
                 x.start_position = Some(PlaybackPosition::Seconds(start_position.into()));
@@ -210,7 +210,7 @@ impl ArgsBuilder {
 
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
-pub struct ArgsExt {
+pub struct AudioSettingsExt {
     base: IScriptable,
     pub start_position: Option<PlaybackPosition>,
     pub loop_region: Option<kira::sound::Region>,
@@ -220,7 +220,7 @@ pub struct ArgsExt {
     pub playback_rate: Option<PlaybackRate>,
 }
 
-unsafe impl ScriptClass for ArgsExt {
+unsafe impl ScriptClass for AudioSettingsExt {
     type Kind = Native;
-    const NAME: &'static str = "Audioware.ArgsExt";
+    const NAME: &'static str = "Audioware.AudioSettingsExt";
 }

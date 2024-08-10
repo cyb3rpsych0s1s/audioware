@@ -7,7 +7,7 @@ use red4ext_rs::{
     PluginOps, ScriptClass,
 };
 
-use crate::{engine::Engine, maybe::ArgsExt, types::Tween, Audioware};
+use crate::{engine::Engine, maybe::AudioSettingsExt, types::Tween, Audioware};
 
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
@@ -27,7 +27,7 @@ impl AudioSystemExt {
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         line_type: Opt<ScnDialogLineType>,
-        ext: Ref<ArgsExt>,
+        ext: Ref<AudioSettingsExt>,
     ) {
         Engine::play_with(sound_name, entity_id, emitter_name, line_type, ext);
     }
@@ -89,13 +89,13 @@ impl AudioSystemExt {
 }
 
 pub trait MergeArgs {
-    fn merge_args(self, ext: &Ref<ArgsExt>) -> Self;
+    fn merge_args(self, ext: &Ref<AudioSettingsExt>) -> Self;
 }
 
 macro_rules! impl_merge_args {
     ($into:path) => {
         impl MergeArgs for $into {
-            fn merge_args(mut self, ext: &Ref<ArgsExt>) -> Self {
+            fn merge_args(mut self, ext: &Ref<AudioSettingsExt>) -> Self {
                 if ext.is_null() {
                     return self;
                 }

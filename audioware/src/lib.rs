@@ -3,7 +3,7 @@ use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::Engine;
 use ext::AudioSystemExt;
 use hooks::*;
-use maybe::{ArgsBuilder, ArgsExt, RegionExt};
+use maybe::{AudioSettingsExtBuilder, AudioSettingsExt, AudioRegion};
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log, methods, static_methods,
     types::{CName, GameEngine, IScriptable, Opt},
@@ -179,30 +179,30 @@ impl Plugin for Audioware {
                     c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
                 ])
                 .build(),
-            ClassExport::<RegionExt>::builder()
+            ClassExport::<AudioRegion>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![
-                    c"SetStart" => RegionExt::set_start,
-                    c"SetEnd" => RegionExt::set_end,
+                    c"SetStart" => AudioRegion::set_start,
+                    c"SetEnd" => AudioRegion::set_end,
                 ])
                 .build(),
-            ClassExport::<ArgsExt>::builder()
+            ClassExport::<AudioSettingsExt>::builder()
                 .base(IScriptable::NAME)
                 .build(),
-            ClassExport::<ArgsBuilder>::builder()
+            ClassExport::<AudioSettingsExtBuilder>::builder()
                 .base(IScriptable::NAME)
                 .static_methods(static_methods![
-                    c"Create" => ArgsBuilder::create
+                    c"Create" => AudioSettingsExtBuilder::create
                 ])
                 .methods(methods![
-                    c"SetStartPosition" => ArgsBuilder::set_start_position,
-                    c"SetLoopRegionStarts" => ArgsBuilder::set_loop_region_starts,
-                    c"SetLoopRegionEnds" => ArgsBuilder::set_loop_region_ends,
-                    c"SetVolume" => ArgsBuilder::set_volume,
-                    c"SetFadeInTween" => ArgsBuilder::set_fade_in_tween,
-                    c"SetPanning" => ArgsBuilder::set_panning,
-                    c"SetPlaybackRate" => ArgsBuilder::set_playback_rate,
-                    c"Build" => ArgsBuilder::build,
+                    c"SetStartPosition" => AudioSettingsExtBuilder::set_start_position,
+                    c"SetLoopRegionStarts" => AudioSettingsExtBuilder::set_loop_region_starts,
+                    c"SetLoopRegionEnds" => AudioSettingsExtBuilder::set_loop_region_ends,
+                    c"SetVolume" => AudioSettingsExtBuilder::set_volume,
+                    c"SetFadeInTween" => AudioSettingsExtBuilder::set_fade_in_tween,
+                    c"SetPanning" => AudioSettingsExtBuilder::set_panning,
+                    c"SetPlaybackRate" => AudioSettingsExtBuilder::set_playback_rate,
+                    c"Build" => AudioSettingsExtBuilder::build,
                 ])
                 .build()
         ]

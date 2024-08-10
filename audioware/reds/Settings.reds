@@ -60,3 +60,22 @@ public native struct EmitterSettings {
     let enableSpatialization: Bool = true;
     let persistUntilSoundsFinish: Bool = false;
 }
+
+public native class AudioRegion {
+    public native func SetStart(value: Float);
+    public native func SetEnd(value: Float);
+}
+
+public native class AudioSettingsExtBuilder {
+    public native static func Create() -> ref<AudioSettingsExtBuilder>;
+    public native func SetStartPosition(value: Float);
+    public native func SetLoopRegionStarts(value: Float);
+    public native func SetLoopRegionEnds(value: Float);
+    public native func SetVolume(value: Float);
+    public native func SetFadeInTween(value: ref<Tween>);
+    public native func SetPanning(value: Float);
+    public native func SetPlaybackRate(value: Float);
+    public native func Build() -> ref<AudioSettingsExt>;
+}
+
+public native importonly class AudioSettingsExt {}

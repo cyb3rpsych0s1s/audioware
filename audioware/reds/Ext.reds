@@ -1,8 +1,8 @@
 import Audioware.AudiowareSystem
 import Audioware.EmitterSettings
 import Audioware.Tween
-import Audioware.ArgsExt
-import Audioware.ArgsBuilder
+import Audioware.AudioSettingsExt
+import Audioware.AudioSettingsExtBuilder
 
 @addMethod(GameInstance)
 public static func GetAudioSystemExt(game: GameInstance) -> ref<AudioSystemExt> {
@@ -11,12 +11,12 @@ public static func GetAudioSystemExt(game: GameInstance) -> ref<AudioSystemExt> 
 
 public native class AudioSystemExt {
     // enhanced SDK
-    public final native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt ext: ref<ArgsExt>) -> Void;
+    public final native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt ext: ref<AudioSettingsExt>) -> Void;
     public final func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt tween: ref<Tween>) -> Void {
-        let builder = ArgsBuilder.Create();
+        let builder = AudioSettingsExtBuilder.Create();
         builder.SetFadeInTween(tween);
-        let args = builder.Build();
-        this.Play(eventName, entityID, emitterName, line, args);
+        let settings = builder.Build();
+        this.Play(eventName, entityID, emitterName, line, settings);
     }
     public native func Stop(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void
     public native func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueTween: ref<Tween>) -> Void;

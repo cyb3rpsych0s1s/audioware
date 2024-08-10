@@ -13,7 +13,7 @@ use red4ext_rs::{
 use crate::{
     error::Error,
     macros::{ok_or_return, some_or_return},
-    maybe::ArgsExt,
+    maybe::AudioSettingsExt,
     states::State,
     types::{
         propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, EmitterSettings,
@@ -182,7 +182,7 @@ impl Engine {
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         line_type: Opt<ScnDialogLineType>,
-        ext: Ref<ArgsExt>,
+        ext: Ref<AudioSettingsExt>,
     ) {
         let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
         let spoken = SpokenLocale::get();

@@ -32,7 +32,7 @@ use crate::engine::modulators::Modulators;
 use crate::error::Error;
 use crate::error::InternalError;
 use crate::ext::MergeArgs;
-use crate::maybe::ArgsExt;
+use crate::maybe::AudioSettingsExt;
 use crate::Audioware;
 
 pub struct Manager;
@@ -138,7 +138,7 @@ impl Manager {
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
         destination: Option<OutputDestination>,
-        ext: Ref<ArgsExt>,
+        ext: Ref<AudioSettingsExt>,
     ) -> Result<f32, Error> {
         match Banks::data(id) {
             either::Either::Left(mut data) => {
