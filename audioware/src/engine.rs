@@ -332,6 +332,7 @@ impl Engine {
             log::error!(Audioware::env(), "{e}");
         }
     }
+    #[allow(dead_code)]
     pub fn stop_for(entity_id: EntityId) {
         if let Err(e) = Manager::stop_for(&entity_id, None) {
             log::error!(Audioware::env(), "{e}");
