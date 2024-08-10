@@ -1,6 +1,7 @@
 mod dialog_line;
 mod emitter_event;
 mod event;
+mod metadata;
 mod sound_play_vo;
 mod spawn_effect;
 mod surface;
