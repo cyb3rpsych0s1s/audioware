@@ -1,7 +1,9 @@
+use std::fmt;
+
 use red4ext_rs::{
     class_kind::Native,
-    types::{CName, IScriptable},
-    ScriptClass,
+    types::{CName, IScriptable, RedArray},
+    NativeRepr, ScriptClass,
 };
 
 #[derive(Debug)]
@@ -172,5 +174,109 @@ impl AsRef<Event> for MusicEvent {
 impl AsRef<IScriptable> for MusicEvent {
     fn as_ref(&self) -> &IScriptable {
         self.base.as_ref()
+    }
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct SoundEvent {
+    base: Event,
+    pub event_name: CName,               // 40
+    pub switches: RedArray<AudSwitch>,   // 48
+    pub params: RedArray<AudParameter>,  // 58
+    pub dynamic_params: RedArray<CName>, // 68
+}
+
+unsafe impl ScriptClass for SoundEvent {
+    type Kind = Native;
+    const NAME: &'static str = "entSoundEvent";
+}
+
+impl AsRef<Event> for SoundEvent {
+    fn as_ref(&self) -> &Event {
+        &self.base
+    }
+}
+
+impl AsRef<IScriptable> for SoundEvent {
+    fn as_ref(&self) -> &IScriptable {
+        self.base.as_ref()
+    }
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct AudSwitch {
+    pub name: CName,  // 0
+    pub value: CName, // 08
+}
+
+unsafe impl ScriptClass for AudSwitch {
+    type Kind = Native;
+    const NAME: &'static str = "audioAudSwitch";
+}
+
+impl fmt::Display for AudSwitch {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}: {}", self.name, self.value)
+    }
+}
+
+const PADDING_08: usize = 0x8 - 0x0;
+const PADDING_24: usize = 0x28 - 0x24;
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct AudParameter {
+    unk00: [u8; PADDING_08],               // 0
+    pub name: CName,                       // 08
+    pub value: f32,                        // 10
+    pub enter_curve_type: ESoundCurveType, // 14
+    pub enter_curve_time: f32,             // 18
+    pub exit_curve_type: ESoundCurveType,  // 1C
+    pub exit_curve_time: f32,              // 20
+    unk24: [u8; PADDING_24],               // 24
+}
+
+unsafe impl ScriptClass for AudParameter {
+    type Kind = Native;
+    const NAME: &'static str = "audioAudParameter";
+}
+
+impl fmt::Display for AudParameter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}: {} (enter: {} at {}, exit: {} at {})",
+            self.name,
+            self.value,
+            self.enter_curve_type,
+            self.enter_curve_time,
+            self.exit_curve_type,
+            self.exit_curve_time
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum ESoundCurveType {
+    Log3 = 0,
+    Sine = 1,
+    InversedSCurve = 3,
+    Linear = 4,
+    SCurve = 5,
+    Exp1 = 6,
+    ReciprocalOfSineCurve = 7,
+    Exp3 = 8,
+}
+
+unsafe impl NativeRepr for ESoundCurveType {
+    const NAME: &'static str = "ESoundCurveType";
+}
+
+impl fmt::Display for ESoundCurveType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self)
     }
 }

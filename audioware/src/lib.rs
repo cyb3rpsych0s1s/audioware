@@ -78,6 +78,7 @@ impl Audioware {
         // native event handlers
         #[cfg(debug_assertions)]
         {
+            crate::hooks::events::sound_event::attach_hook(env);
             crate::hooks::events::music::attach_hook(env);
             // sound_parameter::attach_hook(env); // redundant with global_parameter
             crate::hooks::events::surface::attach_hook(env);
