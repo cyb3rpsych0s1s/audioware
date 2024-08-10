@@ -5,6 +5,7 @@ pub mod play_sound_on_emitter;
 pub mod set_parameter_on_emitter;
 // pub mod sound_parameter; // ❌
 pub mod audio;
+pub mod choice;
 pub mod dive;
 pub mod emerge;
 pub mod music;

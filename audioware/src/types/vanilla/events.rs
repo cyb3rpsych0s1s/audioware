@@ -3,6 +3,7 @@
 mod dialog_line;
 mod emitter_event;
 mod event;
+mod interaction;
 mod metadata;
 mod scene;
 mod sound_play_vo;
@@ -12,6 +13,7 @@ mod voice;
 pub use dialog_line::*;
 pub use emitter_event::*;
 pub use event::*;
+pub use interaction::*;
 pub use metadata::*;
 pub use scene::*;
 pub use sound_play_vo::*;

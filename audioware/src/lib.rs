@@ -78,6 +78,7 @@ impl Audioware {
         // native event handlers
         #[cfg(debug_assertions)]
         {
+            // crate::hooks::events::choice::attach_hook(env); // not thoroughly tested yet
             // crate::hooks::events::audio::attach_hook(env); // 🌊
             // crate::hooks::events::spawn_effect_event::attach_hook(env); // 🌊
             crate::hooks::events::sound_event::attach_hook(env);
