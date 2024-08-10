@@ -90,3 +90,73 @@ impl fmt::Display for Vector4 {
         )
     }
 }
+
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy, Default)]
+#[repr(C)]
+pub struct Vector3 {
+    pub x: f32, // 0x0
+    pub y: f32, // 0x4
+    pub z: f32, // 0x8
+}
+
+unsafe impl NativeRepr for Vector3 {
+    const NAME: &'static str = "Vector3";
+}
+
+impl Add for Vector3 {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+        }
+    }
+}
+
+impl From<Vector3> for mint::Vector3<f32> {
+    fn from(value: Vector3) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+            z: value.z,
+        }
+    }
+}
+
+impl From<Vector3> for glam::Vec3 {
+    fn from(value: Vector3) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+            z: value.z,
+        }
+    }
+}
+
+impl From<glam::Vec3> for Vector3 {
+    fn from(value: glam::Vec3) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+            z: value.z,
+        }
+    }
+}
+
+impl From<mint::Vector3<f32>> for Vector3 {
+    fn from(value: mint::Vector3<f32>) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+            z: value.z,
+        }
+    }
+}
+
+impl fmt::Display for Vector3 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[ x: {}, y: {}, z: {} ]", self.x, self.y, self.z)
+    }
+}
