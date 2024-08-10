@@ -1,9 +1,8 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
-use engine::Engine;
+use engine::{AudioRegion, AudioSettingsExt, AudioSettingsExtBuilder, Engine};
 use ext::AudioSystemExt;
 use hooks::*;
-use maybe::{AudioSettingsExtBuilder, AudioSettingsExt, AudioRegion};
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log, methods, static_methods,
     types::{CName, GameEngine, IScriptable, Opt},
@@ -23,7 +22,6 @@ mod error;
 mod ext;
 mod hooks;
 mod macros;
-mod maybe;
 mod states;
 mod types;
 mod utils;

@@ -17,6 +17,7 @@ use std::{
 };
 
 use super::id::HandleId;
+use super::AudioSettingsExt;
 use super::Context;
 use super::ToOutputDestination;
 use kira::{
@@ -32,7 +33,6 @@ use crate::engine::modulators::Modulators;
 use crate::error::Error;
 use crate::error::InternalError;
 use crate::ext::MergeArgs;
-use crate::maybe::AudioSettingsExt;
 use crate::Audioware;
 
 pub struct Manager;

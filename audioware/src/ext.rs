@@ -7,7 +7,11 @@ use red4ext_rs::{
     PluginOps, ScriptClass,
 };
 
-use crate::{engine::Engine, maybe::AudioSettingsExt, types::Tween, Audioware};
+use crate::{
+    engine::{AudioSettingsExt, Engine},
+    types::Tween,
+    Audioware,
+};
 
 #[derive(Debug, Default, Clone)]
 #[repr(C)]

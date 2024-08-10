@@ -13,7 +13,6 @@ use red4ext_rs::{
 use crate::{
     error::Error,
     macros::{ok_or_return, some_or_return},
-    maybe::AudioSettingsExt,
     states::State,
     types::{
         propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, EmitterSettings,
@@ -28,6 +27,7 @@ mod id;
 mod manager;
 mod modulators;
 mod scene;
+mod settings;
 mod tracks;
 
 pub use effects::IMMEDIATELY;
@@ -36,6 +36,7 @@ pub use eq::Preset;
 pub use manager::Manage;
 pub use manager::Manager;
 pub use scene::Scene;
+pub use settings::*;
 pub use tracks::Tracks;
 
 pub struct Engine;
