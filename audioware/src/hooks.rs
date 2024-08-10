@@ -36,6 +36,7 @@ mod offsets {
     pub(super) const MUSIC_EVENT_HANDLER: u32               = 0x77873E4B; // 0x1411E72E8
     pub(super) const SOUND_EVENT_HANDLER: u32               = 0xDA4F1A61; // 0x14252E384
     pub(super) const SPAWN_EFFECT_EVENT_HANDLER: u32        = 0xA4911D02; // 0x140394DE8
+    pub(super) const AUDIO_EVENT_HANDLER: u32               = 0x10C412FD; // 0x140816DF4
 }
 
 pub mod global_parameter;

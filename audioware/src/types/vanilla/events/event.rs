@@ -293,3 +293,99 @@ impl fmt::Display for ESoundCurveType {
         )
     }
 }
+
+const PADDING_64: usize = 0x68 - 0x64;
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct AudioEvent {
+    base: Event,
+    pub event_name: CName,            // 40
+    pub emitter_name: CName,          // 48
+    pub name_data: CName,             // 50
+    pub float_data: f32,              // 58
+    pub event_type: EventActionType,  // 5C
+    pub event_flags: AudioEventFlags, // 60
+    unk64: [u8; PADDING_64],          // 64
+}
+
+unsafe impl ScriptClass for AudioEvent {
+    type Kind = Native;
+    const NAME: &'static str = "entAudioEvent";
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum EventActionType {
+    Play = 0,
+    PlayAnimation = 1,
+    SetParameter = 2,
+    StopSound = 3,
+    SetSwitch = 4,
+    StopTagged = 5,
+    PlayExternal = 6,
+    Tag = 7,
+    Untag = 8,
+    SetAppearanceName = 9,
+    SetEntityName = 10,
+    AddContainerStreamingPrefetch = 11,
+    RemoveContainerStreamingPrefetch = 12,
+}
+
+unsafe impl NativeRepr for EventActionType {
+    const NAME: &'static str = "EventActionType";
+}
+
+impl fmt::Display for EventActionType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Play => "Play",
+                Self::PlayAnimation => "PlayAnimation",
+                Self::SetParameter => "SetParameter",
+                Self::StopSound => "StopSound",
+                Self::SetSwitch => "SetSwitch",
+                Self::StopTagged => "StopTagged",
+                Self::PlayExternal => "PlayExternal",
+                Self::Tag => "Tag",
+                Self::Untag => "Untag",
+                Self::SetAppearanceName => "SetAppearanceName",
+                Self::SetEntityName => "SetEntityName",
+                Self::AddContainerStreamingPrefetch => "AddContainerStreamingPrefetch",
+                Self::RemoveContainerStreamingPrefetch => "RemoveContainerStreamingPrefetch",
+            }
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum AudioEventFlags {
+    NoEventFlags = 0,
+    SloMoOnly = 1,
+    Music = 2,
+    Unique = 4,
+    Metadata = 8,
+}
+
+unsafe impl NativeRepr for AudioEventFlags {
+    const NAME: &'static str = "AudioEventFlags";
+}
+
+impl fmt::Display for AudioEventFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::NoEventFlags => "NoEventFlags",
+                Self::SloMoOnly => "SloMoOnly",
+                Self::Music => "Music",
+                Self::Unique => "Unique",
+                Self::Metadata => "Metadata",
+            }
+        )
+    }
+}
