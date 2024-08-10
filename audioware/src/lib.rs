@@ -217,8 +217,8 @@ unsafe extern "C" fn post_register() {}
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit initialization: Audioware");
-    test_play();
-    test_static();
+    // test_play();
+    // test_static();
     // test_get_player();
     // test_is_player();
     // scan_globals("PropagateSubtitle");
@@ -242,6 +242,7 @@ fn unset_player_gender() {
     PlayerGender::set(None);
 }
 
+#[allow(dead_code)]
 fn test_play() {
     let rtti = RttiSystem::get();
     let class = rtti.get_class(CName::new(AudioSystem::NAME)).unwrap();
@@ -254,6 +255,7 @@ fn test_play() {
     system.play(CName::new("ono_v_pain_long"), Opt::Default, Opt::Default);
 }
 
+#[allow(dead_code)]
 fn test_static() {
     // CallbackSystemTarget => native: true, size: 0x40, value holder size: 0x0, align: 0x4, parent: IScriptable
     #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("CallbackSystemTarget");
