@@ -222,7 +222,7 @@ impl fmt::Display for AudSwitch {
     }
 }
 
-const PADDING_08: usize = 0x8 - 0x0;
+const PADDING_08: usize = 0x8;
 const PADDING_24: usize = 0x28 - 0x24;
 
 #[derive(Debug)]
@@ -277,6 +277,19 @@ unsafe impl NativeRepr for ESoundCurveType {
 
 impl fmt::Display for ESoundCurveType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self)
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Log3 => "Log3",
+                Self::Sine => "Sine",
+                Self::InversedSCurve => "InversedSCurve",
+                Self::Linear => "Linear",
+                Self::SCurve => "SCurve",
+                Self::Exp1 => "Exp1",
+                Self::ReciprocalOfSineCurve => "ReciprocalOfSineCurve",
+                Self::Exp3 => "Exp3",
+            }
+        )
     }
 }

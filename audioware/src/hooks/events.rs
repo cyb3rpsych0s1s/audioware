@@ -10,6 +10,7 @@ pub mod music;
 pub mod sound_event;
 pub mod sound_play_vo;
 pub mod sound_switch;
+pub mod spawn_effect_event;
 pub mod stop_dialog_line;
 pub mod stop_sound;
 pub mod stop_sound_on_emitter;
