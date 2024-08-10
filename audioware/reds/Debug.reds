@@ -240,7 +240,7 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
     .SetInt(GetAllBlackboardDefs().Audioware_Settings.AudioPreset, value, true);
 }
 
-/// Game.TestBuilderPattern("still_dre");
+/// Game.TestBuilderPattern();
 public static exec func TestBuilderPattern(game: GameInstance) {
     let builder: ref<AudioSettingsExtBuilder> = AudioSettingsExtBuilder.Create(); // builder is a mutable ref
     builder.SetFadeInTween(ElasticTween.ImmediateIn(5.0, 0.25));
