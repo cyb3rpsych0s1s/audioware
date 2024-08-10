@@ -39,7 +39,9 @@ pub struct Scene {
 
 impl Scene {
     pub fn setup(manager: &mut AudioManager, tracks: &Tracks) -> Result<(), Error> {
-        let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
+        let settings = SpatialSceneSettings::default();
+        let capacity = settings.emitter_capacity as usize;
+        let mut scene = manager.add_spatial_scene(settings)?;
         let listener = scene.add_listener(
             Vec3::ZERO,
             Quat::IDENTITY,
@@ -49,8 +51,8 @@ impl Scene {
             .set(Scene {
                 scene: Arc::new(Mutex::new(scene)),
                 v: Arc::new(Mutex::new(listener)),
-                active_entities: Arc::new(Mutex::new(DashMap::new())),
-                entities_updates: Arc::new(RwLock::new(Vec::with_capacity(128))),
+                active_entities: Arc::new(Mutex::new(DashMap::with_capacity(capacity))),
+                entities_updates: Arc::new(RwLock::new(Vec::with_capacity(capacity))),
             })
             .map_err(|_| Error::from(InternalError::Contention { origin: "scene" }))?;
         Ok(())
