@@ -1,5 +1,6 @@
 #![allow(unused_imports)]
 
+mod ai;
 mod dialog_line;
 mod emitter_event;
 mod event;
@@ -10,6 +11,7 @@ mod sound_play_vo;
 mod spawn_effect;
 mod surface;
 mod voice;
+pub use ai::*;
 pub use dialog_line::*;
 pub use emitter_event::*;
 pub use event::*;
