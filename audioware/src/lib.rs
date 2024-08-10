@@ -1,11 +1,11 @@
 use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
-use engine::Engine;
+use engine::{AudioRegion, AudioSettingsExt, AudioSettingsExtBuilder, Engine};
 use ext::AudioSystemExt;
 use hooks::*;
 use red4ext_rs::{
-    call, export_plugin_symbols, exports, global, log, static_methods,
-    types::{CName, GameEngine, Opt},
+    call, export_plugin_symbols, exports, global, log, methods, static_methods,
+    types::{CName, GameEngine, IScriptable, Opt},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
@@ -165,8 +165,9 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
             GlobalExport(global!(c"Audioware.TestPlay", test_play)),
             ClassExport::<AudioSystemExt>::builder()
-                .static_methods(static_methods![
-                    c"Play" => AudioSystemExt::play,
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    final c"Play" => AudioSystemExt::play,
                     c"Stop" => AudioSystemExt::stop,
                     c"Switch" => AudioSystemExt::switch,
                     c"PlayOverThePhone" => AudioSystemExt::play_over_the_phone,
@@ -176,6 +177,32 @@ impl Plugin for Audioware {
                     c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
                 ])
                 .build(),
+            ClassExport::<AudioRegion>::builder()
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    c"SetStart" => AudioRegion::set_start,
+                    c"SetEnd" => AudioRegion::set_end,
+                ])
+                .build(),
+            ClassExport::<AudioSettingsExt>::builder()
+                .base(IScriptable::NAME)
+                .build(),
+            ClassExport::<AudioSettingsExtBuilder>::builder()
+                .base(IScriptable::NAME)
+                .static_methods(static_methods![
+                    c"Create" => AudioSettingsExtBuilder::create
+                ])
+                .methods(methods![
+                    c"SetStartPosition" => AudioSettingsExtBuilder::set_start_position,
+                    c"SetLoopRegionStarts" => AudioSettingsExtBuilder::set_loop_region_starts,
+                    c"SetLoopRegionEnds" => AudioSettingsExtBuilder::set_loop_region_ends,
+                    c"SetVolume" => AudioSettingsExtBuilder::set_volume,
+                    c"SetFadeInTween" => AudioSettingsExtBuilder::set_fade_in_tween,
+                    c"SetPanning" => AudioSettingsExtBuilder::set_panning,
+                    c"SetPlaybackRate" => AudioSettingsExtBuilder::set_playback_rate,
+                    c"Build" => AudioSettingsExtBuilder::build,
+                ])
+                .build()
         ]
     }
 }

@@ -27,6 +27,7 @@ mod id;
 mod manager;
 mod modulators;
 mod scene;
+mod settings;
 mod tracks;
 
 pub use effects::IMMEDIATELY;
@@ -35,6 +36,7 @@ pub use eq::Preset;
 pub use manager::Manage;
 pub use manager::Manager;
 pub use scene::Scene;
+pub use settings::*;
 pub use tracks::Tracks;
 
 pub struct Engine;
@@ -164,6 +166,37 @@ impl Engine {
         let tween = tween.into_tween();
         let duration = ok_or_return!(
             Manager::play_and_store(&mut manager, id, entity_id, emitter_name, None, tween),
+            "Unable to store sound handle"
+        );
+        if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
+            propagate_subtitles(
+                sound_name,
+                entity_id,
+                emitter_name,
+                line_type.unwrap_or_default(),
+                duration,
+            )
+        }
+    }
+    pub fn play_with(
+        sound_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        line_type: Opt<ScnDialogLineType>,
+        ext: Ref<AudioSettingsExt>,
+    ) {
+        let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
+        let spoken = SpokenLocale::get();
+        let gender = PlayerGender::get();
+        let entity_id = entity_id.into_option();
+        let emitter_name = emitter_name.into_option();
+        let id = ok_or_return!(
+            Banks::try_get(&sound_name, &spoken, gender.as_ref()),
+            "Unable to get sound ID"
+        );
+
+        let duration = ok_or_return!(
+            Manager::play_and_store_with(&mut manager, id, entity_id, emitter_name, None, ext),
             "Unable to store sound handle"
         );
         if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {

@@ -8,6 +8,7 @@ use rayon::iter::IntoParallelRefMutIterator;
 use rayon::iter::ParallelBridge;
 use rayon::iter::ParallelIterator;
 use red4ext_rs::log;
+use red4ext_rs::types::Ref;
 use red4ext_rs::PluginOps;
 use std::ops::DerefMut;
 use std::{
@@ -16,6 +17,7 @@ use std::{
 };
 
 use super::id::HandleId;
+use super::AudioSettingsExt;
 use super::Context;
 use super::ToOutputDestination;
 use kira::{
@@ -30,6 +32,7 @@ use crate::config::BufferSize;
 use crate::engine::modulators::Modulators;
 use crate::error::Error;
 use crate::error::InternalError;
+use crate::ext::MergeArgs;
 use crate::Audioware;
 
 pub struct Manager;
@@ -116,6 +119,45 @@ impl Manager {
                     data.settings.fade_in_tween = tween;
                 }
                 let duration = data.duration().as_secs_f32();
+                let handle = if let Some(destination) = destination {
+                    manager.play(data.output_destination(destination))
+                } else {
+                    manager.play(data.output_destination(
+                        Context::new(id, entity_id.as_ref()).output_destination(),
+                    ))
+                }?;
+                let mut storage = StreamStorage::try_lock()?;
+                storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
+                Ok(duration)
+            }
+        }
+    }
+    pub fn play_and_store_with(
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        destination: Option<OutputDestination>,
+        ext: Ref<AudioSettingsExt>,
+    ) -> Result<f32, Error> {
+        match Banks::data(id) {
+            either::Either::Left(mut data) => {
+                let duration = data.duration().as_secs_f32();
+                data = data.merge_args(&ext);
+                let handle = if let Some(destination) = destination {
+                    manager.play(data.output_destination(destination))
+                } else {
+                    manager.play(data.output_destination(
+                        Context::new(id, entity_id.as_ref()).output_destination(),
+                    ))
+                }?;
+                let mut storage = StaticStorage::try_lock()?;
+                storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
+                Ok(duration)
+            }
+            either::Either::Right(mut data) => {
+                let duration = data.duration().as_secs_f32();
+                data = data.merge_args(&ext);
                 let handle = if let Some(destination) = destination {
                     manager.play(data.output_destination(destination))
                 } else {
