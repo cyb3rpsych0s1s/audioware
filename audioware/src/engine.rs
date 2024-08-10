@@ -108,6 +108,14 @@ impl Engine {
         }
         count.unwrap() as i32
     }
+    pub fn on_emitter_dies(entity_id: EntityId) {
+        if let Err(e) = Scene::on_emitter_dies(entity_id) {
+            log::error!(
+                Audioware::env(),
+                "couldn't remove dying emitter from scene: {e}"
+            );
+        }
+    }
     pub fn sync_emitters() {
         if let Err(e) = Scene::sync_emitters() {
             log::error!(Audioware::env(), "couldn't sync emitters on scene: {e}");

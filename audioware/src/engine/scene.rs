@@ -148,6 +148,10 @@ impl Scene {
         Self::try_lock_active_emitters()?.clear();
         Ok(())
     }
+    pub fn on_emitter_dies(entity_id: EntityId) -> Result<(), Error> {
+        Self::try_write_emitters_updates()?.push(entity_id);
+        Ok(())
+    }
     pub fn sync_emitters() -> Result<(), Error> {
         // log::info!(Audioware::env(), "syncing emitters positions...");
         let mut entity: Ref<Entity>;
