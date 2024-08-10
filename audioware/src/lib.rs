@@ -175,6 +175,7 @@ impl Plugin for Audioware {
                     c"EmittersCount" => AudioSystemExt::emitters_count,
                     c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
                     c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
+                    c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
                 ])
                 .build(),
             ClassExport::<AudioRegion>::builder()
@@ -261,9 +262,9 @@ fn test_static() {
     // WorldPosition => native: true, size: 0xC, value holder size: 0x0, align: 0x4, parent: None
     #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("WorldPosition");
     // e.g. static => SetX (SetX)
-    #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("WorldPosition");
+    // #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("WorldPosition");
     // e.g. static => FindEntityByID (FindEntityByID)
-    #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("ScriptGameInstance");
+    // #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("ScriptGameInstance");
 
     let env = Audioware::env();
     let from = Vector4 {

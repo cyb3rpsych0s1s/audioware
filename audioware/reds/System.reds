@@ -193,8 +193,10 @@ public class AudiowareSystem extends ScriptableSystem {
     }
 
     public func UnregisterEmitter(entityID: EntityID) -> Void {
-        UnregisterEmitter(entityID);
-        this.detachedOnce.RemoveTarget(EntityTarget.ID(entityID));
+        if IsRegisteredEmitter(entityID) {
+            UnregisterEmitter(entityID);
+            this.detachedOnce.RemoveTarget(EntityTarget.ID(entityID));
+        }
     }
 
     private cb func OnSpawn(event: ref<EntityLifecycleEvent>) {

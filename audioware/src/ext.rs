@@ -65,7 +65,6 @@ impl AudioSystemExt {
     pub fn play_over_the_phone(&self, event_name: CName, emitter_name: CName, gender: CName) {
         Engine::play_over_the_phone(event_name, emitter_name, gender);
     }
-    #[allow(clippy::wrong_self_convention)]
     pub fn is_registered_emitter(&self, entity_id: EntityId) -> bool {
         Engine::is_registered_emitter(entity_id)
     }
@@ -89,6 +88,9 @@ impl AudioSystemExt {
         tween: Ref<Tween>,
     ) {
         Engine::stop_on_emitter(sound_name, entity_id, emitter_name, tween);
+    }
+    pub fn on_emitter_dies(&self, entity_id: EntityId) {
+        Engine::on_emitter_dies(entity_id);
     }
 }
 
