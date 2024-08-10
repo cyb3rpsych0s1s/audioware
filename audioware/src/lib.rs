@@ -266,9 +266,6 @@ fn test_static() {
     // e.g. static => FindEntityByID (FindEntityByID)
     // #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("ScriptGameInstance");
 
-    let crash_on = CName::from(6042254402083039839);
-    log::info!(Audioware::env(), "crash_on: {}", crash_on);
-
     let env = Audioware::env();
     let from = Vector4 {
         x: 0.,
