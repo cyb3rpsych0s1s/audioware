@@ -9,7 +9,7 @@ const PADDING_45: usize = 0x48 - 0x45;
 pub struct SceneEvent {
     base: ISerializable,
     pub id: SceneEventId,               // 30
-    pub r#type: u32,                    // 38 (EventType is an empty enum in RED4ext.SDK)
+    pub type_: u32,                     // 38 (EventType is an empty enum in RED4ext.SDK)
     pub start_time: u32,                // 3C
     pub duration: u32,                  // 40
     pub execution_tag_flags: u8,        // 44
