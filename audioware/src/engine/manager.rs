@@ -1,20 +1,17 @@
 use audioware_bank::Banks;
 use audioware_bank::Id;
+use dashmap::DashMap;
 use kira::manager::backend::cpal::CpalBackend;
 use kira::manager::backend::cpal::CpalBackendSettings;
 use kira::sound::PlaybackState;
 use kira::OutputDestination;
 use rayon::iter::IntoParallelRefMutIterator;
-use rayon::iter::ParallelBridge;
 use rayon::iter::ParallelIterator;
 use red4ext_rs::log;
 use red4ext_rs::types::Ref;
 use red4ext_rs::PluginOps;
 use std::ops::DerefMut;
-use std::{
-    collections::HashMap,
-    sync::{Mutex, MutexGuard, OnceLock},
-};
+use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use super::id::HandleId;
 use super::AudioSettingsExt;
@@ -54,8 +51,8 @@ pub trait Manage {
 pub struct StaticStorage;
 pub struct StreamStorage;
 
-static STATICS: Lazy<Mutex<HashMap<HandleId, StaticSoundHandle>>> = Lazy::new(Default::default);
-static STREAMS: Lazy<Mutex<HashMap<HandleId, StreamingSoundHandle<FromFileError>>>> =
+static STATICS: Lazy<Mutex<DashMap<HandleId, StaticSoundHandle>>> = Lazy::new(Default::default);
+static STREAMS: Lazy<Mutex<DashMap<HandleId, StreamingSoundHandle<FromFileError>>>> =
     Lazy::new(Default::default);
 
 impl Manager {
@@ -110,7 +107,7 @@ impl Manager {
                         Context::new(id, entity_id.as_ref()).output_destination(),
                     ))
                 }?;
-                let mut storage = StaticStorage::try_lock()?;
+                let storage = StaticStorage::try_lock()?;
                 storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
                 Ok(duration)
             }
@@ -126,7 +123,7 @@ impl Manager {
                         Context::new(id, entity_id.as_ref()).output_destination(),
                     ))
                 }?;
-                let mut storage = StreamStorage::try_lock()?;
+                let storage = StreamStorage::try_lock()?;
                 storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
                 Ok(duration)
             }
@@ -151,7 +148,7 @@ impl Manager {
                         Context::new(id, entity_id.as_ref()).output_destination(),
                     ))
                 }?;
-                let mut storage = StaticStorage::try_lock()?;
+                let storage = StaticStorage::try_lock()?;
                 storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
                 Ok(duration)
             }
@@ -165,7 +162,7 @@ impl Manager {
                         Context::new(id, entity_id.as_ref()).output_destination(),
                     ))
                 }?;
-                let mut storage = StreamStorage::try_lock()?;
+                let storage = StreamStorage::try_lock()?;
                 storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
                 Ok(duration)
             }
@@ -175,7 +172,7 @@ impl Manager {
 
 impl StaticStorage {
     pub fn try_lock<'a>(
-    ) -> Result<MutexGuard<'a, HashMap<HandleId, StaticSoundHandle>>, InternalError> {
+    ) -> Result<MutexGuard<'a, DashMap<HandleId, StaticSoundHandle>>, InternalError> {
         STATICS.try_lock().map_err(|_| InternalError::Contention {
             origin: "static sound handles",
         })
@@ -184,7 +181,7 @@ impl StaticStorage {
 
 impl StreamStorage {
     pub fn try_lock<'a>(
-    ) -> Result<MutexGuard<'a, HashMap<HandleId, StreamingSoundHandle<FromFileError>>>, InternalError>
+    ) -> Result<MutexGuard<'a, DashMap<HandleId, StreamingSoundHandle<FromFileError>>>, InternalError>
     {
         STREAMS.try_lock().map_err(|_| InternalError::Contention {
             origin: "static sound handles",
@@ -219,11 +216,7 @@ impl Manager {
         Ok(())
     }
     #[allow(dead_code)]
-    pub fn stop_for(
-        &mut self,
-        entity_id: &EntityId,
-        tween: Option<Tween>,
-    ) -> Result<(), InternalError> {
+    pub fn stop_for(entity_id: &EntityId, tween: Option<Tween>) -> Result<(), InternalError> {
         StaticStorage::try_lock()?
             .deref_mut()
             .stop_for(entity_id, tween);
@@ -248,12 +241,12 @@ macro_rules! impl_manage {
     ($value_ty:ty) => {
         impl Manage for $value_ty {
             fn stop(&mut self, tween: Option<kira::tween::Tween>) {
-                self.values_mut()
-                    .par_bridge()
+                self.par_iter_mut()
                     .filter(|v| {
-                        v.state() != PlaybackState::Stopped && v.state() != PlaybackState::Stopping
+                        v.value().state() != PlaybackState::Stopped
+                            && v.value().state() != PlaybackState::Stopping
                     })
-                    .for_each(|v| v.stop(tween.unwrap_or_default()));
+                    .for_each(|mut v| v.value_mut().stop(tween.unwrap_or_default()));
             }
 
             fn stop_by(
@@ -264,44 +257,43 @@ macro_rules! impl_manage {
                 tween: Option<Tween>,
             ) {
                 self.par_iter_mut()
-                    .filter(|(k, v)| {
-                        k.event_name() == event_name
-                            && k.entity_id() == entity_id
-                            && k.emitter_name() == emitter_name
-                            && v.state() != PlaybackState::Stopped
-                            && v.state() != PlaybackState::Stopping
+                    .filter(|entry| {
+                        entry.key().event_name() == event_name
+                            && entry.key().entity_id() == entity_id
+                            && entry.key().emitter_name() == emitter_name
+                            && entry.value().state() != PlaybackState::Stopped
+                            && entry.value().state() != PlaybackState::Stopping
                     })
-                    .for_each(|(_, v)| v.stop(tween.unwrap_or_default()));
+                    .for_each(|mut entry| entry.value_mut().stop(tween.unwrap_or_default()));
             }
 
             fn stop_for(&mut self, entity_id: &EntityId, tween: Option<Tween>) {
                 self.par_iter_mut()
-                    .filter(|(k, v)| {
-                        k.entity_id() == Some(entity_id)
-                            && v.state() != PlaybackState::Stopped
-                            && v.state() != PlaybackState::Stopping
+                    .filter(|entry| {
+                        entry.key().entity_id() == Some(entity_id)
+                            && entry.value().state() != PlaybackState::Stopped
+                            && entry.value().state() != PlaybackState::Stopping
                     })
-                    .for_each(|(_, v)| v.stop(tween.unwrap_or_default()));
+                    .for_each(|mut entry| entry.value_mut().stop(tween.unwrap_or_default()));
             }
 
             fn pause(&mut self, tween: Option<kira::tween::Tween>) {
-                self.values_mut()
-                    .par_bridge()
-                    .filter(|v| v.state() == PlaybackState::Playing)
-                    .for_each(|v| v.pause(tween.unwrap_or_default()));
+                self.par_iter_mut()
+                    .filter(|entry| entry.value().state() == PlaybackState::Playing)
+                    .for_each(|mut entry| entry.value_mut().pause(tween.unwrap_or_default()));
             }
 
             fn resume(&mut self, tween: Option<kira::tween::Tween>) {
-                self.values_mut()
-                    .par_bridge()
-                    .filter(|v| {
-                        v.state() == PlaybackState::Paused || v.state() == PlaybackState::Pausing
+                self.par_iter_mut()
+                    .filter(|entry| {
+                        entry.value().state() == PlaybackState::Paused
+                            || entry.value().state() == PlaybackState::Pausing
                     })
-                    .for_each(|v| v.resume(tween.unwrap_or_default()));
+                    .for_each(|mut entry| entry.value_mut().resume(tween.unwrap_or_default()));
             }
         }
     };
 }
 
-impl_manage!(HashMap<HandleId,StaticSoundHandle>);
-impl_manage!(HashMap<HandleId,StreamingSoundHandle<FromFileError>>);
+impl_manage!(DashMap<HandleId,StaticSoundHandle>);
+impl_manage!(DashMap<HandleId,StreamingSoundHandle<FromFileError>>);

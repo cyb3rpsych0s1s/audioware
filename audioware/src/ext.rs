@@ -90,6 +90,9 @@ impl AudioSystemExt {
     ) {
         Engine::stop_on_emitter(sound_name, entity_id, emitter_name, tween);
     }
+    pub fn on_emitter_dies(&self, entity_id: EntityId) {
+        Engine::stop_for(entity_id);
+    }
 }
 
 pub trait MergeArgs {

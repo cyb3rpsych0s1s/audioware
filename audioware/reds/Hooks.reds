@@ -11,44 +11,34 @@ protected cb func OnDeathScreenDelayEvent(evt: ref<DeathMenuDelayEvent>) -> Bool
 /// whenever any NPC is about to die
 @wrapMethod(GameObject)
 protected cb func OnWillDieSoonEventEvent(evt: ref<WillDieSoonEvent>) -> Bool {
-    LOG(s"on will die soon: \(EntityID.ToDebugString(this.GetEntityID()))");
+    LOG(s"on will die soon: \(EntityID.ToDebugString(this.GetEntityID())) [GameObject]");
     if !this.IsPlayer() {
-        UnregisterEmitter(this.GetEntityID());
+        GameInstance.GetAudioSystemExt(GetGameInstance()).OnEmitterDies(this.GetEntityID());
     }
     wrappedMethod(evt);
-}
-
-/// whenever any NPC dies
-@wrapMethod(ScriptedPuppet)
-protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
-    LOG(s"on death: \(EntityID.ToDebugString(this.GetEntityID()))");
-    if !this.IsPlayer() {
-        UnregisterEmitter(this.GetEntityID());
-    }
-    return wrappedMethod(evt);
 }
 
 /// whenever any vehicle is destroyed
 @wrapMethod(VehicleComponent)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
-    LOG(s"on death: \(EntityID.ToDebugString(this.GetEntity().GetEntityID()))");
-    UnregisterEmitter(this.GetEntity().GetEntityID());
+    LOG(s"on death: \(EntityID.ToDebugString(this.GetEntity().GetEntityID())) [VehicleComponent]");
+    GameInstance.GetAudioSystemExt(GetGameInstance()).OnEmitterDies(this.GetEntity().GetEntityID());
     return wrappedMethod(evt);
 }
 
 /// whenever any AI human dies
 @wrapMethod(AIHumanComponent)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
-    LOG(s"on death: \(EntityID.ToDebugString(this.GetEntity().GetEntityID()))");
-    UnregisterEmitter(this.GetEntity().GetEntityID());
+    LOG(s"on death: \(EntityID.ToDebugString(this.GetEntity().GetEntityID())) [AIHumanComponent]");
+    GameInstance.GetAudioSystemExt(GetGameInstance()).OnEmitterDies(this.GetEntity().GetEntityID());
     return wrappedMethod(evt);
 }
 
 /// whenever any device is destroyed
 @wrapMethod(Device)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
-    LOG(s"on death: \(EntityID.ToDebugString(this.GetEntityID()))");
-    UnregisterEmitter(this.GetEntityID());
+    LOG(s"on death: \(EntityID.ToDebugString(this.GetEntityID())) [Device]");
+    GameInstance.GetAudioSystemExt(GetGameInstance()).OnEmitterDies(this.GetEntityID());
     return wrappedMethod(evt);
 }
 
