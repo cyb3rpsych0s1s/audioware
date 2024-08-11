@@ -60,9 +60,9 @@ const PADDING_10C: usize = 0x110 - 0x10C;
 #[repr(C)]
 pub struct ChoiceEvent {
     base: InteractionBaseEvent,
-    pub choice: Choice,          // 68
-    pub action_type: ActionType, // 108
-    unk10c: [u8; PADDING_10C],   // 10C
+    pub choice: InteractionChoice, // 68
+    pub action_type: ActionType,   // 108
+    unk10c: [u8; PADDING_10C],     // 10C
 }
 
 unsafe impl ScriptClass for ChoiceEvent {
@@ -132,24 +132,24 @@ const PADDING_98: usize = 0x9A - 0x98;
 const PADDING_9B: usize = 0xA0 - 0x9B;
 
 #[repr(C)]
-pub struct Choice {
-    pub caption: RedString,                         // 00
-    pub caption_parts: ChoiceCaption,               // 20
-    pub data: RedArray<Variant>,                    // 30
-    pub choice_meta_data: ChoiceMetaData,           // 40
-    unk70: [u8; PADDING_70],                        // 70
-    pub look_at_descriptor: ChoiceLookAtDescriptor, // 78
-    unk98: [u8; PADDING_98],                        // 98
-    pub do_not_turn_off_prevention_system: bool,    // 9A
-    unk9b: [u8; PADDING_9B],                        // 9B
+pub struct InteractionChoice {
+    pub caption: RedString,                          // 00
+    pub caption_parts: InteractionChoiceCaption,     // 20
+    pub data: RedArray<Variant>,                     // 30
+    pub choice_meta_data: InteractionChoiceMetaData, // 40
+    unk70: [u8; PADDING_70],                         // 70
+    pub look_at_descriptor: ChoiceLookAtDescriptor,  // 78
+    unk98: [u8; PADDING_98],                         // 98
+    pub do_not_turn_off_prevention_system: bool,     // 9A
+    unk9b: [u8; PADDING_9B],                         // 9B
 }
 
-unsafe impl ScriptClass for Choice {
+unsafe impl ScriptClass for InteractionChoice {
     type Kind = Native;
     const NAME: &'static str = "gameinteractionsChoice";
 }
 
-impl fmt::Debug for Choice {
+impl fmt::Debug for InteractionChoice {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Choice")
             .field("caption", &self.caption)
@@ -201,14 +201,14 @@ const PADDING_2C: usize = 0x30 - 0x2C;
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct ChoiceMetaData {
+pub struct InteractionChoiceMetaData {
     pub tweak_db_name: RedString, // 00
     pub tweak_db_id: TweakDbId,   // 20
     pub type_: ChoiceTypeWrapper, // 28
     pub unk2c: [u8; PADDING_2C],  // 2C
 }
 
-unsafe impl NativeRepr for ChoiceMetaData {
+unsafe impl NativeRepr for InteractionChoiceMetaData {
     const NAME: &'static str = "gameinteractionsChoiceMetaData";
 }
 
@@ -224,11 +224,11 @@ unsafe impl NativeRepr for ChoiceTypeWrapper {
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct ChoiceCaption {
+pub struct InteractionChoiceCaption {
     pub parts: RedArray<ChoiceCaptionPart>,
 }
 
-unsafe impl NativeRepr for ChoiceCaption {
+unsafe impl NativeRepr for InteractionChoiceCaption {
     const NAME: &'static str = "gameinteractionsChoiceCaption";
 }
 
