@@ -1,7 +1,5 @@
 module Audioware
 
-public native func TestPlay() -> Void;
-
 public class AudiowareSystem extends ScriptableSystem {
     private let attached: ref<CallbackSystemHandler>;
     private let detachedOnce: ref<CallbackSystemHandler>;
@@ -79,7 +77,6 @@ public class AudiowareSystem extends ScriptableSystem {
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {
         LOG("on player attach: AudiowareSystem");
         SetGameState(GameState.InGame);
-        TestPlay();
 
         let player = request.owner as PlayerPuppet;
         if IsDefined(player) {

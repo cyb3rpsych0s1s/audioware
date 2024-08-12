@@ -112,11 +112,6 @@ public static exec func TestAudioSystemPlayOverThePhone(game: GameInstance, name
     GameInstance.GetAudioSystemExt(game).PlayOverThePhone(cname, n"Vik", n"Male");
 }
 
-/// Game.TestPlayRustOnly();
-public static exec func TestPlayRustOnly(game: GameInstance) {
-    TestPlay();
-}
-
 /// Game.TestScenePositions();
 public static exec func TestScenePositions(game: GameInstance) {
     let player = GetPlayer(game);
