@@ -48,7 +48,10 @@ pub mod validation {
         ConflictingKey { cname: String },
         #[snafu(display("audio outside depot: {path}"), visibility(pub(crate)))]
         AudioOutsideDepot { path: String },
-        #[snafu(display("cannot load audio: {path} ({source})"), visibility(pub(crate)))]
+        #[snafu(
+            display("cannot load audio: {path} ({source})"),
+            visibility(pub(crate))
+        )]
         InvalidAudio {
             path: String,
             source: kira::sound::FromFileError,
