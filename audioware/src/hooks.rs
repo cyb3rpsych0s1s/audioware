@@ -12,6 +12,13 @@ mod offsets {
     pub(super) const ON_TRANSFORM_UPDATED: u32              = 0x2AF1B37;  // 0x14014E8D0
     // Entity
     pub(super) const QUEUE_EVENT: u32                       = 0x5E7D1BB0; // 0x1401EE8A8
+    pub(super) const QUEUE_EVENT_FOR_ENTITY_ID: u32         = 0xC1661FE1; // 0x140C5D350
+    // inkLogicController / inkIGameController
+    #[allow(dead_code)]
+    pub(super) const ILC_QUEUE_EVENT: u32                   = 0xC87F2007; // 0x1409D4F9C
+    // inkMenuScenario
+    #[allow(dead_code)]
+    pub(super) const IMS_QUEUE_EVENT: u32                   = 0x19751DF7; // 0x14123DC70
     // gameuiSaveHandlingController
     // note: LoadSaveInGame and LoadModdedSave share same underlying address
     pub(super) const LOAD_SAVE_IN_GAME: u32                 = 0x9AB824D9; // 0x14058E6B8
@@ -49,7 +56,10 @@ pub mod on_transform_updated;
 pub mod parameter;
 pub mod play;
 pub mod play_on_emitter;
+#[allow(dead_code)]
 pub mod queue_event;
+#[allow(dead_code)]
+pub mod queue_event_for_entity_id;
 pub mod stop;
 pub mod switch;
 

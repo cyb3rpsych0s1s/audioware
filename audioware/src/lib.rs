@@ -75,13 +75,12 @@ impl Audioware {
         play_on_emitter::attach_hook(env);
         stop::attach_hook(env);
         switch::attach_hook(env);
-        #[cfg(debug_assertions)]
-        {
-            queue_event::attach_hook(env); // 🌊
-        }
+        // queue_event::attach_hook(env); // 🌊
+        // queue_event_for_entity_id::attach_hook(env); // 🌊
         // native event handlers
         #[cfg(debug_assertions)]
         {
+            crate::hooks::events::vehicle::attach_hook(env);
             // crate::hooks::events::choice::attach_hook(env); // not thoroughly tested yet
             // crate::hooks::events::audio::attach_hook(env); // 🌊
             // crate::hooks::events::spawn_effect_event::attach_hook(env); // 🌊

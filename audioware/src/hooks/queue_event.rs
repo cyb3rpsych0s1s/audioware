@@ -6,7 +6,7 @@ use red4ext_rs::{
 use std::mem;
 
 use crate::{
-    types::{Entity, Event},
+    types::{Entity, Event, VehicleObject},
     Audioware,
 };
 
@@ -40,14 +40,16 @@ unsafe extern "C" fn detour(
             let i = unsafe { &*i };
             let i = unsafe { mem::transmute::<&IScriptable, &Entity>(i) };
             let entity_id = i.entity_id;
-            let iscriptable = fields.as_ref();
-            let serializable = iscriptable.as_serializable();
-            log::info!(
-                Audioware::env(),
-                "Entity.QueueEvent: intercepted {} on {:?}",
-                serializable.class().name(),
-                entity_id
-            );
+            if i.as_ref().as_serializable().is_a::<VehicleObject>() {
+                let iscriptable = fields.as_ref();
+                let serializable = iscriptable.as_serializable();
+                log::info!(
+                    Audioware::env(),
+                    "Entity.QueueEvent: intercepted {} on {:?} (VehicleObject)",
+                    serializable.class().name(),
+                    entity_id
+                );
+            }
         }
     }
     frame.restore_args(state);

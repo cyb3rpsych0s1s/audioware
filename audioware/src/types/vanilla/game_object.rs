@@ -53,3 +53,37 @@ impl AsGameObject for Ref<GameObject> {
             .unwrap()
     }
 }
+
+const PADDING_240: usize = 0x25C - 0x240;
+const PADDING_25D: usize = 0x3A0 - 0x25D;
+const PADDING_3B8: usize = 0x6D2 - 0x3B8;
+const PADDING_6D3: usize = 0xB90 - 0x6D3;
+
+#[repr(C)]
+pub struct VehicleObject {
+    base: GameObject,
+    unk240: [u8; PADDING_240],        // 240
+    is_on_ground: bool,               // 25C
+    unk25d: [u8; PADDING_25D],        // 25D
+    archetype: [u8; 0x18],            // 3A0 (TODO: Ref<AI::Archetype>)
+    unk3b8: [u8; PADDING_3B8],        // 3B8
+    is_vehicle_on_state_locked: bool, // 6D2
+    unk6d3: [u8; PADDING_6D3],        // 6D3
+}
+
+unsafe impl ScriptClass for VehicleObject {
+    type Kind = Native;
+    const NAME: &'static str = "vehicleBaseObject";
+}
+
+impl AsRef<GameObject> for VehicleObject {
+    fn as_ref(&self) -> &GameObject {
+        &self.base
+    }
+}
+
+impl AsRef<IScriptable> for VehicleObject {
+    fn as_ref(&self) -> &IScriptable {
+        self.base.as_ref()
+    }
+}
