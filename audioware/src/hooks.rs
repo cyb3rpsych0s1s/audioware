@@ -10,6 +10,8 @@ mod offsets {
     pub(super) const SWITCH: u32                            = 0x15081DEA; // 0x140291688
     // GameObject
     pub(super) const ON_TRANSFORM_UPDATED: u32              = 0x2AF1B37;  // 0x14014E8D0
+    // Entity
+    pub(super) const QUEUE_EVENT: u32                       = 0x5E7D1BB0; // 0x1401EE8A8
     // gameuiSaveHandlingController
     // note: LoadSaveInGame and LoadModdedSave share same underlying address
     pub(super) const LOAD_SAVE_IN_GAME: u32                 = 0x9AB824D9; // 0x14058E6B8
@@ -47,6 +49,7 @@ pub mod on_transform_updated;
 pub mod parameter;
 pub mod play;
 pub mod play_on_emitter;
+pub mod queue_event;
 pub mod stop;
 pub mod switch;
 
