@@ -1,3 +1,5 @@
+use core::fmt;
+
 use red4ext_rs::{
     class_kind::Native,
     types::{CName, IScriptable, RedArray, WeakRef},
@@ -34,10 +36,20 @@ impl AsRef<IScriptable> for AIEvent {
     }
 }
 
+#[repr(C)]
 pub struct ActionEvent {
     base: AIEvent,
     pub event_action: CName,                  // 50
     pub internal_event: WeakRef<IScriptable>, // 58 (unknown in RED4ext.SDK)
+}
+
+impl fmt::Debug for ActionEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ActionEvent")
+            .field("base", &self.base)
+            .field("event_action", &self.event_action)
+            .finish_non_exhaustive()
+    }
 }
 
 unsafe impl ScriptClass for ActionEvent {
