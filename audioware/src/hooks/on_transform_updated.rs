@@ -9,9 +9,11 @@ hooks! {
    static HOOK: fn(i: *mut IScriptable) -> ();
 }
 
-static DELTA_TIME: Lazy<RwLock<Instant>> = Lazy::new(|| RwLock::new(Instant::now()));
+static SYNC_DELTA_TIME: Lazy<RwLock<Instant>> = Lazy::new(|| RwLock::new(Instant::now()));
+static RECLAIM_DELTA_TIME: Lazy<RwLock<Instant>> = Lazy::new(|| RwLock::new(Instant::now()));
 
-pub const MIN_PERCEPTION_MILLIS: u128 = 20;
+pub const SYNC_ELAPSED_MILLIS: u128 = 20;
+pub const RECLAIM_ELAPSED_MILLIS: u128 = 60 * 1000;
 
 #[allow(clippy::missing_transmute_annotations)]
 pub fn attach_hook(env: &SdkEnv) {
@@ -25,16 +27,29 @@ pub fn attach_hook(env: &SdkEnv) {
 unsafe extern "C" fn detour(i: *mut IScriptable, cb: unsafe extern "C" fn(i: *mut IScriptable)) {
     cb(i);
     let now = Instant::now();
-    let elapsed = DELTA_TIME
-        .try_read()
-        .as_deref()
-        .map(|x| now.duration_since(*x).as_millis() > MIN_PERCEPTION_MILLIS)
-        .unwrap_or(false);
-    if elapsed {
-        if let Ok(x) = DELTA_TIME.try_write().as_deref_mut() {
+    let (sync, reclaim) = (
+        SYNC_DELTA_TIME
+            .try_read()
+            .as_deref()
+            .map(|x| now.duration_since(*x).as_millis() > SYNC_ELAPSED_MILLIS)
+            .unwrap_or(false),
+        RECLAIM_DELTA_TIME
+            .try_read()
+            .as_deref()
+            .map(|x| now.duration_since(*x).as_millis() > RECLAIM_ELAPSED_MILLIS)
+            .unwrap_or(false),
+    );
+    if sync {
+        if let Ok(x) = SYNC_DELTA_TIME.try_write().as_deref_mut() {
             *x = now;
             Engine::sync_listener();
             Engine::sync_emitters();
+        }
+    }
+    if reclaim {
+        if let Ok(x) = RECLAIM_DELTA_TIME.try_write().as_deref_mut() {
+            *x = now;
+            Engine::reclaim();
         }
     }
 }

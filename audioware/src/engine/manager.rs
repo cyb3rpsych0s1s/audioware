@@ -34,6 +34,22 @@ use crate::Audioware;
 
 pub struct Manager;
 
+pub trait Stopped {
+    fn stopped(&self) -> bool;
+}
+
+impl Stopped for StaticSoundHandle {
+    fn stopped(&self) -> bool {
+        self.state() == PlaybackState::Stopped
+    }
+}
+
+impl Stopped for StreamingSoundHandle<FromFileError> {
+    fn stopped(&self) -> bool {
+        self.state() == PlaybackState::Stopped
+    }
+}
+
 pub trait Manage {
     fn stop(&mut self, tween: Option<Tween>);
     fn stop_by(
@@ -167,6 +183,13 @@ impl Manager {
                 Ok(duration)
             }
         }
+    }
+    pub fn reclaim() -> Result<(), Error> {
+        let storage = StaticStorage::try_lock()?;
+        storage.retain(|_, v| v.stopped());
+        let storage = StreamStorage::try_lock()?;
+        storage.retain(|_, v| v.stopped());
+        Ok(())
     }
 }
 

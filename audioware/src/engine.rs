@@ -126,6 +126,14 @@ impl Engine {
             log::error!(Audioware::env(), "couldn't sync listener on scene: {e}");
         }
     }
+    pub fn reclaim() {
+        if let Err(e) = Manager::reclaim() {
+            log::error!(
+                Audioware::env(),
+                "couldn't reclaim stopped sound(s) in storage(s): {e}"
+            );
+        }
+    }
     pub fn play_over_the_phone(event_name: CName, emitter_name: CName, gender: CName) {
         let mut manager = match Manager::try_lock() {
             Ok(x) => x,
