@@ -38,6 +38,7 @@ mod offsets {
     pub(super) const SPAWN_EFFECT_EVENT_HANDLER: u32        = 0xA4911D02; // 0x140394DE8
     pub(super) const AUDIO_EVENT_HANDLER: u32               = 0x10C412FD; // 0x140816DF4
     pub(super) const INTERACTION_CHOICE_EVENT_HANDLER: u32  = 0x5E971C49; // 0x14281097C
+    pub(super) const VEHICLE_AUDIO_EVENT_HANDLER: u32       = 0x69EF1461; // 0x1417B43E0
 }
 
 pub mod global_parameter;

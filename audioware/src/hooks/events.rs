@@ -18,5 +18,6 @@ pub mod stop_sound;
 pub mod stop_sound_on_emitter;
 pub mod stop_tagged_sounds;
 pub mod surface;
+pub mod vehicle;
 pub mod voice_event;
 pub mod voice_played_event;
