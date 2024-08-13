@@ -39,8 +39,8 @@ my_custom_audio:
     start_position: 1s # start playing directly at 1s
 ```
 
-```admonish warn
-Note that digit with decimal(s) is not supported, so if you would like to start the audio at e.g. `1.2s`, please specify `120ms` instead.
+```admonish warning
+Note that digits with decimal(s) are not supported, so if you would like to start the audio at e.g. `1.2s`, please specify `120ms` instead.
 ```
 
 ## Loop region
@@ -57,7 +57,8 @@ my_custom_audio:
 ```
 
 ```admonish hint
-You're not required to specify `starts` or `ends`.
+You're not required to specify both `starts` and `ends`.
+
 If left unspecified:
 
 - `starts` will start at the beginning of the audio.
@@ -120,10 +121,24 @@ my_custom_audio:
     fade_in_tween:
       start_time: 1s # starts playing directly from 1s
       duration: 3s # fade-in duration
-      easing: Linear # fade-in curve
+      Linear # linear fade-in curve
 ```
 
+```yml
+my_custom_audio:
+  file: ./somewhere/audio.wav
+  settings:
+    fade_in_tween:
+      start_time: 1s # starts playing directly from 1s
+      duration: 3s # fade-in duration
+      InPowi: 3 # easing-in with power 3
+```
+
+Possible values for `easing` can be found [here](https://docs.rs/kira/latest/kira/tween/enum.Easing.html).
+
+```admonish hint
 Note that `fade-out` can be specified when calling methods like `Play`, `Switch`, etc.
+```
 
 ## Usage
 
@@ -137,9 +152,9 @@ my_custom_audio:
 
 Usage can be:
 
-- `in-memory`: the audio is loaded all-at-once in-memory on game startup and kept around for the whole duration of the game session.
+- `in-memory`: the audio is loaded *all-at-once* in-memory on game startup and kept around for the whole duration of the game session.
   > this is useful for short sounds that are meant to be played frequently.
-- `on-demand`: the audio is loaded all-at-once each time on-demand, and never kept in-memory.
-  > this is useful when you don't want to allocate memory for sounds, or that a sound is not meant to be played frequently.
+- `on-demand`: the audio is loaded *all-at-once* each time on-demand, and never kept around.
+  > this is useful when you don't want to permanently allocate memory for sounds, or that a sound is not meant to be played frequently.
 - `streaming`: the audio is streamed on-demand.
   > this is useful for long-lasting sounds that should not be loaded all-at-once in-memory. A streamed sound is always loaded on-demand.
