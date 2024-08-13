@@ -12,7 +12,7 @@ Each section contains one or multiple `audio ID`(s) which points to `audio file 
 version: 1.0.0
 # ⮦ section
 sfx:
-# ⮦ audio ID  ⮦ audio file path
+# ⮦ audio ID       ⮦ audio file path
   my_custom_audio: some.mp3
 ```
 
@@ -28,6 +28,7 @@ Each audio file path validated on game startup: if it fails the game will not cr
 Previously a simple audio file path was used, so it can be written inline.
 
 Same definition, with optional nested setting:
+
 ```yml
 version: 1.0.0
 sfx:
@@ -36,4 +37,5 @@ sfx:
     settings:
       volume: 4.0 # 4 times louder!
 ```
+
 All audio accepts multiple optional settings.

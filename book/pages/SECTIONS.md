@@ -11,18 +11,23 @@ Sections provide "good defaults", a way to classify your audio assets, and even 
 - by default, all audios defined there are loaded `in-memory`.
 - volume setting: `SfxVolume`.
 
+```yml
+my_custom_sfx: ./somewhere/sfx.ogg
+```
+
 ## Onos
 
 `onos` (*onomatopeia*) section is meant to define audio with 2 files each, one per gender.
 
 Defaults:
+
 - by default, all audios defined there are loaded `in-memory`.
 - volume setting: `DialogueVolume`.
 
 ```yml
 my_custom_ono:
-    fem: ./somewhere/sfx.wav
-    male: ./somewhere/else/sfx.wav
+    fem: ./somewhere/ono.wav
+    male: ./somewhere/else/ono.wav
 ```
 
 ```admonish hint
