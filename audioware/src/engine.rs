@@ -1,7 +1,7 @@
 use audioware_bank::{Banks, Id};
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Source, SpokenLocale, WrittenLocale};
 use kira::{OutputDestination, Volume};
-use manager::PlayAndStore;
+use manager::{PlayAndStore, PlayAndStoreWith};
 use modulators::{
     CarRadioVolume, DialogueVolume, MusicVolume, Parameter, RadioportVolume, ReverbMix, SfxVolume,
 };
@@ -213,7 +213,7 @@ impl Engine {
         );
 
         let duration = ok_or_return!(
-            Manager::play_and_store_with(&mut manager, id, entity_id, emitter_name, None, ext),
+            Manager.play_and_store_with(&mut manager, id, entity_id, emitter_name, None, ext),
             "Unable to store sound handle"
         );
         if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {

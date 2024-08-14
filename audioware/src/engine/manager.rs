@@ -106,45 +106,6 @@ impl Manager {
                 .into()
             })
     }
-    pub fn play_and_store_with(
-        manager: &mut AudioManager,
-        id: &Id,
-        entity_id: Option<EntityId>,
-        emitter_name: Option<CName>,
-        destination: Option<OutputDestination>,
-        ext: Ref<AudioSettingsExt>,
-    ) -> Result<f32, Error> {
-        match Banks::data(id) {
-            either::Either::Left(mut data) => {
-                let duration = data.duration().as_secs_f32();
-                data = data.merge_args(&ext);
-                let handle = if let Some(destination) = destination {
-                    manager.play(data.output_destination(destination))
-                } else {
-                    manager.play(data.output_destination(
-                        Context::new(id, entity_id.as_ref()).output_destination(),
-                    ))
-                }?;
-                let storage = StaticStorage::try_lock()?;
-                storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
-                Ok(duration)
-            }
-            either::Either::Right(mut data) => {
-                let duration = data.duration().as_secs_f32();
-                data = data.merge_args(&ext);
-                let handle = if let Some(destination) = destination {
-                    manager.play(data.output_destination(destination))
-                } else {
-                    manager.play(data.output_destination(
-                        Context::new(id, entity_id.as_ref()).output_destination(),
-                    ))
-                }?;
-                let storage = StreamStorage::try_lock()?;
-                storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
-                Ok(duration)
-            }
-        }
-    }
     pub fn reclaim() -> Result<(), Error> {
         let storage = StaticStorage::try_lock()?;
         storage.retain(|_, v| v.stopped());
@@ -449,6 +410,94 @@ impl PlayAndStore for Manager {
             }
             either::Either::Right(data) => {
                 data.play_and_store(manager, id, entity_id, emitter_name, destination, tween)
+            }
+        }
+    }
+}
+pub trait PlayWith {
+    type Handle;
+    fn play_with(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        destination: Option<OutputDestination>,
+        ext: Ref<AudioSettingsExt>,
+    ) -> Result<(f32, Self::Handle), Error>;
+}
+
+impl<T> PlayWith for T
+where
+    T: Data + SoundData + MergeArgs,
+    PlaySoundError<<T as SoundData>::Error>: Into<Error>,
+{
+    type Handle = <T as SoundData>::Handle;
+
+    fn play_with(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        destination: Option<OutputDestination>,
+        ext: Ref<AudioSettingsExt>,
+    ) -> Result<(f32, Self::Handle), Error> {
+        let duration = self.duration_as_secs();
+        let handle = manager
+            .play(self.merge_args(&ext).with_route(id, entity_id, destination))
+            .map_err(Into::into)?;
+        Ok((duration, handle))
+    }
+}
+
+pub trait PlayAndStoreWith {
+    fn play_and_store_with(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        destination: Option<OutputDestination>,
+        ext: Ref<AudioSettingsExt>,
+    ) -> Result<f32, Error>;
+}
+
+impl<T> PlayAndStoreWith for T
+where
+    T: Data + SoundData + MergeArgs,
+    PlaySoundError<<T as SoundData>::Error>: Into<Error>,
+    <T as SoundData>::Handle: Store,
+{
+    fn play_and_store_with(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        destination: Option<OutputDestination>,
+        ext: Ref<AudioSettingsExt>,
+    ) -> Result<f32, Error> {
+        let (duration, handle) = self.play_with(manager, id, entity_id, destination, ext)?;
+        handle.store(id, entity_id, emitter_name)?;
+        Ok(duration)
+    }
+}
+
+impl PlayAndStoreWith for Manager {
+    fn play_and_store_with(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        destination: Option<OutputDestination>,
+        ext: Ref<AudioSettingsExt>,
+    ) -> Result<f32, Error> {
+        match Banks::data(id) {
+            either::Either::Left(data) => {
+                data.play_and_store_with(manager, id, entity_id, emitter_name, destination, ext)
+            }
+            either::Either::Right(data) => {
+                data.play_and_store_with(manager, id, entity_id, emitter_name, destination, ext)
             }
         }
     }
