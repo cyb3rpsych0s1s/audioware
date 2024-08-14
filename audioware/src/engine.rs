@@ -3,7 +3,7 @@ use std::sync::MutexGuard;
 use audioware_bank::{Banks, Id};
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Source, SpokenLocale, WrittenLocale};
 use kira::{manager::AudioManager, OutputDestination, Volume};
-use manager::{PlayAndStore, PlayAndStoreWith};
+use manager::PlayAndStore;
 use modulators::{
     CarRadioVolume, DialogueVolume, MusicVolume, Parameter, RadioportVolume, ReverbMix, SfxVolume,
 };
@@ -213,7 +213,7 @@ impl Engine {
         let emitter_name = emitter_name.into_option();
 
         let duration = ok_or_return!(
-            Manager.play_and_store_with(&mut manager, id, entity_id, emitter_name, None, ext),
+            Manager.play_and_store(&mut manager, id, entity_id, emitter_name, None, ext),
             "Unable to store sound handle"
         );
         if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
@@ -404,7 +404,7 @@ impl Engine {
             }
         };
     }
-    fn context<'a>(sound_name: &CName) -> Result<EngineContext, Error> {
+    fn context(sound_name: &CName) -> Result<EngineContext, Error> {
         let manager = Manager::try_lock()?;
         let spoken = SpokenLocale::get();
         let written = WrittenLocale::get();
