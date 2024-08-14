@@ -9,6 +9,8 @@ pub enum Error {
     Conversion { source: ConversionError },
     #[snafu(display("Internal error: {source}"))]
     Internal { source: InternalError },
+    #[snafu(display("Bank error: {source}"))]
+    Bank { source: audioware_bank::Error },
     #[snafu(display("Engine error: {source}"))]
     Engine { source: EngineError },
     #[snafu(display("Scene error: {source}"))]
@@ -79,5 +81,11 @@ impl From<PlaySoundError<FromFileError>> for Error {
         Self::Engine {
             source: EngineError::FromFile { source },
         }
+    }
+}
+
+impl From<audioware_bank::Error> for Error {
+    fn from(source: audioware_bank::Error) -> Self {
+        Self::Bank { source }
     }
 }

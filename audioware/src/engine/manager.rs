@@ -34,6 +34,7 @@ use crate::engine::modulators::Modulators;
 use crate::error::Error;
 use crate::error::InternalError;
 use crate::ext::MergeArgs;
+use crate::types::ToTween;
 use crate::Audioware;
 
 pub struct Manager;
@@ -369,7 +370,7 @@ pub trait PlayAndStore {
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
         destination: Option<OutputDestination>,
-        tween: Option<Tween>,
+        tween: impl ToTween,
     ) -> Result<f32, Error>;
 }
 
@@ -386,9 +387,10 @@ where
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
         destination: Option<OutputDestination>,
-        tween: Option<Tween>,
+        tween: impl ToTween,
     ) -> Result<f32, Error> {
-        let (duration, handle) = self.play(manager, id, entity_id, destination, tween)?;
+        let (duration, handle) =
+            self.play(manager, id, entity_id, destination, tween.into_tween())?;
         handle.store(id, entity_id, emitter_name)?;
         Ok(duration)
     }
@@ -402,7 +404,7 @@ impl PlayAndStore for Manager {
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
         destination: Option<OutputDestination>,
-        tween: Option<Tween>,
+        tween: impl ToTween,
     ) -> Result<f32, Error> {
         match Banks::data(id) {
             either::Either::Left(data) => {

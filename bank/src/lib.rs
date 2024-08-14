@@ -130,7 +130,7 @@ impl Banks {
         name: &CName,
         spoken: &SpokenLocale,
         gender: Option<&PlayerGender>,
-    ) -> Result<&'a Id, RegistryError> {
+    ) -> Result<&'a Id, Error> {
         let mut maybe_missing_locale = false;
         if let Some(ids) = KEYS.get() {
             let mut key: &Key;
@@ -144,7 +144,7 @@ impl Banks {
                 if let Some(GenderKey(k, g)) = key.as_gender() {
                     if k == name {
                         if gender.is_none() {
-                            return Err(RegistryError::RequireGender { cname: *name });
+                            return Err(RegistryError::RequireGender { cname: *name }.into());
                         }
                         if Some(g) == gender {
                             return Ok(id);
@@ -164,7 +164,7 @@ impl Banks {
                         maybe_missing_locale = true;
                         if l == spoken {
                             if gender.is_none() {
-                                return Err(RegistryError::RequireGender { cname: *name });
+                                return Err(RegistryError::RequireGender { cname: *name }.into());
                             }
                             if gender == Some(g) {
                                 return Ok(id);
@@ -178,9 +178,10 @@ impl Banks {
             return Err(RegistryError::MissingSpokenLocale {
                 cname: *name,
                 locale: *spoken,
-            });
+            }
+            .into());
         }
-        Err(RegistryError::NotFound { cname: *name })
+        Err(RegistryError::NotFound { cname: *name }.into())
     }
     /// Retrieves sound data for a given [`Id`], including any settings.
     pub fn data(id: &Id) -> Either<StaticSoundData, StreamingSoundData<FromFileError>> {
