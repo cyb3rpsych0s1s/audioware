@@ -23,3 +23,27 @@ red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "6ba836a" }
 serde = "1.0"
 snafu = "0.8"
 snowflake = "1.2"
+
+[profile.dev.package.kira]
+opt-level = 3
+
+[profile.dev.package.cpal]
+opt-level = 3
+
+[profile.dev.package.symphonia]
+opt-level = 3
+
+[profile.dev.package.symphonia-bundle-mp3]
+opt-level = 3
+
+[profile.dev.package.symphonia-format-ogg]
+opt-level = 3
+
+[profile.dev.package.symphonia-codec-vorbis]
+opt-level = 3
+
+[profile.dev.package.symphonia-bundle-flac]
+opt-level = 3
+
+[profile.dev.package.symphonia-codec-pcm]
+opt-level = 3
