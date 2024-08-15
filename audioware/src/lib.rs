@@ -52,6 +52,7 @@ impl Audioware {
         for error in report.errors {
             log::error!(env, "{error}");
         }
+        #[cfg(debug_assertions)]
         log::info!(
             env,
             "as_if_I_didnt_know_already: {}",
@@ -231,9 +232,12 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     // test_get_player();
     // test_is_player();
     // scan_globals("PropagateSubtitle");
-    utils::info("it should be able to call FTLog");
-    utils::warn("it should be able to call FTLogWarning");
-    utils::error("it should be able to call FTLogError");
+    #[cfg(debug_assertions)]
+    {
+        utils::info("it should be able to call FTLog");
+        utils::warn("it should be able to call FTLogWarning");
+        utils::error("it should be able to call FTLogError");
+    }
 }
 
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
