@@ -378,7 +378,13 @@ fn set_game_locales(spoken: CName, written: CName) {
 fn scan_class(class_name: &str) {
     let env = Audioware::env();
     let rtti = RttiSystem::get();
-    let cls = rtti.get_class(CName::new(class_name)).unwrap();
+    let cls = match rtti.get_class(CName::new(class_name)) {
+        Some(cls) => cls,
+        None => {
+            log::error!(env, "class {class_name} does not exist.");
+            return;
+        }
+    };
     log::info!(env, "{} ({:#02X})", cls.name(), cls.size());
     let static_methods = cls.static_methods();
     for s in static_methods.iter() {
