@@ -20,7 +20,7 @@ use red4ext_rs::{
 
 use crate::{
     error::{Error, InternalError, SceneError},
-    types::{get_player, AsEntity, AsGameInstance, Entity, Vector4},
+    types::{get_player, AIActionHelper, AsEntity, AsGameInstance, Entity, GameObject, Vector4},
     Audioware,
 };
 
@@ -36,6 +36,7 @@ pub struct Scene {
     pub v: Arc<Mutex<ListenerHandle>>,
     pub active_entities: Arc<Mutex<DashMap<EmitterId, EmitterHandle>>>,
     pub dead_entities: Arc<RwLock<Vec<EntityId>>>,
+    pub busy_entities: Arc<RwLock<Vec<EntityId>>>,
 }
 
 impl Scene {
@@ -54,6 +55,7 @@ impl Scene {
                 v: Arc::new(Mutex::new(listener)),
                 active_entities: Arc::new(Mutex::new(DashMap::with_capacity(capacity))),
                 dead_entities: Arc::new(RwLock::new(Vec::with_capacity(capacity))),
+                busy_entities: Arc::new(RwLock::new(Vec::with_capacity(capacity))),
             })
             .map_err(|_| Error::from(InternalError::Contention { origin: "scene" }))?;
         Ok(())
@@ -107,6 +109,18 @@ impl Scene {
                 origin: "spatial scene dead emitters",
             })
     }
+    fn try_write_busy_emitters<'a>() -> Result<RwLockWriteGuard<'a, Vec<EntityId>>, InternalError> {
+        SCENE
+            .get()
+            .ok_or(InternalError::Init {
+                origin: "spatial scene",
+            })?
+            .busy_entities
+            .try_write()
+            .ok_or(InternalError::Contention {
+                origin: "spatial scene busy emitters",
+            })
+    }
     pub fn toggle_emitters_sync(enable: bool) {
         SCENE_SYNC_ENABLED.store(enable, std::sync::atomic::Ordering::SeqCst);
     }
@@ -127,11 +141,19 @@ impl Scene {
                 source: SceneError::InvalidEmitter,
             });
         }
+        let busy = if entity.is_a::<GameObject>() {
+            AIActionHelper::is_in_workspot(entity.clone().cast::<GameObject>().unwrap())
+        } else {
+            false
+        };
         let position = entity.get_world_position();
         let mut scene = Self::try_lock_scene()?;
         let emitters = Self::try_lock_active_emitters()?;
         let emitter = scene.add_emitter(position, emitter_settings.unwrap_or_default())?;
         emitters.insert(EmitterId::new(entity_id, emitter_name), emitter);
+        if busy {
+            Self::try_write_busy_emitters()?.push(entity_id);
+        }
         log::info!(
             Audioware::env(),
             "registered emitter: {:?} -> {:?}",
@@ -164,20 +186,29 @@ impl Scene {
         // log::info!(Audioware::env(), "syncing emitters positions...");
         let mut entity: Ref<Entity>;
         let mut position: Vector4;
-        if let (Ok(ref mut actives), Ok(mut updates)) = (
+        if let (Ok(ref mut actives), Ok(mut deaths), Ok(mut busy)) = (
             Self::try_lock_active_emitters(),
             Self::try_write_dead_emitters(),
+            Self::try_write_busy_emitters(),
         ) {
-            updates.sort();
-            updates.dedup();
-            let removals = updates.drain(..).collect::<Vec<_>>();
-            std::mem::drop(updates);
-            actives.retain(|k, _| !removals.as_slice().contains(k.entity_id()));
+            deaths.sort();
+            deaths.dedup();
+            let removals = deaths.drain(..).collect::<Vec<_>>();
+            let occupied = busy.drain(..).collect::<Vec<_>>();
+            std::mem::drop(deaths);
+            actives.retain(|k, _| {
+                !removals.as_slice().contains(k.entity_id()) && !occupied.contains(k.entity_id())
+            });
             for mut entry in actives.iter_mut() {
                 entity =
                     GameInstance::find_entity_by_id(GameInstance::new(), *entry.key().entity_id());
                 if entity.is_null() {
                     continue;
+                }
+                if entity.is_a::<GameObject>()
+                    && AIActionHelper::is_in_workspot(entity.clone().cast::<GameObject>().unwrap())
+                {
+                    busy.push(*entry.key().entity_id());
                 }
                 position = entity.get_world_position();
                 entry.value_mut().set_position(position, IMMEDIATELY);

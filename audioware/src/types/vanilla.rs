@@ -7,6 +7,8 @@ use red4ext_rs::{
 
 mod audio_system;
 pub use audio_system::*;
+mod helper;
+pub use helper::*;
 mod events;
 pub use events::*;
 mod entity;
