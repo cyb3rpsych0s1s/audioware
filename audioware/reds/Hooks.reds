@@ -8,37 +8,39 @@ protected cb func OnDeathScreenDelayEvent(evt: ref<DeathMenuDelayEvent>) -> Bool
     return wrappedMethod(evt);
 }
 
-/// whenever any NPC is about to die
-@wrapMethod(GameObject)
-protected cb func OnWillDieSoonEventEvent(evt: ref<WillDieSoonEvent>) -> Bool {
-    LOG(s"on will die soon: \(EntityID.ToDebugString(this.GetEntityID())) [GameObject]");
-    if !this.IsPlayer() {
-        GameInstance.GetAudioSystemExt(GetGameInstance()).OnEmitterDies(this.GetEntityID());
-    }
-    wrappedMethod(evt);
-}
-
 /// whenever any vehicle is destroyed
 @wrapMethod(VehicleComponent)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
-    LOG(s"on death: \(EntityID.ToDebugString(this.GetEntity().GetEntityID())) [VehicleComponent]");
-    GameInstance.GetAudioSystemExt(GetGameInstance()).OnEmitterDies(this.GetEntity().GetEntityID());
+    let id = this.GetEntity().GetEntityID();
+    let ext = GameInstance.GetAudioSystemExt(GetGameInstance());
+    LOG(s"on death: \(EntityID.ToDebugString(id)) [VehicleComponent]");
+    if ext.IsRegisteredEmitter(id) {
+        ext.OnEmitterDies(id);
+    }
     return wrappedMethod(evt);
 }
 
 /// whenever any AI human dies
 @wrapMethod(AIHumanComponent)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
-    LOG(s"on death: \(EntityID.ToDebugString(this.GetEntity().GetEntityID())) [AIHumanComponent]");
-    GameInstance.GetAudioSystemExt(GetGameInstance()).OnEmitterDies(this.GetEntity().GetEntityID());
+    let id = this.GetEntity().GetEntityID();
+    let ext = GameInstance.GetAudioSystemExt(this.GetGame());
+    LOG(s"on death: \(EntityID.ToDebugString(id)) [AIHumanComponent]");
+    if ext.IsRegisteredEmitter(id) {
+        ext.OnEmitterDies(id);
+    }
     return wrappedMethod(evt);
 }
 
 /// whenever any device is destroyed
 @wrapMethod(Device)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
-    LOG(s"on death: \(EntityID.ToDebugString(this.GetEntityID())) [Device]");
-    GameInstance.GetAudioSystemExt(GetGameInstance()).OnEmitterDies(this.GetEntityID());
+    let id = this.GetEntityID();
+    let ext = GameInstance.GetAudioSystemExt(this.GetGame());
+    LOG(s"on death: \(EntityID.ToDebugString(id)) [Device]");
+    if ext.IsRegisteredEmitter(id) {
+        ext.OnEmitterDies(id);
+    }
     return wrappedMethod(evt);
 }
 
