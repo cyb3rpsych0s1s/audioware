@@ -92,6 +92,9 @@ impl AudioSystemExt {
     pub fn on_emitter_dies(&self, entity_id: EntityId) {
         Engine::on_emitter_dies(entity_id);
     }
+    pub fn on_emitter_dying(&self, entity_id: EntityId) {
+        Engine::on_emitter_dying(entity_id);
+    }
 }
 
 pub trait MergeArgs {

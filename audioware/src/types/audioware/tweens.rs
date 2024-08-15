@@ -59,6 +59,9 @@ impl ElasticTween {
     pub fn duration(&self) -> f32 {
         self.base.duration
     }
+    pub fn set_duration(&mut self, value: f32) {
+        self.base.duration = value;
+    }
 }
 
 pub trait ToTween {

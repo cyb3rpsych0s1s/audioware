@@ -185,6 +185,7 @@ impl Plugin for Audioware {
                     c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
                     c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
                     c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
+                    c"OnEmitterDying" => AudioSystemExt::on_emitter_dying,
                 ])
                 .build(),
             ClassExport::<AudioRegion>::builder()

@@ -13,7 +13,7 @@ protected cb func OnDeathScreenDelayEvent(evt: ref<DeathMenuDelayEvent>) -> Bool
 protected cb func OnWillDieSoonEventEvent(evt: ref<WillDieSoonEvent>) -> Bool {
     LOG(s"on will die soon: \(EntityID.ToDebugString(this.GetEntityID())) [GameObject]");
     if !this.IsPlayer() {
-        GameInstance.GetAudioSystemExt(GetGameInstance()).OnEmitterDies(this.GetEntityID());
+        GameInstance.GetAudioSystemExt(GetGameInstance()).OnEmitterDying(this.GetEntityID());
     }
     wrappedMethod(evt);
 }

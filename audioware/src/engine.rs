@@ -10,7 +10,7 @@ use modulators::{
 use red4ext_rs::{
     log,
     types::{CName, EntityId, GameInstance, Opt, Ref},
-    PluginOps,
+    PluginOps, ScriptClassOps,
 };
 
 use crate::{
@@ -18,9 +18,10 @@ use crate::{
     macros::{ok_or_return, some_or_return},
     states::State,
     types::{
-        propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, EmitterSettings,
-        GameObject, LocalizationPackage, Subtitle, ToTween, Tween,
+        propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, ElasticTween,
+        EmitterSettings, GameObject, LocalizationPackage, Subtitle, ToTween, Tween,
     },
+    utils::rand,
     Audioware,
 };
 
@@ -123,9 +124,19 @@ impl Engine {
         if let Err(e) = Scene::on_emitter_dies(entity_id) {
             log::error!(
                 Audioware::env(),
-                "couldn't remove dying emitter from scene: {e}"
+                "couldn't remove dead emitter from scene: {e}"
             );
         }
+    }
+    pub fn on_emitter_dying(entity_id: EntityId) {
+        let tween = ElasticTween::new_ref_with(|x| {
+            x.set_duration(rand(0.3..=2.3, 1.0));
+            x.easing = crate::types::Easing::OutPowf;
+            x.value = 0.3;
+        })
+        .map(|x| x.cast().expect("inherits from Tween"))
+        .unwrap_or_default();
+        Self::stop_for(entity_id, tween);
     }
     pub fn toggle_sync_emitters(enable: bool) {
         Scene::toggle_emitters_sync(enable);
@@ -341,9 +352,8 @@ impl Engine {
             log::error!(Audioware::env(), "{e}");
         }
     }
-    #[allow(dead_code)]
-    pub fn stop_for(entity_id: EntityId) {
-        if let Err(e) = Manager::stop_for(&entity_id, None) {
+    pub fn stop_for(entity_id: EntityId, tween: Ref<Tween>) {
+        if let Err(e) = Manager::stop_for(&entity_id, tween.into_tween()) {
             log::error!(Audioware::env(), "{e}");
         }
     }

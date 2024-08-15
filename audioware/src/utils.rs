@@ -1,5 +1,13 @@
-//! Logging utils.
+//! Logging and general utils.
 
+use std::sync::Mutex;
+
+use once_cell::sync::Lazy;
+use rand::{
+    distributions::uniform::{SampleRange, SampleUniform},
+    rngs::SmallRng,
+    Rng, SeedableRng,
+};
 use red4ext_rs::{
     log,
     types::{CName, ScriptRef},
@@ -7,6 +15,14 @@ use red4ext_rs::{
 };
 
 use crate::Audioware;
+
+static RAND: Lazy<Mutex<SmallRng>> = Lazy::new(|| Mutex::new(SmallRng::from_entropy()));
+
+pub fn rand<T: SampleUniform>(range: impl SampleRange<T>, default: T) -> T {
+    RAND.try_lock()
+        .map(|mut x| x.gen_range(range))
+        .unwrap_or(default)
+}
 
 /// Exposes `PLog` to Redscript.
 pub fn plog_info(msg: String) {

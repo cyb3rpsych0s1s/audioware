@@ -21,6 +21,7 @@ kira.workspace = true
 mint = { version = "0.5" }
 once_cell = "1.19"
 parking_lot = "0.12.3"
+rand = { version = "0.8.5", features = ["small_rng"] }
 rayon.workspace = true
 red4ext-rs.workspace = true
 rust-ini = "0.21"

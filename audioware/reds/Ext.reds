@@ -31,4 +31,5 @@ public native class AudioSystemExt {
     public native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
     public native func StopOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
     public native func OnEmitterDies(entityID: EntityID) -> Void;
+    public native func OnEmitterDying(entityID: EntityID) -> Void;
 }

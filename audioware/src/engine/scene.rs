@@ -164,14 +164,14 @@ impl Scene {
         // log::info!(Audioware::env(), "syncing emitters positions...");
         let mut entity: Ref<Entity>;
         let mut position: Vector4;
-        if let (Ok(ref mut actives), Ok(mut updates)) = (
+        if let (Ok(ref mut actives), Ok(mut deaths)) = (
             Self::try_lock_active_emitters(),
             Self::try_write_dead_emitters(),
         ) {
-            updates.sort();
-            updates.dedup();
-            let removals = updates.drain(..).collect::<Vec<_>>();
-            std::mem::drop(updates);
+            deaths.sort();
+            deaths.dedup();
+            let removals = deaths.drain(..).collect::<Vec<_>>();
+            std::mem::drop(deaths);
             actives.retain(|k, _| !removals.as_slice().contains(k.entity_id()));
             for mut entry in actives.iter_mut() {
                 entity =
