@@ -65,6 +65,21 @@ pub trait ToTween {
     fn into_tween(self) -> Option<kira::tween::Tween>;
 }
 
+impl ToTween for kira::tween::Tween {
+    fn into_tween(self) -> Option<kira::tween::Tween> {
+        Some(self)
+    }
+}
+
+impl<T> ToTween for Option<T>
+where
+    T: ToTween,
+{
+    fn into_tween(self) -> Option<kira::tween::Tween> {
+        self.and_then(ToTween::into_tween)
+    }
+}
+
 impl ToTween for Ref<Tween> {
     fn into_tween(self) -> Option<kira::tween::Tween> {
         if self.is_null() {

@@ -1,6 +1,9 @@
+use std::sync::MutexGuard;
+
 use audioware_bank::{Banks, Id};
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Source, SpokenLocale, WrittenLocale};
-use kira::{OutputDestination, Volume};
+use kira::{manager::AudioManager, OutputDestination, Volume};
+use manager::PlayAndStore;
 use modulators::{
     CarRadioVolume, DialogueVolume, MusicVolume, Parameter, RadioportVolume, ReverbMix, SfxVolume,
 };
@@ -40,6 +43,14 @@ pub use settings::*;
 pub use tracks::Tracks;
 
 pub struct Engine;
+
+pub type EngineContext<'a> = (
+    MutexGuard<'a, AudioManager>,
+    SpokenLocale,
+    WrittenLocale,
+    Option<PlayerGender>,
+    &'a Id,
+);
 
 impl Engine {
     pub(crate) fn setup() -> Result<(), Error> {
@@ -149,13 +160,13 @@ impl Engine {
             "Unable to get sound ID"
         );
         let _duration = ok_or_return!(
-            Manager::play_and_store(
+            Manager.play_and_store(
                 &mut manager,
                 id,
                 None,
                 Some(emitter_name),
                 Some(Tracks::holocall_destination()),
-                None
+                None::<kira::tween::Tween>
             ),
             "Unable to store sound handle"
         );
@@ -169,19 +180,14 @@ impl Engine {
         line_type: Opt<ScnDialogLineType>,
         tween: Ref<Tween>,
     ) {
-        let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
-        let spoken = SpokenLocale::get();
-        let gender = PlayerGender::get();
+        let (mut manager, _, _, _, id) =
+            ok_or_return!(Self::context(&sound_name), "Unable to get context");
         let entity_id = entity_id.into_option();
         let emitter_name = emitter_name.into_option();
-        let id = ok_or_return!(
-            Banks::try_get(&sound_name, &spoken, gender.as_ref()),
-            "Unable to get sound ID"
-        );
 
         let tween = tween.into_tween();
         let duration = ok_or_return!(
-            Manager::play_and_store(&mut manager, id, entity_id, emitter_name, None, tween),
+            Manager.play_and_store(&mut manager, id, entity_id, emitter_name, None, tween),
             "Unable to store sound handle"
         );
         if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
@@ -201,18 +207,13 @@ impl Engine {
         line_type: Opt<ScnDialogLineType>,
         ext: Ref<AudioSettingsExt>,
     ) {
-        let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
-        let spoken = SpokenLocale::get();
-        let gender = PlayerGender::get();
+        let (mut manager, _, _, _, id) =
+            ok_or_return!(Self::context(&sound_name), "Unable to get context");
         let entity_id = entity_id.into_option();
         let emitter_name = emitter_name.into_option();
-        let id = ok_or_return!(
-            Banks::try_get(&sound_name, &spoken, gender.as_ref()),
-            "Unable to get sound ID"
-        );
 
         let duration = ok_or_return!(
-            Manager::play_and_store_with(&mut manager, id, entity_id, emitter_name, None, ext),
+            Manager.play_and_store(&mut manager, id, entity_id, emitter_name, None, ext),
             "Unable to store sound handle"
         );
         if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
@@ -293,21 +294,15 @@ impl Engine {
         emitter_name: CName,
         tween: Ref<Tween>,
     ) {
-        let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
-        let spoken = SpokenLocale::get();
-        let gender = PlayerGender::get();
-        let id = ok_or_return!(
-            Banks::try_get(&sound_name, &spoken, gender.as_ref()),
-            "Unable to get sound ID"
-        );
+        let (mut manager, _, _, _, id) =
+            ok_or_return!(Self::context(&sound_name), "Unable to get context");
         let destination = some_or_return!(
             Scene::output_destination(&entity_id),
             "Entity is not registered as emitter",
             entity_id
         );
-        let tween = tween.into_tween();
         let duration = ok_or_return!(
-            Manager::play_and_store(
+            Manager.play_and_store(
                 &mut manager,
                 id,
                 Some(entity_id),
@@ -408,6 +403,14 @@ impl Engine {
                 log::error!(Audioware::env(), "Unknown setting: {setting}");
             }
         };
+    }
+    fn context(sound_name: &CName) -> Result<EngineContext, Error> {
+        let manager = Manager::try_lock()?;
+        let spoken = SpokenLocale::get();
+        let written = WrittenLocale::get();
+        let gender = PlayerGender::get();
+        let id = Banks::try_get(sound_name, &spoken, gender.as_ref())?;
+        Ok((manager, spoken, written, gender, id))
     }
 }
 
