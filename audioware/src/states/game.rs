@@ -7,9 +7,9 @@ use std::{
 
 use red4ext_rs::{log, NativeRepr, PluginOps};
 
-use crate::Audioware;
+use crate::{engine::Engine, Audioware};
 
-use super::State;
+use super::{State, ToggleState};
 
 /// retrieve [`State`]
 fn state() -> &'static AtomicU8 {
@@ -34,6 +34,31 @@ impl State for GameState {
     fn get() -> Self::Value {
         GameState::try_from(self::state().load(std::sync::atomic::Ordering::Relaxed))
             .expect("game state is internally managed")
+    }
+}
+
+impl ToggleState for GameState {
+    fn toggle(before: Self::Value, after: Self::Value) {
+        let before = before.syncable();
+        let after = after.syncable();
+        if before != after {
+            Engine::toggle_sync_emitters(after);
+        }
+    }
+}
+
+impl GameState {
+    pub fn syncable(&self) -> bool {
+        match self {
+            GameState::Load
+            | GameState::Menu
+            | GameState::Start
+            | GameState::InMenu
+            | GameState::InPause
+            | GameState::End
+            | GameState::Unload => false,
+            GameState::InGame => true,
+        }
     }
 }
 

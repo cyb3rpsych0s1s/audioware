@@ -25,6 +25,10 @@ class AudiowareService extends ScriptableService {
             .RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionChange");
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Session/End", this, n"OnSessionChange");
+        // main menu (pre-game)
+        GameInstance.GetCallbackSystem()
+            .RegisterCallback(n"Resource/Ready", this, n"OnMainMenuResourceReady")
+            .AddTarget(ResourceTarget.Path(r"base\\gameplay\\gui\\fullscreen\\main_menu\\pregame_menu.inkmenu"));
 
         this.RegisterOnLoad();
     }
@@ -66,6 +70,11 @@ class AudiowareService extends ScriptableService {
             default:
                 break;
         }
+    }
+
+    private cb func OnMainMenuResourceReady(event: ref<ResourceEvent>) {
+        LOG("on main menu ready: AudiowareService");
+        SetGameState(GameState.Menu);
     }
 
     public static func GetInstance() -> ref<AudiowareService> {

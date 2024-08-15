@@ -26,6 +26,9 @@ pub fn attach_hook(env: &SdkEnv) {
 #[allow(unused_variables)]
 unsafe extern "C" fn detour(i: *mut IScriptable, cb: unsafe extern "C" fn(i: *mut IScriptable)) {
     cb(i);
+    if !Engine::should_sync_emitters() {
+        return;
+    }
     let now = Instant::now();
     let (sync, reclaim) = (
         SYNC_DELTA_TIME

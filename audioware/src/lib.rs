@@ -9,7 +9,7 @@ use red4ext_rs::{
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
-use states::{GameState, State};
+use states::{GameState, State, ToggleState};
 use types::{
     Args, AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings, GameObject, LoopRegion,
     Vector4,
@@ -152,7 +152,10 @@ impl Plugin for Audioware {
                 c"Audioware.SupportedLanguages",
                 Engine::supported_languages
             )),
-            GlobalExport(global!(c"Audioware.SetGameState", GameState::set)),
+            GlobalExport(global!(
+                c"Audioware.SetGameState",
+                GameState::set_and_toggle
+            )),
             GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
             GlobalExport(global!(c"Audioware.UnsetPlayerGender", unset_player_gender)),
             GlobalExport(global!(c"Audioware.SetGameLocales", set_game_locales)),
