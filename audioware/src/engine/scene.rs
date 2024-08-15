@@ -34,7 +34,7 @@ pub struct Scene {
     pub scene: Arc<Mutex<SpatialSceneHandle>>,
     pub v: Arc<Mutex<ListenerHandle>>,
     pub active_entities: Arc<Mutex<DashMap<EmitterId, EmitterHandle>>>,
-    pub entities_updates: Arc<RwLock<Vec<EntityId>>>,
+    pub dead_entities: Arc<RwLock<Vec<EntityId>>>,
 }
 
 impl Scene {
@@ -52,7 +52,7 @@ impl Scene {
                 scene: Arc::new(Mutex::new(scene)),
                 v: Arc::new(Mutex::new(listener)),
                 active_entities: Arc::new(Mutex::new(DashMap::with_capacity(capacity))),
-                entities_updates: Arc::new(RwLock::new(Vec::with_capacity(capacity))),
+                dead_entities: Arc::new(RwLock::new(Vec::with_capacity(capacity))),
             })
             .map_err(|_| Error::from(InternalError::Contention { origin: "scene" }))?;
         Ok(())
@@ -94,17 +94,17 @@ impl Scene {
                 origin: "spatial scene emitters handles",
             })
     }
-    fn try_write_emitters_updates<'a>() -> Result<RwLockWriteGuard<'a, Vec<EntityId>>, InternalError>
+    fn try_write_dead_emitters<'a>() -> Result<RwLockWriteGuard<'a, Vec<EntityId>>, InternalError>
     {
         SCENE
             .get()
             .ok_or(InternalError::Init {
                 origin: "spatial scene",
             })?
-            .entities_updates
+            .dead_entities
             .try_write()
             .ok_or(InternalError::Contention {
-                origin: "spatial scene emitters updates",
+                origin: "spatial scene dead emitters",
             })
     }
     pub fn register_emitter(
@@ -139,7 +139,7 @@ impl Scene {
     }
     pub fn unregister_emitter(entity_id: &EntityId) -> Result<(), Error> {
         log::info!(Audioware::env(), "unregistering emitter: {:?}", entity_id);
-        Self::try_write_emitters_updates()?.push(*entity_id);
+        Self::try_write_dead_emitters()?.push(*entity_id);
         log::info!(Audioware::env(), "unregistered emitter: {:?}", entity_id);
         Ok(())
     }
@@ -151,7 +151,7 @@ impl Scene {
         Ok(())
     }
     pub fn on_emitter_dies(entity_id: EntityId) -> Result<(), Error> {
-        Self::try_write_emitters_updates()?.push(entity_id);
+        Self::try_write_dead_emitters()?.push(entity_id);
         Ok(())
     }
     pub fn sync_emitters() -> Result<(), Error> {
@@ -160,7 +160,7 @@ impl Scene {
         let mut position: Vector4;
         if let (Ok(ref mut actives), Ok(mut updates)) = (
             Self::try_lock_active_emitters(),
-            Self::try_write_emitters_updates(),
+            Self::try_write_dead_emitters(),
         ) {
             updates.sort();
             updates.dedup();
