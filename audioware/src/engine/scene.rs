@@ -1,4 +1,4 @@
-use std::sync::{atomic::AtomicBool, Arc, Mutex, MutexGuard, OnceLock};
+use std::sync::{atomic::AtomicBool, Mutex, MutexGuard, OnceLock};
 
 use dashmap::DashMap;
 use glam::{Quat, Vec3};
@@ -32,11 +32,11 @@ static SCENE: OnceLock<Scene> = OnceLock::new();
 static SCENE_SYNC_ENABLED: AtomicBool = AtomicBool::new(false);
 
 pub struct Scene {
-    pub scene: Arc<Mutex<SpatialSceneHandle>>,
-    pub v: Arc<Mutex<ListenerHandle>>,
-    pub active_entities: Arc<Mutex<DashMap<EmitterId, EmitterHandle>>>,
-    pub dead_entities: Arc<RwLock<Vec<EntityId>>>,
-    pub busy_entities: Arc<RwLock<Vec<EntityId>>>,
+    pub scene: Mutex<SpatialSceneHandle>,
+    pub v: Mutex<ListenerHandle>,
+    pub active_entities: Mutex<DashMap<EmitterId, EmitterHandle>>,
+    pub dead_entities: RwLock<Vec<EntityId>>,
+    pub busy_entities: RwLock<Vec<EntityId>>,
 }
 
 impl Scene {
@@ -51,11 +51,11 @@ impl Scene {
         )?;
         SCENE
             .set(Scene {
-                scene: Arc::new(Mutex::new(scene)),
-                v: Arc::new(Mutex::new(listener)),
-                active_entities: Arc::new(Mutex::new(DashMap::with_capacity(capacity))),
-                dead_entities: Arc::new(RwLock::new(Vec::with_capacity(capacity))),
-                busy_entities: Arc::new(RwLock::new(Vec::with_capacity(capacity))),
+                scene: Mutex::new(scene),
+                v: Mutex::new(listener),
+                active_entities: Mutex::new(DashMap::with_capacity(capacity)),
+                dead_entities: RwLock::new(Vec::with_capacity(capacity)),
+                busy_entities: RwLock::new(Vec::with_capacity(capacity)),
             })
             .map_err(|_| Error::from(InternalError::Contention { origin: "scene" }))?;
         Ok(())
