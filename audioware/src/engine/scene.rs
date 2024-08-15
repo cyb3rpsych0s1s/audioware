@@ -94,8 +94,7 @@ impl Scene {
                 origin: "spatial scene emitters handles",
             })
     }
-    fn try_write_dead_emitters<'a>() -> Result<RwLockWriteGuard<'a, Vec<EntityId>>, InternalError>
-    {
+    fn try_write_dead_emitters<'a>() -> Result<RwLockWriteGuard<'a, Vec<EntityId>>, InternalError> {
         SCENE
             .get()
             .ok_or(InternalError::Init {
