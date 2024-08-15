@@ -127,6 +127,12 @@ impl Engine {
             );
         }
     }
+    pub fn toggle_sync_emitters(enable: bool) {
+        Scene::toggle_emitters_sync(enable);
+    }
+    pub fn should_sync_emitters() -> bool {
+        Scene::should_sync_emitters()
+    }
     pub fn sync_emitters() {
         if let Err(e) = Scene::sync_emitters() {
             log::error!(Audioware::env(), "couldn't sync emitters on scene: {e}");

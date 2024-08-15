@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
+use std::sync::{atomic::AtomicBool, Arc, Mutex, MutexGuard, OnceLock};
 
 use dashmap::DashMap;
 use glam::{Quat, Vec3};
@@ -29,6 +29,7 @@ use super::{effects::IMMEDIATELY, id::EmitterId, Tracks};
 mod emitters;
 
 static SCENE: OnceLock<Scene> = OnceLock::new();
+static SCENE_SYNC_ENABLED: AtomicBool = AtomicBool::new(false);
 
 pub struct Scene {
     pub scene: Arc<Mutex<SpatialSceneHandle>>,
@@ -106,6 +107,9 @@ impl Scene {
                 origin: "spatial scene dead emitters",
             })
     }
+    pub fn toggle_emitters_sync(enable: bool) {
+        SCENE_SYNC_ENABLED.store(enable, std::sync::atomic::Ordering::SeqCst);
+    }
     pub fn register_emitter(
         entity_id: EntityId,
         emitter_name: Option<CName>,
@@ -152,6 +156,9 @@ impl Scene {
     pub fn on_emitter_dies(entity_id: EntityId) -> Result<(), Error> {
         Self::try_write_dead_emitters()?.push(entity_id);
         Ok(())
+    }
+    pub fn should_sync_emitters() -> bool {
+        SCENE_SYNC_ENABLED.load(std::sync::atomic::Ordering::Relaxed)
     }
     pub fn sync_emitters() -> Result<(), Error> {
         // log::info!(Audioware::env(), "syncing emitters positions...");
