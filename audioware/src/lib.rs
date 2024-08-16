@@ -114,7 +114,6 @@ impl Plugin for Audioware {
     const VERSION: SemVer = SemVer::new(1, 0, 0);
 
     fn on_init(env: &SdkEnv) {
-        GameState::set(GameState::Load);
         Self::register_listeners(env);
         Self::load_banks(env);
         Self::load_engine(env);
@@ -229,7 +228,7 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit running: Audioware");
-    GameState::swap(GameState::Unload);
+    GameState::set(GameState::Unload);
     Engine::shutdown();
 }
 
