@@ -121,7 +121,7 @@ impl Scene {
                 origin: "spatial scene busy emitters",
             })
     }
-    pub fn toggle_emitters_sync(enable: bool) {
+    pub fn toggle_sync_emitters(enable: bool) {
         SCENE_SYNC_ENABLED.store(enable, std::sync::atomic::Ordering::SeqCst);
     }
     pub fn register_emitter(

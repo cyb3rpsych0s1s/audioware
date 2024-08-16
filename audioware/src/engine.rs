@@ -128,7 +128,7 @@ impl Engine {
         }
     }
     pub fn toggle_sync_emitters(enable: bool) {
-        Scene::toggle_emitters_sync(enable);
+        Scene::toggle_sync_emitters(enable);
     }
     pub fn should_sync_emitters() -> bool {
         Scene::should_sync_emitters()

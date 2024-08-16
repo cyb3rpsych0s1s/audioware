@@ -39,8 +39,8 @@ impl State for GameState {
 
 impl ToggleState for GameState {
     fn toggle(before: Self::Value, after: Self::Value) {
-        let before = before.syncable();
-        let after = after.syncable();
+        let before = before.should_sync();
+        let after = after.should_sync();
         if before != after {
             Engine::toggle_sync_emitters(after);
         }
@@ -48,7 +48,7 @@ impl ToggleState for GameState {
 }
 
 impl GameState {
-    pub fn syncable(&self) -> bool {
+    pub fn should_sync(&self) -> bool {
         match self {
             GameState::Load
             | GameState::Menu
