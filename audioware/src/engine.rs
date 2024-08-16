@@ -238,20 +238,18 @@ impl Engine {
         emitter_name: Opt<CName>,
         tween: Ref<Tween>,
     ) {
+        let env = Audioware::env();
         let entity_id = entity_id.into_option();
         let emitter_name = emitter_name.into_option();
         let tween = tween.into_tween();
-        log::info!(
-            Audioware::env(),
-            "stop called: {entity_id:?} {emitter_name:?} {tween:?}"
-        );
+        log::info!(env, "stop called: {entity_id:?} {emitter_name:?} {tween:?}");
         if let Err(e) = Manager::stop_by(
             &event_name,
             entity_id.as_ref(),
             emitter_name.as_ref(),
             tween,
         ) {
-            log::error!(Audioware::env(), "{e}");
+            log::error!(env, "{e}");
         }
     }
     pub fn pause(tween: Ref<Tween>) {
