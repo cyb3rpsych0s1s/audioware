@@ -90,9 +90,9 @@ impl Manager {
     }
     pub fn reclaim() -> Result<(), Error> {
         let storage = StaticStorage::try_lock()?;
-        storage.retain(|_, v| v.stopped());
+        storage.retain(|_, v| !v.stopped());
         let storage = StreamStorage::try_lock()?;
-        storage.retain(|_, v| v.stopped());
+        storage.retain(|_, v| !v.stopped());
         Ok(())
     }
 }
@@ -379,10 +379,7 @@ impl<T: Send + Sync + State + Stop> Stop for DashMap<HandleId, T> {
 
     fn stop(&mut self, tween: Option<Tween>) -> Self::Output {
         self.par_iter_mut()
-            .filter(|v| {
-                v.value().state() != PlaybackState::Stopped
-                    && v.value().state() != PlaybackState::Stopping
-            })
+            .filter(|v| v.value().state() != PlaybackState::Stopped)
             .for_each(|mut v| {
                 v.value_mut().stop(tween);
             });
@@ -483,7 +480,6 @@ impl<T: Send + Sync + State + Stop> StopBy for DashMap<HandleId, T> {
                     && entry.key().entity_id() == entity_id
                     && entry.key().emitter_name() == emitter_name
                     && entry.value().state() != PlaybackState::Stopped
-                    && entry.value().state() != PlaybackState::Stopping
             })
             .for_each(|mut entry| {
                 entry.value_mut().stop(tween);
@@ -518,7 +514,6 @@ impl<T: Send + Sync + State + Stop> StopFor for DashMap<HandleId, T> {
             .filter(|entry| {
                 entry.key().entity_id() == Some(entity_id)
                     && entry.value().state() != PlaybackState::Stopped
-                    && entry.value().state() != PlaybackState::Stopping
             })
             .for_each(|mut entry| {
                 entry.value_mut().stop(tween);
@@ -546,7 +541,10 @@ impl<T: Send + Sync + State + Pause> Pause for DashMap<HandleId, T> {
 
     fn pause(&mut self, tween: Option<Tween>) -> Self::Output {
         self.par_iter_mut()
-            .filter(|entry| entry.value().state() == PlaybackState::Playing)
+            .filter(|entry| {
+                entry.value().state() != PlaybackState::Paused
+                    && entry.value().state() != PlaybackState::Stopped
+            })
             .for_each(|mut entry| {
                 entry.value_mut().pause(tween);
             });
@@ -591,10 +589,7 @@ impl<T: Send + Sync + State + Resume> Resume for DashMap<HandleId, T> {
 
     fn resume(&mut self, tween: Option<Tween>) -> Self::Output {
         self.par_iter_mut()
-            .filter(|entry| {
-                entry.value().state() == PlaybackState::Paused
-                    || entry.value().state() == PlaybackState::Pausing
-            })
+            .filter(|entry| entry.value().state() != PlaybackState::Stopped)
             .for_each(|mut entry| {
                 entry.value_mut().resume(tween);
             });
