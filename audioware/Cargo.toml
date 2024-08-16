@@ -20,7 +20,7 @@ glam = { version = "0.28", features = ["mint"] }
 kira.workspace = true
 mint = { version = "0.5" }
 once_cell = "1.19"
-parking_lot = "0.12.3"
+parking_lot = "0.12"
 rayon.workspace = true
 red4ext-rs.workspace = true
 rust-ini = "0.21"
