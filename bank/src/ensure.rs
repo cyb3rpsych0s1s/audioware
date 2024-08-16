@@ -130,7 +130,6 @@ pub fn ensure_located_in_depot(
 }
 
 /// ensure [`Path`](std::path::Path) contains valid audio (based on usage)
-#[inline]
 pub fn ensure_valid_audio(
     path: &impl AsRef<std::path::Path>,
     m: &Mod,

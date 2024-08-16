@@ -102,7 +102,7 @@ public static exec func TestAudioSystemStopOnEmitter(game: GameInstance, name: S
     let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
     emitterID = target.GetEntityID();
 
-    StopOnEmitter(cname, emitterID, n"Jean-Michel");
+    GameInstance.GetAudioSystemExt(game).StopOnEmitter(cname, emitterID, n"Jean-Michel");
 }
 
 /// Game.TestAudioSystemPlayOverThePhone("nah_everything_is_all_good");

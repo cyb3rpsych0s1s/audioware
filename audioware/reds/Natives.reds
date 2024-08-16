@@ -23,27 +23,17 @@ private native func Shutdown() -> Void;
 
 private native func RegisterEmitter(emitterID: EntityID, opt emitterName: CName, opt emitterSettings: EmitterSettings) -> Bool;
 private native func UnregisterEmitter(emitterID: EntityID) -> Bool;
-private native func EmittersCount() -> Int32;
-private native func IsRegisteredEmitter(entityID: EntityID) -> Bool;
 
 private native func SetGameState(state: GameState) -> Void;
 private native func SetPlayerGender(gender: PlayerGender) -> Void;
 private native func UnsetPlayerGender() -> Void;
 private native func SetGameLocales(spoken: CName, written: CName) -> Void;
 
+private native func Pause(opt tween: ref<Tween>) -> Void;
+private native func Resume(opt tween: ref<Tween>) -> Void;
+
 private native func SetReverbMix(value: Float) -> Void;
 private native func SetPreset(value: Preset) -> Void;
-
-public native func PlayOverThePhone(eventName: CName, emitterName: CName, gender: CName) -> Void;
-public native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt tween: ref<Tween>) -> Void;
-public native func Stop(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void;
-public native func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueTween: ref<Tween>) -> Void;
-public native func Pause(opt tween: ref<Tween>) -> Void;
-public native func Resume(opt tween: ref<Tween>) -> Void;
-
-public native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
-public native func StopOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
-
 private native func SetVolume(setting: CName, value: Double) -> Void;
 
 enum GameState {

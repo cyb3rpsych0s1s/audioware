@@ -30,7 +30,12 @@ public class AutoEmittersSystem extends ScriptableSystem {
             n"dok_mai_gab_jeh_gan", 
             n"ton",
             n"dimanche_aux_goudes",
-            n"feel_good_inc"
+            n"feel_good_inc",
+            n"straight_outta_compton",
+            n"welcome_to_brownsville",
+            n"sultans_of_swing",
+            n"ghetto_vet",
+            n"get_off_the_ground"
         ];
         let eventName = sounds[RandRange(0, ArraySize(sounds) -1)];
         let tween = new LinearTween();

@@ -3,7 +3,7 @@ use std::sync::MutexGuard;
 use audioware_bank::{Banks, Id};
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Source, SpokenLocale, WrittenLocale};
 use kira::{manager::AudioManager, OutputDestination, Volume};
-use manager::PlayAndStore;
+use manager::{Pause, PlayAndStore, Resume, StopBy, StopFor};
 use modulators::{
     CarRadioVolume, DialogueVolume, MusicVolume, Parameter, RadioportVolume, ReverbMix, SfxVolume,
 };
@@ -36,7 +36,6 @@ mod tracks;
 pub use effects::IMMEDIATELY;
 pub use eq::EqPass;
 pub use eq::Preset;
-pub use manager::Manage;
 pub use manager::Manager;
 pub use scene::Scene;
 pub use settings::*;
@@ -70,7 +69,7 @@ impl Engine {
         Banks::languages().into_iter().map(|x| x.into()).collect()
     }
     pub fn shutdown() {
-        if let Err(e) = Manager::clear_tracks(None) {
+        if let Err(e) = Manager.clear_tracks(None) {
             log::error!(Audioware::env(), "couldn't clear tracks on manager: {e}");
         }
         if let Err(e) = Scene::clear_emitters() {
@@ -128,7 +127,7 @@ impl Engine {
         }
     }
     pub fn toggle_sync_emitters(enable: bool) {
-        Scene::toggle_emitters_sync(enable);
+        Scene::toggle_sync_emitters(enable);
     }
     pub fn should_sync_emitters() -> bool {
         Scene::should_sync_emitters()
@@ -238,29 +237,27 @@ impl Engine {
         emitter_name: Opt<CName>,
         tween: Ref<Tween>,
     ) {
+        let env = Audioware::env();
         let entity_id = entity_id.into_option();
         let emitter_name = emitter_name.into_option();
         let tween = tween.into_tween();
-        log::info!(
-            Audioware::env(),
-            "stop called: {entity_id:?} {emitter_name:?} {tween:?}"
-        );
-        if let Err(e) = Manager::stop_by(
+        log::info!(env, "stop called: {entity_id:?} {emitter_name:?} {tween:?}");
+        if let Err(e) = Manager.stop_by(
             &event_name,
             entity_id.as_ref(),
             emitter_name.as_ref(),
             tween,
         ) {
-            log::error!(Audioware::env(), "{e}");
+            log::error!(env, "{e}");
         }
     }
     pub fn pause(tween: Ref<Tween>) {
-        if let Err(e) = Manager::pause(tween.into_tween()) {
+        if let Err(e) = Manager.pause(tween.into_tween()) {
             log::error!(Audioware::env(), "{e}");
         }
     }
     pub fn resume(tween: Ref<Tween>) {
-        if let Err(e) = Manager::resume(tween.into_tween()) {
+        if let Err(e) = Manager.resume(tween.into_tween()) {
             log::error!(Audioware::env(), "{e}");
         }
     }
@@ -332,7 +329,7 @@ impl Engine {
         emitter_name: CName,
         tween: Ref<Tween>,
     ) {
-        if let Err(e) = Manager::stop_by(
+        if let Err(e) = Manager.stop_by(
             &event_name,
             Some(&entity_id),
             Some(&emitter_name),
@@ -343,7 +340,7 @@ impl Engine {
     }
     #[allow(dead_code)]
     pub fn stop_for(entity_id: EntityId) {
-        if let Err(e) = Manager::stop_for(&entity_id, None) {
+        if let Err(e) = Manager.stop_for(&entity_id, None) {
             log::error!(Audioware::env(), "{e}");
         }
     }

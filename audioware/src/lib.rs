@@ -114,7 +114,6 @@ impl Plugin for Audioware {
     const VERSION: SemVer = SemVer::new(1, 0, 0);
 
     fn on_init(env: &SdkEnv) {
-        GameState::set(GameState::Load);
         Self::register_listeners(env);
         Self::load_banks(env);
         Self::load_engine(env);
@@ -140,11 +139,6 @@ impl Plugin for Audioware {
                 c"Audioware.UnregisterEmitter",
                 Engine::unregister_emitter
             )),
-            GlobalExport(global!(c"Audioware.EmittersCount", Engine::emitters_count)),
-            GlobalExport(global!(
-                c"Audioware.IsRegisteredEmitter",
-                Engine::is_registered_emitter
-            )),
             GlobalExport(global!(
                 c"Audioware.DefineSubtitles",
                 Engine::define_subtitles
@@ -160,17 +154,8 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
             GlobalExport(global!(c"Audioware.UnsetPlayerGender", unset_player_gender)),
             GlobalExport(global!(c"Audioware.SetGameLocales", set_game_locales)),
-            GlobalExport(global!(
-                c"Audioware.PlayOverThePhone",
-                Engine::play_over_the_phone
-            )),
-            GlobalExport(global!(c"Audioware.Play", Engine::play)),
-            GlobalExport(global!(c"Audioware.Stop", Engine::stop)),
             GlobalExport(global!(c"Audioware.Pause", Engine::pause)),
             GlobalExport(global!(c"Audioware.Resume", Engine::resume)),
-            GlobalExport(global!(c"Audioware.Switch", Engine::switch)),
-            GlobalExport(global!(c"Audioware.PlayOnEmitter", Engine::play_on_emitter)),
-            GlobalExport(global!(c"Audioware.StopOnEmitter", Engine::stop_on_emitter)),
             GlobalExport(global!(c"Audioware.SetReverbMix", Engine::set_reverb_mix)),
             GlobalExport(global!(c"Audioware.SetPreset", Engine::set_preset)),
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
@@ -243,7 +228,7 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit running: Audioware");
-    GameState::swap(GameState::Unload);
+    GameState::set(GameState::Unload);
     Engine::shutdown();
 }
 

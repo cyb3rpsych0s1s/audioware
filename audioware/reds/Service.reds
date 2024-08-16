@@ -28,13 +28,14 @@ class AudiowareService extends ScriptableService {
         // main menu (pre-game)
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Resource/Ready", this, n"OnMainMenuResourceReady")
-            .AddTarget(ResourceTarget.Path(r"base\\gameplay\\gui\\fullscreen\\main_menu\\pregame_menu.inkmenu"));
+            .AddTarget(ResourceTarget.Path(r"base\\gameplay\\gui\\fullscreen\\main_menu\\pregame_menu.inkmenu"))
+            .SetRunMode(CallbackRunMode.Once);
 
-        this.RegisterOnLoad();
+        this.RegisterModSettings();
     }
 
     private cb func OnUninitialize() {
-        this.UnregisterOnUninitialize();
+        this.UnregisterModSettings();
     }
 
     private cb func OnSessionChange(event: ref<GameSessionEvent>) {
@@ -74,7 +75,6 @@ class AudiowareService extends ScriptableService {
 
     private cb func OnMainMenuResourceReady(event: ref<ResourceEvent>) {
         LOG("on main menu ready: AudiowareService");
-        SetGameState(GameState.Menu);
     }
 
     public static func GetInstance() -> ref<AudiowareService> {
@@ -86,14 +86,14 @@ class AudiowareService extends ScriptableService {
     // audio config
 
     @if(ModuleExists("ModSettingsModule"))
-    private func RegisterOnLoad() { ModSettings.RegisterListenerToModifications(this); }
+    private func RegisterModSettings() { ModSettings.RegisterListenerToModifications(this); }
     @if(ModuleExists("ModSettingsModule"))
-    private func UnregisterOnUninitialize() { ModSettings.UnregisterListenerToModifications(this); }
+    private func UnregisterModSettings() { ModSettings.UnregisterListenerToModifications(this); }
 
     @if(!ModuleExists("ModSettingsModule"))
-    private func RegisterOnLoad() -> Void {}
+    private func RegisterModSettings() -> Void {}
     @if(!ModuleExists("ModSettingsModule"))
-    private func UnregisterOnUninitialize() -> Void {}
+    private func UnregisterModSettings() -> Void {}
     
     public func OnModSettingsChange() { this.RefreshConfig(); }
     public func RefreshConfig() -> Void {
