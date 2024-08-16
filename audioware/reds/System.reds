@@ -190,7 +190,7 @@ public class AudiowareSystem extends ScriptableSystem {
     }
 
     public func UnregisterEmitter(entityID: EntityID) -> Void {
-        if IsRegisteredEmitter(entityID) {
+        if GameInstance.GetAudioSystemExt(this.GetGameInstance()).IsRegisteredEmitter(entityID) {
             UnregisterEmitter(entityID);
             this.detachedOnce.RemoveTarget(EntityTarget.ID(entityID));
         }
@@ -206,7 +206,7 @@ public class AudiowareSystem extends ScriptableSystem {
         }
         // ignore EntityTarget placeholder, we only care about emitters here
         if !entity.IsA(n"PlayerPuppet") {
-            let already = IsRegisteredEmitter(id);
+            let already = GameInstance.GetAudioSystemExt(this.GetGameInstance()).IsRegisteredEmitter(id);
             if !already {
                 let registered = RegisterEmitter(id);
                 if registered {
@@ -224,7 +224,7 @@ public class AudiowareSystem extends ScriptableSystem {
             let id = entity.GetEntityID();
             let display = EntityID.ToDebugString(id);
             LOG(s"on emitter despawn: AudiowareSystem (\(display))");
-            let registered = IsRegisteredEmitter(id);
+            let registered = GameInstance.GetAudioSystemExt(this.GetGameInstance()).IsRegisteredEmitter(id);
             if registered {
                 LOG(s"on emitter despawn while registered: AudiowareSystem (\(display))");
                 let unregistered = UnregisterEmitter(id);
