@@ -28,7 +28,8 @@ class AudiowareService extends ScriptableService {
         // main menu (pre-game)
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Resource/Ready", this, n"OnMainMenuResourceReady")
-            .AddTarget(ResourceTarget.Path(r"base\\gameplay\\gui\\fullscreen\\main_menu\\pregame_menu.inkmenu"));
+            .AddTarget(ResourceTarget.Path(r"base\\gameplay\\gui\\fullscreen\\main_menu\\pregame_menu.inkmenu"))
+            .SetRunMode(CallbackRunMode.Once);
 
         this.RegisterModSettings();
     }
