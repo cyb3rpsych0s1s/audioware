@@ -74,7 +74,6 @@ class AudiowareService extends ScriptableService {
 
     private cb func OnMainMenuResourceReady(event: ref<ResourceEvent>) {
         LOG("on main menu ready: AudiowareService");
-        SetGameState(GameState.Menu);
     }
 
     public static func GetInstance() -> ref<AudiowareService> {
