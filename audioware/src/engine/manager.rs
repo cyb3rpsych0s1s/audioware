@@ -263,7 +263,6 @@ where
 {
     type Handle = <T as SoundData>::Handle;
 
-    #[inline]
     fn play(
         self,
         manager: &mut AudioManager,
@@ -383,7 +382,6 @@ where
     <T as SoundData>::Handle: Store,
     U: ToTween,
 {
-    #[inline]
     fn play_and_store(
         self,
         manager: &mut AudioManager,
@@ -431,7 +429,6 @@ where
 {
     type Handle = <T as SoundData>::Handle;
 
-    #[inline]
     fn play(
         self,
         manager: &mut AudioManager,
@@ -454,7 +451,6 @@ where
     PlaySoundError<<T as SoundData>::Error>: Into<Error>,
     <T as SoundData>::Handle: Store,
 {
-    #[inline]
     fn play_and_store(
         self,
         manager: &mut AudioManager,
