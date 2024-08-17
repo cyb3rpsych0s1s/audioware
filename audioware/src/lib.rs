@@ -5,7 +5,7 @@ use ext::AudioSystemExt;
 use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log, methods, static_methods,
-    types::{CName, GameEngine, IScriptable, Opt},
+    types::{CName, GameEngine, IScriptable, Opt, RedArray, RedString},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
@@ -25,6 +25,11 @@ mod macros;
 mod states;
 mod types;
 mod utils;
+
+#[cfg(target_os = "windows")]
+include!(concat!(env!("OUT_DIR"), "\\version.rs"));
+#[cfg(not(target_os = "windows"))]
+include!(concat!(env!("OUT_DIR"), "/version.rs"));
 
 pub struct Audioware;
 
@@ -111,7 +116,7 @@ impl Audioware {
 impl Plugin for Audioware {
     const NAME: &'static U16CStr = wcstr!("audioware");
     const AUTHOR: &'static U16CStr = wcstr!("Roms1383");
-    const VERSION: SemVer = SemVer::new(1, 0, 0);
+    const VERSION: SemVer = AUDIOWARE_VERSION;
 
     fn on_init(env: &SdkEnv) {
         Self::register_listeners(env);
@@ -127,6 +132,8 @@ impl Plugin for Audioware {
             ClassExport::<EmitterSettings>::builder().build(),
             ClassExport::<LoopRegion>::builder().build(),
             ClassExport::<Args>::builder().build(),
+            GlobalExport(global!(c"Audioware.Version", version)),
+            GlobalExport(global!(c"Audioware.SemanticVersion", semantic_version)),
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
             GlobalExport(global!(c"Audioware.PLogError", plog_error)),
@@ -230,6 +237,16 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     log::info!(env, "on exit running: Audioware");
     GameState::set(GameState::Unload);
     Engine::shutdown();
+}
+
+// TODO: replace with upstream conversion when PR merged.
+fn version() -> RedString {
+    RedString::from("1.0.0-alpha.10")
+}
+
+// TODO: replace with upstream conversion when PR merged.
+fn semantic_version() -> RedArray<u32> {
+    RedArray::from_iter([1, 0, 0, 1, 10])
 }
 
 fn set_player_gender(value: PlayerGender) {

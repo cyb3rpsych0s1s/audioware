@@ -2,6 +2,11 @@ module Audioware
 
 import Codeware.Localization.PlayerGender
 
+/// e.g. "1.0.0-alpha.10"
+public native func Version() -> String;
+/// major, minor, patch, type (0 = official, 1 = alpha, 2 = beta, 3 = rc), build number
+public native func SemanticVersion() -> array<Uint32>;
+
 private static func LOG(msg: String) {
     FTLog(AsRef(msg));
     PLog(msg);
