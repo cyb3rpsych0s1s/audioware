@@ -6,5 +6,8 @@ fn main() {
     let out = std::env::var("OUT_DIR").expect("out dir");
     let out = std::path::PathBuf::from(out).join("version.rs");
     std::fs::write(&out, red).expect("write version.rs to out dir");
-    println!("cargo:warning={}", format!("plugin version written to: {}", out.display()));
+    println!(
+        "cargo:warning={}",
+        format_args!("plugin version written to: {}", out.display())
+    );
 }
