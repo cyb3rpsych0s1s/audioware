@@ -171,6 +171,9 @@ impl Plugin for Audioware {
             ClassExport::<ExtSystem>::builder()
                 .base(ScriptableSystem::NAME)
                 .build(),
+            // ClassExport::<spatialization::AudiowareSystem>::builder()
+            //     .base(IScriptable::NAME)
+            //     .build(),
             ClassExport::<AudioSystemExt>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![
