@@ -51,7 +51,7 @@ impl AudioSystemExt {
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         switch_name_tween: Ref<Tween>,
-        switch_value_tween: Ref<Tween>,
+        switch_value_settings: Ref<AudioSettingsExt>,
     ) {
         Engine::switch(
             switch_name,
@@ -59,7 +59,7 @@ impl AudioSystemExt {
             entity_id,
             emitter_name,
             switch_name_tween,
-            switch_value_tween,
+            switch_value_settings,
         );
     }
     pub fn play_over_the_phone(&self, event_name: CName, emitter_name: CName, gender: CName) {

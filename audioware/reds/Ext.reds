@@ -19,7 +19,13 @@ public native class AudioSystemExt {
         this.Play(eventName, entityID, emitterName, line, settings);
     }
     public native func Stop(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void
-    public native func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueTween: ref<Tween>) -> Void;
+    public final native func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueSettings: ref<AudioSettingsExt>) -> Void;
+    public final func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueTween: ref<Tween>) -> Void {
+        let builder = AudioSettingsExtBuilder.Create();
+        builder.SetFadeInTween(switchValueTween);
+        let switchValueSettings = builder.Build();
+        this.Switch(switchName, switchValue, entityID, emitterName, switchNameTween, switchValueSettings); 
+    }
     public native func PlayOverThePhone(eventName: CName, emitterName: CName, gender: CName) -> Void;
         
     // spatial scene

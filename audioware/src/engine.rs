@@ -267,7 +267,7 @@ impl Engine {
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         switch_name_tween: Ref<Tween>,
-        switch_value_tween: Ref<Tween>,
+        switch_value_settings: Ref<AudioSettingsExt>,
     ) {
         let prev = Banks::exists(&switch_name);
         let next = Banks::exists(&switch_value);
@@ -280,12 +280,12 @@ impl Engine {
         }
 
         if next {
-            Engine::play(
+            Engine::play_with(
                 switch_value,
                 entity_id,
                 emitter_name,
                 Opt::Default,
-                switch_value_tween,
+                switch_value_settings,
             );
         } else {
             system.play(switch_value, entity_id, emitter_name);
