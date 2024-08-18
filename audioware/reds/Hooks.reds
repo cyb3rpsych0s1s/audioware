@@ -3,7 +3,7 @@ module Audioware
 /// whenever V dies, after animation where (s)he falls on the ground
 @wrapMethod(gameuiInGameMenuGameController)
 protected cb func OnDeathScreenDelayEvent(evt: ref<DeathMenuDelayEvent>) -> Bool {
-    LOG(s"on display death menu");
+    DBG(s"on display death menu");
     Shutdown();
     return wrappedMethod(evt);
 }
@@ -13,7 +13,7 @@ protected cb func OnDeathScreenDelayEvent(evt: ref<DeathMenuDelayEvent>) -> Bool
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     let id = this.GetEntity().GetEntityID();
     let ext = GameInstance.GetAudioSystemExt(GetGameInstance());
-    LOG(s"on death: \(EntityID.ToDebugString(id)) [VehicleComponent]");
+    DBG(s"on death: \(EntityID.ToDebugString(id)) [VehicleComponent]");
     if ext.IsRegisteredEmitter(id) {
         ext.OnEmitterDies(id);
     }
@@ -25,7 +25,7 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     let id = this.GetEntity().GetEntityID();
     let ext = GameInstance.GetAudioSystemExt(this.GetGame());
-    LOG(s"on death: \(EntityID.ToDebugString(id)) [AIHumanComponent]");
+    DBG(s"on death: \(EntityID.ToDebugString(id)) [AIHumanComponent]");
     if ext.IsRegisteredEmitter(id) {
         ext.OnEmitterDies(id);
     }
@@ -37,7 +37,7 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     let id = this.GetEntityID();
     let ext = GameInstance.GetAudioSystemExt(this.GetGame());
-    LOG(s"on death: \(EntityID.ToDebugString(id)) [Device]");
+    DBG(s"on death: \(EntityID.ToDebugString(id)) [Device]");
     if ext.IsRegisteredEmitter(id) {
         ext.OnEmitterDies(id);
     }

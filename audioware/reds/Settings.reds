@@ -5,7 +5,7 @@ public class VolumeSettingsListener extends ConfigVarListener {
     private let game: GameInstance;
 
     public func Initialize(game: GameInstance) {
-        LOG("initialize VolumeSettingsListener");
+        DBG("initialize VolumeSettingsListener");
         this.game = game;
 
         // update settings for Audioware, which loads way earlier
@@ -39,7 +39,7 @@ public class VolumeSettingsListener extends ConfigVarListener {
                 case n"RadioportVolume":
                     let settings = GameInstance.GetSettingsSystem(this.game);
                     let setting: Double = Cast<Double>((settings.GetGroup(groupPath).GetVar(varName) as ConfigVarInt).GetValue());
-                    LOG(s"value: \(ToString(setting)), groupPath: \(NameToString(groupPath)), varName: \(NameToString(varName)), varType: \(ToString(varType)), reason: \(ToString(reason))");
+                    DBG(s"value: \(ToString(setting)), groupPath: \(NameToString(groupPath)), varName: \(NameToString(varName)), varType: \(ToString(varType)), reason: \(ToString(reason))");
                     SetVolume(varName, setting);
                     break;
                 default:

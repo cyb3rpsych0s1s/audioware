@@ -16,7 +16,7 @@ public class AudiowareSystem extends ScriptableSystem {
     private let subtitleLine: scnDialogLineData;
 
     private func OnAttach() -> Void {
-        LOG("on attach: AudiowareSystem");
+        DBG("on attach: AudiowareSystem");
         let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
         let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
         let ui: ref<IBlackboard> = system.Get(definitions.UI_System);
@@ -53,7 +53,7 @@ public class AudiowareSystem extends ScriptableSystem {
             .SetRunMode(CallbackRunMode.OncePerTarget);
     }
     private func OnDetach() -> Void {
-        LOG("on detach: AudiowareSystem");
+        DBG("on detach: AudiowareSystem");
         this.attached.Unregister();
         this.detachedOnce.Unregister();
         this.attached = null;
@@ -75,7 +75,7 @@ public class AudiowareSystem extends ScriptableSystem {
         }
     }
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {
-        LOG("on player attach: AudiowareSystem");
+        DBG("on player attach: AudiowareSystem");
         SetGameState(GameState.InGame);
 
         let player = request.owner as PlayerPuppet;
@@ -85,7 +85,7 @@ public class AudiowareSystem extends ScriptableSystem {
         }
     }
     private final func OnPlayerDetach(request: ref<PlayerDetachRequest>) -> Void {
-        LOG("on player detach: AudiowareSystem");
+        DBG("on player detach: AudiowareSystem");
         UnsetPlayerGender();
 
         let player = GameInstance.FindEntityByID(this.GetGameInstance(), request.ownerID) as PlayerPuppet;
@@ -202,7 +202,7 @@ public class AudiowareSystem extends ScriptableSystem {
         let id = entity.GetEntityID();
         let display = EntityID.ToDebugString(id);
         if !entity.IsA(n"PlayerPuppet") {
-            LOG(s"on emitter spawn: AudiowareSystem (\(display))");
+            DBG(s"on emitter spawn: AudiowareSystem (\(display))");
         }
         // ignore EntityTarget placeholder, we only care about emitters here
         if !entity.IsA(n"PlayerPuppet") {
@@ -211,7 +211,7 @@ public class AudiowareSystem extends ScriptableSystem {
                 let registered = RegisterEmitter(id);
                 if registered {
                     this.detachedOnce.AddTarget(EntityTarget.ID(id));
-                    LOG(s"on emitter registered: AudiowareSystem (\(display))");
+                    DBG(s"on emitter registered: AudiowareSystem (\(display))");
                 }
             }
         }
@@ -223,18 +223,18 @@ public class AudiowareSystem extends ScriptableSystem {
         if !entity.IsA(n"PlayerPuppet") {
             let id = entity.GetEntityID();
             let display = EntityID.ToDebugString(id);
-            LOG(s"on emitter despawn: AudiowareSystem (\(display))");
+            DBG(s"on emitter despawn: AudiowareSystem (\(display))");
             let registered = GameInstance.GetAudioSystemExt(this.GetGameInstance()).IsRegisteredEmitter(id);
             if registered {
-                LOG(s"on emitter despawn while registered: AudiowareSystem (\(display))");
+                DBG(s"on emitter despawn while registered: AudiowareSystem (\(display))");
                 let unregistered = UnregisterEmitter(id);
-                LOG(s"on emitter despawn + unregistered?[\(ToString(unregistered))]: AudiowareSystem (\(display))");
+                DBG(s"on emitter despawn + unregistered?[\(ToString(unregistered))]: AudiowareSystem (\(display))");
             }
-        } else { LOG("on player despawn: AudiowareSystem"); }
+        } else { DBG("on player despawn: AudiowareSystem"); }
     }
 
     protected cb func OnInMenu(value: Bool) -> Bool {
-        LOG(s"on \(value ? "enter" : "exit") menu: AudiowareSystem");
+        DBG(s"on \(value ? "enter" : "exit") menu: AudiowareSystem");
         SetGameState(value ? GameState.InMenu : GameState.InGame);
         if value {
             Pause();
@@ -245,12 +245,12 @@ public class AudiowareSystem extends ScriptableSystem {
         }
     }
     protected cb func OnPlayerReverb(value: Float) -> Bool {
-        LOG(s"on reverb mix changed (\(ToString(value))): AudiowareSystem");
+        DBG(s"on reverb mix changed (\(ToString(value))): AudiowareSystem");
         SetReverbMix(value);
     }
     protected cb func OnPlayerPreset(value: Int32) -> Bool {
         let preset = IntEnum<Preset>(value);
-        LOG(s"on player preset changed (\(ToString(preset))): AudiowareSystem");
+        DBG(s"on player preset changed (\(ToString(preset))): AudiowareSystem");
         SetPreset(preset);
     }
     protected cb func OnSwim(value: Int32) -> Bool {

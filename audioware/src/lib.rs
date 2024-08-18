@@ -113,14 +113,18 @@ impl Audioware {
         }
     }
 
-    fn delayed_report() {
+    fn report_after_rtti() {
         if let Some(report) = REPORT.get() {
             if report.errors.is_empty() {
-                crate::utils::info(format!("banks successfully initialized:\n{report}"));
+                crate::utils::info(format!(
+                    "[audioware] banks successfully initialized:\n{report}"
+                ));
             } else {
-                crate::utils::warn(format!("banks partially initialized:\n{report}"));
+                crate::utils::warn(format!(
+                    "[audioware] banks partially initialized:\n{report}"
+                ));
                 for error in report.errors.iter() {
-                    crate::utils::error(format!("{error}"));
+                    crate::utils::error(format!("[audioware] {error}"));
                 }
             }
         }
@@ -148,6 +152,7 @@ impl Plugin for Audioware {
             ClassExport::<Args>::builder().build(),
             GlobalExport(global!(c"Audioware.Version", version)),
             GlobalExport(global!(c"Audioware.SemanticVersion", semantic_version)),
+            GlobalExport(global!(c"Audioware.IsDebug", is_debug)),
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
             GlobalExport(global!(c"Audioware.PLogError", plog_error)),
@@ -232,7 +237,7 @@ unsafe extern "C" fn post_register() {}
 
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     log::info!(Audioware::env(), "on exit initialization: Audioware");
-    Audioware::delayed_report();
+    Audioware::report_after_rtti();
 
     #[cfg(debug_assertions)]
     {
@@ -263,6 +268,10 @@ fn version() -> RedString {
 // TODO: replace with upstream conversion when PR merged.
 fn semantic_version() -> RedArray<u32> {
     RedArray::from_iter([1, 0, 0, 1, 11])
+}
+
+fn is_debug() -> bool {
+    cfg!(debug_assertions)
 }
 
 fn set_player_gender(value: PlayerGender) {

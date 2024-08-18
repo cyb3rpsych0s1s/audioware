@@ -41,32 +41,32 @@ class AudiowareService extends ScriptableService {
     private cb func OnSessionChange(event: ref<GameSessionEvent>) {
         switch event.GetEventName() {
             case n"Session/BeforeStart":
-                LOG("on session before start: AudiowareService");
+                DBG("on session before start: AudiowareService");
                 break;
             case n"Session/Start":
-                LOG("on session start: AudiowareService");
+                DBG("on session start: AudiowareService");
                 SetGameState(GameState.Start);
                 break;
             case n"Session/Ready":
-                LOG("on session ready: AudiowareService");
+                DBG("on session ready: AudiowareService");
                 break;
             case n"Session/Pause":
-                LOG("on session pause: AudiowareService");
+                DBG("on session pause: AudiowareService");
                 Pause();
                 break;
             case n"Session/Resume":
-                LOG("on session resume: AudiowareService");
+                DBG("on session resume: AudiowareService");
                 Resume();
                 break;
             case n"Session/BeforeEnd":
-                LOG("on session before end: AudiowareService");
+                DBG("on session before end: AudiowareService");
                 SetGameState(GameState.End);
                 SetPreset(Preset.None);
                 SetReverbMix(0.);
                 Shutdown();
                 break;
             case n"Session/End":
-                LOG("on session end: AudiowareService");
+                DBG("on session end: AudiowareService");
                 break;
             default:
                 break;
@@ -74,7 +74,7 @@ class AudiowareService extends ScriptableService {
     }
 
     private cb func OnMainMenuResourceReady(event: ref<ResourceEvent>) {
-        LOG("on main menu ready: AudiowareService");
+        DBG("on main menu ready: AudiowareService");
     }
 
     public static func GetInstance() -> ref<AudiowareService> {

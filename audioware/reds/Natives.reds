@@ -6,7 +6,16 @@ import Codeware.Localization.PlayerGender
 public native func Version() -> String;
 /// major, minor, patch, type (0 = official, 1 = alpha, 2 = beta, 3 = rc), build number
 public native func SemanticVersion() -> array<Uint32>;
+/// debug or release build ?
+public native func IsDebug() -> Bool;
 
+private static func DBG(msg: String) {
+    if IsDebug() {
+        let prefixed = s"[Audioware] \(msg)";
+        FTLog(AsRef(prefixed));
+        PLog(msg);
+    }
+}
 private static func LOG(msg: String) {
     FTLog(AsRef(msg));
     PLog(msg);

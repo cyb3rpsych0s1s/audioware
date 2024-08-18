@@ -16,13 +16,13 @@ public class AutoEmittersService extends ScriptableService {
 
 public class AutoEmittersSystem extends ScriptableSystem {
     private func OnAttach() {
-        FTLog(s"on attach: AutoEmittersSystem");
+        if IsDebug() { FTLog(s"on attach: AutoEmittersSystem"); }
         GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnKeyInput")
         .AddTarget(InputTarget.Key(EInputKey.IK_F1));
     }
     private cb func OnKeyInput(evt: ref<KeyInputEvent>) {
         if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }
-        FTLog(s"on key input: AutoEmittersSystem");
+        if IsDebug() { FTLog(s"on key input: AutoEmittersSystem"); }
         let sounds = [ 
             n"coco_caline",
             n"god_love_us", 
@@ -51,7 +51,7 @@ public class AutoEmittersSystem extends ScriptableSystem {
         if !GameInstance.GetAudioSystemExt(game).IsRegisteredEmitter(emitterID) {
             GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID);
         }
-        FTLog(s"play on emitter: AutoEmittersSystem");
+        if IsDebug() { FTLog(s"play on emitter: AutoEmittersSystem"); }
         GameInstance.GetAudioSystemExt(game).PlayOnEmitter(eventName, emitterID, emitterCName);
     }
 }
