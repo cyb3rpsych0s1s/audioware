@@ -5,10 +5,11 @@ use ext::AudioSystemExt;
 use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log, methods, static_methods,
-    types::{CName, GameEngine, IScriptable, Opt, RedArray, RedString},
+    types::{CName, GameEngine, IScriptable, Opt, RedArray, RedString, ScriptableSystem},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
+use spatialization::{ExtSystem, SpatializationSystem};
 use states::{GameState, State, ToggleState};
 use types::{
     Args, AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings, GameObject, LoopRegion,
@@ -22,6 +23,7 @@ mod error;
 mod ext;
 mod hooks;
 mod macros;
+mod spatialization;
 mod states;
 mod types;
 mod utils;
@@ -166,6 +168,7 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetReverbMix", Engine::set_reverb_mix)),
             GlobalExport(global!(c"Audioware.SetPreset", Engine::set_preset)),
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
+            ClassExport::<ExtSystem>::builder().base(ScriptableSystem::NAME).build(),
             ClassExport::<AudioSystemExt>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![
