@@ -1,4 +1,6 @@
-use audioware_bank::Banks;
+use std::sync::OnceLock;
+
+use audioware_bank::{Banks, Initialization};
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::{AudioRegion, AudioSettingsExt, AudioSettingsExtBuilder, Engine};
 use ext::AudioSystemExt;
@@ -33,6 +35,8 @@ include!(concat!(env!("OUT_DIR"), "/version.rs"));
 
 pub struct Audioware;
 
+static REPORT: OnceLock<Initialization> = OnceLock::new();
+
 impl Audioware {
     fn register_listeners(env: &SdkEnv) {
         RttiRegistrator::add(Some(register), Some(post_register));
@@ -48,21 +52,18 @@ impl Audioware {
 
     fn load_banks(env: &SdkEnv) {
         let report = Banks::setup();
-        let status = if report.errors.is_empty() {
-            "successfully"
+
+        if report.errors.is_empty() {
+            log::info!(env, "banks successfully initialized:\n{report}");
         } else {
-            "partially"
-        };
-        log::info!(env, "banks {status} initialized:\n{report}");
-        for error in report.errors {
-            log::error!(env, "{error}");
+            log::warn!(env, "banks partially initialized:\n{report}");
+            for error in report.errors.iter() {
+                log::error!(env, "{error}");
+            }
         }
-        #[cfg(debug_assertions)]
-        log::info!(
-            env,
-            "as_if_I_didnt_know_already: {}",
-            Banks::exists(&CName::new("as_if_I_didnt_know_already"))
-        );
+        if let Err(e) = REPORT.set(report) {
+            log::error!(env, "unable to store report for delayed logs: {e}");
+        }
     }
 
     fn load_engine(env: &SdkEnv) {
@@ -109,6 +110,19 @@ impl Audioware {
             crate::hooks::events::set_parameter_on_emitter::attach_hook(env);
             crate::hooks::events::voice_event::attach_hook(env);
             crate::hooks::events::voice_played_event::attach_hook(env);
+        }
+    }
+
+    fn delayed_report() {
+        if let Some(report) = REPORT.get() {
+            if report.errors.is_empty() {
+                crate::utils::info(format!("banks successfully initialized:\n{report}"));
+            } else {
+                crate::utils::warn(format!("banks partially initialized:\n{report}"));
+                for error in report.errors.iter() {
+                    crate::utils::error(format!("{error}"));
+                }
+            }
         }
     }
 }
@@ -217,19 +231,21 @@ unsafe extern "C" fn register() {}
 unsafe extern "C" fn post_register() {}
 
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
-    let env = Audioware::env();
-    log::info!(env, "on exit initialization: Audioware");
-    // test_play();
-    // test_static();
-    // test_get_player();
-    // test_is_player();
-    // scan_globals("PropagateSubtitle");
+    log::info!(Audioware::env(), "on exit initialization: Audioware");
+    Audioware::delayed_report();
+
     #[cfg(debug_assertions)]
     {
         utils::info("it should be able to call FTLog");
         utils::warn("it should be able to call FTLogWarning");
         utils::error("it should be able to call FTLogError");
     }
+
+    // test_play();
+    // test_static();
+    // test_get_player();
+    // test_is_player();
+    // scan_globals("PropagateSubtitle");
 }
 
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
