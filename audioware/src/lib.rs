@@ -170,14 +170,14 @@ impl Plugin for Audioware {
                 .base(IScriptable::NAME)
                 .methods(methods![
                     final c"Play" => AudioSystemExt::play,
-                    c"Stop" => AudioSystemExt::stop,
+                    final c"Stop" => AudioSystemExt::stop,
                     final c"Switch" => AudioSystemExt::switch,
-                    c"PlayOverThePhone" => AudioSystemExt::play_over_the_phone,
-                    c"IsRegisteredEmitter" => AudioSystemExt::is_registered_emitter,
-                    c"EmittersCount" => AudioSystemExt::emitters_count,
-                    c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
-                    c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
-                    c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
+                    final c"PlayOverThePhone" => AudioSystemExt::play_over_the_phone,
+                    final c"IsRegisteredEmitter" => AudioSystemExt::is_registered_emitter,
+                    final c"EmittersCount" => AudioSystemExt::emitters_count,
+                    final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
+                    final c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
+                    final c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
                 ])
                 .build(),
             ClassExport::<AudioRegion>::builder()
