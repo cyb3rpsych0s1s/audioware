@@ -196,14 +196,14 @@ impl Plugin for Audioware {
                     c"Create" => AudioSettingsExtBuilder::create
                 ])
                 .methods(methods![
-                    c"SetStartPosition" => AudioSettingsExtBuilder::set_start_position,
-                    c"SetLoopRegionStarts" => AudioSettingsExtBuilder::set_loop_region_starts,
-                    c"SetLoopRegionEnds" => AudioSettingsExtBuilder::set_loop_region_ends,
-                    c"SetVolume" => AudioSettingsExtBuilder::set_volume,
-                    c"SetFadeInTween" => AudioSettingsExtBuilder::set_fade_in_tween,
-                    c"SetPanning" => AudioSettingsExtBuilder::set_panning,
-                    c"SetPlaybackRate" => AudioSettingsExtBuilder::set_playback_rate,
-                    c"Build" => AudioSettingsExtBuilder::build,
+                    final c"SetStartPosition" => AudioSettingsExtBuilder::set_start_position,
+                    final c"SetLoopRegionStarts" => AudioSettingsExtBuilder::set_loop_region_starts,
+                    final c"SetLoopRegionEnds" => AudioSettingsExtBuilder::set_loop_region_ends,
+                    final c"SetVolume" => AudioSettingsExtBuilder::set_volume,
+                    final c"SetFadeInTween" => AudioSettingsExtBuilder::set_fade_in_tween,
+                    final c"SetPanning" => AudioSettingsExtBuilder::set_panning,
+                    final c"SetPlaybackRate" => AudioSettingsExtBuilder::set_playback_rate,
+                    final c"Build" => AudioSettingsExtBuilder::build,
                 ])
                 .build()
         ]

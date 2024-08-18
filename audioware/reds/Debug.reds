@@ -253,3 +253,21 @@ public static exec func TestBuilderPattern(game: GameInstance) {
     .GetAudioSystemExt(game)
     .Play(n"still_dre", GetPlayer(game).GetEntityID(), n"V", scnDialogLineType.Regular, args);
 }
+
+/// Game.TestChainBuilderPattern();
+public static exec func TestChainBuilderPattern(game: GameInstance) {
+    GameInstance
+    .GetAudioSystemExt(game)
+    .Play(
+        n"still_dre",
+        GetPlayer(game).GetEntityID(),
+        n"V",
+        scnDialogLineType.Regular, 
+        AudioSettingsExtBuilder.Create()
+            .WithFadeInTween(ElasticTween.ImmediateIn(5.0, 0.25))
+            .WithPanning(0.3)
+            .WithPlaybackRate(1.1)
+            .WithVolume(0.9)
+            .Build()
+    );
+}

@@ -68,14 +68,44 @@ public native class AudioRegion {
 
 public native class AudioSettingsExtBuilder {
     public native static func Create() -> ref<AudioSettingsExtBuilder>;
-    public native func SetStartPosition(value: Float);
-    public native func SetLoopRegionStarts(value: Float);
-    public native func SetLoopRegionEnds(value: Float);
-    public native func SetVolume(value: Float);
-    public native func SetFadeInTween(value: ref<Tween>);
-    public native func SetPanning(value: Float);
-    public native func SetPlaybackRate(value: Float);
-    public native func Build() -> ref<AudioSettingsExt>;
+    public final native func SetStartPosition(value: Float);
+    public final native func SetLoopRegionStarts(value: Float);
+    public final native func SetLoopRegionEnds(value: Float);
+    public final native func SetVolume(value: Float);
+    public final native func SetFadeInTween(value: ref<Tween>);
+    public final native func SetPanning(value: Float);
+    public final native func SetPlaybackRate(value: Float);
+    public final native func Build() -> ref<AudioSettingsExt>;
+
+    // alternate chained syntax
+    public final func WithStartPosition(value: Float) -> ref<AudioSettingsExtBuilder> {
+        this.SetStartPosition(value);
+        return this;
+    }
+    public final func WithLoopRegionStarts(value: Float) -> ref<AudioSettingsExtBuilder> {
+        this.SetLoopRegionStarts(value);
+        return this;
+    }
+    public final func WithLoopRegionEnds(value: Float) -> ref<AudioSettingsExtBuilder> {
+        this.SetLoopRegionEnds(value);
+        return this;
+    }
+    public final func WithVolume(value: Float) -> ref<AudioSettingsExtBuilder> {
+        this.SetVolume(value);
+        return this;
+    }
+    public final func WithFadeInTween(value: ref<Tween>) -> ref<AudioSettingsExtBuilder> {
+        this.SetFadeInTween(value);
+        return this;
+    }
+    public final func WithPanning(value: Float) -> ref<AudioSettingsExtBuilder> {
+        this.SetPanning(value);
+        return this;
+    }
+    public final func WithPlaybackRate(value: Float) -> ref<AudioSettingsExtBuilder> {
+        this.SetPlaybackRate(value);
+        return this;
+    }
 }
 
 public native importonly class AudioSettingsExt {}
