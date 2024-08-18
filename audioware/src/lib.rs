@@ -9,7 +9,7 @@ use red4ext_rs::{
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
-use spatialization::{ExtSystem, SpatializationSystem};
+use spatialization::ExtSystem;
 use states::{GameState, State, ToggleState};
 use types::{
     Args, AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings, GameObject, LoopRegion,
@@ -168,7 +168,9 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetReverbMix", Engine::set_reverb_mix)),
             GlobalExport(global!(c"Audioware.SetPreset", Engine::set_preset)),
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
-            ClassExport::<ExtSystem>::builder().base(ScriptableSystem::NAME).build(),
+            ClassExport::<ExtSystem>::builder()
+                .base(ScriptableSystem::NAME)
+                .build(),
             ClassExport::<AudioSystemExt>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![

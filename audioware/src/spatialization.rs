@@ -1,23 +1,22 @@
-use red4ext_rs::{class_kind::{Native, Scripted}, types::ScriptableSystem, ScriptClass};
+use red4ext_rs::{class_kind::Native, types::{IScriptable, ScriptableSystem}, ScriptClass};
 
 #[derive(Debug, Default, Clone)]
-#[repr(C)]
-pub struct SpatializationSystem {
-    base: ScriptableSystem,
-}
-
-unsafe impl ScriptClass for SpatializationSystem {
-    type Kind = Scripted;
-    const NAME: &'static str = "Audioware.SpatializationSystem";
-}
-
-#[derive(Debug, Default, Clone)]
-#[repr(C)]
-pub struct ExtSystem {
-    base: SpatializationSystem,
-}
+#[repr(transparent)]
+pub struct ExtSystem(ScriptableSystem);
 
 unsafe impl ScriptClass for ExtSystem {
     type Kind = Native;
     const NAME: &'static str = "Audioware.ExtSystem";
+}
+
+impl AsRef<ScriptableSystem> for ExtSystem {
+    fn as_ref(&self) -> &ScriptableSystem {
+        &self.0
+    }
+}
+
+impl AsRef<IScriptable> for ExtSystem {
+    fn as_ref(&self) -> &IScriptable {
+        self.0.as_ref()
+    }
 }

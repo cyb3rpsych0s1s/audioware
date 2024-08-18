@@ -1,6 +1,6 @@
 module Audioware
 
-public class AudiowareSystem extends ScriptableSystem {
+public class AudiowareSystem extends ExtSystem {
     private let attached: ref<CallbackSystemHandler>;
     private let detachedOnce: ref<CallbackSystemHandler>;
     private let attachedOnce: ref<CallbackSystemHandler>;
