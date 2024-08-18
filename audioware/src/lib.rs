@@ -241,12 +241,12 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
 
 // TODO: replace with upstream conversion when PR merged.
 fn version() -> RedString {
-    RedString::from("1.0.0-alpha.10")
+    RedString::from("1.0.0-alpha.11")
 }
 
 // TODO: replace with upstream conversion when PR merged.
 fn semantic_version() -> RedArray<u32> {
-    RedArray::from_iter([1, 0, 0, 1, 10])
+    RedArray::from_iter([1, 0, 0, 1, 11])
 }
 
 fn set_player_gender(value: PlayerGender) {
