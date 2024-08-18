@@ -130,6 +130,9 @@ impl Plugin for Audioware {
     #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
     fn exports() -> impl Exportable {
         exports![
+            ClassExport::<ExtSystem>::builder()
+                .base(ScriptableSystem::NAME)
+                .build(),
             ClassExport::<EmitterDistances>::builder().build(),
             ClassExport::<EmitterSettings>::builder().build(),
             ClassExport::<LoopRegion>::builder().build(),
@@ -168,9 +171,6 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetReverbMix", Engine::set_reverb_mix)),
             GlobalExport(global!(c"Audioware.SetPreset", Engine::set_preset)),
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
-            ClassExport::<ExtSystem>::builder()
-                .base(ScriptableSystem::NAME)
-                .build(),
             // ClassExport::<spatialization::AudiowareSystem>::builder()
             //     .base(IScriptable::NAME)
             //     .build(),
