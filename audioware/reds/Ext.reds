@@ -12,21 +12,22 @@ public static func GetAudioSystemExt(game: GameInstance) -> ref<AudioSystemExt> 
 public native class AudioSystemExt {
     // enhanced SDK
     public final native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt ext: ref<AudioSettingsExt>) -> Void;
+    public final native func Stop(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void
+    public final native func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueSettings: ref<AudioSettingsExt>) -> Void;
+    public final native func PlayOverThePhone(eventName: CName, emitterName: CName, gender: CName) -> Void;
+    // enhanced SDK variants
     public final func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt tween: ref<Tween>) -> Void {
         let builder = AudioSettingsExtBuilder.Create();
         builder.SetFadeInTween(tween);
         let settings = builder.Build();
         this.Play(eventName, entityID, emitterName, line, settings);
     }
-    public final native func Stop(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void
-    public final native func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueSettings: ref<AudioSettingsExt>) -> Void;
     public final func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueTween: ref<Tween>) -> Void {
         let builder = AudioSettingsExtBuilder.Create();
         builder.SetFadeInTween(switchValueTween);
         let switchValueSettings = builder.Build();
         this.Switch(switchName, switchValue, entityID, emitterName, switchNameTween, switchValueSettings); 
     }
-    public final native func PlayOverThePhone(eventName: CName, emitterName: CName, gender: CName) -> Void;
         
     // spatial scene
     public final func RegisterEmitter(entityID: EntityID, opt emitterName: CName, opt emitterSettings: EmitterSettings) -> Void { AudiowareSystem.GetInstance(GetGameInstance()).RegisterEmitter(entityID, emitterName, emitterSettings); }
