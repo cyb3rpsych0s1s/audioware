@@ -2,9 +2,9 @@ module Audioware
 
 import Codeware.Localization.PlayerGender
 
-/// e.g. "1.0.0-alpha.10"
+/// e.g. "1.0.0-rc"
 public native func Version() -> String;
-/// major, minor, patch, type (0 = official, 1 = alpha, 2 = beta, 3 = rc), build number
+/// major, minor, patch, type (0 = alpha, 1 = beta, 2 = rc, 3 = official), build number
 public native func SemanticVersion() -> array<Uint32>;
 /// debug or release build ?
 public native func IsDebug() -> Bool;
