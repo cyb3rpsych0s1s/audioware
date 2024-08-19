@@ -22,7 +22,7 @@ In its simplest form, here's how it looks like:
 ```yml
 version: 1.0.0
 sfx:
-  my_custom_audio: some.mp3 # accepts most common formats like .wav / .ogg / etc
+  my_custom_audio: some.mp3 # accepts most common formats like .wav / .ogg / .mp3 / .flac
 ```
 
 ## ⏯️ Use in-game
