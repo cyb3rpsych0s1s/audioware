@@ -95,6 +95,9 @@ impl AudioSystemExt {
     pub fn semantic_version(&self) -> StaticArray<u16, 5> {
         StaticArray::from([1, 0, 0, 2, 1])
     }
+    pub const fn is_debug(&self) -> bool {
+        cfg!(debug_assertions)
+    }
 }
 
 pub trait MergeArgs {

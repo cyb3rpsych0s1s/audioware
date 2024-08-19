@@ -34,6 +34,7 @@ public native class AudioSystemExt {
     public final native func OnEmitterDies(entityID: EntityID) -> Void;
 
     // misc
+    public final native func IsDebug() -> Bool;
     /// major, minor, patch, type (0 = alpha, 1 = beta, 2 = rc, 3 = official), build number
     public final native func SemanticVersion() -> [Uint16; 5];
     public final func Version() -> String {
