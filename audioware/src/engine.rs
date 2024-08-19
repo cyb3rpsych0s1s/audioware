@@ -1,6 +1,9 @@
+use std::sync::MutexGuard;
+
 use audioware_bank::{Banks, Id};
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Source, SpokenLocale, WrittenLocale};
-use kira::{OutputDestination, Volume};
+use kira::{manager::AudioManager, OutputDestination, Volume};
+use manager::{Pause, PlayAndStore, Resume, StopBy, StopFor};
 use modulators::{
     CarRadioVolume, DialogueVolume, MusicVolume, Parameter, RadioportVolume, ReverbMix, SfxVolume,
 };
@@ -15,7 +18,7 @@ use crate::{
     macros::{ok_or_return, some_or_return},
     states::State,
     types::{
-        propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, AudiowareEmitterSettings,
+        propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, EmitterSettings,
         GameObject, LocalizationPackage, Subtitle, ToTween, Tween,
     },
     Audioware,
@@ -27,17 +30,26 @@ mod id;
 mod manager;
 mod modulators;
 mod scene;
+mod settings;
 mod tracks;
 
 pub use effects::IMMEDIATELY;
 pub use eq::EqPass;
 pub use eq::Preset;
-pub use manager::Manage;
 pub use manager::Manager;
 pub use scene::Scene;
+pub use settings::*;
 pub use tracks::Tracks;
 
 pub struct Engine;
+
+pub type EngineContext<'a> = (
+    MutexGuard<'a, AudioManager>,
+    SpokenLocale,
+    WrittenLocale,
+    Option<PlayerGender>,
+    &'a Id,
+);
 
 impl Engine {
     pub(crate) fn setup() -> Result<(), Error> {
@@ -57,7 +69,7 @@ impl Engine {
         Banks::languages().into_iter().map(|x| x.into()).collect()
     }
     pub fn shutdown() {
-        if let Err(e) = Manager::clear_tracks(None) {
+        if let Err(e) = Manager.clear_tracks(None) {
             log::error!(Audioware::env(), "couldn't clear tracks on manager: {e}");
         }
         if let Err(e) = Scene::clear_emitters() {
@@ -70,7 +82,7 @@ impl Engine {
     pub fn register_emitter(
         entity_id: EntityId,
         emitter_name: Opt<CName>,
-        emitter_settings: Opt<AudiowareEmitterSettings>,
+        emitter_settings: Opt<EmitterSettings>,
     ) -> bool {
         if let Err(e) = Scene::register_emitter(
             entity_id,
@@ -106,6 +118,20 @@ impl Engine {
         }
         count.unwrap() as i32
     }
+    pub fn on_emitter_dies(entity_id: EntityId) {
+        if let Err(e) = Scene::on_emitter_dies(entity_id) {
+            log::error!(
+                Audioware::env(),
+                "couldn't remove dying emitter from scene: {e}"
+            );
+        }
+    }
+    pub fn toggle_sync_emitters(enable: bool) {
+        Scene::toggle_sync_emitters(enable);
+    }
+    pub fn should_sync_emitters() -> bool {
+        Scene::should_sync_emitters()
+    }
     pub fn sync_emitters() {
         if let Err(e) = Scene::sync_emitters() {
             log::error!(Audioware::env(), "couldn't sync emitters on scene: {e}");
@@ -114,6 +140,14 @@ impl Engine {
     pub fn sync_listener() {
         if let Err(e) = Scene::sync_listener() {
             log::error!(Audioware::env(), "couldn't sync listener on scene: {e}");
+        }
+    }
+    pub fn reclaim() {
+        if let Err(e) = Manager::reclaim() {
+            log::error!(
+                Audioware::env(),
+                "couldn't reclaim stopped sound(s) in storage(s): {e}"
+            );
         }
     }
     pub fn play_over_the_phone(event_name: CName, emitter_name: CName, gender: CName) {
@@ -131,13 +165,13 @@ impl Engine {
             "Unable to get sound ID"
         );
         let _duration = ok_or_return!(
-            Manager::play_and_store(
+            Manager.play_and_store(
                 &mut manager,
                 id,
                 None,
                 Some(emitter_name),
                 Some(Tracks::holocall_destination()),
-                None
+                None::<kira::tween::Tween>
             ),
             "Unable to store sound handle"
         );
@@ -151,19 +185,40 @@ impl Engine {
         line_type: Opt<ScnDialogLineType>,
         tween: Ref<Tween>,
     ) {
-        let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
-        let spoken = SpokenLocale::get();
-        let gender = PlayerGender::get();
+        let (mut manager, _, _, _, id) =
+            ok_or_return!(Self::context(&sound_name), "Unable to get context");
         let entity_id = entity_id.into_option();
         let emitter_name = emitter_name.into_option();
-        let id = ok_or_return!(
-            Banks::try_get(&sound_name, &spoken, gender.as_ref()),
-            "Unable to get sound ID"
-        );
 
         let tween = tween.into_tween();
         let duration = ok_or_return!(
-            Manager::play_and_store(&mut manager, id, entity_id, emitter_name, None, tween),
+            Manager.play_and_store(&mut manager, id, entity_id, emitter_name, None, tween),
+            "Unable to store sound handle"
+        );
+        if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
+            propagate_subtitles(
+                sound_name,
+                entity_id,
+                emitter_name,
+                line_type.unwrap_or_default(),
+                duration,
+            )
+        }
+    }
+    pub fn play_with(
+        sound_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        line_type: Opt<ScnDialogLineType>,
+        ext: Ref<AudioSettingsExt>,
+    ) {
+        let (mut manager, _, _, _, id) =
+            ok_or_return!(Self::context(&sound_name), "Unable to get context");
+        let entity_id = entity_id.into_option();
+        let emitter_name = emitter_name.into_option();
+
+        let duration = ok_or_return!(
+            Manager.play_and_store(&mut manager, id, entity_id, emitter_name, None, ext),
             "Unable to store sound handle"
         );
         if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
@@ -182,29 +237,27 @@ impl Engine {
         emitter_name: Opt<CName>,
         tween: Ref<Tween>,
     ) {
+        let env = Audioware::env();
         let entity_id = entity_id.into_option();
         let emitter_name = emitter_name.into_option();
         let tween = tween.into_tween();
-        log::info!(
-            Audioware::env(),
-            "stop called: {entity_id:?} {emitter_name:?} {tween:?}"
-        );
-        if let Err(e) = Manager::stop_by(
+        log::info!(env, "stop called: {entity_id:?} {emitter_name:?} {tween:?}");
+        if let Err(e) = Manager.stop_by(
             &event_name,
             entity_id.as_ref(),
             emitter_name.as_ref(),
             tween,
         ) {
-            log::error!(Audioware::env(), "{e}");
+            log::error!(env, "{e}");
         }
     }
     pub fn pause(tween: Ref<Tween>) {
-        if let Err(e) = Manager::pause(tween.into_tween()) {
+        if let Err(e) = Manager.pause(tween.into_tween()) {
             log::error!(Audioware::env(), "{e}");
         }
     }
     pub fn resume(tween: Ref<Tween>) {
-        if let Err(e) = Manager::resume(tween.into_tween()) {
+        if let Err(e) = Manager.resume(tween.into_tween()) {
             log::error!(Audioware::env(), "{e}");
         }
     }
@@ -214,7 +267,7 @@ impl Engine {
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         switch_name_tween: Ref<Tween>,
-        switch_value_tween: Ref<Tween>,
+        switch_value_settings: Ref<AudioSettingsExt>,
     ) {
         let prev = Banks::exists(&switch_name);
         let next = Banks::exists(&switch_value);
@@ -227,12 +280,12 @@ impl Engine {
         }
 
         if next {
-            Engine::play(
+            Engine::play_with(
                 switch_value,
                 entity_id,
                 emitter_name,
                 Opt::Default,
-                switch_value_tween,
+                switch_value_settings,
             );
         } else {
             system.play(switch_value, entity_id, emitter_name);
@@ -244,21 +297,15 @@ impl Engine {
         emitter_name: CName,
         tween: Ref<Tween>,
     ) {
-        let mut manager = ok_or_return!(Manager::try_lock(), "Unable to get audio manager");
-        let spoken = SpokenLocale::get();
-        let gender = PlayerGender::get();
-        let id = ok_or_return!(
-            Banks::try_get(&sound_name, &spoken, gender.as_ref()),
-            "Unable to get sound ID"
-        );
+        let (mut manager, _, _, _, id) =
+            ok_or_return!(Self::context(&sound_name), "Unable to get context");
         let destination = some_or_return!(
             Scene::output_destination(&entity_id),
             "Entity is not registered as emitter",
             entity_id
         );
-        let tween = tween.into_tween();
         let duration = ok_or_return!(
-            Manager::play_and_store(
+            Manager.play_and_store(
                 &mut manager,
                 id,
                 Some(entity_id),
@@ -282,12 +329,18 @@ impl Engine {
         emitter_name: CName,
         tween: Ref<Tween>,
     ) {
-        if let Err(e) = Manager::stop_by(
+        if let Err(e) = Manager.stop_by(
             &event_name,
             Some(&entity_id),
             Some(&emitter_name),
             tween.into_tween(),
         ) {
+            log::error!(Audioware::env(), "{e}");
+        }
+    }
+    #[allow(dead_code)]
+    pub fn stop_for(entity_id: EntityId) {
+        if let Err(e) = Manager.stop_for(&entity_id, None) {
             log::error!(Audioware::env(), "{e}");
         }
     }
@@ -353,6 +406,14 @@ impl Engine {
                 log::error!(Audioware::env(), "Unknown setting: {setting}");
             }
         };
+    }
+    fn context(sound_name: &CName) -> Result<EngineContext, Error> {
+        let manager = Manager::try_lock()?;
+        let spoken = SpokenLocale::get();
+        let written = WrittenLocale::get();
+        let gender = PlayerGender::get();
+        let id = Banks::try_get(sound_name, &spoken, gender.as_ref())?;
+        Ok((manager, spoken, written, gender, id))
     }
 }
 

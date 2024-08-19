@@ -130,7 +130,6 @@ pub fn ensure_located_in_depot(
 }
 
 /// ensure [`Path`](std::path::Path) contains valid audio (based on usage)
-#[inline]
 pub fn ensure_valid_audio(
     path: &impl AsRef<std::path::Path>,
     m: &Mod,
@@ -370,8 +369,8 @@ pub fn ensure_sfx<'a>(
         audio: Audio { file, settings },
         usage,
     } = v.into();
-    let c_string = std::ffi::CString::new(k).expect("CString::new failed");
-    let cname = CNamePool::add_cstr(&c_string);
+    let c_string = std::ffi::CString::new(k)?;
+    let cname = CName::new(k);
     let key = UniqueKey(cname);
     ensure(
         k,
@@ -385,6 +384,7 @@ pub fn ensure_sfx<'a>(
         smap,
         Source::Sfx,
     )?;
+    CNamePool::add_cstr(&c_string);
     Ok(())
 }
 
@@ -398,8 +398,8 @@ pub fn ensure_ono<'a>(
 ) -> Result<(), Error> {
     ensure_key_unique(k)?;
     let (usage, genders) = v.into();
-    let c_string = std::ffi::CString::new(k).expect("CString::new failed");
-    let cname = CNamePool::add_cstr(&c_string);
+    let c_string = std::ffi::CString::new(k)?;
+    let cname = CName::new(k);
     let mut key: GenderKey;
     for (gender, Audio { file, settings }) in genders {
         key = GenderKey(cname, gender);
@@ -416,6 +416,7 @@ pub fn ensure_ono<'a>(
             Source::Ono,
         )?;
     }
+    CNamePool::add_cstr(&c_string);
     Ok(())
 }
 
@@ -434,8 +435,8 @@ pub fn ensure_voice<'a>(
 ) -> Result<(), Error> {
     ensure_key_unique(k)?;
     let v: AnyVoice = v.into();
-    let c_string = std::ffi::CString::new(k).expect("CString::new failed");
-    let cname = CNamePool::add_cstr(&c_string);
+    let c_string = std::ffi::CString::new(k)?;
+    let cname = CName::new(k);
     let mut simple_key: LocaleKey;
     let mut complex_key: BothKey;
     match v {
@@ -490,6 +491,7 @@ pub fn ensure_voice<'a>(
             }
         }
     }
+    CNamePool::add_cstr(&c_string);
     Ok(())
 }
 
@@ -503,8 +505,8 @@ pub fn ensure_music<'a>(
     ensure_key_unique(k)?;
     let Audio { file, settings } = v.into();
     ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref(), None)?;
-    let c_string = std::ffi::CString::new(k).expect("CString::new failed");
-    let cname = CNamePool::add_cstr(&c_string);
+    let c_string = std::ffi::CString::new(k)?;
+    let cname = CName::new(k);
     let key = UniqueKey(cname);
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = Id::OnDemand(
@@ -515,6 +517,7 @@ pub fn ensure_music<'a>(
         ensure_store_settings::<UniqueKey>(&key, settings, smap)?;
     }
     ensure_store_id(id, set)?;
+    CNamePool::add_cstr(&c_string);
     Ok(())
 }
 
@@ -528,8 +531,8 @@ pub fn ensure_jingles<'a>(
     ensure_key_unique(k)?;
     let Audio { file, settings } = (&v).into();
     ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref(), v.captions())?;
-    let c_string = std::ffi::CString::new(k).expect("CString::new failed");
-    let cname = CNamePool::add_cstr(&c_string);
+    let c_string = std::ffi::CString::new(k)?;
+    let cname = CName::new(k);
     let key = UniqueKey(cname);
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = Id::OnDemand(
@@ -540,5 +543,6 @@ pub fn ensure_jingles<'a>(
         ensure_store_settings::<UniqueKey>(&key, settings, smap)?;
     }
     ensure_store_id(id, set)?;
+    CNamePool::add_cstr(&c_string);
     Ok(())
 }

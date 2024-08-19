@@ -6,7 +6,7 @@ use crate::Audioware;
 
 use super::Easing;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[repr(C)]
 pub struct Tween {
     /// delay before starting: in seconds
@@ -29,22 +29,55 @@ unsafe impl ScriptClass for LinearTween {
     const NAME: &'static str = "Audioware.LinearTween";
 }
 
+impl LinearTween {
+    pub fn start_time(&self) -> f32 {
+        self.base.start_time
+    }
+    pub fn duration(&self) -> f32 {
+        self.base.duration
+    }
+}
+
 #[derive(Debug, PartialEq)]
 #[repr(C)]
 pub struct ElasticTween {
     base: Tween,
     /// tween curve
-    easing: Easing,
+    pub easing: Easing,
     /// tween curve intensity
-    value: f32,
+    pub value: f32,
 }
 unsafe impl ScriptClass for ElasticTween {
     type Kind = Scripted;
     const NAME: &'static str = "Audioware.ElasticTween";
 }
 
+impl ElasticTween {
+    pub fn start_time(&self) -> f32 {
+        self.base.start_time
+    }
+    pub fn duration(&self) -> f32 {
+        self.base.duration
+    }
+}
+
 pub trait ToTween {
     fn into_tween(self) -> Option<kira::tween::Tween>;
+}
+
+impl ToTween for kira::tween::Tween {
+    fn into_tween(self) -> Option<kira::tween::Tween> {
+        Some(self)
+    }
+}
+
+impl<T> ToTween for Option<T>
+where
+    T: ToTween,
+{
+    fn into_tween(self) -> Option<kira::tween::Tween> {
+        self.and_then(ToTween::into_tween)
+    }
 }
 
 impl ToTween for Ref<Tween> {

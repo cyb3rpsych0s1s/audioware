@@ -1,7 +1,9 @@
+use std::fmt;
+
 use red4ext_rs::{
     class_kind::Native,
-    types::{CName, IScriptable},
-    ScriptClass,
+    types::{CName, IScriptable, RedArray},
+    NativeRepr, ScriptClass,
 };
 
 #[derive(Debug)]
@@ -155,7 +157,7 @@ impl AsRef<IScriptable> for SoundParameter {
 #[repr(C)]
 pub struct MusicEvent {
     base: Event,
-    event_name: CName, // 40
+    pub event_name: CName, // 40
 }
 
 unsafe impl ScriptClass for MusicEvent {
@@ -172,5 +174,218 @@ impl AsRef<Event> for MusicEvent {
 impl AsRef<IScriptable> for MusicEvent {
     fn as_ref(&self) -> &IScriptable {
         self.base.as_ref()
+    }
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct SoundEvent {
+    base: Event,
+    pub event_name: CName,               // 40
+    pub switches: RedArray<AudSwitch>,   // 48
+    pub params: RedArray<AudParameter>,  // 58
+    pub dynamic_params: RedArray<CName>, // 68
+}
+
+unsafe impl ScriptClass for SoundEvent {
+    type Kind = Native;
+    const NAME: &'static str = "entSoundEvent";
+}
+
+impl AsRef<Event> for SoundEvent {
+    fn as_ref(&self) -> &Event {
+        &self.base
+    }
+}
+
+impl AsRef<IScriptable> for SoundEvent {
+    fn as_ref(&self) -> &IScriptable {
+        self.base.as_ref()
+    }
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct AudSwitch {
+    pub name: CName,  // 0
+    pub value: CName, // 08
+}
+
+unsafe impl ScriptClass for AudSwitch {
+    type Kind = Native;
+    const NAME: &'static str = "audioAudSwitch";
+}
+
+impl fmt::Display for AudSwitch {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}: {}", self.name, self.value)
+    }
+}
+
+const PADDING_08: usize = 0x8;
+const PADDING_24: usize = 0x28 - 0x24;
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct AudParameter {
+    unk00: [u8; PADDING_08],               // 0
+    pub name: CName,                       // 08
+    pub value: f32,                        // 10
+    pub enter_curve_type: ESoundCurveType, // 14
+    pub enter_curve_time: f32,             // 18
+    pub exit_curve_type: ESoundCurveType,  // 1C
+    pub exit_curve_time: f32,              // 20
+    unk24: [u8; PADDING_24],               // 24
+}
+
+unsafe impl ScriptClass for AudParameter {
+    type Kind = Native;
+    const NAME: &'static str = "audioAudParameter";
+}
+
+impl fmt::Display for AudParameter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}: {} (enter: {} at {}, exit: {} at {})",
+            self.name,
+            self.value,
+            self.enter_curve_type,
+            self.enter_curve_time,
+            self.exit_curve_type,
+            self.exit_curve_time
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum ESoundCurveType {
+    Log3 = 0,
+    Sine = 1,
+    InversedSCurve = 3,
+    Linear = 4,
+    SCurve = 5,
+    Exp1 = 6,
+    ReciprocalOfSineCurve = 7,
+    Exp3 = 8,
+}
+
+unsafe impl NativeRepr for ESoundCurveType {
+    const NAME: &'static str = "ESoundCurveType";
+}
+
+impl fmt::Display for ESoundCurveType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Log3 => "Log3",
+                Self::Sine => "Sine",
+                Self::InversedSCurve => "InversedSCurve",
+                Self::Linear => "Linear",
+                Self::SCurve => "SCurve",
+                Self::Exp1 => "Exp1",
+                Self::ReciprocalOfSineCurve => "ReciprocalOfSineCurve",
+                Self::Exp3 => "Exp3",
+            }
+        )
+    }
+}
+
+const PADDING_64: usize = 0x68 - 0x64;
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct AudioEvent {
+    base: Event,
+    pub event_name: CName,            // 40
+    pub emitter_name: CName,          // 48
+    pub name_data: CName,             // 50
+    pub float_data: f32,              // 58
+    pub event_type: EventActionType,  // 5C
+    pub event_flags: AudioEventFlags, // 60
+    unk64: [u8; PADDING_64],          // 64
+}
+
+unsafe impl ScriptClass for AudioEvent {
+    type Kind = Native;
+    const NAME: &'static str = "entAudioEvent";
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum EventActionType {
+    Play = 0,
+    PlayAnimation = 1,
+    SetParameter = 2,
+    StopSound = 3,
+    SetSwitch = 4,
+    StopTagged = 5,
+    PlayExternal = 6,
+    Tag = 7,
+    Untag = 8,
+    SetAppearanceName = 9,
+    SetEntityName = 10,
+    AddContainerStreamingPrefetch = 11,
+    RemoveContainerStreamingPrefetch = 12,
+}
+
+unsafe impl NativeRepr for EventActionType {
+    const NAME: &'static str = "EventActionType";
+}
+
+impl fmt::Display for EventActionType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Play => "Play",
+                Self::PlayAnimation => "PlayAnimation",
+                Self::SetParameter => "SetParameter",
+                Self::StopSound => "StopSound",
+                Self::SetSwitch => "SetSwitch",
+                Self::StopTagged => "StopTagged",
+                Self::PlayExternal => "PlayExternal",
+                Self::Tag => "Tag",
+                Self::Untag => "Untag",
+                Self::SetAppearanceName => "SetAppearanceName",
+                Self::SetEntityName => "SetEntityName",
+                Self::AddContainerStreamingPrefetch => "AddContainerStreamingPrefetch",
+                Self::RemoveContainerStreamingPrefetch => "RemoveContainerStreamingPrefetch",
+            }
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum AudioEventFlags {
+    NoEventFlags = 0,
+    SloMoOnly = 1,
+    Music = 2,
+    Unique = 4,
+    Metadata = 8,
+}
+
+unsafe impl NativeRepr for AudioEventFlags {
+    const NAME: &'static str = "AudioEventFlags";
+}
+
+impl fmt::Display for AudioEventFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::NoEventFlags => "NoEventFlags",
+                Self::SloMoOnly => "SloMoOnly",
+                Self::Music => "Music",
+                Self::Unique => "Unique",
+                Self::Metadata => "Metadata",
+            }
+        )
     }
 }

@@ -25,47 +25,56 @@ class AudiowareService extends ScriptableService {
             .RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionChange");
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Session/End", this, n"OnSessionChange");
+        // main menu (pre-game)
+        GameInstance.GetCallbackSystem()
+            .RegisterCallback(n"Resource/Ready", this, n"OnMainMenuResourceReady")
+            .AddTarget(ResourceTarget.Path(r"base\\gameplay\\gui\\fullscreen\\main_menu\\pregame_menu.inkmenu"))
+            .SetRunMode(CallbackRunMode.Once);
 
-        this.RegisterOnLoad();
+        this.RegisterModSettings();
     }
 
     private cb func OnUninitialize() {
-        this.UnregisterOnUninitialize();
+        this.UnregisterModSettings();
     }
 
     private cb func OnSessionChange(event: ref<GameSessionEvent>) {
         switch event.GetEventName() {
             case n"Session/BeforeStart":
-                LOG("on session before start: AudiowareService");
+                DBG("on session before start: AudiowareService");
                 break;
             case n"Session/Start":
-                LOG("on session start: AudiowareService");
+                DBG("on session start: AudiowareService");
                 SetGameState(GameState.Start);
                 break;
             case n"Session/Ready":
-                LOG("on session ready: AudiowareService");
+                DBG("on session ready: AudiowareService");
                 break;
             case n"Session/Pause":
-                LOG("on session pause: AudiowareService");
+                DBG("on session pause: AudiowareService");
                 Pause();
                 break;
             case n"Session/Resume":
-                LOG("on session resume: AudiowareService");
+                DBG("on session resume: AudiowareService");
                 Resume();
                 break;
             case n"Session/BeforeEnd":
-                LOG("on session before end: AudiowareService");
+                DBG("on session before end: AudiowareService");
                 SetGameState(GameState.End);
                 SetPreset(Preset.None);
                 SetReverbMix(0.);
                 Shutdown();
                 break;
             case n"Session/End":
-                LOG("on session end: AudiowareService");
+                DBG("on session end: AudiowareService");
                 break;
             default:
                 break;
         }
+    }
+
+    private cb func OnMainMenuResourceReady(event: ref<ResourceEvent>) {
+        DBG("on main menu ready: AudiowareService");
     }
 
     public static func GetInstance() -> ref<AudiowareService> {
@@ -77,14 +86,14 @@ class AudiowareService extends ScriptableService {
     // audio config
 
     @if(ModuleExists("ModSettingsModule"))
-    private func RegisterOnLoad() { ModSettings.RegisterListenerToModifications(this); }
+    private func RegisterModSettings() { ModSettings.RegisterListenerToModifications(this); }
     @if(ModuleExists("ModSettingsModule"))
-    private func UnregisterOnUninitialize() { ModSettings.UnregisterListenerToModifications(this); }
+    private func UnregisterModSettings() { ModSettings.UnregisterListenerToModifications(this); }
 
     @if(!ModuleExists("ModSettingsModule"))
-    private func RegisterOnLoad() -> Void {}
+    private func RegisterModSettings() -> Void {}
     @if(!ModuleExists("ModSettingsModule"))
-    private func UnregisterOnUninitialize() -> Void {}
+    private func UnregisterModSettings() -> Void {}
     
     public func OnModSettingsChange() { this.RefreshConfig(); }
     public func RefreshConfig() -> Void {

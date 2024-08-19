@@ -1,21 +1,24 @@
 use audioware_bank::Banks;
 use audioware_bank::Id;
+use dashmap::DashMap;
 use kira::manager::backend::cpal::CpalBackend;
 use kira::manager::backend::cpal::CpalBackendSettings;
+use kira::manager::error::PlaySoundError;
+use kira::sound::static_sound::StaticSoundData;
+use kira::sound::streaming::StreamingSoundData;
 use kira::sound::PlaybackState;
+use kira::sound::SoundData;
 use kira::OutputDestination;
 use rayon::iter::IntoParallelRefMutIterator;
-use rayon::iter::ParallelBridge;
 use rayon::iter::ParallelIterator;
 use red4ext_rs::log;
+use red4ext_rs::types::Ref;
 use red4ext_rs::PluginOps;
 use std::ops::DerefMut;
-use std::{
-    collections::HashMap,
-    sync::{Mutex, MutexGuard, OnceLock},
-};
+use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use super::id::HandleId;
+use super::AudioSettingsExt;
 use super::Context;
 use super::ToOutputDestination;
 use kira::{
@@ -30,29 +33,28 @@ use crate::config::BufferSize;
 use crate::engine::modulators::Modulators;
 use crate::error::Error;
 use crate::error::InternalError;
+use crate::ext::MergeArgs;
+use crate::types::ToTween;
 use crate::Audioware;
 
 pub struct Manager;
 
-pub trait Manage {
-    fn stop(&mut self, tween: Option<Tween>);
-    fn stop_by(
-        &mut self,
-        event_name: &CName,
-        entity_id: Option<&EntityId>,
-        emitter_name: Option<&CName>,
-        tween: Option<Tween>,
-    );
-    fn stop_for(&mut self, entity_id: &EntityId, tween: Option<Tween>);
-    fn pause(&mut self, tween: Option<Tween>);
-    fn resume(&mut self, tween: Option<Tween>);
+pub trait Stopped {
+    fn stopped(&self) -> bool;
+}
+
+impl<T: State> Stopped for T {
+    #[inline]
+    fn stopped(&self) -> bool {
+        self.state() == PlaybackState::Stopped
+    }
 }
 
 pub struct StaticStorage;
 pub struct StreamStorage;
 
-static STATICS: Lazy<Mutex<HashMap<HandleId, StaticSoundHandle>>> = Lazy::new(Default::default);
-static STREAMS: Lazy<Mutex<HashMap<HandleId, StreamingSoundHandle<FromFileError>>>> =
+static STATICS: Lazy<Mutex<DashMap<HandleId, StaticSoundHandle>>> = Lazy::new(Default::default);
+static STREAMS: Lazy<Mutex<DashMap<HandleId, StreamingSoundHandle<FromFileError>>>> =
     Lazy::new(Default::default);
 
 impl Manager {
@@ -86,54 +88,18 @@ impl Manager {
                 .into()
             })
     }
-    pub fn play_and_store(
-        manager: &mut AudioManager,
-        id: &Id,
-        entity_id: Option<EntityId>,
-        emitter_name: Option<CName>,
-        destination: Option<OutputDestination>,
-        tween: Option<Tween>,
-    ) -> Result<f32, Error> {
-        match Banks::data(id) {
-            either::Either::Left(mut data) => {
-                if tween.is_some() {
-                    data.settings.fade_in_tween = tween;
-                }
-                let duration = data.duration().as_secs_f32();
-                let handle = if let Some(destination) = destination {
-                    manager.play(data.output_destination(destination))
-                } else {
-                    manager.play(data.output_destination(
-                        Context::new(id, entity_id.as_ref()).output_destination(),
-                    ))
-                }?;
-                let mut storage = StaticStorage::try_lock()?;
-                storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
-                Ok(duration)
-            }
-            either::Either::Right(mut data) => {
-                if tween.is_some() {
-                    data.settings.fade_in_tween = tween;
-                }
-                let duration = data.duration().as_secs_f32();
-                let handle = if let Some(destination) = destination {
-                    manager.play(data.output_destination(destination))
-                } else {
-                    manager.play(data.output_destination(
-                        Context::new(id, entity_id.as_ref()).output_destination(),
-                    ))
-                }?;
-                let mut storage = StreamStorage::try_lock()?;
-                storage.insert(HandleId::new(id, entity_id, emitter_name), handle);
-                Ok(duration)
-            }
-        }
+    pub fn reclaim() -> Result<(), Error> {
+        let storage = StaticStorage::try_lock()?;
+        storage.retain(|_, v| !v.stopped());
+        let storage = StreamStorage::try_lock()?;
+        storage.retain(|_, v| !v.stopped());
+        Ok(())
     }
 }
 
 impl StaticStorage {
     pub fn try_lock<'a>(
-    ) -> Result<MutexGuard<'a, HashMap<HandleId, StaticSoundHandle>>, InternalError> {
+    ) -> Result<MutexGuard<'a, DashMap<HandleId, StaticSoundHandle>>, InternalError> {
         STATICS.try_lock().map_err(|_| InternalError::Contention {
             origin: "static sound handles",
         })
@@ -142,7 +108,7 @@ impl StaticStorage {
 
 impl StreamStorage {
     pub fn try_lock<'a>(
-    ) -> Result<MutexGuard<'a, HashMap<HandleId, StreamingSoundHandle<FromFileError>>>, InternalError>
+    ) -> Result<MutexGuard<'a, DashMap<HandleId, StreamingSoundHandle<FromFileError>>>, InternalError>
     {
         STREAMS.try_lock().map_err(|_| InternalError::Contention {
             origin: "static sound handles",
@@ -151,37 +117,385 @@ impl StreamStorage {
 }
 
 impl Manager {
-    pub fn clear_tracks(tween: Option<Tween>) -> Result<(), InternalError> {
-        Self::stop(tween)?;
+    pub fn clear_tracks(&mut self, tween: Option<Tween>) -> Result<(), InternalError> {
+        self.stop(tween)?;
         StaticStorage::try_lock()?.deref_mut().clear();
         StreamStorage::try_lock()?.deref_mut().clear();
         Ok(())
     }
-    pub fn stop(tween: Option<Tween>) -> Result<(), InternalError> {
+}
+
+pub trait Play<T> {
+    type Handle;
+    fn play(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        destination: Option<OutputDestination>,
+        extra: T,
+    ) -> Result<(f32, Self::Handle), Error>;
+}
+
+impl<T> Play<Option<Tween>> for T
+where
+    T: Data + SoundData,
+    PlaySoundError<<T as SoundData>::Error>: Into<Error>,
+{
+    type Handle = <T as SoundData>::Handle;
+
+    fn play(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        destination: Option<OutputDestination>,
+        tween: Option<Tween>,
+    ) -> Result<(f32, Self::Handle), Error> {
+        let duration = self.duration_as_secs();
+        let handle = manager
+            .play(
+                self.with_tween(tween)
+                    .with_route(id, entity_id, destination),
+            )
+            .map_err(Into::into)?;
+        Ok((duration, handle))
+    }
+}
+
+pub trait Data {
+    fn duration_as_secs(&self) -> f32;
+    fn with_tween(self, tween: Option<Tween>) -> Self;
+    fn with_route(
+        self,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        destination: Option<OutputDestination>,
+    ) -> Self;
+}
+
+macro_rules! impl_data {
+    ($ty:path) => {
+        impl Data for $ty {
+            fn with_tween(self, tween: Option<Tween>) -> Self {
+                if tween.is_some() {
+                    return self.fade_in_tween(tween);
+                }
+                self
+            }
+
+            fn with_route(
+                self,
+                id: &Id,
+                entity_id: Option<EntityId>,
+                destination: Option<OutputDestination>,
+            ) -> Self {
+                if let Some(destination) = destination {
+                    self.output_destination(destination)
+                } else {
+                    self.output_destination(
+                        Context::new(id, entity_id.as_ref()).output_destination(),
+                    )
+                }
+            }
+
+            fn duration_as_secs(&self) -> f32 {
+                self.duration().as_secs_f32()
+            }
+        }
+    };
+}
+
+impl_data!(StaticSoundData);
+impl_data!(StreamingSoundData<FromFileError>);
+
+pub trait Store {
+    fn store(
+        self,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+    ) -> Result<(), Error>;
+}
+
+impl Store for StaticSoundHandle {
+    fn store(
+        self,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+    ) -> Result<(), Error> {
+        let storage = StaticStorage::try_lock()?;
+        storage.insert(HandleId::new(id, entity_id, emitter_name), self);
+        Ok(())
+    }
+}
+
+impl Store for StreamingSoundHandle<FromFileError> {
+    fn store(
+        self,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+    ) -> Result<(), Error> {
+        let storage = StreamStorage::try_lock()?;
+        storage.insert(HandleId::new(id, entity_id, emitter_name), self);
+        Ok(())
+    }
+}
+
+pub trait PlayAndStore<T> {
+    fn play_and_store(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        destination: Option<OutputDestination>,
+        extra: T,
+    ) -> Result<f32, Error>;
+}
+
+impl<T, U> PlayAndStore<U> for T
+where
+    T: Data + SoundData,
+    PlaySoundError<<T as SoundData>::Error>: Into<Error>,
+    <T as SoundData>::Handle: Store,
+    U: ToTween,
+{
+    fn play_and_store(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        destination: Option<OutputDestination>,
+        tween: U,
+    ) -> Result<f32, Error> {
+        let (duration, handle) =
+            self.play(manager, id, entity_id, destination, tween.into_tween())?;
+        handle.store(id, entity_id, emitter_name)?;
+        Ok(duration)
+    }
+}
+
+impl<U> PlayAndStore<U> for Manager
+where
+    U: ToTween,
+{
+    fn play_and_store(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        destination: Option<OutputDestination>,
+        tween: U,
+    ) -> Result<f32, Error> {
+        match Banks::data(id) {
+            either::Either::Left(data) => {
+                data.play_and_store(manager, id, entity_id, emitter_name, destination, tween)
+            }
+            either::Either::Right(data) => {
+                data.play_and_store(manager, id, entity_id, emitter_name, destination, tween)
+            }
+        }
+    }
+}
+
+impl<T> Play<Ref<AudioSettingsExt>> for T
+where
+    T: Data + SoundData + MergeArgs,
+    PlaySoundError<<T as SoundData>::Error>: Into<Error>,
+{
+    type Handle = <T as SoundData>::Handle;
+
+    fn play(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        destination: Option<OutputDestination>,
+        ext: Ref<AudioSettingsExt>,
+    ) -> Result<(f32, Self::Handle), Error> {
+        let duration = self.duration_as_secs();
+        let handle = manager
+            .play(self.merge_args(&ext).with_route(id, entity_id, destination))
+            .map_err(Into::into)?;
+        Ok((duration, handle))
+    }
+}
+
+impl<T> PlayAndStore<Ref<AudioSettingsExt>> for T
+where
+    T: Data + SoundData + MergeArgs,
+    PlaySoundError<<T as SoundData>::Error>: Into<Error>,
+    <T as SoundData>::Handle: Store,
+{
+    fn play_and_store(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        destination: Option<OutputDestination>,
+        ext: Ref<AudioSettingsExt>,
+    ) -> Result<f32, Error> {
+        let (duration, handle) = self.play(manager, id, entity_id, destination, ext)?;
+        handle.store(id, entity_id, emitter_name)?;
+        Ok(duration)
+    }
+}
+
+impl PlayAndStore<Ref<AudioSettingsExt>> for Manager {
+    fn play_and_store(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        destination: Option<OutputDestination>,
+        ext: Ref<AudioSettingsExt>,
+    ) -> Result<f32, Error> {
+        match Banks::data(id) {
+            either::Either::Left(data) => {
+                data.play_and_store(manager, id, entity_id, emitter_name, destination, ext)
+            }
+            either::Either::Right(data) => {
+                data.play_and_store(manager, id, entity_id, emitter_name, destination, ext)
+            }
+        }
+    }
+}
+
+pub trait Stop {
+    type Output;
+
+    fn stop(&mut self, tween: Option<Tween>) -> Self::Output;
+}
+
+impl<T: Send + Sync + State + Stop> Stop for DashMap<HandleId, T> {
+    type Output = ();
+
+    fn stop(&mut self, tween: Option<Tween>) -> Self::Output {
+        self.par_iter_mut()
+            .filter(|v| v.value().state() != PlaybackState::Stopped)
+            .for_each(|mut v| {
+                v.value_mut().stop(tween);
+            });
+    }
+}
+
+pub trait State {
+    fn state(&self) -> PlaybackState;
+}
+
+impl State for StaticSoundHandle {
+    #[inline]
+    fn state(&self) -> PlaybackState {
+        Self::state(self)
+    }
+}
+
+impl State for StreamingSoundHandle<FromFileError> {
+    #[inline]
+    fn state(&self) -> PlaybackState {
+        Self::state(self)
+    }
+}
+
+impl Stop for Manager {
+    type Output = Result<(), InternalError>;
+
+    fn stop(&mut self, tween: Option<Tween>) -> Result<(), InternalError> {
         StaticStorage::try_lock()?.deref_mut().stop(tween);
         StreamStorage::try_lock()?.deref_mut().stop(tween);
         Ok(())
     }
-    pub fn stop_by(
+}
+
+impl Stop for StaticSoundHandle {
+    type Output = ();
+
+    #[inline]
+    fn stop(&mut self, tween: Option<Tween>) -> Self::Output {
+        Self::stop(self, tween.unwrap_or_default());
+    }
+}
+
+impl Stop for StreamingSoundHandle<FromFileError> {
+    type Output = ();
+
+    #[inline]
+    fn stop(&mut self, tween: Option<Tween>) -> Self::Output {
+        Self::stop(self, tween.unwrap_or_default());
+    }
+}
+
+pub trait StopBy {
+    type Output;
+
+    fn stop_by(
+        &mut self,
         event_name: &CName,
         entity_id: Option<&EntityId>,
         emitter_name: Option<&CName>,
         tween: Option<Tween>,
-    ) -> Result<(), InternalError> {
-        StaticStorage::try_lock()?
-            .deref_mut()
-            .stop_by(event_name, entity_id, emitter_name, tween);
-        StreamStorage::try_lock()?
-            .deref_mut()
-            .stop_by(event_name, entity_id, emitter_name, tween);
-        Ok(())
-    }
-    #[allow(dead_code)]
-    pub fn stop_for(
+    ) -> Self::Output;
+}
+
+impl StopBy for Manager {
+    type Output = Result<(), InternalError>;
+
+    fn stop_by(
         &mut self,
-        entity_id: &EntityId,
+        event_name: &CName,
+        entity_id: Option<&EntityId>,
+        emitter_name: Option<&CName>,
         tween: Option<Tween>,
-    ) -> Result<(), InternalError> {
+    ) -> Self::Output {
+        StaticStorage::try_lock()?
+            .deref_mut()
+            .stop_by(event_name, entity_id, emitter_name, tween);
+        StreamStorage::try_lock()?
+            .deref_mut()
+            .stop_by(event_name, entity_id, emitter_name, tween);
+        Ok(())
+    }
+}
+
+impl<T: Send + Sync + State + Stop> StopBy for DashMap<HandleId, T> {
+    type Output = ();
+
+    fn stop_by(
+        &mut self,
+        event_name: &CName,
+        entity_id: Option<&EntityId>,
+        emitter_name: Option<&CName>,
+        tween: Option<Tween>,
+    ) -> Self::Output {
+        self.par_iter_mut()
+            .filter(|entry| {
+                entry.key().event_name() == event_name
+                    && entry.key().entity_id() == entity_id
+                    && entry.key().emitter_name() == emitter_name
+                    && entry.value().state() != PlaybackState::Stopped
+            })
+            .for_each(|mut entry| {
+                entry.value_mut().stop(tween);
+            });
+    }
+}
+
+pub trait StopFor {
+    type Output;
+    fn stop_for(&mut self, entity_id: &EntityId, tween: Option<Tween>) -> Self::Output;
+}
+
+impl StopFor for Manager {
+    type Output = Result<(), InternalError>;
+
+    fn stop_for(&mut self, entity_id: &EntityId, tween: Option<Tween>) -> Self::Output {
         StaticStorage::try_lock()?
             .deref_mut()
             .stop_for(entity_id, tween);
@@ -190,76 +504,112 @@ impl Manager {
             .stop_for(entity_id, tween);
         Ok(())
     }
-    pub fn pause(tween: Option<Tween>) -> Result<(), InternalError> {
+}
+
+impl<T: Send + Sync + State + Stop> StopFor for DashMap<HandleId, T> {
+    type Output = ();
+
+    fn stop_for(&mut self, entity_id: &EntityId, tween: Option<Tween>) -> Self::Output {
+        self.par_iter_mut()
+            .filter(|entry| {
+                entry.key().entity_id() == Some(entity_id)
+                    && entry.value().state() != PlaybackState::Stopped
+            })
+            .for_each(|mut entry| {
+                entry.value_mut().stop(tween);
+            });
+    }
+}
+
+pub trait Pause {
+    type Output;
+    fn pause(&mut self, tween: Option<Tween>) -> Self::Output;
+}
+
+impl Pause for Manager {
+    type Output = Result<(), InternalError>;
+
+    fn pause(&mut self, tween: Option<Tween>) -> Self::Output {
         StaticStorage::try_lock()?.deref_mut().pause(tween);
         StreamStorage::try_lock()?.deref_mut().pause(tween);
         Ok(())
     }
-    pub fn resume(tween: Option<Tween>) -> Result<(), InternalError> {
+}
+
+impl<T: Send + Sync + State + Pause> Pause for DashMap<HandleId, T> {
+    type Output = ();
+
+    fn pause(&mut self, tween: Option<Tween>) -> Self::Output {
+        self.par_iter_mut()
+            .filter(|entry| {
+                entry.value().state() != PlaybackState::Paused
+                    && entry.value().state() != PlaybackState::Stopped
+            })
+            .for_each(|mut entry| {
+                entry.value_mut().pause(tween);
+            });
+    }
+}
+
+impl Pause for StaticSoundHandle {
+    type Output = ();
+
+    #[inline]
+    fn pause(&mut self, tween: Option<Tween>) -> Self::Output {
+        Self::pause(self, tween.unwrap_or_default());
+    }
+}
+
+impl Pause for StreamingSoundHandle<FromFileError> {
+    type Output = ();
+
+    #[inline]
+    fn pause(&mut self, tween: Option<Tween>) -> Self::Output {
+        Self::pause(self, tween.unwrap_or_default());
+    }
+}
+
+pub trait Resume {
+    type Output;
+    fn resume(&mut self, tween: Option<Tween>) -> Self::Output;
+}
+
+impl Resume for Manager {
+    type Output = Result<(), InternalError>;
+
+    fn resume(&mut self, tween: Option<Tween>) -> Self::Output {
         StaticStorage::try_lock()?.deref_mut().resume(tween);
         StreamStorage::try_lock()?.deref_mut().resume(tween);
         Ok(())
     }
 }
 
-macro_rules! impl_manage {
-    ($value_ty:ty) => {
-        impl Manage for $value_ty {
-            fn stop(&mut self, tween: Option<kira::tween::Tween>) {
-                self.values_mut()
-                    .par_bridge()
-                    .filter(|v| {
-                        v.state() != PlaybackState::Stopped && v.state() != PlaybackState::Stopping
-                    })
-                    .for_each(|v| v.stop(tween.unwrap_or_default()));
-            }
+impl<T: Send + Sync + State + Resume> Resume for DashMap<HandleId, T> {
+    type Output = ();
 
-            fn stop_by(
-                &mut self,
-                event_name: &CName,
-                entity_id: Option<&EntityId>,
-                emitter_name: Option<&CName>,
-                tween: Option<Tween>,
-            ) {
-                self.par_iter_mut()
-                    .filter(|(k, v)| {
-                        k.event_name() == event_name
-                            && k.entity_id() == entity_id
-                            && k.emitter_name() == emitter_name
-                            && v.state() != PlaybackState::Stopped
-                            && v.state() != PlaybackState::Stopping
-                    })
-                    .for_each(|(_, v)| v.stop(tween.unwrap_or_default()));
-            }
-
-            fn stop_for(&mut self, entity_id: &EntityId, tween: Option<Tween>) {
-                self.par_iter_mut()
-                    .filter(|(k, v)| {
-                        k.entity_id() == Some(entity_id)
-                            && v.state() != PlaybackState::Stopped
-                            && v.state() != PlaybackState::Stopping
-                    })
-                    .for_each(|(_, v)| v.stop(tween.unwrap_or_default()));
-            }
-
-            fn pause(&mut self, tween: Option<kira::tween::Tween>) {
-                self.values_mut()
-                    .par_bridge()
-                    .filter(|v| v.state() == PlaybackState::Playing)
-                    .for_each(|v| v.pause(tween.unwrap_or_default()));
-            }
-
-            fn resume(&mut self, tween: Option<kira::tween::Tween>) {
-                self.values_mut()
-                    .par_bridge()
-                    .filter(|v| {
-                        v.state() == PlaybackState::Paused || v.state() == PlaybackState::Pausing
-                    })
-                    .for_each(|v| v.resume(tween.unwrap_or_default()));
-            }
-        }
-    };
+    fn resume(&mut self, tween: Option<Tween>) -> Self::Output {
+        self.par_iter_mut()
+            .filter(|entry| entry.value().state() != PlaybackState::Stopped)
+            .for_each(|mut entry| {
+                entry.value_mut().resume(tween);
+            });
+    }
 }
 
-impl_manage!(HashMap<HandleId,StaticSoundHandle>);
-impl_manage!(HashMap<HandleId,StreamingSoundHandle<FromFileError>>);
+impl Resume for StaticSoundHandle {
+    type Output = ();
+
+    #[inline]
+    fn resume(&mut self, tween: Option<Tween>) -> Self::Output {
+        Self::resume(self, tween.unwrap_or_default());
+    }
+}
+
+impl Resume for StreamingSoundHandle<FromFileError> {
+    type Output = ();
+
+    #[inline]
+    fn resume(&mut self, tween: Option<Tween>) -> Self::Output {
+        Self::resume(self, tween.unwrap_or_default());
+    }
+}

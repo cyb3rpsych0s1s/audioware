@@ -7,6 +7,8 @@ use red4ext_rs::{
 
 mod audio_system;
 pub use audio_system::*;
+mod helper;
+pub use helper::*;
 mod events;
 pub use events::*;
 mod entity;
@@ -22,8 +24,8 @@ mod puppet;
 pub use puppet::*;
 mod quaternion;
 pub use quaternion::*;
-mod vector4;
-pub use vector4::*;
+mod maths;
+pub use maths::*;
 mod world_position;
 pub use world_position::*;
 mod world_transform;

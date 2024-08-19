@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use core::fmt;
 
 /// Locale currently used for e.g. subtitles and UI texts.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SpokenLocale(Locale);
 
 impl fmt::Display for SpokenLocale {
@@ -36,7 +36,7 @@ impl TryFrom<red4ext_rs::types::CName> for SpokenLocale {
 }
 
 /// Locale currently set for e.g. voices and dialogs.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct WrittenLocale(Locale);
 
 impl WrittenLocale {
@@ -81,6 +81,8 @@ impl TryFrom<red4ext_rs::types::CName> for WrittenLocale {
     Serialize,
     PartialEq,
     Eq,
+    PartialOrd,
+    Ord,
     Hash,
     Key,
     strum_macros::Display,

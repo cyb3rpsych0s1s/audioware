@@ -20,19 +20,19 @@ public class LocalizationPackage extends ModLocalizationPackage {
 public class LocalizationProvider extends ModLocalizationProvider {
     protected func OnAttach() {
         super.OnAttach();
-        LOG("on attach: LocalizationProvider");
+        DBG("on attach: LocalizationProvider");
         this.OnLocaleChange();
         this.OnGenderChange();
     }
     public func OnLocaleChange() -> Void {
-        LOG("on locale change: LocalizationProvider");
+        DBG("on locale change: LocalizationProvider");
         let system = LocalizationSystem.GetInstance(this.GetGameInstance());
         let spoken = system.GetVoiceLanguage();
         let written = system.GetSubtitleLanguage();
         SetGameLocales(spoken, written);
     }
     public func OnGenderChange() -> Void {
-        LOG("on gender change: LocalizationProvider");
+        DBG("on gender change: LocalizationProvider");
         let system = LocalizationSystem.GetInstance(this.GetGameInstance());
         let gender = system.GetPlayerGender();
         SetPlayerGender(gender);
@@ -55,7 +55,7 @@ private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName:
     if !IsDefined(target) || !target.IsA(n"gameObject") { return; }
     let key: String = NameToString(reaction);
     let subtitle: String = LocalizationSystem.GetInstance(GetGameInstance()).GetSubtitle(key);
-    LOG(s"subtitle (\(key)): \(subtitle)");
+    DBG(s"subtitle (\(key)): \(subtitle)");
     if StrLen(key) > 0 && NotEquals(key, subtitle) {
         let line: scnDialogLineData;
         line.duration = duration;
@@ -65,7 +65,7 @@ private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName:
         line.speakerName = NameToString(emitterName);
         line.text = subtitle;
         line.type = lineType;
-        LOG(s"subtitle line about to play");
+        DBG(s"subtitle line about to play");
         let board: ref<IBlackboard> = GameInstance.GetBlackboardSystem(GetGameInstance()).Get(GetAllBlackboardDefs().UIGameData);
         board.SetVariant(GetAllBlackboardDefs().UIGameData.ShowDialogLine, ToVariant([line]), true);
         AudiowareSystem.GetInstance(GetGameInstance()).DelayHideSubtitle(line, duration);

@@ -1,17 +1,19 @@
-use audioware_bank::Banks;
+use std::sync::OnceLock;
+
+use audioware_bank::{Banks, Initialization};
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
-use engine::Engine;
+use engine::{AudioRegion, AudioSettingsExt, AudioSettingsExtBuilder, Engine};
 use ext::AudioSystemExt;
 use hooks::*;
 use red4ext_rs::{
-    call, export_plugin_symbols, exports, global, log, static_methods,
-    types::{CName, GameEngine, Opt},
+    call, export_plugin_symbols, exports, global, log, methods, static_methods,
+    types::{CName, GameEngine, IScriptable, Opt, RedArray, RedString},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
-use states::{GameState, State};
+use states::{GameState, State, ToggleState};
 use types::{
-    AsAudioSystem, AudioSystem, AudiowareEmitterDistances, AudiowareEmitterSettings, GameObject,
+    Args, AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings, GameObject, LoopRegion,
     Vector4,
 };
 use utils::{plog_error, plog_info, plog_warn};
@@ -26,7 +28,14 @@ mod states;
 mod types;
 mod utils;
 
+#[cfg(target_os = "windows")]
+include!(concat!(env!("OUT_DIR"), "\\version.rs"));
+#[cfg(not(target_os = "windows"))]
+include!(concat!(env!("OUT_DIR"), "/version.rs"));
+
 pub struct Audioware;
+
+static REPORT: OnceLock<Initialization> = OnceLock::new();
 
 impl Audioware {
     fn register_listeners(env: &SdkEnv) {
@@ -43,20 +52,18 @@ impl Audioware {
 
     fn load_banks(env: &SdkEnv) {
         let report = Banks::setup();
-        let status = if report.errors.is_empty() {
-            "successfully"
+
+        if report.errors.is_empty() {
+            log::info!(env, "banks successfully initialized:\n{report}");
         } else {
-            "partially"
-        };
-        log::info!(env, "banks {status} initialized:\n{report}");
-        for error in report.errors {
-            log::error!(env, "{error}");
+            log::warn!(env, "banks partially initialized:\n{report}");
+            for error in report.errors.iter() {
+                log::error!(env, "{error}");
+            }
         }
-        log::info!(
-            env,
-            "as_if_I_didnt_know_already: {}",
-            Banks::exists(&CName::new("as_if_I_didnt_know_already"))
-        );
+        if let Err(e) = REPORT.set(report) {
+            log::error!(env, "unable to store report for delayed logs: {e}");
+        }
     }
 
     fn load_engine(env: &SdkEnv) {
@@ -75,17 +82,28 @@ impl Audioware {
         play_on_emitter::attach_hook(env);
         stop::attach_hook(env);
         switch::attach_hook(env);
+        // queue_event::attach_hook(env); // 🌊
+        // queue_event_for_entity_id::attach_hook(env); // 🌊
         // native event handlers
         #[cfg(debug_assertions)]
         {
+            crate::hooks::events::vehicle::attach_hook(env);
+            // crate::hooks::events::choice::attach_hook(env); // not thoroughly tested yet
+            // crate::hooks::events::audio::attach_hook(env); // 🌊
+            // crate::hooks::events::spawn_effect_event::attach_hook(env); // 🌊
+            crate::hooks::events::sound_event::attach_hook(env);
+            crate::hooks::events::music::attach_hook(env);
+            // sound_parameter::attach_hook(env); // redundant with global_parameter
+            crate::hooks::events::surface::attach_hook(env);
+            crate::hooks::events::dive::attach_hook(env);
+            crate::hooks::events::emerge::attach_hook(env);
             crate::hooks::events::dialog_line::attach_hook(env);
             crate::hooks::events::dialog_line_end::attach_hook(env);
             crate::hooks::events::sound_play_vo::attach_hook(env);
             crate::hooks::events::play_sound::attach_hook(env);
             crate::hooks::events::stop_sound::attach_hook(env);
             crate::hooks::events::sound_switch::attach_hook(env);
-            // sound_parameter::attach_hook(env); // ❌
-            crate::hooks::events::stop_tagged_sounds::attach_hook(env);
+            // crate::hooks::events::stop_tagged_sounds::attach_hook(env); // ❌
             crate::hooks::events::stop_dialog_line::attach_hook(env);
             crate::hooks::events::play_sound_on_emitter::attach_hook(env);
             crate::hooks::events::stop_sound_on_emitter::attach_hook(env);
@@ -94,15 +112,31 @@ impl Audioware {
             crate::hooks::events::voice_played_event::attach_hook(env);
         }
     }
+
+    fn report_after_rtti() {
+        if let Some(report) = REPORT.get() {
+            if report.errors.is_empty() {
+                crate::utils::info(format!(
+                    "[audioware] banks successfully initialized:\n{report}"
+                ));
+            } else {
+                crate::utils::warn(format!(
+                    "[audioware] banks partially initialized:\n{report}"
+                ));
+                for error in report.errors.iter() {
+                    crate::utils::error(format!("[audioware] {error}"));
+                }
+            }
+        }
+    }
 }
 
 impl Plugin for Audioware {
     const NAME: &'static U16CStr = wcstr!("audioware");
     const AUTHOR: &'static U16CStr = wcstr!("Roms1383");
-    const VERSION: SemVer = SemVer::new(1, 0, 0);
+    const VERSION: SemVer = AUDIOWARE_VERSION;
 
     fn on_init(env: &SdkEnv) {
-        GameState::set(GameState::Load);
         Self::register_listeners(env);
         Self::load_banks(env);
         Self::load_engine(env);
@@ -112,8 +146,13 @@ impl Plugin for Audioware {
     #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
     fn exports() -> impl Exportable {
         exports![
-            ClassExport::<AudiowareEmitterDistances>::builder().build(),
-            ClassExport::<AudiowareEmitterSettings>::builder().build(),
+            ClassExport::<EmitterDistances>::builder().build(),
+            ClassExport::<EmitterSettings>::builder().build(),
+            ClassExport::<LoopRegion>::builder().build(),
+            ClassExport::<Args>::builder().build(),
+            GlobalExport(global!(c"Audioware.Version", version)),
+            GlobalExport(global!(c"Audioware.SemanticVersion", semantic_version)),
+            GlobalExport(global!(c"Audioware.IsDebug", is_debug)),
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
             GlobalExport(global!(c"Audioware.PLogError", plog_error)),
@@ -126,11 +165,6 @@ impl Plugin for Audioware {
                 c"Audioware.UnregisterEmitter",
                 Engine::unregister_emitter
             )),
-            GlobalExport(global!(c"Audioware.EmittersCount", Engine::emitters_count)),
-            GlobalExport(global!(
-                c"Audioware.IsRegisteredEmitter",
-                Engine::is_registered_emitter
-            )),
             GlobalExport(global!(
                 c"Audioware.DefineSubtitles",
                 Engine::define_subtitles
@@ -139,37 +173,58 @@ impl Plugin for Audioware {
                 c"Audioware.SupportedLanguages",
                 Engine::supported_languages
             )),
-            GlobalExport(global!(c"Audioware.SetGameState", GameState::set)),
+            GlobalExport(global!(
+                c"Audioware.SetGameState",
+                GameState::set_and_toggle
+            )),
             GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
             GlobalExport(global!(c"Audioware.UnsetPlayerGender", unset_player_gender)),
             GlobalExport(global!(c"Audioware.SetGameLocales", set_game_locales)),
-            GlobalExport(global!(
-                c"Audioware.PlayOverThePhone",
-                Engine::play_over_the_phone
-            )),
-            GlobalExport(global!(c"Audioware.Play", Engine::play)),
-            GlobalExport(global!(c"Audioware.Stop", Engine::stop)),
             GlobalExport(global!(c"Audioware.Pause", Engine::pause)),
             GlobalExport(global!(c"Audioware.Resume", Engine::resume)),
-            GlobalExport(global!(c"Audioware.Switch", Engine::switch)),
-            GlobalExport(global!(c"Audioware.PlayOnEmitter", Engine::play_on_emitter)),
-            GlobalExport(global!(c"Audioware.StopOnEmitter", Engine::stop_on_emitter)),
             GlobalExport(global!(c"Audioware.SetReverbMix", Engine::set_reverb_mix)),
             GlobalExport(global!(c"Audioware.SetPreset", Engine::set_preset)),
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
-            GlobalExport(global!(c"Audioware.TestPlay", test_play)),
             ClassExport::<AudioSystemExt>::builder()
-                .static_methods(static_methods![
-                    c"Play" => AudioSystemExt::play,
-                    c"Stop" => AudioSystemExt::stop,
-                    c"Switch" => AudioSystemExt::switch,
-                    c"PlayOverThePhone" => AudioSystemExt::play_over_the_phone,
-                    c"IsRegisteredEmitter" => AudioSystemExt::is_registered_emitter,
-                    c"EmittersCount" => AudioSystemExt::emitters_count,
-                    c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
-                    c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    final c"Play" => AudioSystemExt::play,
+                    final c"Stop" => AudioSystemExt::stop,
+                    final c"Switch" => AudioSystemExt::switch,
+                    final c"PlayOverThePhone" => AudioSystemExt::play_over_the_phone,
+                    final c"IsRegisteredEmitter" => AudioSystemExt::is_registered_emitter,
+                    final c"EmittersCount" => AudioSystemExt::emitters_count,
+                    final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
+                    final c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
+                    final c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
                 ])
                 .build(),
+            ClassExport::<AudioRegion>::builder()
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    c"SetStart" => AudioRegion::set_start,
+                    c"SetEnd" => AudioRegion::set_end,
+                ])
+                .build(),
+            ClassExport::<AudioSettingsExt>::builder()
+                .base(IScriptable::NAME)
+                .build(),
+            ClassExport::<AudioSettingsExtBuilder>::builder()
+                .base(IScriptable::NAME)
+                .static_methods(static_methods![
+                    c"Create" => AudioSettingsExtBuilder::create
+                ])
+                .methods(methods![
+                    final c"SetStartPosition" => AudioSettingsExtBuilder::set_start_position,
+                    final c"SetLoopRegionStarts" => AudioSettingsExtBuilder::set_loop_region_starts,
+                    final c"SetLoopRegionEnds" => AudioSettingsExtBuilder::set_loop_region_ends,
+                    final c"SetVolume" => AudioSettingsExtBuilder::set_volume,
+                    final c"SetFadeInTween" => AudioSettingsExtBuilder::set_fade_in_tween,
+                    final c"SetPanning" => AudioSettingsExtBuilder::set_panning,
+                    final c"SetPlaybackRate" => AudioSettingsExtBuilder::set_playback_rate,
+                    final c"Build" => AudioSettingsExtBuilder::build,
+                ])
+                .build()
         ]
     }
 }
@@ -181,23 +236,42 @@ unsafe extern "C" fn register() {}
 unsafe extern "C" fn post_register() {}
 
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
-    let env = Audioware::env();
-    log::info!(env, "on exit initialization: Audioware");
-    test_play();
-    test_static();
+    log::info!(Audioware::env(), "on exit initialization: Audioware");
+    Audioware::report_after_rtti();
+
+    #[cfg(debug_assertions)]
+    {
+        utils::info("it should be able to call FTLog");
+        utils::warn("it should be able to call FTLogWarning");
+        utils::error("it should be able to call FTLogError");
+    }
+
+    // test_play();
+    // test_static();
     // test_get_player();
     // test_is_player();
     // scan_globals("PropagateSubtitle");
-    utils::info("it should be able to call FTLog");
-    utils::warn("it should be able to call FTLogWarning");
-    utils::error("it should be able to call FTLogError");
 }
 
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit running: Audioware");
-    GameState::swap(GameState::Unload);
+    GameState::set(GameState::Unload);
     Engine::shutdown();
+}
+
+// TODO: replace with upstream conversion when PR merged.
+fn version() -> RedString {
+    RedString::from("1.0.0-rc")
+}
+
+// TODO: replace with upstream conversion when PR merged.
+fn semantic_version() -> RedArray<u32> {
+    RedArray::from_iter([1, 0, 0, 2, 0])
+}
+
+fn is_debug() -> bool {
+    cfg!(debug_assertions)
 }
 
 fn set_player_gender(value: PlayerGender) {
@@ -208,6 +282,7 @@ fn unset_player_gender() {
     PlayerGender::set(None);
 }
 
+#[allow(dead_code)]
 fn test_play() {
     let rtti = RttiSystem::get();
     let class = rtti.get_class(CName::new(AudioSystem::NAME)).unwrap();
@@ -220,6 +295,7 @@ fn test_play() {
     system.play(CName::new("ono_v_pain_long"), Opt::Default, Opt::Default);
 }
 
+#[allow(dead_code)]
 fn test_static() {
     // CallbackSystemTarget => native: true, size: 0x40, value holder size: 0x0, align: 0x4, parent: IScriptable
     #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("CallbackSystemTarget");
@@ -228,9 +304,9 @@ fn test_static() {
     // WorldPosition => native: true, size: 0xC, value holder size: 0x0, align: 0x4, parent: None
     #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("WorldPosition");
     // e.g. static => SetX (SetX)
-    #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("WorldPosition");
+    // #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("WorldPosition");
     // e.g. static => FindEntityByID (FindEntityByID)
-    #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("ScriptGameInstance");
+    // #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("ScriptGameInstance");
 
     let env = Audioware::env();
     let from = Vector4 {
@@ -329,7 +405,13 @@ fn set_game_locales(spoken: CName, written: CName) {
 fn scan_class(class_name: &str) {
     let env = Audioware::env();
     let rtti = RttiSystem::get();
-    let cls = rtti.get_class(CName::new(class_name)).unwrap();
+    let cls = match rtti.get_class(CName::new(class_name)) {
+        Some(cls) => cls,
+        None => {
+            log::error!(env, "class {class_name} does not exist.");
+            return;
+        }
+    };
     log::info!(env, "{} ({:#02X})", cls.name(), cls.size());
     let static_methods = cls.static_methods();
     for s in static_methods.iter() {

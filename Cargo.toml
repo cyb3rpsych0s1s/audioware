@@ -3,9 +3,9 @@ members = ["manifest", "bank", "audioware"]
 resolver = "2"
 
 [workspace.package]
-version = "1.0.0"
+version = "1.0.0-rc"
 edition = "2021"
-rust-version = "1.79.0"
+rust-version = "1.80.1"
 
 [profile.release]
 lto = "thin"
@@ -16,10 +16,34 @@ codegen-units = 1
 audioware-manifest = { path = "manifest" }
 audioware-bank = { path = "bank" }
 either = "1.13"
-kira = { version = "0.9", features = ["serde"] }
+kira = { version = "0.9.4", features = ["serde"] }
 rayon = "1.10"
 red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "6ba836a" }
 # red4ext-rs-bindings = { git = "https://github.com/jac3km4/red4ext-rs-bindings", rev = "v0.3.0" }
 serde = "1.0"
 snafu = "0.8"
 snowflake = "1.2"
+
+[profile.dev.package.kira]
+opt-level = 3
+
+[profile.dev.package.cpal]
+opt-level = 3
+
+[profile.dev.package.symphonia]
+opt-level = 3
+
+[profile.dev.package.symphonia-bundle-mp3]
+opt-level = 3
+
+[profile.dev.package.symphonia-format-ogg]
+opt-level = 3
+
+[profile.dev.package.symphonia-codec-vorbis]
+opt-level = 3
+
+[profile.dev.package.symphonia-bundle-flac]
+opt-level = 3
+
+[profile.dev.package.symphonia-codec-pcm]
+opt-level = 3

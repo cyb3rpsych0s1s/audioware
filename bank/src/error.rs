@@ -48,11 +48,21 @@ pub mod validation {
         ConflictingKey { cname: String },
         #[snafu(display("audio outside depot: {path}"), visibility(pub(crate)))]
         AudioOutsideDepot { path: String },
-        #[snafu(display("cannot load audio: {path}"), visibility(pub(crate)))]
+        #[snafu(
+            display("cannot load audio: {path} ({source})"),
+            visibility(pub(crate))
+        )]
         InvalidAudio {
             path: String,
             source: kira::sound::FromFileError,
         },
+        #[snafu(
+            display("invalid cname: {source}"),
+            visibility(pub),
+            context(suffix(false))
+        )]
+        /// An error occured while converting audio ID to CName.
+        InvalidAudioID { source: std::ffi::NulError },
         #[snafu(display("invalid audio setting"), visibility(pub(crate)))]
         InvalidAudioSetting {
             which: &'static str,
@@ -94,5 +104,11 @@ impl From<audioware_manifest::error::Error> for self::Error {
 impl From<std::io::Error> for self::Error {
     fn from(source: std::io::Error) -> Self {
         Self::from(validation::Error::IO { source })
+    }
+}
+
+impl From<std::ffi::NulError> for self::Error {
+    fn from(source: std::ffi::NulError) -> Self {
+        Self::from(validation::Error::InvalidAudioID { source })
     }
 }
