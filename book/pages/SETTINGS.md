@@ -12,7 +12,7 @@ my_custom_audio:
   usage: on-demand
 ```
 
-Each section already has its own default usage when left unspecified, see [Sections](./SETTINGS.md).
+Each section already has its own default usage when left unspecified, see [Sections](./SECTIONS.md).
 
 You can choose for any sound between `on-demand`, `in-memory` and `streaming`.
 
