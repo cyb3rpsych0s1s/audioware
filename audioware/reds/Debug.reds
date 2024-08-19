@@ -40,6 +40,13 @@ public static exec func TestAudioSystemPlay(game: GameInstance, name: String) {
     GameInstance.GetAudioSystemExt(game).Play(cname);
 }
 
+/// Game.TestSemanticVersion();
+public static exec func TestSemanticVersion(game: GameInstance) {
+    let version = GameInstance.GetAudioSystemExt(game).SemanticVersion();
+    FTLog(AsRef(s"semantic version: major: \(version[0]), minor: \(version[1]), patch: \(version[2]), type: \(version[3]), build: \(version[4])"));
+    FTLog(AsRef(GameInstance.GetAudioSystemExt(game).Version()));
+}
+
 /// Game.TestAudioSystemStopSmoothly("dimanche_aux_goudes");
 public static exec func TestAudioSystemStopSmoothly(game: GameInstance, name: String) {
     let cname = StringToName(name);

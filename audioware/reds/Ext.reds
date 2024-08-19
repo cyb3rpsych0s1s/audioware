@@ -32,4 +32,37 @@ public native class AudioSystemExt {
     public final native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
     public final native func StopOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
     public final native func OnEmitterDies(entityID: EntityID) -> Void;
+
+    // misc
+    /// major, minor, patch, type (0 = alpha, 1 = beta, 2 = rc, 3 = official), build number
+    public final native func SemanticVersion() -> [Uint16; 5];
+    public final func Version() -> String {
+        let v = this.SemanticVersion();
+        let major = v[0];
+        let minor = v[1];
+        let patch = v[2];
+        let type: String;
+        switch v[3] {
+            case 0:
+                type = "alpha";
+                break;
+            case 1:
+                type = "beta";
+                break;
+            case 2:
+                type = "rc";
+                break;
+            default:
+                type = "official";
+                break;
+        }
+        let build = v[4];
+        let triple = s"\(ToString(major)).\(ToString(minor)).\(ToString(patch))";
+        // e.g. "1.0.0"
+        if Equals(type, "official") { return triple; }
+        // e.g. "1.0.0-rc"
+        if Equals(build, Cast<Uint16>(0)) { return s"\(triple)-\(type)"; }
+        // e.g. "1.0.0-rc.3"
+        return s"\(triple)-\(type).\(ToString(build))";
+    }
 }

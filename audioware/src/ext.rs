@@ -3,7 +3,7 @@ use kira::sound::PlaybackPosition;
 use red4ext_rs::{
     class_kind::Native,
     log,
-    types::{CName, EntityId, IScriptable, Opt, Ref},
+    types::{CName, EntityId, IScriptable, Opt, Ref, StaticArray},
     PluginOps, ScriptClass,
 };
 
@@ -91,6 +91,9 @@ impl AudioSystemExt {
     }
     pub fn on_emitter_dies(&self, entity_id: EntityId) {
         Engine::on_emitter_dies(entity_id);
+    }
+    pub fn semantic_version(&self) -> StaticArray<u16, 5> {
+        StaticArray::from([1, 0, 0, 2, 1])
     }
 }
 

@@ -7,7 +7,7 @@ use ext::AudioSystemExt;
 use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log, methods, static_methods,
-    types::{CName, GameEngine, IScriptable, Opt, RedArray, RedString},
+    types::{CName, GameEngine, IScriptable, Opt},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
@@ -150,8 +150,6 @@ impl Plugin for Audioware {
             ClassExport::<EmitterSettings>::builder().build(),
             ClassExport::<LoopRegion>::builder().build(),
             ClassExport::<Args>::builder().build(),
-            GlobalExport(global!(c"Audioware.Version", version)),
-            GlobalExport(global!(c"Audioware.SemanticVersion", semantic_version)),
             GlobalExport(global!(c"Audioware.IsDebug", is_debug)),
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
@@ -197,6 +195,7 @@ impl Plugin for Audioware {
                     final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
                     final c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
                     final c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
+                    final c"SemanticVersion" => AudioSystemExt::semantic_version,
                 ])
                 .build(),
             ClassExport::<AudioRegion>::builder()
@@ -258,16 +257,6 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     log::info!(env, "on exit running: Audioware");
     GameState::set(GameState::Unload);
     Engine::shutdown();
-}
-
-// TODO: replace with upstream conversion when PR merged.
-fn version() -> RedString {
-    RedString::from("1.0.0-rc")
-}
-
-// TODO: replace with upstream conversion when PR merged.
-fn semantic_version() -> RedArray<u32> {
-    RedArray::from_iter([1, 0, 0, 2, 0])
 }
 
 fn is_debug() -> bool {
