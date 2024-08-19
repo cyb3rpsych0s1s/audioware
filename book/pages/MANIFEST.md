@@ -19,8 +19,9 @@ sfx:
 ```admonish danger
 each audio ID (e.g. `my_custom_audio`) is automatically added to game's [CName pool](https://jekky.dev/red4ext-rs/red4ext_rs/types/struct.CNamePool.html) on startup, so make sure they are *truly* uniques (across all game and all mods).
 ```
+
 ```admonish warning
-Each audio file path validated on game startup: if it fails the game will not crash, but the error will be reported in the logs at `red4ext\logs\audioware-xyz.log`.
+Each audio file path validated on game startup: if it fails the game will not crash, but the error will be reported in the logs at `red4ext\logs\audioware-xyz.log` and in the [CET Game Log](https://wiki.redmodding.org/cyber-engine-tweaks/console/console).
 ```
 
 ### ⚙️ Optional settings
@@ -38,4 +39,4 @@ sfx:
       volume: 4.0 # 4 times louder!
 ```
 
-All audio accepts multiple optional settings.
+All audio accepts multiple optional [settings](./SETTINGS.md).

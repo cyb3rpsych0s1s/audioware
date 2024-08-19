@@ -2,6 +2,48 @@
 
 Any sound will accept the following settings.
 
+## Usage
+
+This allows to specify how audio will be handled in memory.
+
+```yml
+my_custom_audio:
+  file: ./somewhere/audio.wav
+  usage: on-demand
+```
+
+Each section already has its own default usage when left unspecified, see [Sections](./SETTINGS.md).
+
+You can choose for any sound between `on-demand`, `in-memory` and `streaming`.
+
+```admonish info
+This gives you extra flexibility if e.g. you want to play a song which is traditionally defined in [music](./SECTIONS.md#music) as a [ono](./SECTIONS.md#onos) instead (which by default is loaded `in-memory`) while still being able to play it with `streaming`.
+```
+
+### in-memory
+
+The audio is loaded *all-at-once* in-memory on game startup and kept around for the whole duration of the game session.
+
+```admonish hint
+This is useful for short sounds that are meant to be played frequently.
+```
+
+### on-demand
+
+The audio is loaded *all-at-once* each time on-demand, and never kept around.
+  
+```admonish hint
+This is useful for short sounds that you don't want to permanently allocate memory for, or that are not meant to be played frequently.
+```
+
+### streaming
+
+The audio is streamed on-demand.
+  
+```admonish hint
+This is useful for long-lasting sounds that should not be loaded all-at-once in-memory and only streamed *on-demand*.
+```
+
 ## Volume
 
 You can set `Volume` factor as follow:
@@ -15,6 +57,10 @@ my_other_audio:
   file: ./somewhere/else/audio.ogg
   settings:
     volume: 0.5 # 2 times softer
+```
+
+```admonish info
+No matter how high `Volume` is set, it will not play louder than 85dB.
 ```
 
 ## Start time
@@ -94,7 +140,7 @@ my_custom_audio:
 
 ## Panning
 
-This adjust from where the audio originates from, from left to right. The value **must** be between `0.0` and `1.0` (inclusive).
+This adjust from where the audio originates from, from left to right.
 
 ```yml
 my_custom_audio:
@@ -108,6 +154,10 @@ my_custom_audio:
   file: ./somewhere/audio.wav
   settings:
     panning: 1.0 # plays fully on right side
+```
+
+```admonish warning
+The value **must** be between `0.0` and `1.0` (inclusive).
 ```
 
 ## Fade-in tween
@@ -137,24 +187,5 @@ my_custom_audio:
 Possible values for `easing` can be found [here](https://docs.rs/kira/latest/kira/tween/enum.Easing.html).
 
 ```admonish hint
-Note that `fade-out` can be specified when calling methods like `Play`, `Switch`, etc.
+Note that fade-out can be specified as a parameter when calling methods like `Play`, `Switch`, etc.
 ```
-
-## Usage
-
-This last setting allows to specify how the audio will be handled in memory.
-
-```yml
-my_custom_audio:
-  file: ./somewhere/audio.wav
-  usage: on-demand
-```
-
-Usage can be:
-
-- `in-memory`: the audio is loaded *all-at-once* in-memory on game startup and kept around for the whole duration of the game session.
-  > this is useful for short sounds that are meant to be played frequently.
-- `on-demand`: the audio is loaded *all-at-once* each time on-demand, and never kept around.
-  > this is useful when you don't want to permanently allocate memory for sounds, or that a sound is not meant to be played frequently.
-- `streaming`: the audio is streamed on-demand.
-  > this is useful for long-lasting sounds that should not be loaded all-at-once in-memory. A streamed sound is always loaded on-demand.

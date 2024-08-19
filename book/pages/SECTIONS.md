@@ -6,23 +6,20 @@ Sections provide "good defaults", a way to classify your audio assets, and even 
 
 ## SFX
 
-`sfx` section is meant to be define simple sounds.
-
-- by default, all audios defined there are loaded `in-memory`.
-- volume setting: `SfxVolume`.
+`sfx` section is meant to define simple sounds.
 
 ```yml
 my_custom_sfx: ./somewhere/sfx.ogg
 ```
 
+| Defaults        |                  | Editable? |
+|-----------------|------------------|-----------|
+| usage           | `in-memory`      |✅         |
+| volume settings | `SfxVolume`      |❌         |
+
 ## Onos
 
 `onos` (*onomatopeia*) section is meant to define audio with 2 files each, one per gender.
-
-Defaults:
-
-- by default, all audios defined there are loaded `in-memory`.
-- volume setting: `DialogueVolume`.
 
 ```yml
 my_custom_ono:
@@ -30,22 +27,25 @@ my_custom_ono:
     male: ./somewhere/else/ono.wav
 ```
 
-```admonish hint
+| Defaults        |                  | Editable? |
+|-----------------|------------------|-----------|
+| usage           | `in-memory`      |✅         |
+| volume settings | `DialogueVolume` |❌         |
+
+```admonish info
 Useful for audio that do not require any subtitle, but still have a notion of gender.
 
-e.g. goons grunts and other onos.
+> e.g. goons grunts and other onos.
 ```
 
 ## Voices
 
 `voices` (sometimes called *voiceovers*) section is meant to define audio with multiple files each and optional subtitles.
 
-- by default, all audios defined there are loaded `on-demand`.
-- volume setting: `DialogueVolume`.
-
-```admonish hint
-Useful for audio that have to be translated into multiple languages, with or without any notion of gender and optional subtitle.
-```
+| Defaults        |                  | Editable? |
+|-----------------|------------------|-----------|
+| usage           | `on-demand`      |✅         |
+| volume settings | `DialogueVolume` |❌         |
 
 ### Simple Voice
 
@@ -54,11 +54,13 @@ my_simple_voice:
   en-us: ./some/voice.wav
 ```
 
-```admonish hint
-e.g. a vending machine promotional speech
+```admonish info
+Useful for audio that have to be translated into multiple languages, but the notion of gender does not matter.
+
+> e.g. a vending machine promotional speech
 ```
 
-#### With subtitle
+#### Simple Voice with subtitle
 
 ```yml
 my_simple_voice:
@@ -67,8 +69,10 @@ my_simple_voice:
     subtitle: "hello world"
 ```
 
-```admonish hint
-e.g. NPC dialogues or chatters.
+```admonish info
+Useful to add simple subtitle to be played along your audio.
+
+> e.g. NPC dialogues or chatters.
 ```
 
 ```admonish tip
@@ -76,8 +80,6 @@ Defining subtitle will *automatically* register them with [Codeware Localization
 ```
 
 ### Plural Voice
-
-Useful for dialogues that are both locale-based and gender-based, with subtitle.
 
 ```yml
 version: 1.0.0
@@ -97,19 +99,23 @@ voices:
         subtitle: "Look yourself in the mirror, dude."
 ```
 
-```admonish hint
-e.g. V's dialogues.
+```admonish info
+Useful for dialogues that are both locale-based *and* gender-based, with subtitle.
+
+> e.g. V's dialogues.
 ```
 
 ## Music
 
 `music` defines songs and ambience music.
 
-- by default, all audios defined there are loaded via `streaming`.
-- volume setting: `MusicVolume`.
-
 ```yml
 version: 1.0.0
 music:
   gorillaz_feel_good_inc: ./feel-good-inc.mp3
 ```
+
+| Defaults        |               | Editable? |
+|-----------------|---------------|-----------|
+| usage           | `streaming`   |✅         |
+| volume settings | `MusicVolume` |❌         |
