@@ -19,10 +19,9 @@ GameInstance
 .Play(n"still_dre", GetPlayer(game).GetEntityID(), n"V", scnDialogLineType.Regular, settings);
 ```
 
-```admonish hint
-The AudioSettingsExtBuilder also accepts a shorter syntax:
-```
+~~~admonish hint collapsible=true title="Alternate shorter syntax"
 
+The AudioSettingsExtBuilder also accepts a shorter syntax:
 ```swift
 GameInstance
     .GetAudioSystemExt(game)
@@ -38,4 +37,9 @@ GameInstance
             .WithVolume(0.9)
             .Build()
     );
+```
+~~~
+
+```admonish example title="YouTube demo"
+[![See it in action!](https://img.youtube.com/vi/1JWgtmSyGg8/0.jpg)](https://www.youtube.com/watch?v=1JWgtmSyGg8&list=PLMu2na7a3T6MHJq_JJ6yx_2qRv4MYX9ez&index=3)
 ```
