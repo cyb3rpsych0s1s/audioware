@@ -6,3 +6,7 @@ Welcome to audioware book !
 - [Manifest](./MANIFEST.md)
   - [Sections](./SECTIONS.md)
   - [Settings](./SETTINGS.md)
+- [API](./API.md)
+  - [AudioSystem](./AUDIO_SYSTEM.md)
+  - [AudioSystemExt](./AUDIO_SYSTEM_EXT.md)
+  - [AudioSettingsExt](./AUDIO_SETTINGS_EXT.md)

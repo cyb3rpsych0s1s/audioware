@@ -10,9 +10,9 @@ Each section contains one or multiple `audio ID`(s) which points to `audio file 
 
 ```yml
 version: 1.0.0
-# ⮦ section
+# ⬇️ section
 sfx:
-# ⮦ audio ID       ⮦ audio file path
+# ⬇️ audio ID      ⬇️ audio file path
   my_custom_audio: some.mp3
 ```
 
