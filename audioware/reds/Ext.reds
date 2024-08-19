@@ -1,15 +1,6 @@
-import Audioware.AudiowareSystem
-import Audioware.EmitterSettings
-import Audioware.Tween
-import Audioware.AudioSettingsExt
-import Audioware.AudioSettingsExtBuilder
+module Audioware
 
-@addMethod(GameInstance)
-public static func GetAudioSystemExt(game: GameInstance) -> ref<AudioSystemExt> {
-    return new AudioSystemExt();
-}
-
-public native class AudioSystemExt {
+public native class gameAudioSystemExt extends ScriptableSystem {
     // enhanced SDK
     public final native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt ext: ref<AudioSettingsExt>) -> Void;
     public final native func Stop(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void
@@ -24,9 +15,6 @@ public native class AudioSystemExt {
     }
         
     // spatial scene
-    public final func RegisterEmitter(entityID: EntityID, opt emitterName: CName, opt emitterSettings: EmitterSettings) -> Void { AudiowareSystem.GetInstance(GetGameInstance()).RegisterEmitter(entityID, emitterName, emitterSettings); }
-    public final func UnregisterEmitter(entityID: EntityID) -> Void { AudiowareSystem.GetInstance(GetGameInstance()).UnregisterEmitter(entityID); }
-    public final func IsValidEmitter(className: CName) -> Bool { return AudiowareSystem.GetInstance(GetGameInstance()).IsValidEmitter(className); }
     public final native func IsRegisteredEmitter(entityID: EntityID) -> Bool;
     public final native func EmittersCount() -> Int32;
     public final native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;

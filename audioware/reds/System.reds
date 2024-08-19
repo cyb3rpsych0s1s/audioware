@@ -1,6 +1,6 @@
 module Audioware
 
-public class AudiowareSystem extends ScriptableSystem {
+public class AudioSystemExt extends gameAudioSystemExt {
     private let attached: ref<CallbackSystemHandler>;
     private let detachedOnce: ref<CallbackSystemHandler>;
     private let attachedOnce: ref<CallbackSystemHandler>;
@@ -16,7 +16,7 @@ public class AudiowareSystem extends ScriptableSystem {
     private let subtitleLine: scnDialogLineData;
 
     private func OnAttach() -> Void {
-        DBG("on attach: AudiowareSystem");
+        DBG("on attach: AudioSystemExt");
         let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
         let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
         let ui: ref<IBlackboard> = system.Get(definitions.UI_System);
@@ -53,7 +53,7 @@ public class AudiowareSystem extends ScriptableSystem {
             .SetRunMode(CallbackRunMode.OncePerTarget);
     }
     private func OnDetach() -> Void {
-        DBG("on detach: AudiowareSystem");
+        DBG("on detach: AudioSystemExt");
         this.attached.Unregister();
         this.detachedOnce.Unregister();
         this.attached = null;
@@ -75,7 +75,7 @@ public class AudiowareSystem extends ScriptableSystem {
         }
     }
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {
-        DBG("on player attach: AudiowareSystem");
+        DBG("on player attach: AudioSystemExt");
         SetGameState(GameState.InGame);
 
         let player = request.owner as PlayerPuppet;
@@ -85,7 +85,7 @@ public class AudiowareSystem extends ScriptableSystem {
         }
     }
     private final func OnPlayerDetach(request: ref<PlayerDetachRequest>) -> Void {
-        DBG("on player detach: AudiowareSystem");
+        DBG("on player detach: AudioSystemExt");
         UnsetPlayerGender();
 
         let player = GameInstance.FindEntityByID(this.GetGameInstance(), request.ownerID) as PlayerPuppet;
@@ -202,7 +202,7 @@ public class AudiowareSystem extends ScriptableSystem {
         let id = entity.GetEntityID();
         let display = EntityID.ToDebugString(id);
         if !entity.IsA(n"PlayerPuppet") {
-            DBG(s"on emitter spawn: AudiowareSystem (\(display))");
+            DBG(s"on emitter spawn: AudioSystemExt (\(display))");
         }
         // ignore EntityTarget placeholder, we only care about emitters here
         if !entity.IsA(n"PlayerPuppet") {
@@ -211,7 +211,7 @@ public class AudiowareSystem extends ScriptableSystem {
                 let registered = RegisterEmitter(id);
                 if registered {
                     this.detachedOnce.AddTarget(EntityTarget.ID(id));
-                    DBG(s"on emitter registered: AudiowareSystem (\(display))");
+                    DBG(s"on emitter registered: AudioSystemExt (\(display))");
                 }
             }
         }
@@ -223,18 +223,18 @@ public class AudiowareSystem extends ScriptableSystem {
         if !entity.IsA(n"PlayerPuppet") {
             let id = entity.GetEntityID();
             let display = EntityID.ToDebugString(id);
-            DBG(s"on emitter despawn: AudiowareSystem (\(display))");
+            DBG(s"on emitter despawn: AudioSystemExt (\(display))");
             let registered = GameInstance.GetAudioSystemExt(this.GetGameInstance()).IsRegisteredEmitter(id);
             if registered {
-                DBG(s"on emitter despawn while registered: AudiowareSystem (\(display))");
+                DBG(s"on emitter despawn while registered: AudioSystemExt (\(display))");
                 let unregistered = UnregisterEmitter(id);
-                DBG(s"on emitter despawn + unregistered?[\(ToString(unregistered))]: AudiowareSystem (\(display))");
+                DBG(s"on emitter despawn + unregistered?[\(ToString(unregistered))]: AudioSystemExt (\(display))");
             }
-        } else { DBG("on player despawn: AudiowareSystem"); }
+        } else { DBG("on player despawn: AudioSystemExt"); }
     }
 
     protected cb func OnInMenu(value: Bool) -> Bool {
-        DBG(s"on \(value ? "enter" : "exit") menu: AudiowareSystem");
+        DBG(s"on \(value ? "enter" : "exit") menu: AudioSystemExt");
         SetGameState(value ? GameState.InMenu : GameState.InGame);
         if value {
             Pause();
@@ -245,12 +245,12 @@ public class AudiowareSystem extends ScriptableSystem {
         }
     }
     protected cb func OnPlayerReverb(value: Float) -> Bool {
-        DBG(s"on reverb mix changed (\(ToString(value))): AudiowareSystem");
+        DBG(s"on reverb mix changed (\(ToString(value))): AudioSystemExt");
         SetReverbMix(value);
     }
     protected cb func OnPlayerPreset(value: Int32) -> Bool {
         let preset = IntEnum<Preset>(value);
-        DBG(s"on player preset changed (\(ToString(preset))): AudiowareSystem");
+        DBG(s"on player preset changed (\(ToString(preset))): AudioSystemExt");
         SetPreset(preset);
     }
     protected cb func OnSwim(value: Int32) -> Bool {
@@ -259,10 +259,10 @@ public class AudiowareSystem extends ScriptableSystem {
         SetPreset(diving ? Preset.Underwater : Preset.None);
     }
 
-    public final static func GetInstance(game: GameInstance) -> ref<AudiowareSystem> {
+    public final static func GetInstance(game: GameInstance) -> ref<AudioSystemExt> {
         return GameInstance
         .GetScriptableSystemsContainer(game)
-        .Get(n"Audioware.AudiowareSystem") as AudiowareSystem;
+        .Get(n"Audioware.AudioSystemExt") as AudioSystemExt;
     }
 }
 
@@ -273,7 +273,7 @@ public class HideSubtitleCallback extends DelayCallback {
         let game = this.line.speaker.GetGame();
         GameInstance
         .GetDelaySystem(game)
-        .CancelCallback(AudiowareSystem.GetInstance(game).subtitleDelayID);
+        .CancelCallback(AudioSystemExt.GetInstance(game).subtitleDelayID);
         let board: ref<IBlackboard> = GameInstance.GetBlackboardSystem(game).Get(GetAllBlackboardDefs().UIGameData);
         board.SetVariant(GetAllBlackboardDefs().UIGameData.HideDialogLine, [this.line.id], true);
     }

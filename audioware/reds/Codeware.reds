@@ -68,6 +68,6 @@ private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName:
         DBG(s"subtitle line about to play");
         let board: ref<IBlackboard> = GameInstance.GetBlackboardSystem(GetGameInstance()).Get(GetAllBlackboardDefs().UIGameData);
         board.SetVariant(GetAllBlackboardDefs().UIGameData.ShowDialogLine, ToVariant([line]), true);
-        AudiowareSystem.GetInstance(GetGameInstance()).DelayHideSubtitle(line, duration);
+        AudioSystemExt.GetInstance(GetGameInstance()).DelayHideSubtitle(line, duration);
     }
 }

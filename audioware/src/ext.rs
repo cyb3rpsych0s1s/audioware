@@ -3,7 +3,7 @@ use kira::sound::PlaybackPosition;
 use red4ext_rs::{
     class_kind::Native,
     log,
-    types::{CName, EntityId, IScriptable, Opt, Ref},
+    types::{CName, EntityId, Opt, Ref, ScriptableSystem},
     PluginOps, ScriptClass,
 };
 
@@ -15,16 +15,16 @@ use crate::{
 
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
-pub struct AudioSystemExt {
-    base: IScriptable,
+pub struct GameAudioSystemExt {
+    base: ScriptableSystem,
 }
 
-unsafe impl ScriptClass for AudioSystemExt {
+unsafe impl ScriptClass for GameAudioSystemExt {
     type Kind = Native;
-    const NAME: &'static str = "AudioSystemExt";
+    const NAME: &'static str = "Audioware.gameAudioSystemExt";
 }
 
-impl AudioSystemExt {
+impl GameAudioSystemExt {
     pub fn play(
         &self,
         sound_name: CName,

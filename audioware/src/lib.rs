@@ -3,11 +3,11 @@ use std::sync::OnceLock;
 use audioware_bank::{Banks, Initialization};
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::{AudioRegion, AudioSettingsExt, AudioSettingsExtBuilder, Engine};
-use ext::AudioSystemExt;
+use ext::GameAudioSystemExt;
 use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log, methods, static_methods,
-    types::{CName, GameEngine, IScriptable, Opt, RedArray, RedString},
+    types::{CName, GameEngine, IScriptable, Opt, RedArray, RedString, ScriptableSystem},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
@@ -185,18 +185,18 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetReverbMix", Engine::set_reverb_mix)),
             GlobalExport(global!(c"Audioware.SetPreset", Engine::set_preset)),
             GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
-            ClassExport::<AudioSystemExt>::builder()
-                .base(IScriptable::NAME)
+            ClassExport::<GameAudioSystemExt>::builder()
+                .base(ScriptableSystem::NAME)
                 .methods(methods![
-                    final c"Play" => AudioSystemExt::play,
-                    final c"Stop" => AudioSystemExt::stop,
-                    final c"Switch" => AudioSystemExt::switch,
-                    final c"PlayOverThePhone" => AudioSystemExt::play_over_the_phone,
-                    final c"IsRegisteredEmitter" => AudioSystemExt::is_registered_emitter,
-                    final c"EmittersCount" => AudioSystemExt::emitters_count,
-                    final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
-                    final c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
-                    final c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
+                    final c"Play" => GameAudioSystemExt::play,
+                    final c"Stop" => GameAudioSystemExt::stop,
+                    final c"Switch" => GameAudioSystemExt::switch,
+                    final c"PlayOverThePhone" => GameAudioSystemExt::play_over_the_phone,
+                    final c"IsRegisteredEmitter" => GameAudioSystemExt::is_registered_emitter,
+                    final c"EmittersCount" => GameAudioSystemExt::emitters_count,
+                    final c"PlayOnEmitter" => GameAudioSystemExt::play_on_emitter,
+                    final c"StopOnEmitter" => GameAudioSystemExt::stop_on_emitter,
+                    final c"OnEmitterDies" => GameAudioSystemExt::on_emitter_dies,
                 ])
                 .build(),
             ClassExport::<AudioRegion>::builder()
