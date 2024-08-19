@@ -41,5 +41,5 @@ GameInstance
 ~~~
 
 ```admonish example title="YouTube demo"
-[![See it in action!](https://img.youtube.com/vi/1JWgtmSyGg8/0.jpg)](https://www.youtube.com/watch?v=1JWgtmSyGg8&list=PLMu2na7a3T6MHJq_JJ6yx_2qRv4MYX9ez&index=3)
+[![YouTube demo](https://img.youtube.com/vi/1JWgtmSyGg8/0.jpg)](https://www.youtube.com/watch?v=1JWgtmSyGg8&list=PLMu2na7a3T6MHJq_JJ6yx_2qRv4MYX9ez&index=3)
 ```

@@ -33,7 +33,7 @@ If you want to use vanilla audio with Audioware, you can still convert + export 
 ```
 
 ```admonish example title="YouTube demo"
-[![See it in action!](https://img.youtube.com/vi/yUAQ5id3ZA0/0.jpg)](https://www.youtube.com/watch?v=yUAQ5id3ZA0&list=PLMu2na7a3T6MHJq_JJ6yx_2qRv4MYX9ez&index=5)
+[![YouTube demo](https://img.youtube.com/vi/yUAQ5id3ZA0/0.jpg)](https://www.youtube.com/watch?v=yUAQ5id3ZA0&list=PLMu2na7a3T6MHJq_JJ6yx_2qRv4MYX9ez&index=5)
 ```
 
 ## Ideas
@@ -47,5 +47,5 @@ GameInstance.GetAudioSystemExt(game).Play(n"milles_feuilles");
 ```
 
 ```admonish example title="YouTube demo"
-[![See it in action!](https://img.youtube.com/vi/Vlk0Ve8j4ck/0.jpg)](https://www.youtube.com/watch?v=Vlk0Ve8j4ck&list=PLMu2na7a3T6MHJq_JJ6yx_2qRv4MYX9ez)
+[![YouTube demo](https://img.youtube.com/vi/Vlk0Ve8j4ck/0.jpg)](https://www.youtube.com/watch?v=Vlk0Ve8j4ck&list=PLMu2na7a3T6MHJq_JJ6yx_2qRv4MYX9ez)
 ```

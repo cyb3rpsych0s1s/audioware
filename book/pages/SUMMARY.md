@@ -12,3 +12,4 @@ Welcome to audioware book !
   - [AudioSystemExt](./AUDIO_SYSTEM_EXT.md)
   - [AudioSettingsExt](./AUDIO_SETTINGS_EXT.md)
   - [Parameters](./PARAMETERS.md)
+  - [Spatialization](./SPATIALIZATION.md)

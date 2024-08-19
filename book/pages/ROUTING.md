@@ -22,7 +22,7 @@ Any audio gets affected by `MasterVolume`, as expected.
 ```
 
 ```admonish example title="YouTube demo"
-[![See it in action!](https://img.youtube.com/vi/eE5jRxl8HAY/0.jpg)](https://www.youtube.com/watch?v=eE5jRxl8HAY&list=PLMu2na7a3T6MHJq_JJ6yx_2qRv4MYX9ez&index=4)
+[![YouTube demo](https://img.youtube.com/vi/eE5jRxl8HAY/0.jpg)](https://www.youtube.com/watch?v=eE5jRxl8HAY&list=PLMu2na7a3T6MHJq_JJ6yx_2qRv4MYX9ez&index=4)
 ```
 
 ## Parameters
