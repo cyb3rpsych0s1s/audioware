@@ -19,9 +19,9 @@ GameInstance
 .Play(n"still_dre", GetPlayer(game).GetEntityID(), n"V", scnDialogLineType.Regular, settings);
 ```
 
-~~~admonish hint collapsible=true title="Alternate shorter syntax"
+~~~admonish hint collapsible=true title="Alternate builder shorter syntax"
 
-The AudioSettingsExtBuilder also accepts a shorter syntax:
+The `AudioSettingsExtBuilder` also accepts a shorter syntax:
 ```swift
 GameInstance
     .GetAudioSystemExt(game)

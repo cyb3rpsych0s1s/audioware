@@ -17,4 +17,4 @@ Currently all these methods are supported:
 - [Stop](https://nativedb.red4ext.com/gameGameAudioSystem#Stop)
 - [Switch](https://nativedb.red4ext.com/gameGameAudioSystem#Switch)
 - [PlayOnEmitter](https://nativedb.red4ext.com/gameGameAudioSystem#PlayOnEmitter)
-- [Parameter](https://nativedb.red4ext.com/gameGameAudioSystem#Parameter) see [Parameters](./PARAMETERS.md)
+- [Parameter](https://nativedb.red4ext.com/gameGameAudioSystem#Parameter): see [Parameters](./PARAMETERS.md)
