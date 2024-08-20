@@ -143,6 +143,9 @@ checksum TO:
 smash FROM=game_dir:
   {{ join(justfile_directory(), "community", "redscript-cli.exe") }} decompile -f -i '{{ join(FROM, red_cache_dir, "final.redscripts") }}' -o '{{ join(justfile_directory(), "..", "dump_smasher") }}'
 
+@manual:
+  cargo doc --no-deps --target-dir book/docs
+
 @style:
     (cd book && mdbook-admonish generate-custom ./theme/css/mdbook-admonish-custom.css)
 
@@ -155,5 +158,5 @@ smash FROM=game_dir:
     cd book; mdbook watch --open
 
 # 📕 assemble book (for release in CI)
-@assemble: style
+@assemble: style manual
     cd book; mdbook build
