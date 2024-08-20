@@ -1,0 +1,16 @@
+:is(.admonish-hint) > :is(.admonition-title, summary.admonition-title)::before {
+  mask-image: var(--md-admonition-icon--admonish-bulb);
+  -webkit-mask-image: var(--md-admonition-icon--admonish-bulb);
+}
+
+:is(.admonition):is(.admonish-question, .admonish-help, .admonish-faq) {
+  border-color: #448aff;
+}
+
+:is(.admonish-question, .admonish-help, .admonish-faq) > :is(.admonition-title, summary.admonition-title) {
+  background-color: rgba(68, 138, 255, 0.1);
+}
+
+:is(.admonish-question, .admonish-help, .admonish-faq) > :is(.admonition-title, summary.admonition-title)::before {
+  background-color: #448aff;
+}
