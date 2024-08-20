@@ -8,7 +8,7 @@ It's built with emphasis on getting you going fast, providing sensible defaults 
 
 Here's the simplest way to test it out in under 5min.
 
-## ↘️ Install
+## ⬇️ Install
 
 - grab [Audioware latest release](https://github.com/cyb3rpsych0s1s/audioware/releases/latest) and unzip it in root game folder.
 - make sure you have both [Codeware 1.11.1+](https://github.com/psiberx/cp2077-codeware/releases) and [TweakXL 1.10.2+](https://github.com/psiberx/cp2077-tweak-xl/releases) installed too.
@@ -31,7 +31,7 @@ sfx:
   my_custom_audio: some.mp3 # accepts most common formats like .wav / .ogg / .mp3 / .flac
 ```
 
-## ⏯️ Use in-game
+## ♬⋆.˚ Use in-game
 
 ```swift
 GameInstance.GetAudioSystem(game).Play(n"my_custom_audio");
