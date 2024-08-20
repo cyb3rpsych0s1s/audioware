@@ -9,7 +9,7 @@ Audioware is a native plugin to play custom audios in Cyberpunk 2077, *without* 
 
 ## 📄 Define audios
 
-Create a folder e.g. `MyMod` for your mod, located either:
+Create a folder e.g. `MyMod` for your mod, located in either depot:
 
 - under `mods\MyMod`
 - or `r6\audioware\MyMod`
