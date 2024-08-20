@@ -1,3 +1,5 @@
+#![doc(html_root_url = "https://cyb3rpsych0s1s.github.io/audioware/")]
+
 use std::sync::OnceLock;
 
 use audioware_bank::{Banks, Initialization};
