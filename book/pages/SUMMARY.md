@@ -3,6 +3,7 @@
 Welcome to audioware book !
 
 - [Getting started](./GETTING-STARTED.md)
+- [Concept](./CONCEPT.md)
 - [Manifest](./MANIFEST.md)
   - [Sections](./SECTIONS.md)
   - [Settings](./SETTINGS.md)
