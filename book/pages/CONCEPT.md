@@ -4,11 +4,19 @@ Out-of-the-box, Cyberpunk 2077's *vanilla*[^1] audio engine is built on top of [
 
 Audioware *does not make any use it* and it has *almost* **no** control over it.
 
+~~~admonish question title="What about REDmod?"
+I initially really enjoyed [REDmod](https://wiki.redmodding.org/cyberpunk-2077-modding/for-mod-creators-theory/modding-tools/redmod/audio-modding) in the beginning but always felt frustrated to not be able to alter sounds dynamically.
+~~~
+
+The [audio parameters](https://wiki.redmodding.org/cyberpunk-2077-modding/for-mod-creators-theory/modding-tools/redmod/audio-modding#parameters) it exposes are very cool, but as far as I remember you can't seamlessly switch from one to another, and if you want multiple parameters per sound you basically have to duplicate them as many times.
+
+Last but not least, I regularly got players complaining about it becoming overly slow when (too?) many mods use it, and it does not seem particularly appreciated among player base.
+
 ~~~admonish question title="Why not directly hook WWise?"
 When I initially started working on Audioware I also was tempted to hook everything from Audiokinetic to allow adding custom audio to the game. At first.
 ~~~
 
-But the reality is that, when you choose this path on one side you get native[^2] integration, but on the other you then need to do <span style="color: hotpink">everything</span> as both [WWise](https://www.audiokinetic.com/en/library/edge/?source=SDK&id=index.html) and the game does. Not even mentioning that you actually will have to learn how CDPR works with WWise, which is [not always standard](https://github.com/vgmstream/vgmstream/issues/778).
+But the reality is that, when you choose this path on one side you get native[^2] integration, but on the other you then need to do <span style="color: hotpink">everything</span> as both [WWise](https://www.audiokinetic.com/en/library/edge/?source=SDK&id=index.html) and the game does. Not even mentioning that you actually will have to learn how CDPR works <span style="color: hotpink">with</span> WWise, which is [not always standard](https://github.com/vgmstream/vgmstream/issues/778).
 
 Professional *all-in-one* softwares like Audiokinetic can be dauting to use when unfamiliar and quickly become an <span style="color: hotpink">entry-skills barrier[^3]</span> for newcomers who would simply like to add sounds, play around with them and come up with an interesting mod.
 
