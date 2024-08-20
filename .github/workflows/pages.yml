@@ -9,9 +9,9 @@ on:
       - "book/pages/**"
       - "**.md"
 env:
-  MDBOOK_VERSION: '0.4.37'
-  MDBOOK_CODEBLOCKS_VERSION: '0.1.14'
-  MDBOOK_ADMONISH_VERSION: '1.15.0'
+  MDBOOK_VERSION: '0.4.40'
+  MDBOOK_CODEBLOCKS_VERSION: '0.1.15'
+  MDBOOK_ADMONISH_VERSION: '1.18.0'
 
 jobs:
   deploy:
@@ -37,9 +37,13 @@ jobs:
           echo `pwd`/mdbook-admonish >> $GITHUB_PATH
       - name: Setup rust toolchain
         uses: dtolnay/rust-toolchain@stable
+      - name: Additional tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just
       - name: Deploy GitHub Pages
         run: |
-          (cd book && mdbook build)
+          just assemble
           git worktree add gh-pages
           git config user.name "Deploy from CI"
           git config user.email ""
