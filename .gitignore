@@ -4,7 +4,12 @@
 /r6
 /.vscode
 /community
-/book
+/book/screenshots
+/book/PATTERNS.md
+/book/PHASES.md
+/book/REVERSE.md
+/book/site
+/book/pages/docs
 .env
 /audioware-copy
 /release-audioware
