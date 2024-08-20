@@ -51,7 +51,7 @@ Audioware supports the following formats:
 - .flac
 
 ~~~admonish hint title="Tip"
-Generally speaking, Cyberpunk 2077 *vanilla*[^vanilla] audio uses 48kHz / 16 bit PCM.
+Generally speaking, Cyberpunk 2077 vanilla audio uses 48kHz / 16 bit PCM.
 
 <details><summary>analyze with ffprobe</summary>
 
@@ -148,5 +148,3 @@ Since everything is loaded at-most **once** on startup, Audioware does **not** c
 ```
 
 [^YAML]: YAML is a file format, see [how to write your own](https://circleci.com/blog/what-is-yaml-a-beginner-s-guide/).
-
-[^vanilla]: *vanilla* describes everything originally belonging to the game, as opposed to further modifications or *mods* made by the community.
