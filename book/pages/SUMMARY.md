@@ -2,9 +2,13 @@
 
 Welcome to audioware book !
 
+Audioware is a native plugin to play custom audios in Cyberpunk 2077, *without* REDmod.
+
+It's built with emphasis on getting you going fast, providing sensible defaults and seamless integration with the game while not compromising on performances.
+
 - [Getting started](./GETTING-STARTED.md)
 - [Concept](./CONCEPT.md)
-- [Usage](./USAGE.md)
+- [How to use?](./USAGE.md)
   - [Manifest](./MANIFEST.md)
     - [Sections](./SECTIONS.md)
     - [Settings](./SETTINGS.md)

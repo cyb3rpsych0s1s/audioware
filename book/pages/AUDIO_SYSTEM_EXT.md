@@ -1,6 +1,6 @@
 # AudioSystemExt
 
-[AudioSystemExt](../../audioware/reds/Ext.reds) is an enhanced system over Cyberpunk's [AudioSystem](https://nativedb.red4ext.com/AudioSystem).
+[AudioSystemExt](https://github.com/cyb3rpsych0s1s/audioware/blob/main/audioware/reds/Ext.reds) is an enhanced system over Cyberpunk's [AudioSystem](https://nativedb.red4ext.com/AudioSystem).
 
 This system exposes both *the exact same API* as its counterpart, but *also* similar methods with *additional* parameters.
 

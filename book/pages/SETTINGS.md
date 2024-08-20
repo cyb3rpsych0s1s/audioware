@@ -2,7 +2,7 @@
 
 Any sound will accept the following settings.
 
-## Usage
+## 🗃️ Usage
 
 This allows to specify how audio will be handled in memory.
 
@@ -14,37 +14,38 @@ my_custom_audio:
 
 Each section already has its own default usage when left unspecified, see [Sections](./SECTIONS.md).
 
-You can choose for any sound between `on-demand`, `in-memory` and `streaming`.
+You can choose between possible values: `on-demand`, `in-memory` and `streaming`.
 
-```admonish info
+```admonish hint title="Extra flexibility"
 This gives you extra flexibility if e.g. you want to play a song which is traditionally defined in [music](./SECTIONS.md#music) as a [ono](./SECTIONS.md#onos) instead (which by default is loaded `in-memory`) while still being able to play it with `streaming`.
 ```
 
 ### in-memory
 
-The audio is loaded *all-at-once* in-memory on game startup and kept around for the whole duration of the game session.
+The audio is loaded *all-at-once* in-memory on game startup and kept around for the *whole duration* of the game session.
 
-```admonish hint
-This is useful for short sounds that are meant to be played frequently.
+```admonish hint title="Best used for"
+<span style="color: #f3d772">Short</span> sounds that are meant to be played <span style="color: #f3d772">frequently</span>.
 ```
 
 ### on-demand
 
 The audio is loaded *all-at-once* each time on-demand, and never kept around.
   
-```admonish hint
-This is useful for short sounds that you don't want to permanently allocate memory for, or that are not meant to be played frequently.
+```admonish hint title="Best used for"
+<span style="color: #f3d772">Short</span> sounds that *you don't want to permanently allocate memory for*,  
+or that are <span style="color: #f3d772">not</span> meant to be played <span style="color: #f3d772">frequently</span>.
 ```
 
 ### streaming
 
 The audio is streamed on-demand.
   
-```admonish hint
-This is useful for long-lasting sounds that should not be loaded all-at-once in-memory and only streamed *on-demand*.
+```admonish hint title="Best used for"
+<span style="color: #f3d772">Long-lasting</span> sounds that should not be loaded all-at-once in-memory and only <span style="color: #f3d772">streamed</span> *on-demand*.
 ```
 
-## Volume
+## 🔉 Volume
 
 You can set `Volume` factor as follow:
 
@@ -63,7 +64,7 @@ my_other_audio:
 No matter how high `Volume` is set, it will not play louder than 85dB.
 ```
 
-## Start time
+## 🕟 Start time
 
 This will play your audio with a delay.
 
@@ -74,7 +75,7 @@ my_custom_audio:
     start_time: 10s # 10 seconds delay
 ```
 
-## Start position
+## 🔚 Start position
 
 This will play your audio further from start.
 
@@ -89,7 +90,7 @@ my_custom_audio:
 Note that digits with decimal(s) are not supported, so if you would like to start the audio at e.g. `1.2s`, please specify `120ms` instead.
 ```
 
-## Loop region
+## 🔁 Loop region
 
 This will play your audio in a loop, only the part that you specify.
 
@@ -111,7 +112,7 @@ If left unspecified:
 - `ends` will play until the end of the audio.
 ```
 
-## Playback rate
+## ⏩ Playback rate
 
 This will play your audio faster, or slower.
 
@@ -138,7 +139,7 @@ my_custom_audio:
     playback_rate: 2♯ # adjusts by 2 semitones
 ```
 
-## Panning
+## ↔️ Panning
 
 This adjust from where the audio originates from, from left to right.
 
@@ -160,7 +161,7 @@ my_custom_audio:
 The value **must** be between `0.0` and `1.0` (inclusive).
 ```
 
-## Fade-in tween
+## ⤴️ Fade-in tween
 
 This will play your audio gradually fading-in.
 
