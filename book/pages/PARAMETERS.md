@@ -1,6 +1,6 @@
 # Parameters
 
-Audioware exposes parameters.
+Audioware exposes the following parameters.
 
 ## Preset
 
