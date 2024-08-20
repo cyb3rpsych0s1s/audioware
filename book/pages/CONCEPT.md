@@ -22,7 +22,7 @@ Something <span style="color: #f3d772">Simple</span>. <span style="color: #f3d77
 
 And this how Audioware was initially born as a simple proof-of-concept in [4ddicted](https://github.com/cyb3rpsych0s1s/4ddicted), another mod of mine. Until other modders started to notice that it worked pretty well and asked me to turn into a fully integrated native plugin.
 
-Audioware actually uses a second <span style="color: hotpink">alternate audio engine</span> named [kira](https://docs.rs/kira/latest/kira/), *alongside* vanilla one.
+Audioware actually uses a second <span style="color: hotpink">alternate audio engine</span> named [kira][kira], *alongside* vanilla one.
 
 It then does integrate seamlessly, creating the illusion that there's only one and unique audio environment.
 
@@ -31,3 +31,5 @@ It then does integrate seamlessly, creating the illusion that there's only one a
 [^2]: *natively* in the sense that tool, assets and game itself speaks the exact same language leading to seamless integration.
 
 [^3]: reserved to a handful of professional.
+
+[kira]: https://docs.rs/kira/latest/kira "kira crate"
