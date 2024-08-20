@@ -4,13 +4,13 @@
 }
 
 :is(.admonition):is(.admonish-question, .admonish-help, .admonish-faq) {
-  border-color: #448aff;
+  border-color: #ff9100;
 }
 
 :is(.admonish-question, .admonish-help, .admonish-faq) > :is(.admonition-title, summary.admonition-title) {
-  background-color: rgba(68, 138, 255, 0.1);
+  background-color: rgba(255, 145, 0, 0.1);
 }
 
 :is(.admonish-question, .admonish-help, .admonish-faq) > :is(.admonition-title, summary.admonition-title)::before {
-  background-color: #448aff;
+  background-color: #ff9100;
 }
