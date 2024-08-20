@@ -39,4 +39,4 @@ GameInstance.GetAudioSystem(game).Play(n"my_custom_audio");
 
 ---
 
-If you want to look at what you can further do, head over to [How to use?](./USAGE.md) for more.
+If you want to dive in directly, head over to [How to use?](./HOWTO.md) for more.

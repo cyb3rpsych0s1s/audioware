@@ -28,7 +28,7 @@ It then does integrate seamlessly, creating the illusion that there's only one a
 
 ---
 
-But let's process to [next chapter](./USAGE.md) to see how it can be used, and what it can currently do for you.
+But let's process to [next chapter](./HOWTO.md) to see how it can be used, and what it can currently do for you.
 
 [^1]: *vanilla* describes everything belonging to the original game, as opposed to further modifications or *mods* made by the community.
 

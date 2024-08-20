@@ -8,7 +8,7 @@ It's built with emphasis on getting you going fast, providing sensible defaults 
 
 - [Getting started](./GETTING-STARTED.md)
 - [Concept](./CONCEPT.md)
-- [How to use?](./USAGE.md)
+- [How to use?](./HOWTO.md)
   - [Manifest](./MANIFEST.md)
     - [Sections](./SECTIONS.md)
     - [Settings](./SETTINGS.md)
