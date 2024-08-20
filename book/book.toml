@@ -19,7 +19,7 @@ yaml = { color = "tomato", link = "https://github.com/psiberx/cp2077-tweak-xl/wi
 
 [preprocessor.admonish]
 command = "mdbook-admonish"
-assets_version = "3.0.1" # do not edit: managed by `mdbook-admonish install`
+assets_version = "3.0.2" # do not edit: managed by `mdbook-admonish install`
 on_failure = "bail"
 after = ["links"]
 
