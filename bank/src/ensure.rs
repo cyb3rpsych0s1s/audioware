@@ -55,7 +55,7 @@ pub fn ensure_key_unique(cname: &str) -> Result<(), Error> {
     Ok(())
 }
 
-/// ensure [`Key`](crate::Key) variants do not [`Conflict`].
+/// ensure [`Key`] variants do not [`Conflict`].
 #[inline]
 pub fn ensure_key_no_conflict<T: Conflictual>(
     key: &T,
@@ -72,8 +72,8 @@ pub fn ensure_key_no_conflict<T: Conflictual>(
 }
 
 /// ensure [`Manifest`] does not contain duplicate keys among
-/// [`Sfx`](crate::manifest::de::Sfx),
-/// [`Ono`](crate::manifest::de::Ono),
+/// [`Sfx`]
+/// [`Ono`]
 /// etc.
 pub fn ensure_manifest_no_duplicates(manifest: &Manifest) -> Result<(), Error> {
     let mut hashset = HashSet::with_capacity(100);
