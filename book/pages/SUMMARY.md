@@ -21,3 +21,4 @@ It's built with emphasis on getting you going fast, providing sensible defaults 
       - [Parameters](./PARAMETERS.md)
       - [Spatialization](./SPATIALIZATION.md)
     - [Internal docs](./DOCS.md)
+  - [Integration](./INTEGRATION.md)

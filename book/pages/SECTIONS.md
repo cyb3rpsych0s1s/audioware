@@ -6,20 +6,20 @@ Sections provide "good defaults", a way to classify your audio assets, and even 
 
 ## SFX
 
-`sfx` section is meant to define simple sounds.
+`sfx` is used to define simple sounds.
 
 ```yml
 my_custom_sfx: ./somewhere/sfx.ogg
 ```
 
-| Defaults        |                  | Editable? |
+| Default         |                  | Editable? |
 |-----------------|------------------|-----------|
 | usage           | `in-memory`      |✅         |
-| volume settings | `SfxVolume`      |❌         |
+| volume settings | `SfxVolume`      |⛔         |
 
 ## Onos
 
-`onos` (*onomatopeia*) section is meant to define audio with 2 files each, one per gender.
+`onos` (*onomatopeia*) is used to define audio with 2 files each, one per gender.
 
 ```yml
 my_custom_ono:
@@ -27,10 +27,10 @@ my_custom_ono:
     male: ./somewhere/else/ono.wav
 ```
 
-| Defaults        |                  | Editable? |
+| Default         |                  | Editable? |
 |-----------------|------------------|-----------|
 | usage           | `in-memory`      |✅         |
-| volume settings | `DialogueVolume` |❌         |
+| volume settings | `DialogueVolume` |⛔         |
 
 ```admonish info
 Useful for audio that do not require any subtitle, but still have a notion of gender.
@@ -40,12 +40,13 @@ Useful for audio that do not require any subtitle, but still have a notion of ge
 
 ## Voices
 
-`voices` (sometimes called *voiceovers*) section is meant to define audio with multiple files each and optional subtitles.
+`voices` (sometimes called *voiceovers*) is used to define audio with multiple files each  
+and optional subtitles.
 
-| Defaults        |                  | Editable? |
+| Default         |                  | Editable? |
 |-----------------|------------------|-----------|
 | usage           | `on-demand`      |✅         |
-| volume settings | `DialogueVolume` |❌         |
+| volume settings | `DialogueVolume` |⛔         |
 
 ### Simple Voice
 
@@ -55,7 +56,7 @@ my_simple_voice:
 ```
 
 ```admonish info
-Useful for audio that have to be translated into multiple languages, but the notion of gender does not matter.
+Useful for audio that have to be translated into multiple languages, but for which the notion of gender does not matter.
 
 > e.g. a vending machine promotional speech
 ```
@@ -115,7 +116,7 @@ music:
   gorillaz_feel_good_inc: ./feel-good-inc.mp3
 ```
 
-| Defaults        |               | Editable? |
+| Default         |               | Editable? |
 |-----------------|---------------|-----------|
 | usage           | `streaming`   |✅         |
-| volume settings | `MusicVolume` |❌         |
+| volume settings | `MusicVolume` |⛔         |

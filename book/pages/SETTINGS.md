@@ -16,7 +16,7 @@ Each section already has its own default usage when left unspecified, see [Secti
 
 You can choose between possible values: `on-demand`, `in-memory` and `streaming`.
 
-```admonish hint title="Extra flexibility"
+```admonish bulb title="Extra flexibility"
 This gives you extra flexibility if e.g. you want to play a song which is traditionally defined in [music](./SECTIONS.md#music) as a [ono](./SECTIONS.md#onos) instead (which by default is loaded `in-memory`) while still being able to play it with `streaming`.
 ```
 
@@ -24,7 +24,7 @@ This gives you extra flexibility if e.g. you want to play a song which is tradit
 
 The audio is loaded *all-at-once* in-memory on game startup and kept around for the *whole duration* of the game session.
 
-```admonish hint title="Best used for"
+```admonish info title="Best used for"
 <span style="color: #f3d772">Short</span> sounds that are meant to be played <span style="color: #f3d772">frequently</span>.
 ```
 
@@ -32,7 +32,7 @@ The audio is loaded *all-at-once* in-memory on game startup and kept around for 
 
 The audio is loaded *all-at-once* each time on-demand, and never kept around.
   
-```admonish hint title="Best used for"
+```admonish info title="Best used for"
 <span style="color: #f3d772">Short</span> sounds that *you don't want to permanently allocate memory for*,  
 or that are <span style="color: #f3d772">not</span> meant to be played <span style="color: #f3d772">frequently</span>.
 ```
@@ -41,7 +41,7 @@ or that are <span style="color: #f3d772">not</span> meant to be played <span sty
 
 The audio is streamed on-demand.
   
-```admonish hint title="Best used for"
+```admonish info title="Best used for"
 <span style="color: #f3d772">Long-lasting</span> sounds that should not be loaded all-at-once in-memory and only <span style="color: #f3d772">streamed</span> *on-demand*.
 ```
 

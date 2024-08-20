@@ -19,8 +19,7 @@ GameInstance
 .Play(n"still_dre", GetPlayer(game).GetEntityID(), n"V", scnDialogLineType.Regular, settings);
 ```
 
-~~~admonish hint collapsible=true title="Alternate builder shorter syntax"
-
+~~~admonish hint collapsible=true, title='Alternate builder shorter syntax <span style="color: hotpink; font-size: 0.75em">click to open</span>'
 The `AudioSettingsExtBuilder` also accepts a shorter syntax:
 ```swift
 GameInstance
@@ -40,6 +39,6 @@ GameInstance
 ```
 ~~~
 
-```admonish example title="YouTube demo"
-[![YouTube demo](https://img.youtube.com/vi/1JWgtmSyGg8/0.jpg)](https://www.youtube.com/watch?v=1JWgtmSyGg8&list=PLMu2na7a3T6MHJq_JJ6yx_2qRv4MYX9ez&index=3)
+```admonish youtube title="YouTube demo"
+<iframe width="100%" height="420" src="https://www.youtube.com/embed/eE5jRxl8HAY?si=FJTsTnAUuWfqmMrC" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 ```

@@ -1,6 +1,6 @@
 # Spatialization
 
-Audioware supports audio spatialization, which means audio *that moves around along its emitter*, getting louder when closer and softer when further, along with left-right [panning](https://en.wikipedia.org/wiki/Panning_(audio)).
+Thanks to [kira][kira] Audioware supports audio spatialization, which means audio *that moves along its emitter*, getting louder when closer and softer when further, along with left-right [panning](https://en.wikipedia.org/wiki/Panning_(audio)).
 
 ## Registration
 
@@ -34,6 +34,10 @@ GameInstance.GetAudioSystemExt(game).PlayOnEmitter(n"my_custom_audio", emitterID
 
 // if should stop at some point...
 GameInstance.GetAudioSystemExt(game).StopOnEmitter(n"my_custom_audio", emitterID, emitterCName);
+```
+
+```admonish youtube title="YouTube demo"
+<iframe width="100%" height="420" src="https://www.youtube.com/embed/GZWnAjhhFOQ?si=BRe8h-x7A5SZUO2X" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 ```
 
 ## Auto-registration
@@ -84,6 +88,13 @@ public class AutoEmittersSystem extends ScriptableSystem {
 }
 ```
 
-```admonish example title="YouTube demo"
-[![YouTube demo](https://img.youtube.com/vi/cngYFyFaapo/0.jpg)](https://www.youtube.com/watch?v=cngYFyFaapo&list=PLMu2na7a3T6MHJq_JJ6yx_2qRv4MYX9ez&index=2)
+```admonish youtube title="YouTube demo"
+This particular showcase is a smoke test: applying most CPU-intensive sounds (music streaming) to multiple entities in the vicinity and triggering auto-unregistration.
+
+It aims at demonstrating that both performances stay correct (even on my low-end laptop!),  
+and unregistration happens seamlessly (including during simultaneous kills).
+
+<iframe width="100%" height="420" src="https://www.youtube.com/embed/cngYFyFaapo?si=q1I_8g7t5A0d6uGs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 ```
+
+[kira]: https://docs.rs/kira/latest/kira/spatial/index.html "kira spatial scene"

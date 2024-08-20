@@ -8,8 +8,8 @@ This is important because each track will come with different behavior.
 
 Depending on which section audio is defined, it will be affected by a specific game volume setting.
 
-```admonish example title="Cyberpunk volume settings"
-![Cyberpunk volume settings](./settings.png)
+```admonish gear title="Cyberpunk volume settings"
+![Cyberpunk volume settings](./assets/settings.png)
 
 | track  | volume           
 |--------|----------------
@@ -18,11 +18,11 @@ Depending on which section audio is defined, it will be affected by a specific g
 | voices | DialogueVolume 
 | music  | MusicVolume    
 
-Any audio gets affected by `MasterVolume`, as expected.
+All audio are always affected by `MasterVolume`, as expected.
 ```
 
-```admonish example title="YouTube demo"
-[![YouTube demo](https://img.youtube.com/vi/eE5jRxl8HAY/0.jpg)](https://www.youtube.com/watch?v=eE5jRxl8HAY&list=PLMu2na7a3T6MHJq_JJ6yx_2qRv4MYX9ez&index=4)
+```admonish youtube title="YouTube demo"
+<iframe width="100%" height="420" src="https://www.youtube.com/embed/eE5jRxl8HAY?si=KBzA9kfuWZMKwx-r" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 ```
 
 ## Parameters
@@ -36,12 +36,13 @@ Likewise each track will be affected, or not, by [preset](./PARAMETERS.md#preset
 | voices | ✅     | ✅      |
 | music  | ❌     | ❌      |
 
-## Going beyond
+## Going further
 
 This might sounds restrictive at first, but it's actually a way to provide good defaults while being easily worked-around when needed.
 
 ```admonish hint title="Tip"
 Imagine you want to play a song affected by [underwater preset](./PARAMETERS.md#preset) when V dives underwater.
 
-Even if you'd usually go for [music](./SECTIONS.md#music) section, nothing prevents from defining your audio in [sfx](./SECTIONS.md#sfx) instead with *streaming* [usage](./SETTINGS.md#usage) for example.
+Even if you'd usually go for [music](./SECTIONS.md#music) section,  
+nothing prevents from defining your audio in [sfx](./SECTIONS.md#sfx) instead with *streaming* [usage](./SETTINGS.md#usage) for example.
 ```
