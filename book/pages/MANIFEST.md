@@ -41,6 +41,62 @@ sfx:
 
 All audio accepts multiple optional [settings](./SETTINGS.md).
 
+## Supported audio formats
+
+Audioware supports the following formats:
+
+- .wav
+- .ogg
+- .mp3
+- .flac
+
+~~~admonish hint title="Tip"
+Generally speaking, Cyberpunk 2077 *vanilla*[^vanilla] audio uses 48kHz / 16 bit PCM.
+
+<details><summary>analyze with ffprobe</summary>
+
+```sh
+$ just analyze C:\\Development\\modding-cyberpunk\\4ddicted\\archive\\source\\archive\\base\\localization\\common\\vo\\civ_mid_m_85_mex_30_mt_vista_del_rey_f_1ed3f72f92559000.wem
+
+ffprobe -i 'C:\Development\modding-cyberpunk\4ddicted\archive\source\archive\base\localization\common\vo\civ_mid_m_85_mex_30_mt_vista_del_rey_f_1ed3f72f92559000.wem' -show_format
+
+ffprobe version 6.0-essentials_build-www.gyan.dev Copyright (c) 2007-2023 the FFmpeg developers
+  built with gcc 12.2.0 (Rev10, Built by MSYS2 project)
+  configuration: --enable-gpl --enable-version3 --enable-static --disable-w32threads --disable-autodetect --enable-fontconfig --enable-iconv --enable-gnutls --enable-libxml2 --enable-gmp --enable-lzma --enable-zlib --enable-libsrt --enable-libssh --enable-libzmq --enable-avisynth --enable-sdl2 --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxvid --enable-libaom --enable-libopenjpeg --enable-libvpx --enable-libass --enable-libfreetype --enable-libfribidi --enable-libvidstab --enable-libvmaf --enable-libzimg --enable-amf --enable-cuda-llvm --enable-cuvid --enable-ffnvcodec --enable-nvdec --enable-nvenc --enable-d3d11va --enable-dxva2 --enable-libmfx --enable-libgme --enable-libopenmpt --enable-libopencore-amrwb --enable-libmp3lame --enable-libtheora --enable-libvo-amrwbenc --enable-libgsm --enable-libopencore-amrnb --enable-libopus --enable-libspeex --enable-libvorbis --enable-librubberband
+  libavutil      58.  2.100 / 58.  2.100
+  libavcodec     60.  3.100 / 60.  3.100
+  libavformat    60.  3.100 / 60.  3.100
+  libavdevice    60.  1.100 / 60.  1.100
+  libavfilter     9.  3.100 /  9.  3.100
+  libswscale      7.  1.100 /  7.  1.100
+  libswresample   4. 10.100 /  4. 10.100
+  libpostproc    57.  1.100 / 57.  1.100
+
+[wav @ 0000023cb642ebc0] Estimating duration from bitrate, this may be inaccurate
+[wav @ 0000023cb642ebc0] Could not find codec parameters for stream 0 (Audio: none ([255][255][0][0] / 0xFFFF), 48000 Hz, 
+1 channels, 103 kb/s): unknown codec
+Consider increasing the value for the 'analyzeduration' (0) and 'probesize' (5000000) options
+Input #0, wav, from 'C:\Development\modding-cyberpunk\4ddicted\archive\source\archive\base\localization\common\vo\civ_mid_m_85_mex_30_mt_vista_del_rey_f_1ed3f72f92559000.wem':
+  Duration: 00:00:05.94, bitrate: 103 kb/s
+  Stream #0:0: Audio: none ([255][255][0][0] / 0xFFFF), 48000 Hz, 1 channels, 103 kb/s
+Unsupported codec with id 0 for input stream 0
+[FORMAT]
+filename=C:\Development\modding-cyberpunk\4ddicted\archive\source\archive\base\localization\common\vo\civ_mid_m_85_mex_30_mt_vista_del_rey_f_1ed3f72f92559000.wem
+nb_streams=1
+nb_programs=0
+format_name=wav
+format_long_name=WAV / WAVE (Waveform Audio)
+start_time=N/A
+duration=5.937938
+size=76925
+bit_rate=103638
+probe_score=99
+[/FORMAT]
+```
+
+</details>
+~~~
+
 ### Validation
 
 What is worth mentioning is that Audioware will actually validate *many properties* of your audios on game startup, here's a *non-exhaustive* list.
@@ -92,3 +148,5 @@ Since everything is loaded at-most **once** on startup, Audioware does **not** c
 ```
 
 [^YAML]: YAML is a file format, see [how to write your own](https://circleci.com/blog/what-is-yaml-a-beginner-s-guide/).
+
+[^vanilla]: *vanilla* describes everything originally belonging to the game, as opposed to further modifications or *mods* made by the community.
