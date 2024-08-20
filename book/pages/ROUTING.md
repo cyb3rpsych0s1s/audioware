@@ -31,10 +31,10 @@ Likewise each track will be affected, or not, by [preset](./PARAMETERS.md#preset
 
 | track  | preset | reverb |
 |--------|--------|--------|
-| sfx    | ✅     | ✅      |
-| onos   | ✅     | ✅      |
-| voices | ✅     | ✅      |
-| music  | ❌     | ❌      |
+| sfx    | ✅     | ✅    |
+| onos   | ✅     | ✅    |
+| voices | ✅     | ✅    |
+| music  | ❌     | ❌    |
 
 ## Going further
 
