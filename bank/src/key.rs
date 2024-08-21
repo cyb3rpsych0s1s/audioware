@@ -17,7 +17,7 @@ use red4ext_rs::types::CName;
 ///   > including external mods which add their own
 /// - no conflict across audioware manifests
 ///
-/// Additionally, all except [`UniqueKey`]:
+/// Additionally, all except [UniqueKey]:
 /// - have unique combination variants
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Key {

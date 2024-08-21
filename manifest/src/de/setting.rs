@@ -7,7 +7,7 @@ use kira::{
 };
 use serde::Deserialize;
 
-/// Cyberpunk mirror type for [`StaticSoundSettings`](kira::sound::static_sound::StaticSoundSettings)/[`StreamingSoundSettings`](kira::sound::streaming::StreamingSoundSettings).
+/// Cyberpunk mirror type for [StaticSoundSettings`](kira::sound::static_sound::StaticSoundSettings)/[`StreamingSoundSettings](kira::sound::streaming::StreamingSoundSettings).
 #[derive(Debug, Deserialize, Clone)]
 pub struct Settings {
     #[serde(with = "humantime_serde", default)]

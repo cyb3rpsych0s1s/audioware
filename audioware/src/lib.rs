@@ -74,7 +74,7 @@ impl Audioware {
             log::error!(env, "Unable to load engine: {e}");
         }
     }
-    /// Attach [`hooks`].
+    #[doc(hidden)]
     fn attach_hooks(env: &SdkEnv) {
         // native methods
         global_parameter::attach_hook(env);
@@ -116,6 +116,7 @@ impl Audioware {
         }
     }
 
+    /// Report in CET game console after [RTTI][RttiSystem] initialization.
     fn report_after_rtti() {
         if let Some(report) = REPORT.get() {
             if report.errors.is_empty() {
@@ -139,7 +140,7 @@ impl Plugin for Audioware {
     const AUTHOR: &'static U16CStr = wcstr!("Roms1383");
     const VERSION: SemVer = AUDIOWARE_VERSION;
 
-    /// Initialize [Plugin]
+    /// Initialize plugin.
     fn on_init(env: &SdkEnv) {
         Self::register_listeners(env);
         Self::load_banks(env);
@@ -147,7 +148,7 @@ impl Plugin for Audioware {
         Self::attach_hooks(env);
     }
 
-    /// Register types in [`RttiSystem`]
+    /// Register types in [RTTI][RttiSystem].
     #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
     fn exports() -> impl Exportable {
         exports![
@@ -240,7 +241,7 @@ unsafe extern "C" fn register() {}
 
 unsafe extern "C" fn post_register() {}
 
-/// Delayed report for [`Banks`] initialization report to players in CET game console.
+/// Once plugin initialized.
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     log::info!(Audioware::env(), "on exit initialization: Audioware");
     Audioware::report_after_rtti();
@@ -267,21 +268,21 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     Engine::shutdown();
 }
 
-/// [Plugin] version.
+/// Current [Audioware] version.
 /// e.g. `"1.0.0-rc"`
 // TODO: replace with upstream conversion when PR merged.
 fn version() -> RedString {
     RedString::from("1.0.0-rc")
 }
 
-/// [Plugin] semantic version.
+/// Current [Audioware] semantic version.
 /// e.g. `[1, 0, 0, 2, 0]`
 // TODO: replace with upstream conversion when PR merged.
 fn semantic_version() -> RedArray<u32> {
     RedArray::from_iter([1, 0, 0, 2, 0])
 }
 
-/// [Plugin] built in [debug mode](https://doc.rust-lang.org/cargo/commands/cargo-build.html) ?
+/// Was [Audioware] built in [debug mode](https://doc.rust-lang.org/cargo/commands/cargo-build.html) ?
 fn is_debug() -> bool {
     cfg!(debug_assertions)
 }

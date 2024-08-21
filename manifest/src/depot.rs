@@ -44,7 +44,7 @@ impl AsRef<Path> for R6Audioware {
     }
 }
 
-/// Folder containing [`Mod`] folder(s).
+/// Folder containing [Mod] folder(s).
 pub trait Depot
 where
     Self: Sized + AsRef<Path>,

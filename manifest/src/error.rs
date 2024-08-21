@@ -38,10 +38,10 @@ pub enum Error {
 
 #[derive(Debug, Snafu, PartialEq)]
 pub enum ConversionError {
-    /// Cyberpunk 2077 does not support this [`Locale`](crate::Locale).
+    /// Cyberpunk 2077 does not support this [Locale](crate::Locale).
     #[snafu(display("invalid locale: {value}"))]
     InvalidLocale { value: String },
-    /// Cyberpunk 2077 does not support this [`PlayerGender`](crate::PlayerGender).
+    /// Cyberpunk 2077 does not support this [PlayerGender](crate::PlayerGender).
     #[snafu(display("invalid gender: {value}"))]
     InvalidGender { value: String },
     /// Audio stream buffer size is invalid.
