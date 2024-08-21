@@ -143,20 +143,21 @@ checksum TO:
 smash FROM=game_dir:
   {{ join(justfile_directory(), "community", "redscript-cli.exe") }} decompile -f -i '{{ join(FROM, red_cache_dir, "final.redscripts") }}' -o '{{ join(justfile_directory(), "..", "dump_smasher") }}'
 
-@manual:
-  cargo build; cargo doc --no-deps --document-private-items --target-dir book/pages/docs
-
 @style:
     cd book; mdbook-admonish generate-custom ./theme/css/mdbook-admonish-custom.css
 
 # 📖 read book directly
-@read: style manual
+@read: style preassemble
     cd book; mdbook build --open
 
 # 🖊️  book with live hot reload
-@draft: style manual
+@draft: style preassemble
     cd book; mdbook watch --open
 
+# 📕 preassemble book: rustdoc (for release in CI in 2 steps)
+@preassemble:
+    cargo build; cargo doc --no-deps --document-private-items --target-dir book/pages/docs
+
 # 📕 assemble book (for release in CI)
-@assemble: style manual
+@assemble: style
     cd book; mdbook build
