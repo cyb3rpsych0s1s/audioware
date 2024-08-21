@@ -88,6 +88,7 @@ impl Manager {
                 .into()
             })
     }
+    /// Retain non-stopped sounds only.
     pub fn reclaim() -> Result<(), Error> {
         let storage = StaticStorage::try_lock()?;
         storage.retain(|_, v| !v.stopped());
@@ -117,6 +118,7 @@ impl StreamStorage {
 }
 
 impl Manager {
+    /// Stop and clear all tracks.
     pub fn clear_tracks(&mut self, tween: Option<Tween>) -> Result<(), InternalError> {
         self.stop(tween)?;
         StaticStorage::try_lock()?.deref_mut().clear();
