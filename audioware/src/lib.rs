@@ -492,6 +492,7 @@ fn scan_repr(cls_name: &str) {
     );
 }
 
+#[doc(hidden)]
 #[cfg(debug_assertions)]
 #[allow(dead_code)]
 fn whoami(cname_hash: u64) {
