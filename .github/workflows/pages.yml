@@ -75,8 +75,6 @@ jobs:
           echo `pwd`/mdbook-admonish >> $GITHUB_PATH
       - name: Deploy GitHub Pages
         run: |
-          unzip book/pages/docs/rustdoc-latest.zip -d book/pages/docs
-          rm book/docs/rustdoc-latest.zip
           just assemble
           git worktree add gh-pages
           git config user.name "Deploy from CI"
