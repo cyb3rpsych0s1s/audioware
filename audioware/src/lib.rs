@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://cyb3rpsych0s1s.github.io/audioware/")]
+#![doc(html_root_url = "https://cyb3rpsych0s1s.github.io/audioware/docs/doc/audioware")]
 #![doc = include_str!("../../README.md")]
 
 use std::sync::OnceLock;
