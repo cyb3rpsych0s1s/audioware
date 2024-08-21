@@ -37,13 +37,9 @@ jobs:
           echo `pwd`/mdbook-admonish >> $GITHUB_PATH
       - name: Setup rust toolchain
         uses: dtolnay/rust-toolchain@stable
-      - name: Additional tools
-        uses: taiki-e/install-action@v2
-        with:
-          tool: just
       - name: Deploy GitHub Pages
         run: |
-          just assemble
+          (cd book && mdbook build)
           git worktree add gh-pages
           git config user.name "Deploy from CI"
           git config user.email ""
