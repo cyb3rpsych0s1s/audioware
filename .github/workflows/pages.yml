@@ -79,8 +79,6 @@ jobs:
       - name: Deploy GitHub Pages
         run: |
           just assemble
-          # assemble recipe cd into book, so go back
-          cd ..
           git worktree add gh-pages
           git config user.name "Deploy from CI"
           git config user.email ""
