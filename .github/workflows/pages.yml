@@ -17,6 +17,9 @@ env:
 jobs:
   docs:
     runs-on: windows-latest
+    concurrency:
+      group: pages-docs
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
         with:
