@@ -10,6 +10,7 @@ plugin_name         := 'audioware'
 # codebase (here)
 red4ext_bin_dir     := join(justfile_directory(), "target")
 redscript_repo_dir  := join(justfile_directory(), "audioware", "reds")
+rustdoc_target_dir  := join(justfile_directory(), "book", "pages", "docs")
 
 # game files
 red4ext_deploy_dir    := join("red4ext", "plugins", plugin_name)
@@ -156,7 +157,9 @@ smash FROM=game_dir:
 
 # 📕 preassemble book: rustdoc (for release in CI in 2 steps)
 @preassemble:
-    cargo build; cargo doc --no-deps --document-private-items --target-dir book/pages/docs
+    cargo build; cargo doc --no-deps --document-private-items --target-dir '{{rustdoc_target_dir}}'
+    just delete '{{ join(rustdoc_target_dir, "debug") }}'
+    just delete '{{ join(rustdoc_target_dir, "CACHEDIR.TAG") }}'
 
 # 📕 assemble book (for release in CI)
 @assemble: style
