@@ -192,7 +192,7 @@ pub struct DialogLine {
 }
 
 /// Manifest sources.
-/// 
+///
 /// Also called ["sections" in the book](https://cyb3rpsych0s1s.github.io/audioware/SECTIONS.html).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Source {
