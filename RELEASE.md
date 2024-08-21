@@ -3,12 +3,10 @@
 - bump:
   1. `Plugin::VERSION` in *.\audioware\src\lib.rs*
   2. workspace version in *.\Cargo.toml*
+  3. waiting on [red4ext-rs #62](https://github.com/jac3km4/red4ext-rs/pull/62)
+    but in the meantime [API must be updated manually](https://github.com/cyb3rpsych0s1s/audioware/blob/main/audioware/src/lib.rs#L263-L271).
 - tag accordingly
 
 ## after patch update
 
-- SDK: update `red4ext-rs` ➡️ `RED4ext.SDK`
-- addresses:
-  1. run `just offsets` command to retrieve addresses from hex patterns
-  2. update addresses in *.\audioware\src\addresses.rs* with previous results
-  3. ⚠️ troubleshooting: double-check in IDA
+Cyberpunk 2077 universal addresses are automatically updated.
