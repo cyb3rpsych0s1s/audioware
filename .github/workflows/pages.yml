@@ -37,14 +37,13 @@ jobs:
         uses: thedoctor0/zip-release@0.7.6
         with:
           type: zip
-          filename: rustdoc-latest-${{ github.ref_name }}.zip
-          directory: rustdoc-latest-${{ github.ref_name }}
+          filename: rustdoc-latest.zip
           path: book/pages/docs
       - name: Upload artifact rustdoc
         uses: actions/upload-artifact@v4
         with:
-          name: windows-latest-${{ github.ref_name }}-artifact-rustdoc
-          path: rustdoc-latest-${{ github.ref_name }}/rustdoc-latest-${{ github.ref_name }}.zip
+          name: rustdoc-latest-artifact
+          path: rustdoc-latest.zip
           if-no-files-found: error
   deploy:
     runs-on: ubuntu-latest
@@ -53,6 +52,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Setup rust toolchain
+        uses: dtolnay/rust-toolchain@stable
       - name: Additional tools
         uses: taiki-e/install-action@v2
         with:
@@ -77,8 +78,6 @@ jobs:
           mkdir mdbook-admonish
           curl -sSL https://github.com/tommilligan/mdbook-admonish/releases/download/v${{ env.MDBOOK_ADMONISH_VERSION }}/mdbook-admonish-v${{ env.MDBOOK_ADMONISH_VERSION }}-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory=./mdbook-codeblocks
           echo `pwd`/mdbook-admonish >> $GITHUB_PATH
-      - name: Setup rust toolchain
-        uses: dtolnay/rust-toolchain@stable
       - name: Deploy GitHub Pages
         run: |
           just assemble
