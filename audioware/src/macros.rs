@@ -1,3 +1,5 @@
+//! Macro utils.
+
 macro_rules! ok_or_return {
     ($lock:expr, $err:literal) => {
         match $lock {

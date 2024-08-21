@@ -1,4 +1,4 @@
-//! interop types with Cyberpunk 2077 [vanilla] types,
+//! Interop types with Cyberpunk 2077 [vanilla] types,
 //! but also [audioware] and [codeware] types.
 
 mod audioware;

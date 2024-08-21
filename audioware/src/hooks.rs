@@ -1,3 +1,5 @@
+//! Hooks for native functions and event handlers.
+
 #[rustfmt::skip]
 #[doc(hidden)]
 mod offsets {

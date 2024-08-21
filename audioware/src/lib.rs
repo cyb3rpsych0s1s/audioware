@@ -25,6 +25,7 @@ mod config;
 mod engine;
 mod error;
 mod ext;
+#[doc(hidden)]
 mod hooks;
 mod macros;
 mod states;

@@ -66,7 +66,7 @@ impl Engine {
         Scene::setup(&mut manager, Tracks::get())?;
         Ok(())
     }
-    /// Define [LocalizationPackage] subtitles from those defined in [Manifest][audioware_manifest::Manifest]s.
+    /// Define [LocalizationPackage] subtitles from [Manifest][audioware_manifest::Manifest]s.
     pub fn define_subtitles(package: Ref<LocalizationPackage>) {
         let written = WrittenLocale::get();
         let subtitles = Banks::subtitles(written);
@@ -74,11 +74,11 @@ impl Engine {
             package.subtitle(key.as_str(), value_f.as_str(), value_m.as_str());
         }
     }
-    /// [Engine] supported languages.
+    /// Engine supported languages.
     pub fn supported_languages() -> Vec<CName> {
         Banks::languages().into_iter().map(|x| x.into()).collect()
     }
-    /// Shutdown [Engine].
+    /// Shutdown engine.
     pub fn shutdown() {
         if let Err(e) = Manager.clear_tracks(None) {
             log::error!(Audioware::env(), "couldn't clear tracks on manager: {e}");
@@ -87,7 +87,7 @@ impl Engine {
             log::error!(Audioware::env(), "couldn't clear emitters in scene: {e}");
         }
     }
-    /// Register an audio emitter to spatial scene.
+    /// Register an audio emitter to spatial [Scene].
     ///
     /// ⚠️ Returns `true` if already registered.
     pub fn register_emitter(
@@ -105,7 +105,7 @@ impl Engine {
         }
         true
     }
-    /// Unregister an audio emitter from spatial scene.
+    /// Unregister an audio emitter from spatial [Scene].
     ///
     /// ⚠️ Returns `true` if already unregistered (or never registered).
     pub fn unregister_emitter(entity_id: EntityId) -> bool {
@@ -121,7 +121,7 @@ impl Engine {
     pub fn is_registered_emitter(entity_id: EntityId) -> bool {
         Scene::is_registered_emitter(&entity_id)
     }
-    /// Current number of registered audio emitters.
+    /// Current number of registered [Scene] audio emitters.
     pub fn emitters_count() -> i32 {
         let count = Scene::emitters_count();
         if let Err(e) = count {
@@ -130,7 +130,7 @@ impl Engine {
         }
         count.unwrap() as i32
     }
-    /// Whenever an audio emitter dies in-game.
+    /// Whenever [Scene] audio emitter dies in-game.
     pub fn on_emitter_dies(entity_id: EntityId) {
         if let Err(e) = Scene::on_emitter_dies(entity_id) {
             log::error!(
@@ -139,21 +139,21 @@ impl Engine {
             );
         }
     }
-    /// Toggle audio emitters synchonization.
+    /// Toggle [Scene] audio emitters synchonization.
     pub fn toggle_sync_emitters(enable: bool) {
         Scene::toggle_sync_emitters(enable);
     }
-    /// Whether audio emitters should be synchronized or not.
+    /// Whether [Scene] audio emitters should be synchronized or not.
     pub fn should_sync_emitters() -> bool {
         Scene::should_sync_emitters()
     }
-    /// Audio emitters synchronization.
+    /// [Scene] audio emitters synchronization.
     pub fn sync_emitters() {
         if let Err(e) = Scene::sync_emitters() {
             log::error!(Audioware::env(), "couldn't sync emitters on scene: {e}");
         }
     }
-    /// Audio listener synchronization.
+    /// [Scene] audio listener synchronization.
     pub fn sync_listener() {
         if let Err(e) = Scene::sync_listener() {
             log::error!(Audioware::env(), "couldn't sync listener on scene: {e}");
