@@ -1,3 +1,5 @@
+//! Banks storage.
+
 use std::{
     collections::{HashMap, HashSet},
     sync::OnceLock,
@@ -44,6 +46,7 @@ static MUL_SET: OnceLock<HashMap<BothKey, Settings>> = OnceLock::new();
 
 static KEYS: OnceLock<HashSet<Id>> = OnceLock::new();
 
+/// Returns raw entries to create a [localization package](https://github.com/psiberx/cp2077-codeware/wiki#localization-packages).
 pub trait Package {
     fn package(&self, locale: Locale) -> Vec<(CName, (String, String))>;
 }
@@ -97,6 +100,7 @@ impl Banks {
     pub unsafe fn ids<'a>() -> &'a HashSet<Id> {
         KEYS.get().unwrap_unchecked()
     }
+    /// Whether audio ID exists in banks or not.
     pub fn exists(cname: &CName) -> bool {
         if cname == &CName::undefined() {
             return false;
@@ -105,6 +109,7 @@ impl Banks {
             .and_then(|x| x.iter().find(|x| AsRef::<CName>::as_ref(x) == cname))
             .is_some()
     }
+    /// All languages found in [Manifest]s.
     pub fn languages() -> HashSet<Locale> {
         let mut out = HashSet::new();
         for key in LOC_SUB.get().unwrap().keys() {
@@ -115,6 +120,8 @@ impl Banks {
         }
         out
     }
+    /// All subtitles stored in banks for a given [written locale](WrittenLocale),
+    /// returned as raw values.
     pub fn subtitles(locale: WrittenLocale) -> Vec<(CName, (String, String))> {
         let simple_package = LOC_SUB
             .get()
@@ -183,7 +190,7 @@ impl Banks {
         }
         Err(RegistryError::NotFound { cname: *name }.into())
     }
-    /// Retrieves sound data for a given [`Id`], including any settings.
+    /// Retrieves sound data for a given [Id], including settings if any.
     pub fn data(id: &Id) -> Either<StaticSoundData, StreamingSoundData<FromFileError>> {
         let settings = Self::settings(id);
         match id {
@@ -242,6 +249,7 @@ impl Banks {
             ),
         }
     }
+    /// Retrieves sound settings for a given [Id] if any.
     fn settings(id: &Id) -> Option<Either<StaticSoundSettings, StreamingSoundSettings>> {
         match id {
             Id::OnDemand(Usage::Static(key, _), ..) => match key {
@@ -300,6 +308,7 @@ impl Banks {
             Id::InMemory(..) => None,
         }
     }
+    /// Initialize banks.
     pub fn setup() -> Initialization {
         let since = Instant::now();
 
@@ -495,6 +504,7 @@ impl Banks {
     }
 }
 
+/// Outcome of [Banks] initialization.
 pub struct Initialization {
     duration: Duration,
     lengths: String,

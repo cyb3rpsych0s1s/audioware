@@ -1,4 +1,4 @@
-//! Voices definitions, either gender-based or plural-based.
+//! Voices definitions, either gender-based, locale-based or both.
 
 use std::{collections::HashMap, path::PathBuf};
 

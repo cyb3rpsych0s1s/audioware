@@ -1,3 +1,5 @@
+//! Bank errors.
+
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]

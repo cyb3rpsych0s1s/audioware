@@ -1,3 +1,5 @@
+//! Bank registry ids.
+
 use std::{hash::Hash, path::PathBuf};
 
 use audioware_manifest::{Locale, PlayerGender, Source};
@@ -5,7 +7,7 @@ use red4ext_rs::types::CName;
 
 use super::{BothKey, GenderKey, Key, LocaleKey, UniqueKey};
 
-/// special type whose audio data is guaranteed to both exist in banks and be valid
+/// Special type whose audio data is guaranteed to both exist in banks and be valid.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Id {
     OnDemand(Usage, Source),
@@ -76,12 +78,12 @@ impl PartialEq<(&CName, &Locale, Option<&PlayerGender>)> for Id {
     }
 }
 
-/// specify [on-demand](`Id::OnDemand`) usage
+/// Specify [on-demand](Id::OnDemand) [Usage].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Usage {
-    /// used with [kira static sounds](https://docs.rs/kira/latest/kira/sound/static_sound/index.html)
+    /// Used with [kira static sounds](https://docs.rs/kira/latest/kira/sound/static_sound/index.html).
     Static(Key, PathBuf),
-    /// used with [kira streaming](https://docs.rs/kira/latest/kira/sound/streaming/index.html)
+    /// Used with [kira streaming](https://docs.rs/kira/latest/kira/sound/streaming/index.html).
     Streaming(Key, PathBuf),
 }
 

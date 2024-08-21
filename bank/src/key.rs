@@ -1,7 +1,8 @@
 //! # Bank keys
 //!
-//! Each [`Id`](super::Id) contains inside a [`Key`] which has 4 variants.
-//! These [`Key`]s uphold the guarantee provided by their parent [`Id`](super::Id).
+//! Each [Id](super::Id) contains inside a [Key] which has 4 variants.
+//!
+//! These [Key]s uphold the guarantee provided by their parent [Id](super::Id).
 
 use std::hash::Hash;
 
@@ -91,7 +92,7 @@ impl PartialEq<(&CName, &Locale, &PlayerGender)> for Key {
     }
 }
 
-/// Any audio solely defined by its inner [`CName`].
+/// Any audio solely defined by its inner [CName].
 ///
 /// e.g. sfx
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -117,7 +118,7 @@ impl From<UniqueKey> for Key {
     }
 }
 
-/// Any audio defined by both a [`CName`] and a [`PlayerGender`].
+/// Any audio defined by both a [CName] and a [PlayerGender].
 ///
 /// e.g. ono
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -143,7 +144,7 @@ impl From<GenderKey> for Key {
     }
 }
 
-/// Any audio defined by both a [`CName`] and a [`Locale`].
+/// Any audio defined by both a [CName] and a [Locale].
 ///
 /// e.g. dialog from a unique NPC translated in many languages
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -169,7 +170,7 @@ impl From<LocaleKey> for Key {
     }
 }
 
-/// Any audio defined all by a [`CName`], [`Locale`] and [`PlayerGender`].
+/// Any audio defined all by a [CName], [Locale] and [PlayerGender].
 ///
 /// e.g. dialog for V translated in many languages for each gender.
 #[derive(Debug, Clone, PartialEq, Eq)]
