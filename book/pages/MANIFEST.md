@@ -124,7 +124,7 @@ Each setting defined alongside audios must be valid.
 ```
 
 ```admonish tip title="Validation deep-dive"
-If you would like to know exactly how Audioware validates entries, consider browsing [unit-tests files](https://github.com/cyb3rpsych0s1s/audioware/tree/main/manifest/src/de).
+If you would like to know exactly how validation works, consider browsing [unit-tests files](https://github.com/cyb3rpsych0s1s/audioware/tree/main/manifest/src/de).
 ```
 
 ### Guarantees
@@ -138,7 +138,7 @@ Upholding these invariants <span style="color: hotpink">guarantees</span> for ex
 ```admonish danger title="Don't be THAT person!"
 Of course if you delete audio file(s) while your game is running, Audioware will **crash** as soon as called with e.g. `Play`. This is **expected**.
 
-Let's be pragmatic 1sec: if you do so, you probably *deserve* your game to crash anyway 😂
+<span style="font-size: 0.85em">Let's be pragmatic 1sec: if you do so, you probably *deserve* your game to crash anyway 😂</span>
 ```
 
 ```admonish warning title="NO hot-reloading"
