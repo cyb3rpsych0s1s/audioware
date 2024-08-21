@@ -34,17 +34,11 @@ jobs:
           key: release
       - name: Bundle docs files
         run: just preassemble
-      - name: Zip files
-        uses: thedoctor0/zip-release@0.7.6
-        with:
-          type: zip
-          filename: rustdoc-latest.zip
-          path: book/pages/docs
       - name: Upload artifact rustdoc
         uses: actions/upload-artifact@v4
         with:
           name: rustdoc-latest-artifact
-          path: rustdoc-latest.zip
+          path: book/pages/docs
           if-no-files-found: error
   deploy:
     runs-on: ubuntu-latest
@@ -81,7 +75,7 @@ jobs:
           echo `pwd`/mdbook-admonish >> $GITHUB_PATH
       - name: Deploy GitHub Pages
         run: |
-          unzip book/docs/rustdoc-latest.zip -d book/docs
+          unzip book/pages/docs/rustdoc-latest.zip -d book/pages/docs
           rm book/docs/rustdoc-latest.zip
           just assemble
           git worktree add gh-pages
