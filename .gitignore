@@ -10,6 +10,8 @@
 /book/REVERSE.md
 /book/site
 /book/pages/docs
+# auto-generated
+/book/theme/css/mdbook-admonish-custom.css
 .env
 /audioware-copy
 /release-audioware
