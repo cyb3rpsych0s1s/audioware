@@ -1,6 +1,6 @@
 # audioware
 
-![Cyberpunk 2077 version compatibility](https://img.shields.io/badge/Cyberpunk_2077-patch_2.12a-yellow) [![Nexus](https://img.shields.io/badge/Nexus-Audioware-orange)](https://www.nexusmods.com/cyberpunk2077/mods/12001) [![download](https://img.shields.io/github/v/release/cyb3rpsych0s1s/audioware?display_name=tag&label=Download)](https://github.com/cyb3rpsych0s1s/audioware/releases/latest) [![build](https://github.com/cyb3rpsych0s1s/audioware/actions/workflows/quality.yml/badge.svg)](https://github.com/cyb3rpsych0s1s/audioware/actions)
+![Cyberpunk 2077 version compatibility](https://img.shields.io/badge/Cyberpunk_2077-patch_2.12a-yellow) [![Nexus](https://img.shields.io/badge/Nexus-Audioware-orange)](https://www.nexusmods.com/cyberpunk2077/mods/12001) [![download](https://img.shields.io/github/v/release/cyb3rpsych0s1s/audioware?display_name=tag&label=Download)](https://github.com/cyb3rpsych0s1s/audioware/releases/latest) [![build](https://github.com/cyb3rpsych0s1s/audioware/actions/workflows/quality.yml/badge.svg)](https://github.com/cyb3rpsych0s1s/audioware/actions) [![docs](https://github.com/cyb3rpsych0s1s/audioware/actions/workflows/pages.yml/badge.svg)][BOOK]
 
 CP2077 modding tool to expose a new audio backend.
 
@@ -13,7 +13,7 @@ Currently in its infancy, further information will be provided at a later time.
 - [x] seamlessly integrates with vanilla `AudioSystem`, and provide enhanced audio capabilities with `AudioSystemExt`.
 - [x] update reverb via blackboard
 - [x] update player EQ preset via blackboard (`None` / `OnThePhone` / `Underwater`)
-- [x] more ! book coming soon ...
+- [x] more ! get started directly in the 👉 [<span style="font-size:20px;">DOCUMENTATION</span>][BOOK] 👈
 
 ### dependent features
 
@@ -32,3 +32,5 @@ This initial release would never have been possible without the following person
 - [@WopsS](https://github.com/WopsS): for being the author of [RED4ext.SDK](https://github.com/WopsS/RED4ext.SDK) on which all Cyberpunk modding tools are based.
 - [@Nibana](https://linktr.ee/nibanamusic): for providing extensive explanations about audio in games in general, and testing out sound effects.
 - [@catbus00](https://github.com/catbus00): for supporting me all along these months of struggle :)
+
+[BOOK]: https://cyb3rpsych0s1s.github.io/audioware/
