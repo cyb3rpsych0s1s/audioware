@@ -1,4 +1,24 @@
 :root {
+  --md-admonition-icon--admonish-youtube: url("data:image/svg+xml;charset=utf-8,<?xml version='1.0' encoding='iso-8859-1'?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools --><svg height='800px' width='800px' version='1.1' id='Layer_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 461.001 461.001' xml:space='preserve'><g><path style='fill:%23F61C0D;' d='M365.257,67.393H95.744C42.866,67.393,0,110.259,0,163.137v134.728c0,52.878,42.866,95.744,95.744,95.744h269.513c52.878,0,95.744-42.866,95.744-95.744V163.137C461.001,110.259,418.135,67.393,365.257,67.393z M300.506,237.056l-126.06,60.123c-3.359,1.602-7.239-0.847-7.239-4.568V168.607c0-3.774,3.982-6.22,7.348-4.514l126.06,63.881C304.363,229.873,304.298,235.248,300.506,237.056z'/></g></svg>");
+}
+
+:is(.admonition):is(.admonish-youtube) {
+  border-color: #cd201f;
+}
+
+:is(.admonish-youtube) > :is(.admonition-title, summary.admonition-title) {
+  background-color: rgba(205, 32, 31, 0.1);
+}
+:is(.admonish-youtube) > :is(.admonition-title, summary.admonition-title)::before {
+  background-color: #cd201f;
+  mask-image: var(--md-admonition-icon--admonish-youtube);
+  -webkit-mask-image: var(--md-admonition-icon--admonish-youtube);
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+}
+:root {
   --md-admonition-icon--admonish-bulb: url("data:image/svg+xml;charset=utf-8,<?xml version='1.0' encoding='utf-8'?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools --><svg fill='%23000000' version='1.1' id='Layer_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='800px' height='800px' viewBox='0 0 172 260' enable-background='new 0 0 172 260' xml:space='preserve'><path d='M45.999,210h80v15.917h-80V210z M97.999,258h-24c-8.837,0-16-7.163-16-16v-4h56v4C113.999,250.837,106.836,258,97.999,258zM83.973,2.024C38.1,3.104,1.263,41.516,2.011,87.395c0.353,21.69,8.928,41.381,22.743,56.093c13.44,14.314,21.245,33.004,21.245,52.64v1.789h34V128h-16v-12h44v12h-16v69.917h34v-1.793c0-19.601,7.746-38.292,21.18-52.566c14.15-15.034,22.82-35.283,22.82-57.558C169.999,38.935,131.291,0.91,83.973,2.024z'/></svg>");
 }
 
@@ -33,26 +53,6 @@
   background-color: #7c4dff;
   mask-image: var(--md-admonition-icon--admonish-gear);
   -webkit-mask-image: var(--md-admonition-icon--admonish-gear);
-  mask-repeat: no-repeat;
-  -webkit-mask-repeat: no-repeat;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-}
-:root {
-  --md-admonition-icon--admonish-youtube: url("data:image/svg+xml;charset=utf-8,<?xml version='1.0' encoding='iso-8859-1'?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools --><svg height='800px' width='800px' version='1.1' id='Layer_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 461.001 461.001' xml:space='preserve'><g><path style='fill:%23F61C0D;' d='M365.257,67.393H95.744C42.866,67.393,0,110.259,0,163.137v134.728c0,52.878,42.866,95.744,95.744,95.744h269.513c52.878,0,95.744-42.866,95.744-95.744V163.137C461.001,110.259,418.135,67.393,365.257,67.393z M300.506,237.056l-126.06,60.123c-3.359,1.602-7.239-0.847-7.239-4.568V168.607c0-3.774,3.982-6.22,7.348-4.514l126.06,63.881C304.363,229.873,304.298,235.248,300.506,237.056z'/></g></svg>");
-}
-
-:is(.admonition):is(.admonish-youtube) {
-  border-color: #cd201f;
-}
-
-:is(.admonish-youtube) > :is(.admonition-title, summary.admonition-title) {
-  background-color: rgba(205, 32, 31, 0.1);
-}
-:is(.admonish-youtube) > :is(.admonition-title, summary.admonition-title)::before {
-  background-color: #cd201f;
-  mask-image: var(--md-admonition-icon--admonish-youtube);
-  -webkit-mask-image: var(--md-admonition-icon--admonish-youtube);
   mask-repeat: no-repeat;
   -webkit-mask-repeat: no-repeat;
   mask-size: contain;
