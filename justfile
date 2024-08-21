@@ -163,4 +163,4 @@ smash FROM=game_dir:
 
 # 📕 assemble book (for release in CI)
 @assemble: style
-    cd book; mdbook build; cd ..
+    cd book; mdbook build
