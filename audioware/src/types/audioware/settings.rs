@@ -1,9 +1,12 @@
+//! Interop types for [kira].
+
 use core::fmt;
 
 use red4ext_rs::{class_kind::Native, types::Ref, NativeRepr, ScriptClass};
 
 use super::{ToEasing, Tween};
 
+/// Interop type for [kira::spatial::emitter::EmitterSettings].
 #[derive(Default)]
 #[repr(C)]
 pub struct EmitterSettings {
@@ -63,6 +66,7 @@ impl fmt::Debug for EmitterSettings {
     }
 }
 
+/// Interop type for [kira::spatial::emitter::EmitterDistances].
 #[derive(Debug, Default, Clone, PartialEq)]
 #[repr(C)]
 pub struct EmitterDistances {

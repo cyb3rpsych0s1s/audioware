@@ -1,3 +1,5 @@
+//! Interop types for [Codeware](https://github.com/psiberx/cp2077-codeware/wiki).
+
 use red4ext_rs::{
     call,
     class_kind::{Native, Scripted},
@@ -8,6 +10,7 @@ use red4ext_rs::{
 
 use crate::Audioware;
 
+/// Interop type for [localization package](https://github.com/psiberx/cp2077-codeware/wiki#localization-packages).
 #[repr(C)]
 pub struct LocalizationPackage;
 unsafe impl ScriptClass for LocalizationPackage {
@@ -27,6 +30,7 @@ impl Subtitle for Ref<LocalizationPackage> {
     }
 }
 
+/// Interop type for [game events](https://github.com/psiberx/cp2077-codeware/wiki#game-events).
 #[allow(dead_code)]
 #[derive(Debug)]
 #[repr(C)]
@@ -41,6 +45,7 @@ unsafe impl ScriptClass for CallbackSystemTarget {
 #[allow(dead_code)]
 const PADDING_68: usize = 0x68 - 0x40;
 
+/// Interop type for [game events](https://github.com/psiberx/cp2077-codeware/wiki#game-events).
 #[allow(dead_code)]
 #[derive(Debug)]
 #[repr(C)]

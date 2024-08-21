@@ -1,3 +1,5 @@
+//! Interop types for Cyberpunk 2077: see [RED4ext.SDK](https://github.com/WopsS/RED4ext.SDK).
+
 #![allow(dead_code)]
 
 use red4ext_rs::{
