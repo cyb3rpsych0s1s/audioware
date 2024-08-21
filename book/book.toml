@@ -43,6 +43,7 @@ color = "#7c4dff"
 after = ["links"]
 
 [output.html]
+site-url = "/audioware/"
 git-repository-url = "https://github.com/cyb3rpsych0s1s/audioware"
 additional-css = [
   "./theme/css/mdbook-admonish.css",
