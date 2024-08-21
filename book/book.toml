@@ -4,6 +4,7 @@ language = "en"
 multilingual = false
 src = "pages"
 title = "audioware"
+base-url = "https://cyb3rpsych0s1s.github.io/audioware/"
 
 [build]
 extra-watch-dirs = ["pages"]
