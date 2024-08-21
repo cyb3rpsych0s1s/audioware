@@ -31,6 +31,7 @@ mod emitters;
 static SCENE: OnceLock<Scene> = OnceLock::new();
 static SCENE_SYNC_ENABLED: AtomicBool = AtomicBool::new(false);
 
+/// Audio spatial scene.
 pub struct Scene {
     pub scene: Mutex<SpatialSceneHandle>,
     pub v: Mutex<ListenerHandle>,

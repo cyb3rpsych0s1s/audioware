@@ -13,6 +13,7 @@ use super::Parameter;
 const MODULATOR_NAME: &str = "ReverbMix";
 static MODULATOR: OnceLock<Mutex<TweenerHandle>> = OnceLock::new();
 
+/// Reverb mix parameter.
 pub struct ReverbMix;
 impl ReverbMix {
     pub fn try_lock<'a>() -> Result<MutexGuard<'a, TweenerHandle>, InternalError> {

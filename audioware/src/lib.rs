@@ -33,11 +33,13 @@ mod utils;
 
 include!(concat!(env!("OUT_DIR"), "/version.rs"));
 
+/// Audio [Plugin] for Cyberpunk 2077.
 pub struct Audioware;
 
 static REPORT: OnceLock<Initialization> = OnceLock::new();
 
 impl Audioware {
+    /// Register [plugin][Plugin] lifecycle listeners.
     fn register_listeners(env: &SdkEnv) {
         RttiRegistrator::add(Some(register), Some(post_register));
         env.add_listener(
@@ -49,7 +51,7 @@ impl Audioware {
             StateListener::default().with_on_exit(on_exit_running),
         );
     }
-
+    /// Load audio [banks][Banks].
     fn load_banks(env: &SdkEnv) {
         let report = Banks::setup();
 
@@ -65,13 +67,13 @@ impl Audioware {
             log::error!(env, "unable to store report for delayed logs: {e}");
         }
     }
-
+    /// Load audio [engine][Engine].
     fn load_engine(env: &SdkEnv) {
         if let Err(e) = Engine::setup() {
             log::error!(env, "Unable to load engine: {e}");
         }
     }
-
+    /// Attach [`hooks`].
     fn attach_hooks(env: &SdkEnv) {
         // native methods
         global_parameter::attach_hook(env);
@@ -136,6 +138,7 @@ impl Plugin for Audioware {
     const AUTHOR: &'static U16CStr = wcstr!("Roms1383");
     const VERSION: SemVer = AUDIOWARE_VERSION;
 
+    /// Initialize [Plugin]
     fn on_init(env: &SdkEnv) {
         Self::register_listeners(env);
         Self::load_banks(env);
@@ -143,6 +146,7 @@ impl Plugin for Audioware {
         Self::attach_hooks(env);
     }
 
+    /// Register types in [`RttiSystem`]
     #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
     fn exports() -> impl Exportable {
         exports![
@@ -235,6 +239,7 @@ unsafe extern "C" fn register() {}
 
 unsafe extern "C" fn post_register() {}
 
+/// Delayed report for [`Banks`] initialization report to players in CET game console.
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     log::info!(Audioware::env(), "on exit initialization: Audioware");
     Audioware::report_after_rtti();
@@ -253,6 +258,7 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
     // scan_globals("PropagateSubtitle");
 }
 
+/// Unload [Plugin].
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     let env = Audioware::env();
     log::info!(env, "on exit running: Audioware");
@@ -260,28 +266,36 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     Engine::shutdown();
 }
 
+/// [Plugin] version.
+/// e.g. `"1.0.0-rc"`
 // TODO: replace with upstream conversion when PR merged.
 fn version() -> RedString {
     RedString::from("1.0.0-rc")
 }
 
+/// [Plugin] semantic version.
+/// e.g. `[1, 0, 0, 2, 0]`
 // TODO: replace with upstream conversion when PR merged.
 fn semantic_version() -> RedArray<u32> {
     RedArray::from_iter([1, 0, 0, 2, 0])
 }
 
+/// [Plugin] built in [debug mode](https://doc.rust-lang.org/cargo/commands/cargo-build.html) ?
 fn is_debug() -> bool {
     cfg!(debug_assertions)
 }
 
+/// Set V's [gender][PlayerGender].
 fn set_player_gender(value: PlayerGender) {
     PlayerGender::set(Some(value));
 }
 
+/// Unset V's [gender][PlayerGender].
 fn unset_player_gender() {
     PlayerGender::set(None);
 }
 
+#[doc(hidden)]
 #[allow(dead_code)]
 fn test_play() {
     let rtti = RttiSystem::get();
@@ -295,6 +309,7 @@ fn test_play() {
     system.play(CName::new("ono_v_pain_long"), Opt::Default, Opt::Default);
 }
 
+#[doc(hidden)]
 #[allow(dead_code)]
 fn test_static() {
     // CallbackSystemTarget => native: true, size: 0x40, value holder size: 0x0, align: 0x4, parent: IScriptable
@@ -331,6 +346,7 @@ fn test_static() {
     log::info!(env, "player critical health threshold: {threshold}");
 }
 
+#[doc(hidden)]
 #[allow(dead_code)]
 fn test_is_player() {
     let env = Audioware::env();
@@ -353,6 +369,7 @@ fn test_is_player() {
     };
 }
 
+#[doc(hidden)]
 #[allow(dead_code)]
 fn test_get_player() {
     let env = Audioware::env();
@@ -378,6 +395,7 @@ fn test_get_player() {
     };
 }
 
+/// Set game's [spoken locale][SpokenLocale] and [written locale][WrittenLocale].
 fn set_game_locales(spoken: CName, written: CName) {
     let env = Audioware::env();
     let (spoken, written): (SpokenLocale, WrittenLocale) = (
@@ -400,6 +418,7 @@ fn set_game_locales(spoken: CName, written: CName) {
     WrittenLocale::set(written);
 }
 
+#[doc(hidden)]
 #[cfg(debug_assertions)]
 #[allow(dead_code)]
 fn scan_class(class_name: &str) {
@@ -439,6 +458,7 @@ fn scan_class(class_name: &str) {
     }
 }
 
+#[doc(hidden)]
 #[cfg(debug_assertions)]
 #[allow(dead_code)]
 fn scan_globals(func_name: &str) {
@@ -452,6 +472,7 @@ fn scan_globals(func_name: &str) {
     }
 }
 
+#[doc(hidden)]
 #[cfg(debug_assertions)]
 #[allow(dead_code)]
 fn scan_repr(cls_name: &str) {

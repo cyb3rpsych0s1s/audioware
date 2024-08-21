@@ -41,8 +41,15 @@ pub use scene::Scene;
 pub use settings::*;
 pub use tracks::Tracks;
 
+/// Audio engine built on top of [kira].
 pub struct Engine;
 
+/// Context in which sound will be played in [Engine],
+/// mostly a convenience method for:
+/// - [Manager] mutex guard
+/// - [spoken locale][SpokenLocale]
+/// - [written locale][WrittenLocale]
+/// - optionally V's [gender][PlayerGender]
 pub type EngineContext<'a> = (
     MutexGuard<'a, AudioManager>,
     SpokenLocale,
@@ -52,12 +59,14 @@ pub type EngineContext<'a> = (
 );
 
 impl Engine {
+    /// Engine setup for [Manager], [Tracks] and [Scene].
     pub(crate) fn setup() -> Result<(), Error> {
         let mut manager = Manager::try_lock()?;
         Tracks::setup(&mut manager)?;
         Scene::setup(&mut manager, Tracks::get())?;
         Ok(())
     }
+    /// Define [LocalizationPackage] subtitles from those defined in [Manifest][audioware_manifest::Manifest]s.
     pub fn define_subtitles(package: Ref<LocalizationPackage>) {
         let written = WrittenLocale::get();
         let subtitles = Banks::subtitles(written);
@@ -65,9 +74,11 @@ impl Engine {
             package.subtitle(key.as_str(), value_f.as_str(), value_m.as_str());
         }
     }
+    /// [Engine] supported languages.
     pub fn supported_languages() -> Vec<CName> {
         Banks::languages().into_iter().map(|x| x.into()).collect()
     }
+    /// Shutdown [Engine].
     pub fn shutdown() {
         if let Err(e) = Manager.clear_tracks(None) {
             log::error!(Audioware::env(), "couldn't clear tracks on manager: {e}");
@@ -110,6 +121,7 @@ impl Engine {
     pub fn is_registered_emitter(entity_id: EntityId) -> bool {
         Scene::is_registered_emitter(&entity_id)
     }
+    /// Current number of registered audio emitters.
     pub fn emitters_count() -> i32 {
         let count = Scene::emitters_count();
         if let Err(e) = count {
@@ -118,6 +130,7 @@ impl Engine {
         }
         count.unwrap() as i32
     }
+    /// Whenever an audio emitter dies in-game.
     pub fn on_emitter_dies(entity_id: EntityId) {
         if let Err(e) = Scene::on_emitter_dies(entity_id) {
             log::error!(
@@ -126,22 +139,27 @@ impl Engine {
             );
         }
     }
+    /// Toggle audio emitters synchonization.
     pub fn toggle_sync_emitters(enable: bool) {
         Scene::toggle_sync_emitters(enable);
     }
+    /// Whether audio emitters should be synchronized or not.
     pub fn should_sync_emitters() -> bool {
         Scene::should_sync_emitters()
     }
+    /// Audio emitters synchronization.
     pub fn sync_emitters() {
         if let Err(e) = Scene::sync_emitters() {
             log::error!(Audioware::env(), "couldn't sync emitters on scene: {e}");
         }
     }
+    /// Audio listener synchronization.
     pub fn sync_listener() {
         if let Err(e) = Scene::sync_listener() {
             log::error!(Audioware::env(), "couldn't sync listener on scene: {e}");
         }
     }
+    /// Free [Manager] storage from stopped sounds.
     pub fn reclaim() {
         if let Err(e) = Manager::reclaim() {
             log::error!(
@@ -150,6 +168,7 @@ impl Engine {
             );
         }
     }
+    #[doc(hidden)]
     pub fn play_over_the_phone(event_name: CName, emitter_name: CName, gender: CName) {
         let mut manager = match Manager::try_lock() {
             Ok(x) => x,
@@ -177,7 +196,7 @@ impl Engine {
         );
         // TODO: handle convo?
     }
-    /// play sound
+    /// Play sound with optional [tween][Tween].
     pub fn play(
         sound_name: CName,
         entity_id: Opt<EntityId>,
@@ -205,6 +224,7 @@ impl Engine {
             )
         }
     }
+    /// Play sound with [alternate settings][AudioSettingsExt].
     pub fn play_with(
         sound_name: CName,
         entity_id: Opt<EntityId>,
@@ -231,6 +251,7 @@ impl Engine {
             )
         }
     }
+    /// Stop sound with optional [tween][Tween].
     pub fn stop(
         event_name: CName,
         entity_id: Opt<EntityId>,
@@ -251,16 +272,20 @@ impl Engine {
             log::error!(env, "{e}");
         }
     }
+    /// Pause all sounds with optional [tween][Tween].
     pub fn pause(tween: Ref<Tween>) {
         if let Err(e) = Manager.pause(tween.into_tween()) {
             log::error!(Audioware::env(), "{e}");
         }
     }
+    /// Resume all sounds with optional [tween][Tween],
+    /// except those already stopped.
     pub fn resume(tween: Ref<Tween>) {
         if let Err(e) = Manager.resume(tween.into_tween()) {
             log::error!(Audioware::env(), "{e}");
         }
     }
+    /// Switch one sound for another, with optional [tween][Tween] and [alternate settings][AudioSettingsExt].
     pub fn switch(
         switch_name: CName,
         switch_value: CName,
@@ -291,6 +316,7 @@ impl Engine {
             system.play(switch_value, entity_id, emitter_name);
         }
     }
+    /// Play sound on audio emitter with optional [tween][Tween].
     pub fn play_on_emitter(
         sound_name: CName,
         entity_id: EntityId,
@@ -323,6 +349,7 @@ impl Engine {
             duration,
         );
     }
+    /// Stop sound on audio emitter with optional [tween][Tween].
     pub fn stop_on_emitter(
         event_name: CName,
         entity_id: EntityId,
@@ -338,12 +365,14 @@ impl Engine {
             log::error!(Audioware::env(), "{e}");
         }
     }
+    /// Stop any sound for given [EntityId].
     #[allow(dead_code)]
     pub fn stop_for(entity_id: EntityId) {
         if let Err(e) = Manager.stop_for(&entity_id, None) {
             log::error!(Audioware::env(), "{e}");
         }
     }
+    /// Set [ReverbMix].
     pub fn set_reverb_mix(value: f32) {
         if !(0. ..=1.).contains(&value) {
             log::error!(
@@ -357,6 +386,7 @@ impl Engine {
             "Unable to set reverb mix"
         );
     }
+    /// Set audio [Preset].
     pub fn set_preset(value: Preset) {
         let tracks = Tracks::get();
         let mut eq = ok_or_return!(tracks.ambience.try_eq(), "Unable to set EQ preset");
@@ -407,6 +437,7 @@ impl Engine {
             }
         };
     }
+    /// Retrieve current [engine context][EngineContext].
     fn context(sound_name: &CName) -> Result<EngineContext, Error> {
         let manager = Manager::try_lock()?;
         let spoken = SpokenLocale::get();
