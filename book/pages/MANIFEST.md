@@ -120,7 +120,7 @@ Each audio file is briefly preloaded on game startup to make sure they will play
 ```admonish warning title="Audio settings must be valid"
 Each setting defined alongside audios must be valid.
 
-> e.g. specifying a `start_position` that is shorter than audio's duration is **not**!
+> e.g. specifying a `start_position` further than audio total duration is **not**!
 ```
 
 ```admonish tip title="Validation deep-dive"
