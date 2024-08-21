@@ -2,7 +2,7 @@
 
 Out-of-the-box, Cyberpunk 2077's *vanilla*[^1] audio engine is built on top of [Audiokinetic's WWise](https://www.audiokinetic.com/en/wwise/overview/) which is a professional-grade audio software and tools suite.
 
-Audioware *does not make any use it* and it has *almost* **no** control over it.
+Audioware *does not make any use of it* and it has *almost* **no** control over it.
 
 Here's how Cyberpunk 2077 is designed, in an overly simplified way.
 
