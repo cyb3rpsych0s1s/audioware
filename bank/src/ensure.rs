@@ -207,29 +207,36 @@ pub fn ensure_valid_audio_settings(
                 }
             );
         }
-        if let Some(region) = settings.loop_region {
-            let start: f64 = match (region.start, audio) {
-                (PlaybackPosition::Seconds(seconds), _) => seconds,
-                (PlaybackPosition::Samples(samples), Either::Left(data)) => {
+        if let Some(ref region) = settings.region {
+            let start: f64 = match (region.starts(), audio) {
+                (Some(PlaybackPosition::Seconds(seconds)), _) => seconds,
+                (Some(PlaybackPosition::Samples(samples)), Either::Left(data)) => {
                     samples as f64 / data.sample_rate as f64
                 }
                 // no sample rate method, so returns start of audio
-                (PlaybackPosition::Samples(_), Either::Right(_)) => 0.0,
+                (Some(PlaybackPosition::Samples(_)), Either::Right(_)) => 0.0,
+                // none implicitly means beginning of the audio
+                (None, _) => 0.0,
             };
-            let end: f64 = match (region.end, audio) {
-                (EndPosition::EndOfAudio, Either::Left(_)) => duration,
-                (EndPosition::EndOfAudio, Either::Right(_)) => duration,
-                (EndPosition::Custom(PlaybackPosition::Seconds(x)), _) => x,
-                (EndPosition::Custom(PlaybackPosition::Samples(samples)), Either::Left(data)) => {
-                    samples as f64 / data.sample_rate as f64
-                }
+            let end: f64 = match (region.ends(), audio) {
+                (Some(EndPosition::EndOfAudio), Either::Left(_)) => duration,
+                (Some(EndPosition::EndOfAudio), Either::Right(_)) => duration,
+                (Some(EndPosition::Custom(PlaybackPosition::Seconds(x))), _) => x,
+                (
+                    Some(EndPosition::Custom(PlaybackPosition::Samples(samples))),
+                    Either::Left(data),
+                ) => samples as f64 / data.sample_rate as f64,
                 // no sample rate method, so returns end of audio
-                (EndPosition::Custom(PlaybackPosition::Samples(_)), Either::Right(_)) => duration,
+                (Some(EndPosition::Custom(PlaybackPosition::Samples(_))), Either::Right(_)) => {
+                    duration
+                }
+                // none implicitly means end of the audio
+                (None, _) => duration,
             };
             ensure!(
                 start >= 0.0 && end > 0.0 && start < duration && end <= duration && start < end,
                 InvalidAudioSettingSnafu {
-                    which: "loop_region",
+                    which: "region",
                     why: "must be within audio duration and starts before it ends"
                 }
             );
