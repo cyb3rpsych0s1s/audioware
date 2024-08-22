@@ -29,7 +29,7 @@ Note that any of these additional parameters <span style="color: #f3d772">only</
 ```admonish tip
 If you want to use vanilla audio with Audioware, you can still convert + export them from WolvenKit as described [in their Wiki](https://wiki.redmodding.org/wolvenkit/wolvenkit-app/usage/video-and-audio#audio), then re-define them normally in your [manifest](./MANIFEST.md).
 
-> ⚠️ make sure to use a [supported audio format](./GETTING-STARTED.md#-define-audios)
+> ⚠️ make sure to use a [supported audio format](./MANIFEST.html#supported-audio-formats)
 ```
 
 ```admonish youtube title="YouTube demo"
