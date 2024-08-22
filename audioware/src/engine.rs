@@ -1,6 +1,6 @@
 use std::sync::MutexGuard;
 
-use audioware_bank::{Banks, Id};
+use audioware_bank::{BankSubtitles, Banks, Id};
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Source, SpokenLocale, WrittenLocale};
 use kira::{manager::AudioManager, OutputDestination, Volume};
 use manager::{Pause, PlayAndStore, Resume, StopBy, StopFor};
@@ -69,7 +69,7 @@ impl Engine {
     /// Define [LocalizationPackage] subtitles from [Manifest][audioware_manifest::Manifest]s.
     pub fn define_subtitles(package: Ref<LocalizationPackage>) {
         let written = WrittenLocale::get();
-        let subtitles = Banks::subtitles(written);
+        let subtitles = Banks.subtitles(written);
         for (key, (value_f, value_m)) in subtitles.iter() {
             package.subtitle(key.as_str(), value_f.as_str(), value_m.as_str());
         }

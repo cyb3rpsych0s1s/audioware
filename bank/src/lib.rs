@@ -9,7 +9,6 @@ use std::{
 use audioware_manifest::{
     error::{CannotParseManifest, CannotReadManifest},
     Depot, DialogLine, Locale, Manifest, PlayerGender, R6Audioware, REDmod, Settings, SpokenLocale,
-    WrittenLocale,
 };
 use ensure::*;
 use kira::sound::static_sound::StaticSoundData;
@@ -29,56 +28,7 @@ pub use storage::*;
 
 use crate::error::registry::Error as RegistryError;
 
-static LOC_SUB: OnceLock<HashMap<LocaleKey, DialogLine>> = OnceLock::new();
-static MUL_SUB: OnceLock<HashMap<BothKey, DialogLine>> = OnceLock::new();
-
 static KEYS: OnceLock<HashSet<Id>> = OnceLock::new();
-
-/// Returns raw entries to create a [localization package](https://github.com/psiberx/cp2077-codeware/wiki#localization-packages).
-pub trait Package {
-    fn package(&self, locale: Locale) -> Vec<(CName, (String, String))>;
-}
-
-impl Package for HashMap<LocaleKey, DialogLine> {
-    fn package(&self, locale: Locale) -> Vec<(CName, (String, String))> {
-        let mut out = Vec::new();
-        for (k, v) in self {
-            if k.1 == locale {
-                out.push((k.0, (v.msg.clone(), v.msg.clone())));
-            }
-        }
-        out
-    }
-}
-
-impl Package for HashMap<BothKey, DialogLine> {
-    fn package(&self, locale: Locale) -> Vec<(CName, (String, String))> {
-        let mut out = Vec::new();
-        let mut female: String;
-        let mut male: String;
-        for (k, v) in self {
-            if k.1 == locale {
-                if k.2 == PlayerGender::Female {
-                    female = v.msg.clone();
-                    male = self
-                        .get(&BothKey(k.0, k.1, PlayerGender::Male))
-                        .expect("genders cannot be partially defined")
-                        .msg
-                        .clone();
-                } else {
-                    male = v.msg.clone();
-                    female = self
-                        .get(&BothKey(k.0, k.1, PlayerGender::Female))
-                        .expect("genders cannot be partially defined")
-                        .msg
-                        .clone();
-                }
-                out.push((k.0, (female, male)));
-            }
-        }
-        out
-    }
-}
 
 pub struct Banks;
 impl Banks {
@@ -100,26 +50,13 @@ impl Banks {
     /// All languages found in [Manifest]s.
     pub fn languages() -> HashSet<Locale> {
         let mut out = HashSet::new();
-        for key in LOC_SUB.get().unwrap().keys() {
+        for key in LOC_SUB.keys() {
             out.insert(key.1);
         }
-        for key in MUL_SUB.get().unwrap().keys() {
+        for key in MUL_SUB.keys() {
             out.insert(key.1);
         }
         out
-    }
-    /// All subtitles stored in banks for a given [written locale](WrittenLocale),
-    /// returned as raw values.
-    pub fn subtitles(locale: WrittenLocale) -> Vec<(CName, (String, String))> {
-        let simple_package = LOC_SUB
-            .get()
-            .map(|x| x.package(locale.into_inner()))
-            .unwrap_or_default();
-        let complex_package = MUL_SUB
-            .get()
-            .map(|x| x.package(locale.into_inner()))
-            .unwrap_or_default();
-        [simple_package, complex_package].concat()
     }
     pub fn try_get<'a>(
         name: &CName,
