@@ -15,7 +15,7 @@ It allows you to play sounds with audio effects, including on game entities like
 - [x] seamlessly integrates with vanilla `AudioSystem`, and provide enhanced audio capabilities with `AudioSystemExt`.
 - [x] update reverb via blackboard
 - [x] update player EQ preset via blackboard (`None` / `OnThePhone` / `Underwater`)
-- [x] more ! get started directly in the 👉 [<span style="font-size:1.35em;">DOCUMENTATION</span>][BOOK] 👈
+- [x] more ! get started directly in the <span style="font-size:1.45em;">👉 [DOCUMENTATION][BOOK] 👈</span>
 
 ### dependent features
 
