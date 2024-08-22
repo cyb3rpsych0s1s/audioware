@@ -37,6 +37,8 @@ use crate::ext::MergeArgs;
 use crate::types::ToTween;
 use crate::Audioware;
 
+use audioware_bank::BankData;
+
 pub struct Manager;
 
 pub trait Stopped {
@@ -294,7 +296,7 @@ where
         destination: Option<OutputDestination>,
         tween: U,
     ) -> Result<f32, Error> {
-        match Banks::data(id) {
+        match Banks.data(id) {
             either::Either::Left(data) => {
                 data.play_and_store(manager, id, entity_id, emitter_name, destination, tween)
             }
@@ -359,7 +361,7 @@ impl PlayAndStore<Ref<AudioSettingsExt>> for Manager {
         destination: Option<OutputDestination>,
         ext: Ref<AudioSettingsExt>,
     ) -> Result<f32, Error> {
-        match Banks::data(id) {
+        match Banks.data(id) {
             either::Either::Left(data) => {
                 data.play_and_store(manager, id, entity_id, emitter_name, destination, ext)
             }
