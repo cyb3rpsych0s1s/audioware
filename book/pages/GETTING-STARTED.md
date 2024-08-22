@@ -1,5 +1,7 @@
 # Getting started
 
+![Cover image](./assets/cover.webp)
+
 Welcome to audioware book !
 
 Audioware is a native plugin to play custom audios in Cyberpunk 2077, *without* REDmod.
