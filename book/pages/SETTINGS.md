@@ -185,7 +185,7 @@ my_custom_audio:
     fade_in_tween:
       start_time: 1s # starts playing directly from 1s
       duration: 3s # fade-in duration
-      Linear # linear fade-in curve
+      Linear: # linear fade-in curve (no value needed)
 ```
 
 ```yml
