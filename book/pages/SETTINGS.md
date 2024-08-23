@@ -188,5 +188,5 @@ my_custom_audio:
 Possible values for `easing` can be found [here](https://docs.rs/kira/latest/kira/tween/enum.Easing.html).
 
 ```admonish hint
-Note that fade-out can be specified as a parameter when calling methods like `Play`, `Switch`, etc. see [AudioSettingsExt](./AUDIO_SETTINGS_EXT.md).
+Note that fade-out can be specified as a parameter when calling methods like `Stop`, `Switch`, etc. see [AudioSettingsExt](./AUDIO_SETTINGS_EXT.md).
 ```
