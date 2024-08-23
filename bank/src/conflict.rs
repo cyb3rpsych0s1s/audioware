@@ -1,19 +1,21 @@
+//! Identify potential conflicts between instances of same type.
+
 use std::collections::HashSet;
 
 use red4ext_rs::types::CName;
 
 use super::{BothKey, GenderKey, Id, Key, LocaleKey, UniqueKey};
 
-/// identify a type as potentially conflictual
+/// Identify a type as potentially conflictual.
 pub trait Conflictual {}
 
-/// search indexes for conflictual combination
+/// Search indexes for conflictual combination.
 pub trait Conflict<T: Conflictual> {
     fn conflict(&self, other: &T) -> bool;
 }
 
 impl Conflict<UniqueKey> for HashSet<Id> {
-    /// unique key must not conflict with any kind of id
+    /// Unique key must not conflict with any kind of id.
     fn conflict(&self, other: &UniqueKey) -> bool {
         for id in self.iter() {
             if AsRef::<CName>::as_ref(id) == &other.0 {
@@ -25,7 +27,7 @@ impl Conflict<UniqueKey> for HashSet<Id> {
 }
 
 impl Conflict<GenderKey> for HashSet<Id> {
-    /// gender key must not conflict with other kind of id, and self-duplicate
+    /// Gender key must not conflict with other kind of id, and self-duplicate.
     fn conflict(&self, other: &GenderKey) -> bool {
         for id in self.iter() {
             match id.as_ref() {
@@ -49,7 +51,7 @@ impl Conflict<GenderKey> for HashSet<Id> {
 }
 
 impl Conflict<LocaleKey> for HashSet<Id> {
-    /// locale key must not conflict with other kind of id, and self-duplicate
+    /// Locale key must not conflict with other kind of id, and self-duplicate.
     fn conflict(&self, other: &LocaleKey) -> bool {
         for id in self.iter() {
             match id.as_ref() {
@@ -71,7 +73,7 @@ impl Conflict<LocaleKey> for HashSet<Id> {
 }
 
 impl Conflict<BothKey> for HashSet<Id> {
-    /// both key must not conflict with other kind of id, and self-duplicate
+    /// Both key must not conflict with other kind of id, and self-duplicate.
     fn conflict(&self, other: &BothKey) -> bool {
         for id in self.iter() {
             match id.as_ref() {

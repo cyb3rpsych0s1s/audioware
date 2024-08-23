@@ -7,7 +7,9 @@ use kira::{
 };
 use serde::Deserialize;
 
-/// Cyberpunk mirror type for [`StaticSoundSettings`](kira::sound::static_sound::StaticSoundSettings)/[`StreamingSoundSettings`](kira::sound::streaming::StreamingSoundSettings).
+/// Interop type
+/// for [kira::sound::static_sound::StaticSoundSettings]
+/// and [kira::sound::streaming::StreamingSoundSettings].
 #[derive(Debug, Deserialize, Clone)]
 pub struct Settings {
     #[serde(with = "humantime_serde", default)]
@@ -54,6 +56,7 @@ where
     Ok(None)
 }
 
+/// Interop type for [kira::tween::Tween].
 #[derive(Debug, Deserialize, Clone)]
 pub struct Interpolation {
     #[serde(with = "humantime_serde", default)]

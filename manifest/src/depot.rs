@@ -1,6 +1,6 @@
-//! Audioware first loads all [`Depot`] from [`REDmod`] and [`R6Audioware`] folders.
+//! Audioware first loads all [Depot] from [REDmod] and [R6Audioware] folders.
 //!
-//! Each [`Depot`] is expected to contain one or multiple [Manifests](crate::Manifest).
+//! Each [Depot] is expected to contain one or multiple [Manifests](crate::Manifest).
 
 use std::path::{Path, PathBuf};
 
@@ -11,6 +11,7 @@ use snafu::{OptionExt, ResultExt};
 
 use super::error::Error;
 
+/// [Depot] for REDmod, `mods`.
 #[derive(Debug)]
 pub struct REDmod(PathBuf);
 
@@ -26,11 +27,12 @@ impl AsRef<Path> for REDmod {
     }
 }
 
+/// [Depot] for `r6\audioware`.
 #[derive(Debug)]
 pub struct R6Audioware(PathBuf);
 
 impl Depot for R6Audioware {
-    /// try getting r6\audioware folder, if it exists
+    /// Try getting `r6\audioware` folder, if it exists.
     fn try_new() -> Result<Self, Error> {
         Ok(Self(try_get_folder(PathBuf::from("r6").join("audioware"))?))
     }
@@ -42,7 +44,7 @@ impl AsRef<Path> for R6Audioware {
     }
 }
 
-/// a folder containing [`Mod`] folder(s)
+/// Folder containing [Mod] folder(s).
 pub trait Depot
 where
     Self: Sized + AsRef<Path>,
@@ -70,6 +72,7 @@ where
     }
 }
 
+/// Try to retrieve a specific folder from filesystem.
 pub fn try_get_folder(folder: impl AsRef<Path>) -> Result<PathBuf, Error> {
     let current_folder = std::env::current_exe().context(BinaryLocationSnafu)?;
     Ok(current_folder
@@ -91,7 +94,7 @@ fn is_yaml(file: &Path) -> bool {
         .unwrap_or(false)
 }
 
-/// a folder containing YAML and audio files
+/// Folder containing YAML manifest and audio files.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Mod(PathBuf);
 
@@ -102,15 +105,16 @@ impl std::fmt::Display for Mod {
 }
 
 impl Mod {
-    /// check that folder names match, independently of location in file system.
+    /// Check that folder names match, independently of location in file system.
     ///
-    /// if folder name cannot be determined, it will return `false`.
+    /// If folder name cannot be determined, it will return `false`.
     pub fn same_folder_name(&self, rhs: &Path) -> bool {
         if let (Some(this), Some(that)) = (self.0.file_name(), rhs.file_name()) {
             return this == that;
         }
         false
     }
+    /// Retrieve all manifests paths.
     pub fn manifests_paths(&self) -> Vec<PathBuf> {
         let readdir = match std::fs::read_dir(self.as_ref()) {
             Ok(x) => x,
@@ -140,13 +144,13 @@ impl AsRef<Path> for Mod {
 }
 
 impl Mod {
-    /// get mod folder name (file stem)
+    /// Get mod folder name (file stem).
     pub fn name(&self) -> ModName {
         ModName(self.0.file_stem().unwrap().to_str().unwrap().to_string())
     }
 }
 
-/// a mod name
+/// [Mod] name.
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct ModName(String);
 

@@ -1,3 +1,5 @@
+//! Plugin config settings.
+
 use std::path::PathBuf;
 
 use audioware_manifest::{error::ConversionError, try_get_folder};
@@ -22,6 +24,7 @@ pub enum BufferSize {
 }
 
 impl BufferSize {
+    /// Read ModSettings .ini file.
     pub fn read_ini() -> BufferSize {
         if let Ok(ini_filepath) = try_get_ini() {
             if let Ok(conf) = Ini::load_from_file(ini_filepath) {
@@ -68,6 +71,7 @@ impl TryFrom<Ini> for BufferSize {
     }
 }
 
+/// Retrieve ModSettings .ini file from filesystem.
 fn try_get_ini() -> Result<PathBuf, audioware_manifest::error::Error> {
     try_get_folder(
         PathBuf::from("red4ext")

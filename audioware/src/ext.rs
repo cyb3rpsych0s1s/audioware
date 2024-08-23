@@ -1,3 +1,5 @@
+//! [AudioSystemExt] surface API.
+
 use audioware_manifest::ScnDialogLineType;
 use kira::sound::PlaybackPosition;
 use red4ext_rs::{
@@ -13,6 +15,7 @@ use crate::{
     Audioware,
 };
 
+/// Interop type for [Ext.reds](https://github.com/cyb3rpsych0s1s/audioware/blob/main/audioware/reds/Ext.reds).
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
 pub struct AudioSystemExt {
@@ -93,13 +96,15 @@ impl AudioSystemExt {
         Engine::on_emitter_dies(entity_id);
     }
     pub fn semantic_version(&self) -> StaticArray<u16, 5> {
-        StaticArray::from([1, 0, 0, 2, 1])
+        // StaticArray::from([1, 0, 0, 2, 1])
+        todo!()
     }
     pub const fn is_debug(&self) -> bool {
         cfg!(debug_assertions)
     }
 }
 
+/// Any type which can be merged with [settings](AudioSettingsExt).
 pub trait MergeArgs {
     fn merge_args(self, ext: &Ref<AudioSettingsExt>) -> Self;
 }
@@ -107,6 +112,7 @@ pub trait MergeArgs {
 macro_rules! impl_merge_args {
     ($into:path) => {
         impl MergeArgs for $into {
+            /// Merge defined [AudioSettingsExt] values when valid.
             fn merge_args(mut self, ext: &Ref<AudioSettingsExt>) -> Self {
                 if ext.is_null() {
                     return self;

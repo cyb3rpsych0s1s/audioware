@@ -4,6 +4,7 @@ use red4ext_rs::{
     RttiSystem,
 };
 
+/// Trigger subtitles display in Redscript from Rust.
 pub fn propagate_subtitles(
     reaction: CName,
     entity_id: EntityId,

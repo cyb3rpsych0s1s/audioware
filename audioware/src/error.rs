@@ -1,3 +1,5 @@
+//! Plugin errors.
+
 use audioware_manifest::error::ConversionError;
 use kira::{manager::error::PlaySoundError, sound::FromFileError, ResourceLimitReached};
 use snafu::Snafu;

@@ -1,0 +1,55 @@
+[book]
+authors = ["Roms1383"]
+language = "en"
+multilingual = false
+src = "pages"
+title = "audioware"
+base-url = "https://cyb3rpsych0s1s.github.io/audioware/"
+
+[build]
+extra-watch-dirs = ["pages"]
+build-dir = 'site'
+
+[preprocessor.codeblocks]
+renderers = ["html"]
+cpp = { color = "#FFFF99", link = "https://wiki.redmodding.org/red4ext" }
+swift = { icon = "fa-r", label = "Redscript", color = "tomato", link = "https://wiki.redmodding.org/redscript" }
+rust = { color = "tomato", link = "https://github.com/jac3km4/red4ext-rs" }
+lua = { color = "skyblue", link = "https://wiki.redmodding.org/cyber-engine-tweaks" }
+yaml = { color = "tomato", link = "https://github.com/psiberx/cp2077-tweak-xl/wiki/YAML-Tweaks" }
+
+[preprocessor.admonish]
+command = "mdbook-admonish"
+assets_version = "3.0.2" # do not edit: managed by `mdbook-admonish install`
+on_failure = "bail"
+after = ["links"]
+
+[[preprocessor.admonish.custom]]
+directive = "youtube"
+icon = "./pages/assets/youtube.svg"
+color = "#CD201F"
+after = ["links"]
+
+[[preprocessor.admonish.custom]]
+directive = "bulb"
+icon = "./pages/assets/bulb.svg"
+color = "#318CE7"
+after = ["links"]
+
+[[preprocessor.admonish.custom]]
+directive = "gear"
+icon = "./pages/assets/gear.svg"
+color = "#7c4dff"
+after = ["links"]
+
+[output.html]
+site-url = "/audioware/"
+git-repository-url = "https://github.com/cyb3rpsych0s1s/audioware"
+additional-css = [
+  "./theme/css/mdbook-admonish.css",
+  "./theme/css/mdbook-admonish-custom.css",
+  "./theme/css/mdbook-admonish-styling.css"
+]
+
+[output.linkcheck]
+optional = true

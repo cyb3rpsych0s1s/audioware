@@ -1,4 +1,7 @@
+//! Hooks for native functions and event handlers.
+
 #[rustfmt::skip]
+#[doc(hidden)]
 mod offsets {
     // AudioSystem
     pub(super) const PARAMETER: u32                         = 0x7A491F19; // 0x14244FE90

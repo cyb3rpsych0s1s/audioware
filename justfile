@@ -10,6 +10,7 @@ plugin_name         := 'audioware'
 # codebase (here)
 red4ext_bin_dir     := join(justfile_directory(), "target")
 redscript_repo_dir  := join(justfile_directory(), "audioware", "reds")
+rustdoc_target_dir  := join(justfile_directory(), "book", "pages", "docs")
 
 # game files
 red4ext_deploy_dir    := join("red4ext", "plugins", plugin_name)
@@ -142,3 +143,24 @@ checksum TO:
 
 smash FROM=game_dir:
   {{ join(justfile_directory(), "community", "redscript-cli.exe") }} decompile -f -i '{{ join(FROM, red_cache_dir, "final.redscripts") }}' -o '{{ join(justfile_directory(), "..", "dump_smasher") }}'
+
+@style:
+    cd book; mdbook-admonish generate-custom ./theme/css/mdbook-admonish-custom.css
+
+# 📖 read book directly
+@read: style preassemble
+    cd book; mdbook build --open
+
+# 🖊️  book with live hot reload
+@draft: style preassemble
+    cd book; mdbook watch --open
+
+# 📕 preassemble book: rustdoc (for release in CI in 2 steps)
+@preassemble:
+    cargo build; cargo doc --document-private-items --target-dir '{{rustdoc_target_dir}}'
+    just delete '{{ join(rustdoc_target_dir, "debug") }}'
+    just delete '{{ join(rustdoc_target_dir, "CACHEDIR.TAG") }}'
+
+# 📕 assemble book (for release in CI)
+@assemble: style
+    cd book; mdbook build; cd ..

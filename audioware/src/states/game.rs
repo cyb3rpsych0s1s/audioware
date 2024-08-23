@@ -1,4 +1,4 @@
-//! game state
+//! Game state.
 
 use std::{
     convert::Infallible,
@@ -11,7 +11,7 @@ use crate::{engine::Engine, Audioware};
 
 use super::{State, ToggleState};
 
-/// retrieve [`State`]
+/// Retrieve raw game [State].
 fn state() -> &'static AtomicU8 {
     static INSTANCE: OnceLock<AtomicU8> = OnceLock::new();
     INSTANCE.get_or_init(|| AtomicU8::new(GameState::default() as u8))

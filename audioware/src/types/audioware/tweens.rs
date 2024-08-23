@@ -6,6 +6,7 @@ use crate::Audioware;
 
 use super::Easing;
 
+/// Intermediate representation for [kira::tween::Tween].
 #[derive(Debug, PartialEq, Clone)]
 #[repr(C)]
 pub struct Tween {
@@ -19,6 +20,8 @@ unsafe impl ScriptClass for Tween {
     const NAME: &'static str = "Audioware.Tween";
 }
 
+/// Intermediate representation for [kira::tween::Tween]
+/// used in Redscript.
 #[derive(Debug, PartialEq)]
 #[repr(C)]
 pub struct LinearTween {
@@ -38,6 +41,8 @@ impl LinearTween {
     }
 }
 
+/// Intermediate representation for [kira::tween::Tween]
+/// used in Redscript.
 #[derive(Debug, PartialEq)]
 #[repr(C)]
 pub struct ElasticTween {
@@ -61,6 +66,7 @@ impl ElasticTween {
     }
 }
 
+/// Any type that can converted into an optional [kira::tween::Tween].
 pub trait ToTween {
     fn into_tween(self) -> Option<kira::tween::Tween>;
 }
@@ -157,6 +163,7 @@ impl ToTween for Ref<ElasticTween> {
     }
 }
 
+/// Any type that can be converted into an optional [kira::tween::Easing].
 pub trait ToEasing {
     fn into_easing(self) -> Option<kira::tween::Easing>;
 }

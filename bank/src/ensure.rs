@@ -1,3 +1,6 @@
+//! Guarantees to uphold at all time,
+//! as explained in the [book](https://cyb3rpsych0s1s.github.io/audioware/MANIFEST.html#guarantees).
+
 use std::{
     collections::{HashMap, HashSet},
     hash::Hash,
@@ -27,7 +30,7 @@ use super::{
     BothKey, Error, GenderKey, Key, LocaleKey, UniqueKey,
 };
 
-/// ensure no duplicate mod folder name across depots: `r6\audioware` and `mods`.
+/// Ensure no duplicate mod folder name across depots: `r6\audioware` and `mods`.
 #[inline]
 pub fn ensure_no_duplicate_accross_depots(
     redmod_exists: bool,
@@ -43,7 +46,7 @@ pub fn ensure_no_duplicate_accross_depots(
     Ok(())
 }
 
-/// ensure [`CName`] does not already exist in game pool.
+/// Ensure [CName] does not already exist in [game pool](CNamePool).
 #[inline]
 pub fn ensure_key_unique(cname: &str) -> Result<(), Error> {
     ensure!(
@@ -55,7 +58,7 @@ pub fn ensure_key_unique(cname: &str) -> Result<(), Error> {
     Ok(())
 }
 
-/// ensure [`Key`](crate::Key) variants do not [`Conflict`].
+/// Ensure [Key] variants do not [Conflict] with each others.
 #[inline]
 pub fn ensure_key_no_conflict<T: Conflictual>(
     key: &T,
@@ -71,9 +74,9 @@ pub fn ensure_key_no_conflict<T: Conflictual>(
     Ok(())
 }
 
-/// ensure [`Manifest`] does not contain duplicate keys among
-/// [`Sfx`](crate::manifest::de::Sfx),
-/// [`Ono`](crate::manifest::de::Ono),
+/// Ensure [Manifest] does not contain duplicate keys among
+/// [Sfx]
+/// [Ono]
 /// etc.
 pub fn ensure_manifest_no_duplicates(manifest: &Manifest) -> Result<(), Error> {
     let mut hashset = HashSet::with_capacity(100);
@@ -112,7 +115,7 @@ pub fn ensure_manifest_no_duplicates(manifest: &Manifest) -> Result<(), Error> {
     Ok(())
 }
 
-/// ensure audio file [`Path`](std::path::Path) is located inside [`Mod`] depot.
+/// Ensure audio file [Path](std::path::Path) is located inside [Mod] depot.
 pub fn ensure_located_in_depot(
     file: &impl AsRef<std::path::Path>,
     folder: &Mod,
@@ -129,7 +132,7 @@ pub fn ensure_located_in_depot(
     Ok(())
 }
 
-/// ensure [`Path`](std::path::Path) contains valid audio (based on usage)
+/// Ensure path refers to valid audio (based on [usage](Usage)).
 pub fn ensure_valid_audio(
     path: &impl AsRef<std::path::Path>,
     m: &Mod,
@@ -167,6 +170,7 @@ pub fn ensure_valid_audio(
     Ok(data)
 }
 
+/// Ensure given settings are valid for audio.
 pub fn ensure_valid_audio_settings(
     audio: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
     settings: Option<&Settings>,
@@ -234,6 +238,7 @@ pub fn ensure_valid_audio_settings(
     Ok(())
 }
 
+#[doc(hidden)]
 pub fn ensure_valid_jingle_captions(
     audio: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
     captions: &[Caption],
@@ -269,6 +274,7 @@ pub fn ensure_valid_jingle_captions(
     Ok(())
 }
 
+/// Ensure data is properly stored.
 pub fn ensure_store_data<T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     key: T,
     value: StaticSoundData,
@@ -290,6 +296,7 @@ pub fn ensure_store_data<T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     Ok(())
 }
 
+/// Ensure subtitle is properly stored.
 pub fn ensure_store_subtitle<T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     key: T,
     value: DialogLine,
@@ -299,6 +306,7 @@ pub fn ensure_store_subtitle<T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     Ok(())
 }
 
+/// Ensure settings are properly stored.
 pub fn ensure_store_settings<T: PartialEq + Eq + Hash + Clone>(
     key: &T,
     value: Settings,
@@ -311,13 +319,14 @@ pub fn ensure_store_settings<T: PartialEq + Eq + Hash + Clone>(
     Ok(())
 }
 
-/// ensure [`Id`] is properly indexed in appropriate bank
+/// Ensure [Id] is properly indexed in appropriate bank.
 #[inline]
 pub fn ensure_store_id(id: Id, store: &mut HashSet<Id>) -> Result<(), Error> {
     ensure!(store.insert(id.clone()), CannotStoreAgnosticIdSnafu { id });
     Ok(())
 }
 
+/// Ensure guarantees are upheld.
 #[allow(clippy::too_many_arguments)]
 fn ensure<'a, K: PartialEq + Eq + Hash + Clone + Into<Key> + Conflictual>(
     k: &'a str,
@@ -356,6 +365,7 @@ where
     Ok(())
 }
 
+/// Ensure [Sfx] guarantees are upheld.
 pub fn ensure_sfx<'a>(
     k: &'a str,
     v: Sfx,
@@ -388,6 +398,7 @@ pub fn ensure_sfx<'a>(
     Ok(())
 }
 
+/// Ensure [Ono] guarantees are upheld.
 pub fn ensure_ono<'a>(
     k: &'a str,
     v: Ono,
@@ -420,6 +431,7 @@ pub fn ensure_ono<'a>(
     Ok(())
 }
 
+/// Ensure [Voice] guarantees are upheld.
 #[allow(clippy::too_many_arguments)]
 pub fn ensure_voice<'a>(
     k: &'a str,
@@ -495,6 +507,7 @@ pub fn ensure_voice<'a>(
     Ok(())
 }
 
+/// Ensure [Music] guarantees are upheld.
 pub fn ensure_music<'a>(
     k: &'a str,
     v: Music,
@@ -521,6 +534,7 @@ pub fn ensure_music<'a>(
     Ok(())
 }
 
+#[doc(hidden)]
 pub fn ensure_jingles<'a>(
     k: &'a str,
     v: Jingle,

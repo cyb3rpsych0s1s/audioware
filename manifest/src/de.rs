@@ -53,7 +53,7 @@ impl fmt::Debug for Manifest {
     }
 }
 
-/// [`Audio`] with optional [`Usage`].
+/// [Audio] with optional [Usage].
 #[derive(Debug, Deserialize)]
 pub struct UsableAudio {
     #[serde(flatten)]
@@ -61,7 +61,7 @@ pub struct UsableAudio {
     pub usage: Option<Usage>,
 }
 
-/// Audio file path with optional [`Settings`].
+/// Audio file path with optional [Settings].
 #[derive(Debug, Deserialize, Clone)]
 pub struct Audio {
     pub file: PathBuf,
@@ -125,6 +125,8 @@ pub fn paths_into_audios<K: PartialEq + Eq + Hash>(
         .collect()
 }
 
+/// Convert any audio into audios,
+/// merging settings in the process.
 pub fn any_audios_into_audios<K: PartialEq + Eq + Hash>(
     value: HashMap<K, AnyAudio>,
     settings: Option<Settings>,
@@ -161,17 +163,20 @@ impl Audio {
 }
 
 /// Describes usage made of audio.
+///
+/// Read more [in the book](https://cyb3rpsych0s1s.github.io/audioware/SETTINGS.html#-usage).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Usage {
-    /// audio played on-demand.
+    /// Audio played on-demand.
     OnDemand,
-    /// audio loaded all at once in-memory.
+    /// Audio loaded all at once in-memory.
     InMemory,
-    /// audio streamed on-demand.
+    /// Audio streamed on-demand.
     Streaming,
 }
 
+/// Subtitle for audio.
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum Subtitle {
@@ -179,6 +184,7 @@ pub enum Subtitle {
     Nested(DialogLine),
 }
 
+/// Dialog line.
 #[derive(Debug, Clone, Deserialize)]
 pub struct DialogLine {
     pub msg: String,
@@ -186,6 +192,8 @@ pub struct DialogLine {
 }
 
 /// Manifest sources.
+///
+/// Also called ["sections" in the book](https://cyb3rpsych0s1s.github.io/audioware/SECTIONS.html).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Source {
     Sfx,
