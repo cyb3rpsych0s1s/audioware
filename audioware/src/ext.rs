@@ -5,14 +5,14 @@ use kira::sound::PlaybackPosition;
 use red4ext_rs::{
     class_kind::Native,
     log,
-    types::{CName, EntityId, IScriptable, Opt, Ref},
+    types::{CName, EntityId, IScriptable, Opt, Ref, StaticArray},
     PluginOps, ScriptClass,
 };
 
 use crate::{
     engine::{AudioSettingsExt, Engine},
     types::Tween,
-    Audioware,
+    Audioware, AUDIOWARE_VERSION,
 };
 
 /// Interop type for [Ext.reds](https://github.com/cyb3rpsych0s1s/audioware/blob/main/audioware/reds/Ext.reds).
@@ -94,6 +94,12 @@ impl AudioSystemExt {
     }
     pub fn on_emitter_dies(&self, entity_id: EntityId) {
         Engine::on_emitter_dies(entity_id);
+    }
+    pub fn semantic_version(&self) -> StaticArray<u16, 5> {
+        StaticArray::from(AUDIOWARE_VERSION)
+    }
+    pub const fn is_debug(&self) -> bool {
+        cfg!(debug_assertions)
     }
 }
 

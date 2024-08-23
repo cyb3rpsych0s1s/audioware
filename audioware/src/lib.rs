@@ -10,7 +10,7 @@ use ext::AudioSystemExt;
 use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log, methods, static_methods,
-    types::{CName, GameEngine, IScriptable, Opt, RedArray, RedString},
+    types::{CName, GameEngine, IScriptable, Opt},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
@@ -151,8 +151,6 @@ impl Plugin for Audioware {
         exports![
             ClassExport::<EmitterDistances>::builder().build(),
             ClassExport::<EmitterSettings>::builder().build(),
-            GlobalExport(global!(c"Audioware.Version", version)),
-            GlobalExport(global!(c"Audioware.SemanticVersion", semantic_version)),
             GlobalExport(global!(c"Audioware.IsDebug", is_debug)),
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
@@ -198,6 +196,8 @@ impl Plugin for Audioware {
                     final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
                     final c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
                     final c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
+                    final c"SemanticVersion" => AudioSystemExt::semantic_version,
+                    final c"IsDebug" => AudioSystemExt::is_debug,
                 ])
                 .build(),
             ClassExport::<AudioRegion>::builder()
@@ -266,22 +266,7 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     Engine::shutdown();
 }
 
-/// Current [Audioware] version.
-/// e.g. `"1.0.0-rc"`
-// TODO: replace with upstream conversion when PR merged.
-fn version() -> RedString {
-    RedString::from("1.0.0-rc")
-}
-
-/// Current [Audioware] semantic version.
-/// e.g. `[1, 0, 0, 2, 0]`
-// TODO: replace with upstream conversion when PR merged.
-fn semantic_version() -> RedArray<u32> {
-    RedArray::from_iter([1, 0, 0, 2, 0])
-}
-
-/// Was [Audioware] built in [debug mode](https://doc.rust-lang.org/cargo/commands/cargo-build.html) ?
-fn is_debug() -> bool {
+const fn is_debug() -> bool {
     cfg!(debug_assertions)
 }
 
