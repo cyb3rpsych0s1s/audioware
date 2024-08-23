@@ -201,7 +201,7 @@ impl Plugin for Audioware {
                     final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
                     final c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
                     final c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
-                    // final c"SemanticVersion" => AudioSystemExt::semantic_version,
+                    final c"SemanticVersion" => AudioSystemExt::semantic_version,
                     final c"IsDebug" => AudioSystemExt::is_debug,
                 ])
                 .build(),

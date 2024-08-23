@@ -12,7 +12,7 @@ use red4ext_rs::{
 use crate::{
     engine::{AudioSettingsExt, Engine},
     types::Tween,
-    Audioware,
+    Audioware, AUDIOWARE_VERSION,
 };
 
 /// Interop type for [Ext.reds](https://github.com/cyb3rpsych0s1s/audioware/blob/main/audioware/reds/Ext.reds).
@@ -96,8 +96,7 @@ impl AudioSystemExt {
         Engine::on_emitter_dies(entity_id);
     }
     pub fn semantic_version(&self) -> StaticArray<u16, 5> {
-        // StaticArray::from([1, 0, 0, 2, 1])
-        todo!()
+        StaticArray::from(AUDIOWARE_VERSION)
     }
     pub const fn is_debug(&self) -> bool {
         cfg!(debug_assertions)
