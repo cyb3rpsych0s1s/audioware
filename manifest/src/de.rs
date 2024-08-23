@@ -151,8 +151,26 @@ impl Audio {
                 if me.start_time.is_none() && parent.start_time.is_some() {
                     me.start_time = parent.start_time;
                 }
+                if me.start_position.is_none() && parent.start_position.is_some() {
+                    me.start_position = parent.start_position;
+                }
                 if me.volume.is_none() && parent.volume.is_some() {
                     me.volume = parent.volume;
+                }
+                if me.panning.is_none() && parent.panning.is_some() {
+                    me.panning = parent.panning;
+                }
+                if me.r#loop.is_none() && parent.r#loop.is_some() {
+                    me.r#loop = parent.r#loop;
+                }
+                if me.region.is_none() && parent.region.is_some() {
+                    me.region = parent.region;
+                }
+                if me.playback_rate.is_none() && parent.playback_rate.is_some() {
+                    me.playback_rate = parent.playback_rate;
+                }
+                if me.fade_in_tween.is_none() && parent.fade_in_tween.is_some() {
+                    me.fade_in_tween = parent.fade_in_tween;
                 }
             }
             None => {
