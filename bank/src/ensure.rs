@@ -213,8 +213,15 @@ pub fn ensure_valid_audio_settings(
                 (Some(PlaybackPosition::Samples(samples)), Either::Left(data)) => {
                     samples as f64 / data.sample_rate as f64
                 }
-                // no sample rate method, so returns start of audio
-                (Some(PlaybackPosition::Samples(_)), Either::Right(_)) => 0.0,
+                // no sample rate method yet
+                (Some(PlaybackPosition::Samples(_)), Either::Right(_)) => {
+                    return InvalidAudioSettingSnafu {
+                        which: "region.starts",
+                        why: "samples unit is not supported with streaming sound yet",
+                    }
+                    .fail()
+                    .map_err(Into::<Error>::into)
+                }
                 // none implicitly means beginning of the audio
                 (None, _) => 0.0,
             };
@@ -226,9 +233,14 @@ pub fn ensure_valid_audio_settings(
                     Some(EndPosition::Custom(PlaybackPosition::Samples(samples))),
                     Either::Left(data),
                 ) => samples as f64 / data.sample_rate as f64,
-                // no sample rate method, so returns end of audio
+                // no sample rate method yet
                 (Some(EndPosition::Custom(PlaybackPosition::Samples(_))), Either::Right(_)) => {
-                    duration
+                    return InvalidAudioSettingSnafu {
+                        which: "region.ends",
+                        why: "samples unit is not supported with streaming sound yet",
+                    }
+                    .fail()
+                    .map_err(Into::<Error>::into)
                 }
                 // none implicitly means end of the audio
                 (None, _) => duration,
