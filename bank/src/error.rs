@@ -65,7 +65,10 @@ pub mod validation {
         )]
         /// An error occured while converting audio ID to CName.
         InvalidAudioID { source: std::ffi::NulError },
-        #[snafu(display("invalid audio setting"), visibility(pub(crate)))]
+        #[snafu(
+            display("invalid audio setting {which}: {why}"),
+            visibility(pub(crate))
+        )]
         InvalidAudioSetting {
             which: &'static str,
             why: &'static str,
