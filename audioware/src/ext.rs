@@ -148,6 +148,12 @@ macro_rules! impl_merge_args {
                                 } else {
                                     self = self.slice(value);
                                 }
+                            } else {
+                                log::warn!(
+                                    Audioware::env(),
+                                    "invalid region: start {} / end of audio",
+                                    start
+                                );
                             }
                         }
                         (
@@ -169,6 +175,13 @@ macro_rules! impl_merge_args {
                                 } else {
                                     self = self.slice(value);
                                 }
+                            } else {
+                                log::warn!(
+                                    Audioware::env(),
+                                    "invalid region: start {} / end {}",
+                                    start,
+                                    end
+                                );
                             }
                         }
                         _ => {
