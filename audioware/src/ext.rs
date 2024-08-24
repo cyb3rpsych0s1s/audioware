@@ -160,10 +160,7 @@ macro_rules! impl_merge_args {
                             PlaybackPosition::Seconds(start),
                             kira::sound::EndPosition::Custom(PlaybackPosition::Seconds(end)),
                         ) => {
-                            if start >= 0.0
-                                && end > 0.0
-                                && start < end
-                            {
+                            if start >= 0.0 && end > 0.0 && start < end {
                                 let value = kira::sound::Region {
                                     start: PlaybackPosition::Seconds(start),
                                     end: kira::sound::EndPosition::Custom(
