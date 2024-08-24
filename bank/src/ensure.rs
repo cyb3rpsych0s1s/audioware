@@ -362,7 +362,17 @@ fn ensure<'a, K: PartialEq + Eq + Hash + Clone + Into<Key> + Conflictual>(
 where
     HashSet<Id>: Conflict<K>,
 {
-    let data = ensure_valid_audio(&path, m, usage, settings.as_ref(), None)?;
+    let data = ensure_valid_audio(&path, m, usage, settings.as_ref(), None)?.map_either_with(
+        (usage, settings.as_ref().and_then(|x| x.region.clone())),
+        |ctx, data| {
+            if let (Usage::InMemory, Some(region)) = ctx {
+                data.slice(region)
+            } else {
+                data
+            }
+        },
+        |_, data| data,
+    );
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = match usage {
         Usage::InMemory => Id::InMemory(key.clone().into(), source),
