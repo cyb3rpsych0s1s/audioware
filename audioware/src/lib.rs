@@ -15,10 +15,7 @@ use red4ext_rs::{
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State, ToggleState};
-use types::{
-    Args, AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings, GameObject, LoopRegion,
-    Vector4,
-};
+use types::{AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings, GameObject, Vector4};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod config;
@@ -154,8 +151,6 @@ impl Plugin for Audioware {
         exports![
             ClassExport::<EmitterDistances>::builder().build(),
             ClassExport::<EmitterSettings>::builder().build(),
-            ClassExport::<LoopRegion>::builder().build(),
-            ClassExport::<Args>::builder().build(),
             GlobalExport(global!(c"Audioware.IsDebug", is_debug)),
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
@@ -224,6 +219,9 @@ impl Plugin for Audioware {
                     final c"SetStartPosition" => AudioSettingsExtBuilder::set_start_position,
                     final c"SetLoopRegionStarts" => AudioSettingsExtBuilder::set_loop_region_starts,
                     final c"SetLoopRegionEnds" => AudioSettingsExtBuilder::set_loop_region_ends,
+                    final c"SetRegionStarts" => AudioSettingsExtBuilder::set_region_starts,
+                    final c"SetRegionEnds" => AudioSettingsExtBuilder::set_region_ends,
+                    final c"SetLoop" => AudioSettingsExtBuilder::set_loop,
                     final c"SetVolume" => AudioSettingsExtBuilder::set_volume,
                     final c"SetFadeInTween" => AudioSettingsExtBuilder::set_fade_in_tween,
                     final c"SetPanning" => AudioSettingsExtBuilder::set_panning,

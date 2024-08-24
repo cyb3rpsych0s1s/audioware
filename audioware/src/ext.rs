@@ -132,41 +132,59 @@ macro_rules! impl_merge_args {
                         }
                     };
                 }
-                if let Some(loop_region) = fields.loop_region {
-                    match (loop_region.start, loop_region.end) {
+                if let Some(region) = fields.region {
+                    match (region.start, region.end) {
                         (
                             PlaybackPosition::Seconds(start),
                             kira::sound::EndPosition::EndOfAudio,
                         ) => {
-                            if start > 0. && start < self.duration().as_secs_f64() {
-                                self = self.loop_region(kira::sound::Region {
+                            if start >= 0. {
+                                let value = kira::sound::Region {
                                     start: PlaybackPosition::Seconds(start),
                                     end: kira::sound::EndPosition::EndOfAudio,
-                                });
+                                };
+                                if fields.r#loop.unwrap_or_default() {
+                                    self = self.loop_region(value);
+                                } else {
+                                    self = self.slice(value);
+                                }
+                            } else {
+                                log::warn!(
+                                    Audioware::env(),
+                                    "invalid region: start {} / end of audio",
+                                    start
+                                );
                             }
                         }
                         (
                             PlaybackPosition::Seconds(start),
                             kira::sound::EndPosition::Custom(PlaybackPosition::Seconds(end)),
                         ) => {
-                            if start >= 0.0
-                                && start < self.duration().as_secs_f64()
-                                && end > 0.0
-                                && end <= self.duration().as_secs_f64()
-                                && start < end
-                            {
-                                self = self.loop_region(kira::sound::Region {
+                            if start >= 0.0 && end > 0.0 && start < end {
+                                let value = kira::sound::Region {
                                     start: PlaybackPosition::Seconds(start),
                                     end: kira::sound::EndPosition::Custom(
                                         PlaybackPosition::Seconds(end),
                                     ),
-                                });
+                                };
+                                if fields.r#loop.unwrap_or_default() {
+                                    self = self.loop_region(value);
+                                } else {
+                                    self = self.slice(value);
+                                }
+                            } else {
+                                log::warn!(
+                                    Audioware::env(),
+                                    "invalid region: start {} / end {}",
+                                    start,
+                                    end
+                                );
                             }
                         }
                         _ => {
                             log::warn!(
                                 Audioware::env(),
-                                "Setting loop region in samples is not supported."
+                                "Setting region in samples unit is not supported."
                             );
                         }
                     }

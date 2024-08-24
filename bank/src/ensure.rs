@@ -207,29 +207,48 @@ pub fn ensure_valid_audio_settings(
                 }
             );
         }
-        if let Some(region) = settings.loop_region {
-            let start: f64 = match (region.start, audio) {
-                (PlaybackPosition::Seconds(seconds), _) => seconds,
-                (PlaybackPosition::Samples(samples), Either::Left(data)) => {
+        if let Some(ref region) = settings.region {
+            let start: f64 = match (region.starts(), audio) {
+                (Some(PlaybackPosition::Seconds(seconds)), _) => seconds,
+                (Some(PlaybackPosition::Samples(samples)), Either::Left(data)) => {
                     samples as f64 / data.sample_rate as f64
                 }
-                // no sample rate method, so returns start of audio
-                (PlaybackPosition::Samples(_), Either::Right(_)) => 0.0,
+                // no sample rate method yet
+                (Some(PlaybackPosition::Samples(_)), Either::Right(_)) => {
+                    return InvalidAudioSettingSnafu {
+                        which: "region.starts",
+                        why: "samples unit is not supported with streaming sound yet",
+                    }
+                    .fail()
+                    .map_err(Into::<Error>::into)
+                }
+                // none implicitly means beginning of the audio
+                (None, _) => 0.0,
             };
-            let end: f64 = match (region.end, audio) {
-                (EndPosition::EndOfAudio, Either::Left(_)) => duration,
-                (EndPosition::EndOfAudio, Either::Right(_)) => duration,
-                (EndPosition::Custom(PlaybackPosition::Seconds(x)), _) => x,
-                (EndPosition::Custom(PlaybackPosition::Samples(samples)), Either::Left(data)) => {
-                    samples as f64 / data.sample_rate as f64
+            let end: f64 = match (region.ends(), audio) {
+                (Some(EndPosition::EndOfAudio), Either::Left(_)) => duration,
+                (Some(EndPosition::EndOfAudio), Either::Right(_)) => duration,
+                (Some(EndPosition::Custom(PlaybackPosition::Seconds(x))), _) => x,
+                (
+                    Some(EndPosition::Custom(PlaybackPosition::Samples(samples))),
+                    Either::Left(data),
+                ) => samples as f64 / data.sample_rate as f64,
+                // no sample rate method yet
+                (Some(EndPosition::Custom(PlaybackPosition::Samples(_))), Either::Right(_)) => {
+                    return InvalidAudioSettingSnafu {
+                        which: "region.ends",
+                        why: "samples unit is not supported with streaming sound yet",
+                    }
+                    .fail()
+                    .map_err(Into::<Error>::into)
                 }
-                // no sample rate method, so returns end of audio
-                (EndPosition::Custom(PlaybackPosition::Samples(_)), Either::Right(_)) => duration,
+                // none implicitly means end of the audio
+                (None, _) => duration,
             };
             ensure!(
                 start >= 0.0 && end > 0.0 && start < duration && end <= duration && start < end,
                 InvalidAudioSettingSnafu {
-                    which: "loop_region",
+                    which: "region",
                     why: "must be within audio duration and starts before it ends"
                 }
             );
@@ -343,7 +362,17 @@ fn ensure<'a, K: PartialEq + Eq + Hash + Clone + Into<Key> + Conflictual>(
 where
     HashSet<Id>: Conflict<K>,
 {
-    let data = ensure_valid_audio(&path, m, usage, settings.as_ref(), None)?;
+    let data = ensure_valid_audio(&path, m, usage, settings.as_ref(), None)?.map_either_with(
+        (usage, settings.as_ref().and_then(|x| x.region.clone())),
+        |ctx, data| {
+            if let (Usage::InMemory, Some(region)) = ctx {
+                data.slice(region)
+            } else {
+                data
+            }
+        },
+        |_, data| data,
+    );
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = match usage {
         Usage::InMemory => Id::InMemory(key.clone().into(), source),
@@ -513,23 +542,29 @@ pub fn ensure_music<'a>(
     v: Music,
     m: &Mod,
     set: &'a mut HashSet<Id>,
+    map: &'a mut HashMap<UniqueKey, StaticSoundData>,
     smap: &'a mut HashMap<UniqueKey, Settings>,
 ) -> Result<(), Error> {
     ensure_key_unique(k)?;
-    let Audio { file, settings } = v.into();
-    ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref(), None)?;
+    let UsableAudio {
+        audio: Audio { file, settings },
+        usage,
+    } = v.into();
     let c_string = std::ffi::CString::new(k)?;
     let cname = CName::new(k);
     let key = UniqueKey(cname);
-    ensure_key_no_conflict(&key, k, set)?;
-    let id: Id = Id::OnDemand(
-        crate::Usage::Streaming(crate::Key::Unique(key.clone()), m.as_ref().join(file)),
-        Source::Music,
-    );
-    if let Some(settings) = settings {
-        ensure_store_settings::<UniqueKey>(&key, settings, smap)?;
-    }
-    ensure_store_id(id, set)?;
+    ensure(
+        k,
+        key,
+        file,
+        m,
+        usage.unwrap_or(Usage::Streaming),
+        settings,
+        set,
+        map,
+        smap,
+        Source::Sfx,
+    )?;
     CNamePool::add_cstr(&c_string);
     Ok(())
 }

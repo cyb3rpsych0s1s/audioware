@@ -63,8 +63,9 @@ impl From<AudioRegion> for kira::sound::Region {
 pub struct AudioSettingsExtBuilder {
     base: IScriptable,
     start_position: Cell<Option<f32>>,
-    loop_region_starts: Cell<Option<f32>>,
-    loop_region_ends: Cell<Option<f32>>,
+    region_starts: Cell<Option<f32>>,
+    region_ends: Cell<Option<f32>>,
+    r#loop: Cell<Option<bool>>,
     volume: Cell<Option<f32>>,
     fade_in_tween_start_time: Cell<Option<f32>>,
     fade_in_tween_duration: Cell<Option<f32>>,
@@ -89,12 +90,24 @@ impl AudioSettingsExtBuilder {
         log::info!(Audioware::env(), "set start_position to {value}");
     }
     pub fn set_loop_region_starts(&self, value: f32) {
-        self.loop_region_starts.set(Some(value));
-        log::info!(Audioware::env(), "set loop_region starts to {value}");
+        self.set_region_starts(value);
+        self.set_loop(true);
     }
     pub fn set_loop_region_ends(&self, value: f32) {
-        self.loop_region_ends.set(Some(value));
-        log::info!(Audioware::env(), "set loop_region ends to {value}");
+        self.set_region_ends(value);
+        self.set_loop(true);
+    }
+    pub fn set_region_starts(&self, value: f32) {
+        self.region_starts.set(Some(value));
+        log::info!(Audioware::env(), "set region starts to {value}");
+    }
+    pub fn set_region_ends(&self, value: f32) {
+        self.region_ends.set(Some(value));
+        log::info!(Audioware::env(), "set region ends to {value}");
+    }
+    pub fn set_loop(&self, value: bool) {
+        self.r#loop.set(Some(value));
+        log::info!(Audioware::env(), "set loop to {value}");
     }
     pub fn set_volume(&self, value: f32) {
         self.volume.set(Some(value));
@@ -143,27 +156,30 @@ impl AudioSettingsExtBuilder {
             if let Some(start_position) = self.start_position.get() {
                 x.start_position = Some(PlaybackPosition::Seconds(start_position.into()));
             }
-            match (self.loop_region_starts.get(), self.loop_region_ends.get()) {
+            match (self.region_starts.get(), self.region_ends.get()) {
                 (Some(start), Some(end)) => {
-                    x.loop_region = Some(kira::sound::Region {
+                    x.region = Some(kira::sound::Region {
                         start: PlaybackPosition::Seconds(start.into()),
                         end: EndPosition::Custom(PlaybackPosition::Seconds(end.into())),
                     });
                 }
                 (Some(start), None) => {
-                    x.loop_region = Some(kira::sound::Region {
+                    x.region = Some(kira::sound::Region {
                         start: PlaybackPosition::Seconds(start.into()),
                         end: EndPosition::EndOfAudio,
                     });
                 }
                 (None, Some(end)) => {
-                    x.loop_region = Some(kira::sound::Region {
+                    x.region = Some(kira::sound::Region {
                         start: PlaybackPosition::Seconds(0.0),
                         end: EndPosition::Custom(PlaybackPosition::Seconds(end.into())),
                     });
                 }
                 _ => {}
             };
+            if self.r#loop.get().is_some() {
+                x.r#loop = self.r#loop.get();
+            }
             if let Some(volume) = self.volume.get() {
                 x.volume = Some(Volume::Amplitude(volume.into()));
             }
@@ -213,7 +229,8 @@ impl AudioSettingsExtBuilder {
 pub struct AudioSettingsExt {
     base: IScriptable,
     pub start_position: Option<PlaybackPosition>,
-    pub loop_region: Option<kira::sound::Region>,
+    pub region: Option<kira::sound::Region>,
+    pub r#loop: Option<bool>,
     pub volume: Option<Volume>,
     pub fade_in_tween: Option<kira::tween::Tween>,
     pub panning: Option<f64>,

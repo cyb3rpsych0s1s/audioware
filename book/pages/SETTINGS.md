@@ -90,15 +90,15 @@ my_custom_audio:
 Note that digits with decimal(s) are not supported, so if you would like to start the audio at e.g. `1.2s`, please specify `120ms` instead.
 ```
 
-## 🔁 Loop region
+## 🍕 Region
 
-This will play your audio in a loop, only the part that you specify.
+This will only play the specified region of audio.
 
 ```yml
 my_custom_audio:
   file: ./somewhere/audio.wav
   settings:
-    loop_region:
+    region:
       starts: 120ms # starts directly from 1.2s
       ends: 8s # ends at 8s
 ```
@@ -110,6 +110,19 @@ If left unspecified:
 
 - `starts` will start at the beginning of the audio.
 - `ends` will play until the end of the audio.
+
+> Also kindly note that entire piece of audio still need to be loaded, in terms of memory, regardless its region.
+```
+
+## 🔁 Loop
+
+This will loop audio until explicitly stopped.
+
+```yml
+my_custom_audio:
+  file: ./somewhere/audio.wav
+  settings:
+    loop: true
 ```
 
 ## ⏩ Playback rate
@@ -172,7 +185,7 @@ my_custom_audio:
     fade_in_tween:
       start_time: 1s # starts playing directly from 1s
       duration: 3s # fade-in duration
-      Linear # linear fade-in curve
+      Linear: # linear fade-in curve (no value needed)
 ```
 
 ```yml

@@ -71,6 +71,9 @@ public native class AudioSettingsExtBuilder {
     public final native func SetStartPosition(value: Float);
     public final native func SetLoopRegionStarts(value: Float);
     public final native func SetLoopRegionEnds(value: Float);
+    public final native func SetRegionStarts(value: Float);
+    public final native func SetRegionEnds(value: Float);
+    public final native func SetLoop(value: Bool);
     public final native func SetVolume(value: Float);
     public final native func SetFadeInTween(value: ref<Tween>);
     public final native func SetPanning(value: Float);
@@ -88,6 +91,18 @@ public native class AudioSettingsExtBuilder {
     }
     public final func WithLoopRegionEnds(value: Float) -> ref<AudioSettingsExtBuilder> {
         this.SetLoopRegionEnds(value);
+        return this;
+    }
+    public final func WithRegionStarts(value: Float) -> ref<AudioSettingsExtBuilder> {
+        this.SetRegionStarts(value);
+        return this;
+    }
+    public final func WithRegionEnds(value: Float) -> ref<AudioSettingsExtBuilder> {
+        this.SetRegionEnds(value);
+        return this;
+    }
+    public final func WithLoop(value: Bool) -> ref<AudioSettingsExtBuilder> {
+        this.SetLoop(value);
         return this;
     }
     public final func WithVolume(value: Float) -> ref<AudioSettingsExtBuilder> {

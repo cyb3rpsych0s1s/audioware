@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use kira::{
-    sound::{PlaybackRate, Region},
+    sound::{EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate},
     tween::Tween,
     StartTime, Volume,
 };
@@ -18,10 +18,54 @@ pub struct Settings {
     pub start_position: Option<Duration>,
     pub volume: Option<f64>,
     pub panning: Option<f64>,
-    pub loop_region: Option<Region>,
+    #[serde(rename = "loop")]
+    pub r#loop: Option<bool>,
+    pub region: Option<self::Region>,
     #[serde(deserialize_with = "factor_or_semitones", default)]
     pub playback_rate: Option<PlaybackRate>,
     pub fade_in_tween: Option<Interpolation>,
+}
+
+/// Interop type
+/// for [kira::sound::Region].
+#[derive(Debug, Deserialize, Clone)]
+pub struct Region {
+    #[serde(with = "humantime_serde", default)]
+    pub starts: Option<Duration>,
+    #[serde(with = "humantime_serde", default)]
+    pub ends: Option<Duration>,
+}
+
+impl Region {
+    pub fn starts(&self) -> Option<PlaybackPosition> {
+        self.starts
+            .map(|x| PlaybackPosition::Seconds(x.as_secs_f64()))
+    }
+    pub fn ends(&self) -> Option<EndPosition> {
+        self.ends
+            .map(|x| PlaybackPosition::Seconds(x.as_secs_f64()))
+            .map(EndPosition::Custom)
+    }
+}
+
+impl IntoOptionalRegion for self::Region {
+    fn into_optional_region(self) -> Option<kira::sound::Region> {
+        match (self.starts, self.ends) {
+            (None, None) => None,
+            (None, Some(ends)) => Some(kira::sound::Region {
+                start: PlaybackPosition::Seconds(0.),
+                end: EndPosition::Custom(PlaybackPosition::Seconds(ends.as_secs_f64())),
+            }),
+            (Some(starts), None) => Some(kira::sound::Region {
+                start: PlaybackPosition::Seconds(starts.as_secs_f64()),
+                end: EndPosition::EndOfAudio,
+            }),
+            (Some(starts), Some(ends)) => Some(kira::sound::Region {
+                start: PlaybackPosition::Seconds(starts.as_secs_f64()),
+                end: EndPosition::Custom(PlaybackPosition::Seconds(ends.as_secs_f64())),
+            }),
+        }
+    }
 }
 
 fn factor_or_semitones<'de, D>(deserializer: D) -> Result<Option<PlaybackRate>, D::Error>
@@ -103,7 +147,13 @@ macro_rules! impl_from_settings {
                         .map(Into::into)
                         .unwrap_or_default(),
                     fade_in_tween: value.fade_in_tween.map(Into::into),
-                    loop_region: value.loop_region,
+                    loop_region: if value.r#loop.unwrap_or_default() {
+                        value
+                            .region
+                            .and_then(IntoOptionalRegion::into_optional_region)
+                    } else {
+                        None
+                    },
                     playback_rate: value.playback_rate.map(Into::into).unwrap_or_default(),
                     ..Default::default()
                 }
@@ -151,12 +201,24 @@ mod tests {
     #[test_case(r##"settings:
     start_time: 120ms"## ; "start time")]
     #[test_case(r##"settings:
+    region:
+        ends: 8s"## ; "region with only ends specified")]
+    #[test_case(r##"settings:
+    region:
+        starts: 120ms
+        ends: 8s
+    loop: true"## ; "region with both starts and ends + loop specified")]
+    #[test_case(r##"settings:
     start_time: 120ms
     volume: 0.5"## ; "start time + volume")]
     #[test_case(r##"settings:
     fade_in_tween:
         duration: 1s
-        InPowf: 0.5"## ; "fade_in_tween")]
+        Linear:"## ; "linear fade-in tween")]
+    #[test_case(r##"settings:
+    fade_in_tween:
+        duration: 1s
+        InPowf: 0.5"## ; "elastic fade-in tween")]
     #[test_case(r##"settings:
     start_time: 5s
     fade_in_tween:
