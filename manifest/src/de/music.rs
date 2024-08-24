@@ -40,6 +40,15 @@ mod tests {
     use super::Music;
 
     #[test_case(r##"new_intro: ./somewhere/music.wav"## ; "simple music")]
+    #[test_case(r##"new_intro:
+    file: ./somewhere/music.wav
+    usage: in-memory"## ; "music with alternative usage")]
+    #[test_case(r##"new_intro:
+    file: ./somewhere/music.wav
+    usage: in-memory
+    settings:
+        volume: 2
+        start_position: 5s"## ; "music with both usage and settings")]
     fn music(yaml: &str) {
         let music = serde_yaml::from_str::<HashMap<String, Music>>(yaml);
         dbg!("{}", &music);
