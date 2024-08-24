@@ -532,23 +532,29 @@ pub fn ensure_music<'a>(
     v: Music,
     m: &Mod,
     set: &'a mut HashSet<Id>,
+    map: &'a mut HashMap<UniqueKey, StaticSoundData>,
     smap: &'a mut HashMap<UniqueKey, Settings>,
 ) -> Result<(), Error> {
     ensure_key_unique(k)?;
-    let Audio { file, settings } = v.into();
-    ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref(), None)?;
+    let UsableAudio {
+        audio: Audio { file, settings },
+        usage,
+    } = v.into();
     let c_string = std::ffi::CString::new(k)?;
     let cname = CName::new(k);
     let key = UniqueKey(cname);
-    ensure_key_no_conflict(&key, k, set)?;
-    let id: Id = Id::OnDemand(
-        crate::Usage::Streaming(crate::Key::Unique(key.clone()), m.as_ref().join(file)),
-        Source::Music,
-    );
-    if let Some(settings) = settings {
-        ensure_store_settings::<UniqueKey>(&key, settings, smap)?;
-    }
-    ensure_store_id(id, set)?;
+    ensure(
+        k,
+        key,
+        file,
+        m,
+        usage.unwrap_or(Usage::Streaming),
+        settings,
+        set,
+        map,
+        smap,
+        Source::Sfx,
+    )?;
     CNamePool::add_cstr(&c_string);
     Ok(())
 }

@@ -415,8 +415,14 @@ impl Banks {
                 }
                 if let Some(music) = manifest.music {
                     for (key, value) in music {
-                        match ensure_music(key.as_str(), value, &m, &mut ids, &mut unique_settings)
-                        {
+                        match ensure_music(
+                            key.as_str(),
+                            value,
+                            &m,
+                            &mut ids,
+                            &mut uniques,
+                            &mut unique_settings,
+                        ) {
                             Ok(x) => x,
                             Err(e) => {
                                 errors.push(e);

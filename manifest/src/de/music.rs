@@ -1,16 +1,33 @@
 //! Music definitions.
 
+use std::path::PathBuf;
+
 use serde::Deserialize;
 
-use super::{AnyAudio, Audio};
+use super::{Audio, UsableAudio};
 
 #[derive(Debug, Deserialize)]
-#[serde(transparent)]
-pub struct Music(AnyAudio);
+#[serde(untagged)]
+pub enum Music {
+    Inline(PathBuf),
+    Nested {
+        #[serde(flatten)]
+        props: UsableAudio,
+    },
+}
 
-impl From<Music> for Audio {
+impl From<Music> for UsableAudio {
     fn from(value: Music) -> Self {
-        value.0.into()
+        match value {
+            Music::Inline(file) => Self {
+                audio: Audio {
+                    file,
+                    settings: None,
+                },
+                usage: None,
+            },
+            Music::Nested { props } => props,
+        }
     }
 }
 
