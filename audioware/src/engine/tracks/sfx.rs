@@ -14,7 +14,7 @@ use super::ambience::Ambience;
 pub struct Sfx(TrackHandle);
 
 impl Sfx {
-    pub fn setup(manager: &mut AudioManager, ambience: &Ambience) -> Result<Self, Error> {
+    pub(super) fn setup(manager: &mut AudioManager, ambience: &Ambience) -> Result<Self, Error> {
         let track = manager.add_sub_track(
             TrackBuilder::new()
                 .routes(

@@ -1,7 +1,7 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
     addr_hashes, hooks, log,
-    types::{CName, EntityId, IScriptable, Opt, Ref, StackFrame},
+    types::{CName, EntityId, IScriptable, StackFrame},
     PluginOps, SdkEnv, VoidPtr,
 };
 
@@ -37,13 +37,11 @@ unsafe extern "C" fn detour(
     if Banks::exists(&event_name) {
         let env = Audioware::env();
         log::info!(env, "AudioSystem.Play: intercepted {event_name}");
-        Engine::play(
+        Engine::send(crate::engine::commands::Command::PlayVanilla {
             event_name,
-            entity_id.into(),
-            emitter_name.into(),
-            Opt::default(),
-            Ref::default(),
-        );
+            entity_id: entity_id.into(),
+            emitter_name: emitter_name.into(),
+        });
     } else {
         frame.restore_args(state);
         cb(i, f, a3, a4);

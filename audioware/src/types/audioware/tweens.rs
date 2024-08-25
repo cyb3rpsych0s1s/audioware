@@ -7,7 +7,7 @@ use crate::Audioware;
 use super::Easing;
 
 /// Intermediate representation for [kira::tween::Tween].
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 #[repr(C)]
 pub struct Tween {
     /// delay before starting: in seconds

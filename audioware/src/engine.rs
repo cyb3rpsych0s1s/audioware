@@ -1,7 +1,11 @@
-use std::sync::MutexGuard;
+//! Audio engine.
+
+use std::sync::{MutexGuard, OnceLock};
 
 use audioware_bank::{Banks, Id};
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Source, SpokenLocale, WrittenLocale};
+use commands::{Command, CommandOps, OuterCommand, OuterCommandOps};
+use crossbeam::channel::{Receiver, Sender, TryRecvError, TrySendError};
 use kira::{manager::AudioManager, OutputDestination, Volume};
 use manager::{Pause, PlayAndStore, Resume, StopBy, StopFor};
 use modulators::{
@@ -24,6 +28,7 @@ use crate::{
     Audioware,
 };
 
+pub mod commands;
 mod effects;
 mod eq;
 mod id;
@@ -40,6 +45,22 @@ pub use manager::Manager;
 pub use scene::Scene;
 pub use settings::*;
 pub use tracks::Tracks;
+
+/// Use to enqueue [sound commands][SoundCommand].
+static SENDER: OnceLock<Sender<OuterCommand>> = OnceLock::new();
+
+/// Execute queued [sound commands][SoundCommand].
+fn handle_receive(r: Receiver<OuterCommand>) {
+    'game: loop {
+        match r.try_recv() {
+            Ok(command) => command.into_inner().execute(),
+            Err(TryRecvError::Empty) => {}
+            Err(TryRecvError::Disconnected) => {
+                break 'game;
+            }
+        }
+    }
+}
 
 /// Audio engine built on top of [kira].
 pub struct Engine;
@@ -79,12 +100,52 @@ impl Engine {
         Banks::languages().into_iter().map(|x| x.into()).collect()
     }
     /// Shutdown engine.
-    pub fn shutdown() {
+    pub(crate) fn shutdown() {
         if let Err(e) = Manager.clear_tracks(None) {
             log::error!(Audioware::env(), "couldn't clear tracks on manager: {e}");
         }
         if let Err(e) = Scene::clear_emitters() {
             log::error!(Audioware::env(), "couldn't clear emitters in scene: {e}");
+        }
+    }
+    /// Send sound command (cancelable).
+    pub fn send(command: Command) {
+        Self::send_as(command, true);
+    }
+    /// Send non-cancelable sound command.
+    pub(super) fn send_non_cancelable(command: Command) {
+        Self::send_as(command, false)
+    }
+    fn send_as(command: Command, cancelable: bool) {
+        if let Err(e) = SENDER
+            .get()
+            .expect("should have been initialized")
+            .try_send(if cancelable {
+                command.cancelable()
+            } else {
+                command.non_cancelable()
+            })
+        {
+            match e {
+                TrySendError::Full(command) => {
+                    if command.cancelable() {
+                        log::warn!(
+                            Audioware::env(),
+                            "couldn't send command, channel full: {:#?}",
+                            command.into_inner()
+                        );
+                    } else {
+                        Self::send_non_cancelable(command.into_inner());
+                    }
+                }
+                TrySendError::Disconnected(command) => {
+                    log::error!(
+                        Audioware::env(),
+                        "error sending command, channel disconnected: {:#?}",
+                        command.into_inner()
+                    );
+                }
+            }
         }
     }
     /// Register an audio emitter to spatial [Scene].
@@ -131,7 +192,7 @@ impl Engine {
         count.unwrap() as i32
     }
     /// Whenever [Scene] audio emitter dies in-game.
-    pub fn on_emitter_dies(entity_id: EntityId) {
+    pub(crate) fn on_emitter_dies(entity_id: EntityId) {
         if let Err(e) = Scene::on_emitter_dies(entity_id) {
             log::error!(
                 Audioware::env(),
@@ -140,27 +201,27 @@ impl Engine {
         }
     }
     /// Toggle [Scene] audio emitters synchonization.
-    pub fn toggle_sync_emitters(enable: bool) {
+    pub(crate) fn toggle_sync_emitters(enable: bool) {
         Scene::toggle_sync_emitters(enable);
     }
     /// Whether [Scene] audio emitters should be synchronized or not.
-    pub fn should_sync_emitters() -> bool {
+    pub(crate) fn should_sync_emitters() -> bool {
         Scene::should_sync_emitters()
     }
     /// [Scene] audio emitters synchronization.
-    pub fn sync_emitters() {
+    pub(crate) fn sync_emitters() {
         if let Err(e) = Scene::sync_emitters() {
             log::error!(Audioware::env(), "couldn't sync emitters on scene: {e}");
         }
     }
     /// [Scene] audio listener synchronization.
-    pub fn sync_listener() {
+    pub(crate) fn sync_listener() {
         if let Err(e) = Scene::sync_listener() {
             log::error!(Audioware::env(), "couldn't sync listener on scene: {e}");
         }
     }
     /// Free [Manager] storage from stopped sounds.
-    pub fn reclaim() {
+    pub(crate) fn reclaim() {
         if let Err(e) = Manager::reclaim() {
             log::error!(
                 Audioware::env(),
@@ -169,7 +230,7 @@ impl Engine {
         }
     }
     #[doc(hidden)]
-    pub fn play_over_the_phone(event_name: CName, emitter_name: CName, gender: CName) {
+    fn play_over_the_phone(event_name: CName, emitter_name: CName, gender: CName) {
         let mut manager = match Manager::try_lock() {
             Ok(x) => x,
             Err(e) => {
@@ -197,7 +258,7 @@ impl Engine {
         // TODO: handle convo?
     }
     /// Play sound with optional [tween][Tween].
-    pub fn play(
+    fn play(
         sound_name: CName,
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
@@ -225,7 +286,7 @@ impl Engine {
         }
     }
     /// Play sound with [alternate settings][AudioSettingsExt].
-    pub fn play_with(
+    fn play_with(
         sound_name: CName,
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
@@ -252,7 +313,7 @@ impl Engine {
         }
     }
     /// Stop sound with optional [tween][Tween].
-    pub fn stop(
+    fn stop(
         event_name: CName,
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
@@ -273,20 +334,20 @@ impl Engine {
         }
     }
     /// Pause all sounds with optional [tween][Tween].
-    pub fn pause(tween: Ref<Tween>) {
+    fn pause(tween: Ref<Tween>) {
         if let Err(e) = Manager.pause(tween.into_tween()) {
             log::error!(Audioware::env(), "{e}");
         }
     }
     /// Resume all sounds with optional [tween][Tween],
     /// except those already stopped.
-    pub fn resume(tween: Ref<Tween>) {
+    fn resume(tween: Ref<Tween>) {
         if let Err(e) = Manager.resume(tween.into_tween()) {
             log::error!(Audioware::env(), "{e}");
         }
     }
     /// Switch one sound for another, with optional [tween][Tween] and [alternate settings][AudioSettingsExt].
-    pub fn switch(
+    fn switch(
         switch_name: CName,
         switch_value: CName,
         entity_id: Opt<EntityId>,
@@ -317,7 +378,7 @@ impl Engine {
         }
     }
     /// Play sound on audio emitter with optional [tween][Tween].
-    pub fn play_on_emitter(
+    fn play_on_emitter(
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
@@ -350,7 +411,7 @@ impl Engine {
         );
     }
     /// Stop sound on audio emitter with optional [tween][Tween].
-    pub fn stop_on_emitter(
+    fn stop_on_emitter(
         event_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
@@ -367,13 +428,13 @@ impl Engine {
     }
     /// Stop any sound for given [EntityId].
     #[allow(dead_code)]
-    pub fn stop_for(entity_id: EntityId) {
+    fn stop_for(entity_id: EntityId) {
         if let Err(e) = Manager.stop_for(&entity_id, None) {
             log::error!(Audioware::env(), "{e}");
         }
     }
     /// Set [ReverbMix].
-    pub fn set_reverb_mix(value: f32) {
+    fn set_reverb_mix(value: f32) {
         if !(0. ..=1.).contains(&value) {
             log::error!(
                 Audioware::env(),
@@ -387,12 +448,12 @@ impl Engine {
         );
     }
     /// Set audio [Preset].
-    pub fn set_preset(value: Preset) {
+    fn set_preset(value: Preset) {
         let tracks = Tracks::get();
         let mut eq = ok_or_return!(tracks.ambience.try_eq(), "Unable to set EQ preset");
         eq.set_preset(value);
     }
-    pub fn set_volume(setting: CName, value: f64) {
+    fn set_volume(setting: CName, value: f64) {
         if !(0.0..=100.0).contains(&value) {
             log::error!(Audioware::env(), "Volume must be between 0. and 100.");
             return;

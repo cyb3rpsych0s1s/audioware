@@ -20,7 +20,7 @@ pub struct V {
 }
 
 impl V {
-    pub fn setup(manager: &mut AudioManager, ambience: &Ambience) -> Result<Self, Error> {
+    pub(super) fn setup(manager: &mut AudioManager, ambience: &Ambience) -> Result<Self, Error> {
         let vocal = manager.add_sub_track(
             TrackBuilder::new()
                 .routes(
