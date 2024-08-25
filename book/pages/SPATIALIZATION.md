@@ -27,8 +27,9 @@ Audioware does it automatically whenever emitter despawns or dies. Dying emitter
 /// for Humans
 @wrapMethod(NPCDeathListener)
 protected cb func OnStatPoolCustomLimitReached(value: Float) -> Bool {
+    let wasAlive = !this.npc.m_wasJustKilledOrDefeated;
     let out = wrappedMethod(value);
-    if this.npc.IsAboutToDieOrDefeated() {
+    if wasAlive && this.npc.m_wasJustKilledOrDefeated {
         let id = this.npc.GetEntityID();
         let name = this.npc.GetDisplayName(); // or whatever you named it
         // fades for 2sec, with intensity 0.2
