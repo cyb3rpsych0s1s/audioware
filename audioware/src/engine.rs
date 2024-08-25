@@ -46,10 +46,10 @@ pub use scene::Scene;
 pub use settings::*;
 pub use tracks::Tracks;
 
-/// Use to enqueue [sound commands][SoundCommand].
+/// Use to enqueue [sound commands][Command].
 static SENDER: OnceLock<Sender<OuterCommand>> = OnceLock::new();
 
-/// Execute queued [sound commands][SoundCommand].
+/// Execute queued [sound commands][Command].
 fn handle_receive(r: Receiver<OuterCommand>) {
     'game: loop {
         match r.try_recv() {
