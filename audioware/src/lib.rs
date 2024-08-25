@@ -5,12 +5,14 @@ use std::sync::OnceLock;
 
 use audioware_bank::{Banks, Initialization};
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
-use engine::{AudioRegion, AudioSettingsExt, AudioSettingsExtBuilder, Engine};
+use engine::{
+    commands::Command, AudioRegion, AudioSettingsExt, AudioSettingsExtBuilder, Engine, Preset,
+};
 use ext::AudioSystemExt;
 use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log, methods, static_methods,
-    types::{CName, GameEngine, IScriptable, Opt},
+    types::{CName, GameEngine, IScriptable, Opt, Ref},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
@@ -179,11 +181,11 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
             GlobalExport(global!(c"Audioware.UnsetPlayerGender", unset_player_gender)),
             GlobalExport(global!(c"Audioware.SetGameLocales", set_game_locales)),
-            GlobalExport(global!(c"Audioware.Pause", Engine::pause)),
-            GlobalExport(global!(c"Audioware.Resume", Engine::resume)),
-            GlobalExport(global!(c"Audioware.SetReverbMix", Engine::set_reverb_mix)),
-            GlobalExport(global!(c"Audioware.SetPreset", Engine::set_preset)),
-            GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
+            GlobalExport(global!(c"Audioware.Pause", pause)),
+            GlobalExport(global!(c"Audioware.Resume", resume)),
+            GlobalExport(global!(c"Audioware.SetReverbMix", set_reverb_mix)),
+            GlobalExport(global!(c"Audioware.SetPreset", set_preset)),
+            GlobalExport(global!(c"Audioware.SetVolume", set_volume)),
             ClassExport::<AudioSystemExt>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![
@@ -268,6 +270,30 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
 
 const fn is_debug() -> bool {
     cfg!(debug_assertions)
+}
+
+fn pause() {
+    Engine::send_non_cancelable(Command::Pause {
+        tween: Ref::default().into(),
+    });
+}
+
+fn resume() {
+    Engine::send_non_cancelable(Command::Resume {
+        tween: Ref::default().into(),
+    });
+}
+
+fn set_preset(value: Preset) {
+    Engine::send(Command::SetPreset { value })
+}
+
+fn set_reverb_mix(value: f32) {
+    Engine::send(Command::SetReverbMix { value })
+}
+
+fn set_volume(setting: CName, value: f64) {
+    Engine::send(Command::SetVolume { setting, value })
 }
 
 /// Set V's [gender][PlayerGender].

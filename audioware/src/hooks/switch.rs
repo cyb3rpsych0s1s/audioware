@@ -45,14 +45,14 @@ unsafe extern "C" fn detour(
             "AudioSystem.Switch: intercepted {switch_name}/{switch_value}"
         );
 
-        Engine::switch(
+        Engine::send(crate::engine::commands::Command::Switch {
             switch_name,
             switch_value,
-            entity_id.into(),
-            emitter_name.into(),
-            Ref::default(),
-            Ref::default(),
-        );
+            entity_id: entity_id.into(),
+            emitter_name: emitter_name.into(),
+            switch_name_tween: Ref::default().into(),
+            switch_value_settings: Ref::default().into(),
+        });
     } else {
         frame.restore_args(state);
         cb(i, f, a3, a4);

@@ -26,8 +26,6 @@ use crate::{
 
 use super::{effects::IMMEDIATELY, id::EmitterId, Tracks};
 
-mod emitters;
-
 static SCENE: OnceLock<Scene> = OnceLock::new();
 static SCENE_SYNC_ENABLED: AtomicBool = AtomicBool::new(false);
 
@@ -41,7 +39,7 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn setup(manager: &mut AudioManager, tracks: &Tracks) -> Result<(), Error> {
+    pub(super) fn setup(manager: &mut AudioManager, tracks: &Tracks) -> Result<(), Error> {
         let settings = SpatialSceneSettings::default();
         let capacity = settings.emitter_capacity as usize;
         let mut scene = manager.add_spatial_scene(settings)?;

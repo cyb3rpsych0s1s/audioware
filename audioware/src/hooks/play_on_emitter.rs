@@ -37,7 +37,12 @@ unsafe extern "C" fn detour(
     if Banks::exists(&event_name) {
         let env = Audioware::env();
         log::info!(env, "AudioSystem.PlayOnEmitter: intercepted {event_name}");
-        Engine::play_on_emitter(event_name, entity_id, emitter_name, Ref::default());
+        Engine::send(crate::engine::commands::Command::PlayOnEmitter {
+            sound_name: event_name,
+            entity_id,
+            emitter_name,
+            tween: Ref::default().into(),
+        });
     } else {
         frame.restore_args(state);
         cb(i, f, a3, a4);

@@ -22,7 +22,7 @@ pub struct Ambience {
 }
 
 impl Ambience {
-    pub fn setup(manager: &mut AudioManager) -> Result<Self, Error> {
+    pub(super) fn setup(manager: &mut AudioManager) -> Result<Self, Error> {
         let low: FilterHandle;
         let high: FilterHandle;
         let reverb =

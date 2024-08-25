@@ -10,7 +10,7 @@ use red4ext_rs::{
 };
 
 use crate::{
-    engine::{AudioSettingsExt, Engine},
+    engine::{commands::Command, AudioSettingsExt, Engine},
     types::Tween,
     Audioware, AUDIOWARE_VERSION,
 };
@@ -36,7 +36,13 @@ impl AudioSystemExt {
         line_type: Opt<ScnDialogLineType>,
         ext: Ref<AudioSettingsExt>,
     ) {
-        Engine::play_with(sound_name, entity_id, emitter_name, line_type, ext);
+        Engine::send(Command::PlayExt {
+            sound_name,
+            entity_id,
+            emitter_name,
+            line_type,
+            ext: ext.into(),
+        });
     }
     pub fn stop(
         &self,
@@ -45,7 +51,12 @@ impl AudioSystemExt {
         emitter_name: Opt<CName>,
         tween: Ref<Tween>,
     ) {
-        Engine::stop(event_name, entity_id, emitter_name, tween);
+        Engine::send(Command::Stop {
+            event_name,
+            entity_id,
+            emitter_name,
+            tween: tween.into(),
+        });
     }
     pub fn switch(
         &self,
@@ -56,17 +67,25 @@ impl AudioSystemExt {
         switch_name_tween: Ref<Tween>,
         switch_value_settings: Ref<AudioSettingsExt>,
     ) {
-        Engine::switch(
+        Engine::send(Command::Switch {
             switch_name,
             switch_value,
             entity_id,
             emitter_name,
-            switch_name_tween,
-            switch_value_settings,
-        );
+            switch_name_tween: switch_name_tween.into(),
+            switch_value_settings: switch_value_settings.into(),
+        })
     }
     pub fn play_over_the_phone(&self, event_name: CName, emitter_name: CName, gender: CName) {
-        Engine::play_over_the_phone(event_name, emitter_name, gender);
+        if let Ok(gender) = gender.try_into() {
+            Engine::send(Command::PlayOverThePhone {
+                event_name,
+                emitter_name,
+                gender,
+            });
+        } else {
+            log::warn!(Audioware::env(), "invalid gender: {gender}");
+        }
     }
     pub fn is_registered_emitter(&self, entity_id: EntityId) -> bool {
         Engine::is_registered_emitter(entity_id)
@@ -81,7 +100,12 @@ impl AudioSystemExt {
         emitter_name: CName,
         tween: Ref<Tween>,
     ) {
-        Engine::play_on_emitter(sound_name, entity_id, emitter_name, tween);
+        Engine::send(Command::PlayOnEmitter {
+            sound_name,
+            entity_id,
+            emitter_name,
+            tween: tween.into(),
+        });
     }
     pub fn stop_on_emitter(
         &self,
@@ -90,7 +114,12 @@ impl AudioSystemExt {
         emitter_name: CName,
         tween: Ref<Tween>,
     ) {
-        Engine::stop_on_emitter(sound_name, entity_id, emitter_name, tween);
+        Engine::send(Command::StopOnEmitter {
+            event_name: sound_name,
+            entity_id,
+            emitter_name,
+            tween: tween.into(),
+        })
     }
     pub fn on_emitter_dies(&self, entity_id: EntityId) {
         Engine::on_emitter_dies(entity_id);

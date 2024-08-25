@@ -16,7 +16,7 @@ use crate::{
 pub struct Holocall(TrackHandle);
 
 impl Holocall {
-    pub fn setup(manager: &mut AudioManager) -> Result<Self, Error> {
+    pub(super) fn setup(manager: &mut AudioManager) -> Result<Self, Error> {
         let track = manager.add_sub_track({
             let mut builder = TrackBuilder::new();
             builder.add_effect(
