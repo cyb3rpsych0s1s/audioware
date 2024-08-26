@@ -39,12 +39,14 @@ public native class AudioSystemExt {
 
     // misc
     public final native func IsDebug() -> Bool;
-    /// returns sound region duration as seconds if found, or -1.0 otherwise
-    public final native func Duration(eventName: CName, opt locale: LocaleExt, opt gender: PlayerGender) -> Float;
-    public final func Duration(eventName: CName, opt locale: CName, opt gender: CName) -> Float {
+    /// returns sound duration as seconds if found, or -1.0 otherwise
+    ///
+    /// `total` can be used to retrieve total audio duration (default: current audio region duration).
+    public final native func Duration(eventName: CName, opt locale: LocaleExt, opt gender: PlayerGender, opt total: Bool) -> Float;
+    public final func Duration(eventName: CName, opt locale: CName, opt gender: CName, opt total: Bool) -> Float {
         let l: LocaleExt = IntoLocaleExt(locale);
         let g: PlayerGender = IntoPlayerGender(gender);
-        return this.Duration(eventName, l, g);
+        return this.Duration(eventName, l, g, total);
     }
     /// major, minor, patch, type (0 = alpha, 1 = beta, 2 = rc, 3 = official), build number
     public final native func SemanticVersion() -> [Uint16; 5];

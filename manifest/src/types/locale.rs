@@ -29,6 +29,12 @@ impl PartialEq<Locale> for SpokenLocale {
     }
 }
 
+impl From<Locale> for SpokenLocale {
+    fn from(value: Locale) -> Self {
+        Self(value)
+    }
+}
+
 #[cfg(not(test))]
 impl TryFrom<red4ext_rs::types::CName> for SpokenLocale {
     type Error = crate::error::ConversionError;
@@ -62,6 +68,12 @@ impl PartialEq<Locale> for WrittenLocale {
 impl PartialEq<WrittenLocale> for Locale {
     fn eq(&self, other: &WrittenLocale) -> bool {
         other.0.eq(self)
+    }
+}
+
+impl From<Locale> for WrittenLocale {
+    fn from(value: Locale) -> Self {
+        Self(value)
     }
 }
 
