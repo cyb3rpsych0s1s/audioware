@@ -111,11 +111,11 @@ impl Banks {
             .is_some()
     }
     /// Return audio duration (as seconds) if any, otherwise `-1.0`.
-    pub fn duration(cname: &CName, locale: Option<LocaleExt>, gender: Option<PlayerGender>) -> f32 {
+    pub fn duration(cname: &CName, locale: LocaleExt, gender: PlayerGender) -> f32 {
         Self::try_get(
             cname,
-            &locale.and_then(|x| x.try_into().ok()).unwrap_or_default(),
-            gender.as_ref(),
+            &(locale.try_into().unwrap_or_default()),
+            Some(&gender),
         )
         .map(Banks::data)
         .map(|x| match x {

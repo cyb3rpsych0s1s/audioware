@@ -137,7 +137,11 @@ impl AudioSystemExt {
         locale: Opt<LocaleExt>,
         gender: Opt<PlayerGender>,
     ) -> f32 {
-        Banks::duration(&event_name, locale.into_option(), gender.into_option())
+        Banks::duration(
+            &event_name,
+            locale.unwrap_or_default(),
+            gender.unwrap_or_default(),
+        )
     }
 }
 

@@ -281,6 +281,7 @@ public static exec func TestChainBuilderPattern(game: GameInstance) {
 }
 
 /// Game.TestAudioSystemExtDuration("still_dre");
+/// Game.TestAudioSystemExtDuration("situation_scribe", "en-us", "Female");
 public static exec func TestAudioSystemExtDuration(game: GameInstance, eventName: String, opt locale: String, opt gender: String) {
     let hasLocale = StrLen(locale) > 0;
     let hasGender = StrLen(gender) > 0;

@@ -5,9 +5,13 @@ import Codeware.Localization.PlayerGender
 public static final func IntoPlayerGender(gender: CName) -> PlayerGender {
     switch gender {
         case n"Female":
+        case n"fem":
             return PlayerGender.Female;
         case n"Male":
+        case n"male":
             return PlayerGender.Male;
+        default:
+            break;
     }
     return PlayerGender.Default;
 }
@@ -76,6 +80,8 @@ public static final func IntoLocaleExt(locale: CName) -> LocaleExt {
         case n"th-th":
         case n"Thai":
 			return LocaleExt.Thai;
+        default:
+            break;
     }
     return LocaleExt.Invalid;
 }
