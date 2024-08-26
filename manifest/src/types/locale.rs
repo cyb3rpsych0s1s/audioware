@@ -133,10 +133,6 @@ pub enum LocaleExt {
     Turkish = 18,
     #[serde(rename = "th-th")]
     Thai = 19,
-    #[serde(skip)]
-    Count = 20,
-    #[serde(skip)]
-    Invalid = -1,
 }
 
 unsafe impl NativeRepr for LocaleExt {
@@ -248,17 +244,12 @@ impl TryFrom<LocaleExt> for ScnDialogLineLanguage {
     }
 }
 
-impl TryFrom<i64> for LocaleExt {
+impl TryFrom<u32> for LocaleExt {
     type Error = crate::error::ConversionError;
 
-    fn try_from(value: i64) -> Result<Self, Self::Error> {
-        if value == Self::Count as i64 || value == Self::Invalid as i64 {
-            return Err(crate::error::ConversionError::InvalidLocale {
-                value: value.to_string(),
-            });
-        }
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
         for variant in LocaleExt::iter() {
-            if value == variant as i64 {
+            if value == variant as u32 {
                 return Ok(variant);
             }
         }

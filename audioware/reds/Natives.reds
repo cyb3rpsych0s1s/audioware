@@ -78,6 +78,4 @@ enum LocaleExt {
     Hungarian = 17,
     Turkish = 18,
     Thai = 19,
-    Count = 20,
-    Invalid = -1,
 }

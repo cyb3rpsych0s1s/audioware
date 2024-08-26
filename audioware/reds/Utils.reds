@@ -18,9 +18,6 @@ public static final func IntoPlayerGender(gender: CName) -> PlayerGender {
 
 public static final func IntoLocaleExt(locale: CName) -> LocaleExt {
     switch locale {
-        case n"en-us":
-        case n"English":
-            return LocaleExt.English;
         case n"ht-ht":
         case n"Creole":
 			return LocaleExt.Creole;
@@ -83,5 +80,5 @@ public static final func IntoLocaleExt(locale: CName) -> LocaleExt {
         default:
             break;
     }
-    return LocaleExt.Invalid;
+    return LocaleExt.English;
 }
