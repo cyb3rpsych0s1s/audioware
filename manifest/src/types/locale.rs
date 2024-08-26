@@ -185,6 +185,14 @@ impl From<ScnDialogLineLanguage> for LocaleExt {
     }
 }
 
+impl TryFrom<LocaleExt> for SpokenLocale {
+    type Error = <Locale as TryFrom<LocaleExt>>::Error;
+
+    fn try_from(value: LocaleExt) -> Result<Self, Self::Error> {
+        Ok(Self(Locale::try_from(value)?))
+    }
+}
+
 impl TryFrom<LocaleExt> for Locale {
     type Error = crate::error::ConversionError;
 
@@ -257,6 +265,42 @@ impl TryFrom<i64> for LocaleExt {
         Err(crate::error::ConversionError::InvalidLocale {
             value: value.to_string(),
         })
+    }
+}
+
+#[cfg(not(test))]
+impl TryFrom<red4ext_rs::types::CName> for LocaleExt {
+    type Error = crate::error::ConversionError;
+
+    fn try_from(value: red4ext_rs::types::CName) -> Result<Self, Self::Error> {
+        if value == red4ext_rs::types::CName::undefined() {
+            return Ok(Self::English);
+        }
+        match value.as_str() {
+            "en-us" | "English" => Ok(Self::English),
+            "ht-ht" | "Creole" => Ok(Self::Creole),
+            "jp-jp" | "Japanese" => Ok(Self::Japanese),
+            "ar-ar" | "Arabic" => Ok(Self::Arabic),
+            "ru-ru" | "Russian" => Ok(Self::Russian),
+            "zh-cn" | "SimplifiedChinese" => Ok(Self::SimplifiedChinese),
+            "pt-br" | "BrazilianPortuguese" => Ok(Self::BrazilianPortuguese),
+            "sw-ke" | "sw-tz" | "Swahili" => Ok(Self::Swahili),
+            "fr-fr" | "French" => Ok(Self::French),
+            "pl-pl" | "Polish" => Ok(Self::Polish),
+            "es-es" | "Spanish" => Ok(Self::Spanish),
+            "it-it" | "Italian" => Ok(Self::Italian),
+            "de-de" | "German" => Ok(Self::German),
+            "es-mx" | "LatinAmericanSpanish" => Ok(Self::LatinAmericanSpanish),
+            "kr-kr" | "Korean" => Ok(Self::Korean),
+            "zh-tw" | "TraditionalChinese" => Ok(Self::TraditionalChinese),
+            "cz-cz" | "Czech" => Ok(Self::Czech),
+            "hu-hu" | "Hungarian" => Ok(Self::Hungarian),
+            "tr-tr" | "Turkish" => Ok(Self::Turkish),
+            "th-th" | "Thai" => Ok(Self::Thai),
+            v => Err(Self::Error::InvalidLocale {
+                value: v.to_string(),
+            }),
+        }
     }
 }
 

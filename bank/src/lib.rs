@@ -7,8 +7,9 @@ use std::{
 };
 
 use audioware_manifest::{
-    error::CannotParseManifest, error::CannotReadManifest, Depot, DialogLine, Locale, Manifest,
-    PlayerGender, R6Audioware, REDmod, Settings, SpokenLocale, WrittenLocale,
+    error::{CannotParseManifest, CannotReadManifest},
+    Depot, DialogLine, Locale, LocaleExt, Manifest, PlayerGender, R6Audioware, REDmod, Settings,
+    SpokenLocale, WrittenLocale,
 };
 use either::Either;
 use ensure::*;
@@ -108,6 +109,20 @@ impl Banks {
         KEYS.get()
             .and_then(|x| x.iter().find(|x| AsRef::<CName>::as_ref(x) == cname))
             .is_some()
+    }
+    /// Return audio duration (as seconds) if any, otherwise `-1.0`.
+    pub fn duration(cname: &CName, locale: Option<LocaleExt>, gender: Option<PlayerGender>) -> f32 {
+        Self::try_get(
+            cname,
+            &locale.and_then(|x| x.try_into().ok()).unwrap_or_default(),
+            gender.as_ref(),
+        )
+        .map(Banks::data)
+        .map(|x| match x {
+            Either::Left(left) => left.duration().as_secs_f32(),
+            Either::Right(right) => right.duration().as_secs_f32(),
+        })
+        .unwrap_or(-1.0)
     }
     /// All languages found in [Manifest]s.
     pub fn languages() -> HashSet<Locale> {

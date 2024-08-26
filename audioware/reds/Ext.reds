@@ -3,6 +3,10 @@ import Audioware.EmitterSettings
 import Audioware.Tween
 import Audioware.AudioSettingsExt
 import Audioware.AudioSettingsExtBuilder
+import Audioware.LocaleExt
+import Audioware.IntoLocaleExt
+import Audioware.IntoPlayerGender
+import Codeware.Localization.PlayerGender
 
 @addMethod(GameInstance)
 public static func GetAudioSystemExt(game: GameInstance) -> ref<AudioSystemExt> {
@@ -35,6 +39,13 @@ public native class AudioSystemExt {
 
     // misc
     public final native func IsDebug() -> Bool;
+    /// returns sound region duration as seconds if found, or -1.0 otherwise
+    public final native func Duration(eventName: CName, opt locale: LocaleExt, opt gender: PlayerGender) -> Float;
+    public final func Duration(eventName: CName, opt locale: CName, opt gender: CName) -> Float {
+        let l: LocaleExt = IntoLocaleExt(locale);
+        let g: PlayerGender = IntoPlayerGender(gender);
+        return this.Duration(eventName, l, g);
+    }
     /// major, minor, patch, type (0 = alpha, 1 = beta, 2 = rc, 3 = official), build number
     public final native func SemanticVersion() -> [Uint16; 5];
     public final func Version() -> String {

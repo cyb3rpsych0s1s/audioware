@@ -1,6 +1,7 @@
 //! [AudioSystemExt] surface API.
 
-use audioware_manifest::ScnDialogLineType;
+use audioware_bank::Banks;
+use audioware_manifest::{LocaleExt, PlayerGender, ScnDialogLineType};
 use kira::sound::PlaybackPosition;
 use red4ext_rs::{
     class_kind::Native,
@@ -129,6 +130,14 @@ impl AudioSystemExt {
     }
     pub const fn is_debug(&self) -> bool {
         cfg!(debug_assertions)
+    }
+    pub fn duration(
+        &self,
+        event_name: CName,
+        locale: Opt<LocaleExt>,
+        gender: Opt<PlayerGender>,
+    ) -> f32 {
+        Banks::duration(&event_name, locale.into_option(), gender.into_option())
     }
 }
 
