@@ -279,3 +279,11 @@ public static exec func TestChainBuilderPattern(game: GameInstance) {
             .Build()
     );
 }
+
+/// Game.TestAudioSystemExtDuration("still_dre");
+public static exec func TestAudioSystemExtDuration(game: GameInstance, eventName: String) {
+    let duration = GameInstance
+    .GetAudioSystemExt(game)
+    .Duration(StringToName(eventName));
+    FTLog(AsRef(s"\(eventName) duration: \(ToString(duration)) sec(s)"));
+}
