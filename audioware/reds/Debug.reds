@@ -281,9 +281,20 @@ public static exec func TestChainBuilderPattern(game: GameInstance) {
 }
 
 /// Game.TestAudioSystemExtDuration("still_dre");
-public static exec func TestAudioSystemExtDuration(game: GameInstance, eventName: String) {
+public static exec func TestAudioSystemExtDuration(game: GameInstance, eventName: String, opt locale: String, opt gender: String) {
+    let hasLocale = StrLen(locale) > 0;
+    let hasGender = StrLen(gender) > 0;
+    let loc: CName;
+    let gen: CName;
+    if hasLocale { loc = StringToName(locale); }
+    if hasGender { gen = StringToName(gender); }
     let duration = GameInstance
     .GetAudioSystemExt(game)
-    .Duration(StringToName(eventName));
-    FTLog(AsRef(s"\(eventName) duration: \(ToString(duration)) sec(s)"));
+    .Duration(StringToName(eventName), loc, gen);
+    let opts = "";
+    if hasLocale                { opts += s"locale: \(locale)"; }
+    if hasLocale && hasGender   { opts += ", ";                 }
+    if hasGender                { opts += s"gender: \(gender)"; }
+    if hasLocale || hasGender   { opts = s" (\(opts))";          }
+    FTLog(AsRef(s"\(eventName) duration\(opts): \(ToString(duration)) sec(s)"));
 }
