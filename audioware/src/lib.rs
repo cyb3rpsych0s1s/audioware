@@ -200,6 +200,7 @@ impl Plugin for Audioware {
                     final c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
                     final c"SemanticVersion" => AudioSystemExt::semantic_version,
                     final c"IsDebug" => AudioSystemExt::is_debug,
+                    final c"Duration" => AudioSystemExt::duration,
                 ])
                 .build(),
             ClassExport::<AudioRegion>::builder()

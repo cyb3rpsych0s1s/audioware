@@ -41,6 +41,9 @@ pub enum ConversionError {
     /// Cyberpunk 2077 does not support this [Locale](crate::Locale).
     #[snafu(display("invalid locale: {value}"))]
     InvalidLocale { value: String },
+    /// Locale type is not supported by Locale subset.
+    #[snafu(display("unsupported locale for {}: {value}", r#type))]
+    UnsupportedLocale { r#type: String, value: String },
     /// Cyberpunk 2077 does not support this [PlayerGender](crate::PlayerGender).
     #[snafu(display("invalid gender: {value}"))]
     InvalidGender { value: String },
