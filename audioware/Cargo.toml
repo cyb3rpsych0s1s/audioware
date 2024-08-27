@@ -15,6 +15,7 @@ crate-type = ["cdylib"]
 audioware-bank.workspace = true
 audioware-manifest.workspace = true
 cpal = "0.15"
+crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 dashmap = { version = "6.0", features = ["inline", "rayon"] }
 either.workspace = true
 glam = { version = "0.28", features = ["mint"] }

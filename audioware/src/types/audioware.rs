@@ -3,8 +3,8 @@
 mod subtitles;
 pub use subtitles::propagate_subtitles;
 
-mod args;
-pub use args::*;
+mod references;
+pub use references::*;
 mod easing;
 pub use easing::*;
 mod settings;

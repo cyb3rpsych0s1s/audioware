@@ -2,10 +2,6 @@ module Audioware
 
 import Codeware.Localization.PlayerGender
 
-/// e.g. "1.0.0-rc"
-public native func Version() -> String;
-/// major, minor, patch, type (0 = alpha, 1 = beta, 2 = rc, 3 = official), build number
-public native func SemanticVersion() -> array<Uint32>;
 /// debug or release build ?
 public native func IsDebug() -> Bool;
 
@@ -59,4 +55,27 @@ enum GameState {
     InPause = 5,
     End = 6,
     Unload = 7,
+}
+
+enum LocaleExt {
+    English = 0,
+    Creole = 1,
+    Japanese = 2,
+    Arabic = 3,
+    Russian = 4,
+    SimplifiedChinese = 5,
+    BrazilianPortuguese = 6,
+    Swahili = 7,
+    French = 8,
+    Polish = 9,
+    Spanish = 10,
+    Italian = 11,
+    German = 12,
+    LatinAmericanSpanish = 13,
+    Korean = 14,
+    TraditionalChinese = 15,
+    Czech = 16,
+    Hungarian = 17,
+    Turkish = 18,
+    Thai = 19,
 }

@@ -289,6 +289,16 @@ mod tests {
     fr-fr:
         fem: ./elsewhere/sfx.wav
         male: ./elsewhere/else/sfx.wav"## ; "dual dialog without subtitle")]
+        #[test_case(r##"id:
+    en-us:
+        fem: ./somewhere/sfx.wav
+        male: ./somewhere/else/sfx.wav
+    fr-fr:
+        fem: ./elsewhere/sfx.wav
+        male: ./elsewhere/else/sfx.wav
+    settings:
+        region:
+            starts: 500ms"## ; "dual dialog without subtitle with specific settings")]
         fn basic_format_without_subtitle(yaml: &str) {
             let dual_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
             dbg!("{}", &dual_dialog);
@@ -309,6 +319,20 @@ mod tests {
         male:
             file: ./somewhere/else/sfx.wav
             subtitle: "hello world""## ; "dual dialog with different subtitles and default line")]
+        #[test_case(r##"id:
+    en-us:
+        fem:
+            file: ./somewhere/sfx.wav
+            subtitle: "hello world"
+            settings:
+                region:
+                    starts: 500ms
+        male:
+            file: ./somewhere/else/sfx.wav
+            subtitle: "hello world"
+            settings:
+                region:
+                    starts: 300ms"## ; "dual dialog with different subtitles, default line and custom settings")]
         fn basic_format_with_subtitles(yaml: &str) {
             let dual_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
             dbg!("{}", &dual_dialog);

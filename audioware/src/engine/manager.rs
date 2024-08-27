@@ -1,5 +1,6 @@
 use audioware_bank::Banks;
 use audioware_bank::Id;
+use crossbeam::channel::bounded;
 use dashmap::DashMap;
 use kira::manager::backend::cpal::CpalBackend;
 use kira::manager::backend::cpal::CpalBackendSettings;
@@ -16,6 +17,7 @@ use red4ext_rs::types::Ref;
 use red4ext_rs::PluginOps;
 use std::ops::DerefMut;
 use std::sync::{Mutex, MutexGuard, OnceLock};
+use std::thread;
 
 use super::id::HandleId;
 use super::AudioSettingsExt;
@@ -30,7 +32,10 @@ use once_cell::sync::Lazy;
 use red4ext_rs::types::{CName, EntityId};
 
 use crate::config::BufferSize;
+use crate::engine::commands::OuterCommand;
+use crate::engine::handle_receive;
 use crate::engine::modulators::Modulators;
+use crate::engine::SENDER;
 use crate::error::Error;
 use crate::error::InternalError;
 use crate::ext::MergeArgs;
@@ -60,7 +65,7 @@ static STREAMS: Lazy<Mutex<DashMap<HandleId, StreamingSoundHandle<FromFileError>
     Lazy::new(Default::default);
 
 impl Manager {
-    pub fn try_lock<'a>() -> Result<MutexGuard<'a, AudioManager>, Error> {
+    pub(super) fn try_lock<'a>() -> Result<MutexGuard<'a, AudioManager>, Error> {
         static INSTANCE: OnceLock<Mutex<AudioManager<CpalBackend>>> = OnceLock::new();
         INSTANCE
             .get_or_init(|| {
@@ -74,12 +79,17 @@ impl Manager {
                         buffer_size as u32
                     );
                 }
-                let mut manager = AudioManager::new(AudioManagerSettings {
+                let manager_settings = AudioManagerSettings {
                     backend_settings,
                     ..Default::default()
-                })
-                .expect("instantiate audio manager");
+                };
+                let commands_capacity = manager_settings.capacities.command_capacity;
+                let mut manager =
+                    AudioManager::new(manager_settings).expect("instantiate audio manager");
                 Modulators::setup(&mut manager).expect("modulators");
+                let (s, r) = bounded::<OuterCommand>(commands_capacity);
+                let _ = SENDER.set(s);
+                thread::spawn(move || handle_receive(r));
                 Mutex::new(manager)
             })
             .try_lock()
@@ -91,7 +101,7 @@ impl Manager {
             })
     }
     /// Retain non-stopped sounds only.
-    pub fn reclaim() -> Result<(), Error> {
+    pub(super) fn reclaim() -> Result<(), Error> {
         let storage = StaticStorage::try_lock()?;
         storage.retain(|_, v| !v.stopped());
         let storage = StreamStorage::try_lock()?;

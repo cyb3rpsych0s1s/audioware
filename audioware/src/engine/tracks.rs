@@ -40,7 +40,7 @@ pub struct Tracks {
 }
 
 impl Tracks {
-    pub fn setup(manager: &mut AudioManager) -> Result<(), Error> {
+    pub(super) fn setup(manager: &mut AudioManager) -> Result<(), Error> {
         let ambience = Ambience::setup(manager)?;
 
         let sfx = Sfx::setup(manager, &ambience)?;

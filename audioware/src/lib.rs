@@ -5,20 +5,19 @@ use std::sync::OnceLock;
 
 use audioware_bank::{Banks, Initialization};
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
-use engine::{AudioRegion, AudioSettingsExt, AudioSettingsExtBuilder, Engine};
+use engine::{
+    commands::Command, AudioRegion, AudioSettingsExt, AudioSettingsExtBuilder, Engine, Preset,
+};
 use ext::AudioSystemExt;
 use hooks::*;
 use red4ext_rs::{
     call, export_plugin_symbols, exports, global, log, methods, static_methods,
-    types::{CName, GameEngine, IScriptable, Opt, RedArray, RedString},
+    types::{CName, GameEngine, IScriptable, Opt, Ref},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State, ToggleState};
-use types::{
-    Args, AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings, GameObject, LoopRegion,
-    Vector4,
-};
+use types::{AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings, GameObject, Vector4};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod config;
@@ -154,10 +153,6 @@ impl Plugin for Audioware {
         exports![
             ClassExport::<EmitterDistances>::builder().build(),
             ClassExport::<EmitterSettings>::builder().build(),
-            ClassExport::<LoopRegion>::builder().build(),
-            ClassExport::<Args>::builder().build(),
-            GlobalExport(global!(c"Audioware.Version", version)),
-            GlobalExport(global!(c"Audioware.SemanticVersion", semantic_version)),
             GlobalExport(global!(c"Audioware.IsDebug", is_debug)),
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
@@ -186,11 +181,11 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetPlayerGender", set_player_gender)),
             GlobalExport(global!(c"Audioware.UnsetPlayerGender", unset_player_gender)),
             GlobalExport(global!(c"Audioware.SetGameLocales", set_game_locales)),
-            GlobalExport(global!(c"Audioware.Pause", Engine::pause)),
-            GlobalExport(global!(c"Audioware.Resume", Engine::resume)),
-            GlobalExport(global!(c"Audioware.SetReverbMix", Engine::set_reverb_mix)),
-            GlobalExport(global!(c"Audioware.SetPreset", Engine::set_preset)),
-            GlobalExport(global!(c"Audioware.SetVolume", Engine::set_volume)),
+            GlobalExport(global!(c"Audioware.Pause", pause)),
+            GlobalExport(global!(c"Audioware.Resume", resume)),
+            GlobalExport(global!(c"Audioware.SetReverbMix", set_reverb_mix)),
+            GlobalExport(global!(c"Audioware.SetPreset", set_preset)),
+            GlobalExport(global!(c"Audioware.SetVolume", set_volume)),
             ClassExport::<AudioSystemExt>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![
@@ -203,6 +198,9 @@ impl Plugin for Audioware {
                     final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
                     final c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
                     final c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
+                    final c"SemanticVersion" => AudioSystemExt::semantic_version,
+                    final c"IsDebug" => AudioSystemExt::is_debug,
+                    final c"Duration" => AudioSystemExt::duration,
                 ])
                 .build(),
             ClassExport::<AudioRegion>::builder()
@@ -224,6 +222,9 @@ impl Plugin for Audioware {
                     final c"SetStartPosition" => AudioSettingsExtBuilder::set_start_position,
                     final c"SetLoopRegionStarts" => AudioSettingsExtBuilder::set_loop_region_starts,
                     final c"SetLoopRegionEnds" => AudioSettingsExtBuilder::set_loop_region_ends,
+                    final c"SetRegionStarts" => AudioSettingsExtBuilder::set_region_starts,
+                    final c"SetRegionEnds" => AudioSettingsExtBuilder::set_region_ends,
+                    final c"SetLoop" => AudioSettingsExtBuilder::set_loop,
                     final c"SetVolume" => AudioSettingsExtBuilder::set_volume,
                     final c"SetFadeInTween" => AudioSettingsExtBuilder::set_fade_in_tween,
                     final c"SetPanning" => AudioSettingsExtBuilder::set_panning,
@@ -268,23 +269,32 @@ unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     Engine::shutdown();
 }
 
-/// Current [Audioware] version.
-/// e.g. `"1.0.0-rc"`
-// TODO: replace with upstream conversion when PR merged.
-fn version() -> RedString {
-    RedString::from("1.0.0-rc")
-}
-
-/// Current [Audioware] semantic version.
-/// e.g. `[1, 0, 0, 2, 0]`
-// TODO: replace with upstream conversion when PR merged.
-fn semantic_version() -> RedArray<u32> {
-    RedArray::from_iter([1, 0, 0, 2, 0])
-}
-
-/// Was [Audioware] built in [debug mode](https://doc.rust-lang.org/cargo/commands/cargo-build.html) ?
-fn is_debug() -> bool {
+const fn is_debug() -> bool {
     cfg!(debug_assertions)
+}
+
+fn pause() {
+    Engine::send_non_cancelable(Command::Pause {
+        tween: Ref::default().into(),
+    });
+}
+
+fn resume() {
+    Engine::send_non_cancelable(Command::Resume {
+        tween: Ref::default().into(),
+    });
+}
+
+fn set_preset(value: Preset) {
+    Engine::send(Command::SetPreset { value })
+}
+
+fn set_reverb_mix(value: f32) {
+    Engine::send(Command::SetReverbMix { value })
+}
+
+fn set_volume(setting: CName, value: f64) {
+    Engine::send(Command::SetVolume { setting, value })
 }
 
 /// Set V's [gender][PlayerGender].

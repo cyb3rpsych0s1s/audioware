@@ -10,8 +10,12 @@ use audioware_manifest::{
     error::{CannotParseManifest, CannotReadManifest},
     Depot, DialogLine, Locale, Manifest, PlayerGender, R6Audioware, REDmod, Settings, SpokenLocale,
 };
+use either::Either;
 use ensure::*;
-use kira::sound::static_sound::StaticSoundData;
+use kira::sound::{
+    static_sound::{StaticSoundData, StaticSoundSettings},
+    streaming::StreamingSoundSettings,
+};
 use red4ext_rs::types::CName;
 use snafu::ResultExt;
 
@@ -46,6 +50,51 @@ impl Banks {
         KEYS.get()
             .and_then(|x| x.iter().find(|x| AsRef::<CName>::as_ref(x) == cname))
             .is_some()
+    }
+    /// Return audio duration (as seconds) if any, otherwise `-1.0`.
+    pub fn duration(cname: &CName, locale: Locale, gender: PlayerGender, total: bool) -> f32 {
+        let locale = SpokenLocale::from(locale);
+        if let Ok(id) = Self::try_get(cname, &locale, Some(&gender)) {
+            // in-memory sound data already embed settings
+            let in_memory = match id {
+                Id::OnDemand(_, _) => false,
+                Id::InMemory(_, _) => true,
+            };
+            match (total, in_memory, Banks.data(id)) {
+                // if no need for total and in-memory, just return its duration
+                (false, true, data) => data
+                    .left()
+                    .expect("streaming cannot be stored in-memory")
+                    .duration(),
+                // if no need for total and on-demand, check for settings
+                (false, false, data) => match (data, Banks.settings(id)) {
+                    (
+                        Either::Left(x),
+                        Some(Either::Left(StaticSoundSettings {
+                            loop_region: Some(region),
+                            ..
+                        })),
+                    ) => x.slice(region).duration(),
+                    (Either::Left(x), _) => x.duration(),
+                    (
+                        Either::Right(x),
+                        Some(Either::Right(StreamingSoundSettings {
+                            loop_region: Some(region),
+                            ..
+                        })),
+                    ) => x.slice(region).duration(),
+                    (Either::Right(x), _) => x.duration(),
+                },
+                // if need total
+                (true, _, data) => match data {
+                    Either::Left(x) => x.slice(None).duration(),
+                    Either::Right(x) => x.slice(None).duration(),
+                },
+            }
+            .as_secs_f32()
+        } else {
+            -1.0
+        }
     }
     /// All languages found in [Manifest]s.
     pub fn languages() -> HashSet<Locale> {
@@ -242,8 +291,14 @@ impl Banks {
                 }
                 if let Some(music) = manifest.music {
                     for (key, value) in music {
-                        match ensure_music(key.as_str(), value, &m, &mut ids, &mut unique_settings)
-                        {
+                        match ensure_music(
+                            key.as_str(),
+                            value,
+                            &m,
+                            &mut ids,
+                            &mut uniques,
+                            &mut unique_settings,
+                        ) {
                             Ok(x) => x,
                             Err(e) => {
                                 errors.push(e);

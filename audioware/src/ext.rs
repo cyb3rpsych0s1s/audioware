@@ -1,18 +1,19 @@
 //! [AudioSystemExt] surface API.
 
-use audioware_manifest::ScnDialogLineType;
+use audioware_bank::Banks;
+use audioware_manifest::{LocaleExt, PlayerGender, ScnDialogLineType};
 use kira::sound::PlaybackPosition;
 use red4ext_rs::{
     class_kind::Native,
     log,
-    types::{CName, EntityId, IScriptable, Opt, Ref},
+    types::{CName, EntityId, IScriptable, Opt, Ref, StaticArray},
     PluginOps, ScriptClass,
 };
 
 use crate::{
-    engine::{AudioSettingsExt, Engine},
+    engine::{commands::Command, AudioSettingsExt, Engine},
     types::Tween,
-    Audioware,
+    Audioware, AUDIOWARE_VERSION,
 };
 
 /// Interop type for [Ext.reds](https://github.com/cyb3rpsych0s1s/audioware/blob/main/audioware/reds/Ext.reds).
@@ -36,7 +37,13 @@ impl AudioSystemExt {
         line_type: Opt<ScnDialogLineType>,
         ext: Ref<AudioSettingsExt>,
     ) {
-        Engine::play_with(sound_name, entity_id, emitter_name, line_type, ext);
+        Engine::send(Command::PlayExt {
+            sound_name,
+            entity_id,
+            emitter_name,
+            line_type,
+            ext: ext.into(),
+        });
     }
     pub fn stop(
         &self,
@@ -45,7 +52,12 @@ impl AudioSystemExt {
         emitter_name: Opt<CName>,
         tween: Ref<Tween>,
     ) {
-        Engine::stop(event_name, entity_id, emitter_name, tween);
+        Engine::send(Command::Stop {
+            event_name,
+            entity_id,
+            emitter_name,
+            tween: tween.into(),
+        });
     }
     pub fn switch(
         &self,
@@ -56,17 +68,25 @@ impl AudioSystemExt {
         switch_name_tween: Ref<Tween>,
         switch_value_settings: Ref<AudioSettingsExt>,
     ) {
-        Engine::switch(
+        Engine::send(Command::Switch {
             switch_name,
             switch_value,
             entity_id,
             emitter_name,
-            switch_name_tween,
-            switch_value_settings,
-        );
+            switch_name_tween: switch_name_tween.into(),
+            switch_value_settings: switch_value_settings.into(),
+        })
     }
     pub fn play_over_the_phone(&self, event_name: CName, emitter_name: CName, gender: CName) {
-        Engine::play_over_the_phone(event_name, emitter_name, gender);
+        if let Ok(gender) = gender.try_into() {
+            Engine::send(Command::PlayOverThePhone {
+                event_name,
+                emitter_name,
+                gender,
+            });
+        } else {
+            log::warn!(Audioware::env(), "invalid gender: {gender}");
+        }
     }
     pub fn is_registered_emitter(&self, entity_id: EntityId) -> bool {
         Engine::is_registered_emitter(entity_id)
@@ -81,7 +101,12 @@ impl AudioSystemExt {
         emitter_name: CName,
         tween: Ref<Tween>,
     ) {
-        Engine::play_on_emitter(sound_name, entity_id, emitter_name, tween);
+        Engine::send(Command::PlayOnEmitter {
+            sound_name,
+            entity_id,
+            emitter_name,
+            tween: tween.into(),
+        });
     }
     pub fn stop_on_emitter(
         &self,
@@ -90,10 +115,38 @@ impl AudioSystemExt {
         emitter_name: CName,
         tween: Ref<Tween>,
     ) {
-        Engine::stop_on_emitter(sound_name, entity_id, emitter_name, tween);
+        Engine::send(Command::StopOnEmitter {
+            event_name: sound_name,
+            entity_id,
+            emitter_name,
+            tween: tween.into(),
+        })
     }
     pub fn on_emitter_dies(&self, entity_id: EntityId) {
         Engine::on_emitter_dies(entity_id);
+    }
+    pub fn semantic_version(&self) -> StaticArray<u16, 5> {
+        StaticArray::from(AUDIOWARE_VERSION)
+    }
+    pub const fn is_debug(&self) -> bool {
+        cfg!(debug_assertions)
+    }
+    pub fn duration(
+        &self,
+        event_name: CName,
+        locale: Opt<LocaleExt>,
+        gender: Opt<PlayerGender>,
+        total: Opt<bool>,
+    ) -> f32 {
+        Banks::duration(
+            &event_name,
+            locale
+                .into_option()
+                .and_then(|x| x.try_into().ok())
+                .unwrap_or_default(),
+            gender.unwrap_or_default(),
+            total.unwrap_or_default(),
+        )
     }
 }
 
@@ -126,41 +179,59 @@ macro_rules! impl_merge_args {
                         }
                     };
                 }
-                if let Some(loop_region) = fields.loop_region {
-                    match (loop_region.start, loop_region.end) {
+                if let Some(region) = fields.region {
+                    match (region.start, region.end) {
                         (
                             PlaybackPosition::Seconds(start),
                             kira::sound::EndPosition::EndOfAudio,
                         ) => {
-                            if start > 0. && start < self.duration().as_secs_f64() {
-                                self = self.loop_region(kira::sound::Region {
+                            if start >= 0. {
+                                let value = kira::sound::Region {
                                     start: PlaybackPosition::Seconds(start),
                                     end: kira::sound::EndPosition::EndOfAudio,
-                                });
+                                };
+                                if fields.r#loop.unwrap_or_default() {
+                                    self = self.loop_region(value);
+                                } else {
+                                    self = self.slice(value);
+                                }
+                            } else {
+                                log::warn!(
+                                    Audioware::env(),
+                                    "invalid region: start {} / end of audio",
+                                    start
+                                );
                             }
                         }
                         (
                             PlaybackPosition::Seconds(start),
                             kira::sound::EndPosition::Custom(PlaybackPosition::Seconds(end)),
                         ) => {
-                            if start >= 0.0
-                                && start < self.duration().as_secs_f64()
-                                && end > 0.0
-                                && end <= self.duration().as_secs_f64()
-                                && start < end
-                            {
-                                self = self.loop_region(kira::sound::Region {
+                            if start >= 0.0 && end > 0.0 && start < end {
+                                let value = kira::sound::Region {
                                     start: PlaybackPosition::Seconds(start),
                                     end: kira::sound::EndPosition::Custom(
                                         PlaybackPosition::Seconds(end),
                                     ),
-                                });
+                                };
+                                if fields.r#loop.unwrap_or_default() {
+                                    self = self.loop_region(value);
+                                } else {
+                                    self = self.slice(value);
+                                }
+                            } else {
+                                log::warn!(
+                                    Audioware::env(),
+                                    "invalid region: start {} / end {}",
+                                    start,
+                                    end
+                                );
                             }
                         }
                         _ => {
                             log::warn!(
                                 Audioware::env(),
-                                "Setting loop region in samples is not supported."
+                                "Setting region in samples unit is not supported."
                             );
                         }
                     }

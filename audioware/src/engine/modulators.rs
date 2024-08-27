@@ -17,7 +17,7 @@ pub trait Parameter {
 pub struct Modulators;
 
 impl Modulators {
-    pub fn setup(manager: &mut AudioManager) -> Result<(), Error> {
+    pub(super) fn setup(manager: &mut AudioManager) -> Result<(), Error> {
         ReverbMix::setup(manager)?;
         SfxVolume::setup(manager)?;
         DialogueVolume::setup(manager)?;

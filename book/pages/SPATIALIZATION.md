@@ -16,9 +16,39 @@ if !GameInstance.GetAudioSystemExt(game).IsRegisteredEmitter(emitterID) {
 Audio emitter have to be positioned so they can only be [Entity](https://nativedb.red4ext.com/Entity) or classes inheriting from it like [GameObject](https://nativedb.red4ext.com/GameObject), devices, vehicles, NPCs, etc.
 ```
 
-```admonish hint title="Cleanup"
-You don't need to manually unregister your audio emitter(s), even if you can do so: Audioware does it automatically whenever emitter despawns or dies. Dying emitter still emit.
+~~~admonish hint title="Cleanup"
+You don't need to manually unregister your audio emitter(s), even if you can do so:  
+Audioware does it automatically whenever emitter despawns or dies. Dying emitter <span style="color: hotpink">still</span> emit.
+~~~
+
+<details><summary>How to easily e.g. fade a sound out whenever an Entity is dying <span style="color: hotpink; font-size: 0.75em">click to open</span></summary>
+
+```swift
+/// for Humans
+@wrapMethod(NPCDeathListener)
+protected cb func OnStatPoolCustomLimitReached(value: Float) -> Bool {
+    let wasAlive = !this.npc.m_wasJustKilledOrDefeated;
+    let out = wrappedMethod(value);
+    if wasAlive && this.npc.m_wasJustKilledOrDefeated {
+        let id = this.npc.GetEntityID();
+        let name = this.npc.GetDisplayName(); // or whatever you named it
+        // fades for 2sec, with intensity 0.2
+        let fadeOut = LinearTween.ImmediateOut(2.0, 0.2);
+
+        GameInstance
+            .GetAudioSystemExt(this.npc.GetGame())
+            .Stop(n"my_custom_audio", id, name, fadeOut);
+    }
+    return out;
+}
+/// for Robots
+@wrapMethod(NPCDeathListener)
+protected cb func OnStatPoolMinValueReached(value: Float) -> Bool { ... }
 ```
+
+> A courtesy of [Demon9ne](https://next.nexusmods.com/profile/Demon9ne), thanks for the snippet!
+
+</details>
 
 ```admonish hint
 V cannot be an audio emitter because (s)he is the listener.

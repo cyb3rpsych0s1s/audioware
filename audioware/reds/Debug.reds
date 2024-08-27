@@ -40,6 +40,14 @@ public static exec func TestAudioSystemPlay(game: GameInstance, name: String) {
     GameInstance.GetAudioSystemExt(game).Play(cname);
 }
 
+/// Game.TestSemanticVersion();
+public static exec func TestSemanticVersion(game: GameInstance) {
+    let version = GameInstance.GetAudioSystemExt(game).SemanticVersion();
+    FTLog(AsRef(s"semantic version: major: \(version[0]), minor: \(version[1]), patch: \(version[2]), type: \(version[3]), build: \(version[4])"));
+    FTLog(AsRef(GameInstance.GetAudioSystemExt(game).Version()));
+    FTLog(AsRef(ToString(GameInstance.GetAudioSystemExt(game).IsDebug())));
+}
+
 /// Game.TestAudioSystemStopSmoothly("dimanche_aux_goudes");
 public static exec func TestAudioSystemStopSmoothly(game: GameInstance, name: String) {
     let cname = StringToName(name);
@@ -270,4 +278,27 @@ public static exec func TestChainBuilderPattern(game: GameInstance) {
             .WithVolume(0.9)
             .Build()
     );
+}
+
+/// Game.TestAudioSystemExtDuration("still_dre");
+/// Game.TestAudioSystemExtDuration("situation_scribe", "en-us", "Female");
+/// Game.TestAudioSystemExtDuration("situation_scribe", "en-us", "Female", true);
+public static exec func TestAudioSystemExtDuration(game: GameInstance, eventName: String, opt locale: String, opt gender: String, opt total: Bool) {
+    let hasLocale = StrLen(locale) > 0;
+    let hasGender = StrLen(gender) > 0;
+    let loc: CName;
+    let gen: CName;
+    if hasLocale { loc = StringToName(locale); }
+    if hasGender { gen = StringToName(gender); }
+    let duration = GameInstance
+    .GetAudioSystemExt(game)
+    .Duration(StringToName(eventName), loc, gen, total);
+    let opts = "";
+    if hasLocale                { opts += s"locale: \(locale)"; }
+    if hasLocale && hasGender   { opts += ", ";                 }
+    if hasGender                { opts += s"gender: \(gender)"; }
+    if hasLocale || hasGender   { opts += ", ";                 }
+    opts += s"total: \(ToString(total))";
+    opts = s" (\(opts))";
+    FTLog(AsRef(s"\(eventName) duration\(opts): \(ToString(duration)) sec(s)"));
 }
