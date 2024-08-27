@@ -1,7 +1,6 @@
 //! Used with [Codeware Localization](https://github.com/psiberx/cp2077-codeware/wiki#localization).
 
 use fixed_map::Key;
-use red4ext_rs::NativeRepr;
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 
@@ -147,7 +146,8 @@ pub enum LocaleExt {
     Thai = 19,
 }
 
-unsafe impl NativeRepr for LocaleExt {
+#[cfg(not(test))]
+unsafe impl red4ext_rs::NativeRepr for LocaleExt {
     const NAME: &'static str = "Audioware.LocaleExt";
 }
 
@@ -232,10 +232,12 @@ impl TryFrom<LocaleExt> for Locale {
     }
 }
 
+#[cfg(not(test))]
 impl TryFrom<LocaleExt> for ScnDialogLineLanguage {
     type Error = crate::error::ConversionError;
 
     fn try_from(value: LocaleExt) -> Result<Self, Self::Error> {
+        use red4ext_rs::NativeRepr;
         match value {
             LocaleExt::Polish => Ok(Self::Polish),
             LocaleExt::English => Ok(Self::Origin),
@@ -465,7 +467,8 @@ pub enum ScnDialogLineLanguage {
     Polish = 9,
 }
 
-unsafe impl NativeRepr for ScnDialogLineLanguage {
+#[cfg(not(test))]
+unsafe impl red4ext_rs::NativeRepr for ScnDialogLineLanguage {
     const NAME: &'static str = "scnDialogLineLanguage";
 }
 

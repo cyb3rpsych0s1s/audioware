@@ -1,7 +1,11 @@
 use std::{cell::Cell, time::Duration};
 
+use audioware_core::With;
 use kira::{
-    sound::{EndPosition, PlaybackPosition, PlaybackRate},
+    sound::{
+        static_sound::StaticSoundData, streaming::StreamingSoundData, EndPosition, FromFileError,
+        PlaybackPosition, PlaybackRate,
+    },
     Volume,
 };
 use red4ext_rs::{
@@ -240,4 +244,50 @@ pub struct AudioSettingsExt {
 unsafe impl ScriptClass for AudioSettingsExt {
     type Kind = Native;
     const NAME: &'static str = "Audioware.AudioSettingsExt";
+}
+
+macro_rules! impl_with {
+    ($self:expr, $settings:expr) => {{
+        if let Some(x) = $settings.start_position {
+            $self = $self.start_position(x);
+        }
+        if let Some(x) = $settings.volume {
+            $self = $self.volume(x);
+        }
+        if let Some(x) = $settings.panning {
+            $self = $self.panning(x);
+        }
+        if let Some(x) = $settings.region {
+            if $settings.r#loop.unwrap_or(false) {
+                $self = $self.loop_region(x);
+            } else {
+                $self = $self.slice(x);
+            }
+        }
+        if let Some(x) = $settings.playback_rate {
+            $self = $self.playback_rate(x);
+        }
+        if let Some(x) = $settings.fade_in_tween {
+            $self = $self.fade_in_tween(x);
+        }
+        $self
+    }};
+}
+
+impl With<AudioSettingsExt> for StaticSoundData {
+    fn with(mut self, settings: AudioSettingsExt) -> Self
+    where
+        Self: Sized,
+    {
+        impl_with!(self, settings)
+    }
+}
+
+impl With<AudioSettingsExt> for StreamingSoundData<FromFileError> {
+    fn with(mut self, settings: AudioSettingsExt) -> Self
+    where
+        Self: Sized,
+    {
+        impl_with!(self, settings)
+    }
 }

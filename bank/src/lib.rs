@@ -6,16 +6,14 @@ use std::{
     time::{Duration, Instant},
 };
 
+use audioware_core::AudioData;
 use audioware_manifest::{
     error::{CannotParseManifest, CannotReadManifest},
     Depot, DialogLine, Locale, Manifest, PlayerGender, R6Audioware, REDmod, Settings, SpokenLocale,
 };
 use either::Either;
 use ensure::*;
-use kira::sound::{
-    static_sound::{StaticSoundData, StaticSoundSettings},
-    streaming::StreamingSoundSettings,
-};
+use kira::sound::static_sound::StaticSoundData;
 use red4ext_rs::types::CName;
 use snafu::ResultExt;
 
@@ -65,30 +63,30 @@ impl Banks {
                 (false, true, data) => data
                     .left()
                     .expect("streaming cannot be stored in-memory")
-                    .duration(),
+                    .current_duration(),
                 // if no need for total and on-demand, check for settings
                 (false, false, data) => match (data, Banks.settings(id)) {
                     (
                         Either::Left(x),
-                        Some(Either::Left(StaticSoundSettings {
-                            loop_region: Some(region),
+                        Some(Settings {
+                            region: Some(region),
                             ..
-                        })),
+                        }),
                     ) => x.slice(region).duration(),
-                    (Either::Left(x), _) => x.duration(),
+                    (Either::Left(x), _) => x.current_duration(),
                     (
                         Either::Right(x),
-                        Some(Either::Right(StreamingSoundSettings {
-                            loop_region: Some(region),
+                        Some(Settings {
+                            region: Some(region),
                             ..
-                        })),
+                        }),
                     ) => x.slice(region).duration(),
-                    (Either::Right(x), _) => x.duration(),
+                    (Either::Right(x), _) => x.current_duration(),
                 },
                 // if need total
                 (true, _, data) => match data {
-                    Either::Left(x) => x.slice(None).duration(),
-                    Either::Right(x) => x.slice(None).duration(),
+                    Either::Left(x) => x.total_duration(),
+                    Either::Right(x) => x.total_duration(),
                 },
             }
             .as_secs_f32()

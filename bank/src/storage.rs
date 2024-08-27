@@ -7,11 +7,7 @@ use std::{
 };
 
 use either::Either;
-use kira::sound::{
-    static_sound::{StaticSoundData, StaticSoundSettings},
-    streaming::{StreamingSoundData, StreamingSoundSettings},
-    FromFileError,
-};
+use kira::sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError};
 
 use audioware_manifest::{
     DialogLine, Locale, PlayerGender, Settings as ManifestSettings, WrittenLocale,
@@ -115,7 +111,7 @@ pub(super) static MUL_SUB: OnceStorage<BothKey, DialogLine> = OnceStorage::new()
 
 impl BankSettings for Banks {
     type Key = Id;
-    type Settings = Either<StaticSoundSettings, StreamingSoundSettings>;
+    type Settings = audioware_manifest::Settings;
 
     /// Retrieves sound settings for a given [Id] if any.
     fn settings(&self, key: &Self::Key) -> Option<Self::Settings> {
@@ -130,12 +126,8 @@ impl BankSettings for Banks {
                     },
                 };
                 match usage {
-                    Usage::Static(_, _) => {
-                        settings.map(StaticSoundSettings::from).map(Either::Left)
-                    }
-                    Usage::Streaming(_, _) => settings
-                        .map(StreamingSoundSettings::from)
-                        .map(Either::Right),
+                    Usage::Static(_, _) => settings,
+                    Usage::Streaming(_, _) => settings,
                 }
             }
             // in-memory sound data already embed settings
@@ -156,8 +148,7 @@ impl BankData for Banks {
                 let data = StaticSoundData::from_file(path)
                     .expect("static sound data has already been validated");
                 if let Some(settings) = settings {
-                    let settings = settings.left().expect("static sound settings should match");
-                    return Either::Left(data.with_settings(settings));
+                    return Either::Left(data.with_settings(settings.into()));
                 }
                 Either::Left(data)
             }
@@ -166,10 +157,7 @@ impl BankData for Banks {
                 let data = StreamingSoundData::from_file(path)
                     .expect("streaming sound data has already been validated");
                 if let Some(settings) = settings {
-                    let settings = settings
-                        .right()
-                        .expect("streaming sound settings should match");
-                    return Either::Right(data.with_settings(settings));
+                    return Either::Right(data.with_settings(settings.into()));
                 }
                 Either::Right(data)
             }

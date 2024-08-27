@@ -1,18 +1,21 @@
-use kira::sound::static_sound::{StaticSoundData, StaticSoundSettings};
+use kira::{
+    sound::static_sound::{StaticSoundData, StaticSoundSettings},
+    tween::Tween,
+};
 
-use crate::{AudioData, OptionalAudioSettings, SampleRate, With};
+use crate::{AudioData, SampleRate, With};
 
 impl AudioData for StaticSoundData {
     type Settings = StaticSoundSettings;
 
     #[inline]
-    fn duration(&self) -> std::time::Duration {
+    fn current_duration(&self) -> std::time::Duration {
         self.duration()
     }
 
     #[inline]
     fn total_duration(self) -> std::time::Duration {
-        self.loop_region(None).duration()
+        self.slice(None).loop_region(None).duration()
     }
 
     #[inline]
@@ -48,11 +51,12 @@ impl With<StaticSoundSettings> for StaticSoundData {
     }
 }
 
-impl<T: OptionalAudioSettings> With<T> for StaticSoundData {
-    fn with(mut self, settings: T) -> Self
+impl With<Tween> for StaticSoundData {
+    #[inline]
+    fn with(self, settings: Tween) -> Self
     where
         Self: Sized,
     {
-        super::impl_with!(self, settings)
+        self.fade_in_tween(settings)
     }
 }

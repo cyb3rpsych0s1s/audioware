@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+audioware-core.workspace = true
 audioware-manifest.workspace = true
 either = "1.12"
 kira.workspace = true

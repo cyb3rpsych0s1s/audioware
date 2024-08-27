@@ -1,6 +1,9 @@
-use kira::sound::streaming::{StreamingSoundData, StreamingSoundSettings};
+use kira::{
+    sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+    tween::Tween,
+};
 
-use crate::{AudioData, OptionalAudioSettings, With};
+use crate::{AudioData, With};
 
 impl<T> AudioData for StreamingSoundData<T>
 where
@@ -9,13 +12,13 @@ where
     type Settings = StreamingSoundSettings;
 
     #[inline]
-    fn duration(&self) -> std::time::Duration {
+    fn current_duration(&self) -> std::time::Duration {
         self.duration()
     }
 
     #[inline]
     fn total_duration(self) -> std::time::Duration {
-        self.loop_region(None).duration()
+        self.slice(None).loop_region(None).duration()
     }
 
     #[inline]
@@ -47,14 +50,15 @@ where
     }
 }
 
-impl<T, U: OptionalAudioSettings> With<U> for StreamingSoundData<T>
+impl<T> With<Tween> for StreamingSoundData<T>
 where
     T: Send + 'static,
 {
-    fn with(mut self, settings: U) -> Self
+    #[inline]
+    fn with(self, settings: Tween) -> Self
     where
         Self: Sized,
     {
-        super::impl_with!(self, settings)
+        self.fade_in_tween(settings)
     }
 }

@@ -1,5 +1,7 @@
 use audioware_bank::Banks;
 use audioware_bank::Id;
+use audioware_core::AudioData;
+use audioware_core::With;
 use crossbeam::channel::bounded;
 use dashmap::DashMap;
 use kira::manager::backend::cpal::CpalBackend;
@@ -16,6 +18,7 @@ use red4ext_rs::log;
 use red4ext_rs::types::Ref;
 use red4ext_rs::PluginOps;
 use std::ops::DerefMut;
+use std::ops::Not;
 use std::sync::{Mutex, MutexGuard, OnceLock};
 use std::thread;
 
@@ -38,7 +41,6 @@ use crate::engine::modulators::Modulators;
 use crate::engine::SENDER;
 use crate::error::Error;
 use crate::error::InternalError;
-use crate::ext::MergeArgs;
 use crate::types::ToTween;
 use crate::Audioware;
 
@@ -153,10 +155,10 @@ pub trait Play<T> {
 
 impl<T> Play<Option<Tween>> for T
 where
-    T: Data + SoundData,
+    T: SoundData + AudioData + WithContextualRoute + With<Option<Tween>>,
     PlaySoundError<<T as SoundData>::Error>: Into<Error>,
 {
-    type Handle = <T as SoundData>::Handle;
+    type Handle = <Self as SoundData>::Handle;
 
     fn play(
         self,
@@ -166,20 +168,43 @@ where
         destination: Option<OutputDestination>,
         tween: Option<Tween>,
     ) -> Result<(f32, Self::Handle), Error> {
-        let duration = self.duration_as_secs();
+        let duration = self.current_duration().as_secs_f32();
         let handle = manager
-            .play(
-                self.with_tween(tween)
-                    .with_route(id, entity_id, destination),
-            )
+            .play(self.with(tween).with_route(id, entity_id, destination))
             .map_err(Into::into)?;
         Ok((duration, handle))
     }
 }
 
-pub trait Data {
-    fn duration_as_secs(&self) -> f32;
-    fn with_tween(self, tween: Option<Tween>) -> Self;
+impl<T> Play<Ref<AudioSettingsExt>> for T
+where
+    T: SoundData + AudioData + WithContextualRoute + With<Option<AudioSettingsExt>>,
+    PlaySoundError<<T as SoundData>::Error>: Into<Error>,
+{
+    type Handle = <Self as SoundData>::Handle;
+
+    fn play(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        destination: Option<OutputDestination>,
+        ext: Ref<AudioSettingsExt>,
+    ) -> Result<(f32, Self::Handle), Error> {
+        let duration = self.current_duration().as_secs_f32();
+        let ext = ext
+            .is_null()
+            .not()
+            .then(|| unsafe { ext.fields() })
+            .and_then(Option::<&AudioSettingsExt>::cloned);
+        let handle = manager
+            .play(self.with(ext).with_route(id, entity_id, destination))
+            .map_err(Into::into)?;
+        Ok((duration, handle))
+    }
+}
+
+pub trait WithContextualRoute {
     fn with_route(
         self,
         id: &Id,
@@ -188,40 +213,38 @@ pub trait Data {
     ) -> Self;
 }
 
-macro_rules! impl_data {
-    ($ty:path) => {
-        impl Data for $ty {
-            fn with_tween(self, tween: Option<Tween>) -> Self {
-                if tween.is_some() {
-                    return self.fade_in_tween(tween);
-                }
-                self
-            }
-
-            fn with_route(
-                self,
-                id: &Id,
-                entity_id: Option<EntityId>,
-                destination: Option<OutputDestination>,
-            ) -> Self {
-                if let Some(destination) = destination {
-                    self.output_destination(destination)
-                } else {
-                    self.output_destination(
-                        Context::new(id, entity_id.as_ref()).output_destination(),
-                    )
-                }
-            }
-
-            fn duration_as_secs(&self) -> f32 {
-                self.duration().as_secs_f32()
-            }
+impl WithContextualRoute for StaticSoundData {
+    fn with_route(
+        self,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        destination: Option<OutputDestination>,
+    ) -> Self {
+        if let Some(destination) = destination {
+            self.output_destination(destination)
+        } else {
+            self.output_destination(Context::new(id, entity_id.as_ref()).output_destination())
         }
-    };
+    }
 }
 
-impl_data!(StaticSoundData);
-impl_data!(StreamingSoundData<FromFileError>);
+impl<T> WithContextualRoute for StreamingSoundData<T>
+where
+    T: Send + 'static,
+{
+    fn with_route(
+        self,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        destination: Option<OutputDestination>,
+    ) -> Self {
+        if let Some(destination) = destination {
+            self.output_destination(destination)
+        } else {
+            self.output_destination(Context::new(id, entity_id.as_ref()).output_destination())
+        }
+    }
+}
 
 pub trait Store {
     fn store(
@@ -270,12 +293,9 @@ pub trait PlayAndStore<T> {
     ) -> Result<f32, Error>;
 }
 
-impl<T, U> PlayAndStore<U> for T
+impl PlayAndStore<Option<Tween>> for StaticSoundData
 where
-    T: Data + SoundData,
-    PlaySoundError<<T as SoundData>::Error>: Into<Error>,
-    <T as SoundData>::Handle: Store,
-    U: ToTween,
+    <Self as SoundData>::Handle: Store,
 {
     fn play_and_store(
         self,
@@ -284,10 +304,30 @@ where
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
         destination: Option<OutputDestination>,
-        tween: U,
+        extra: Option<Tween>,
     ) -> Result<f32, Error> {
         let (duration, handle) =
-            self.play(manager, id, entity_id, destination, tween.into_tween())?;
+            self.play(manager, id, entity_id, destination, extra.into_tween())?;
+        handle.store(id, entity_id, emitter_name)?;
+        Ok(duration)
+    }
+}
+
+impl PlayAndStore<Option<Tween>> for StreamingSoundData<FromFileError>
+where
+    <Self as SoundData>::Handle: Store,
+{
+    fn play_and_store(
+        self,
+        manager: &mut AudioManager,
+        id: &Id,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        destination: Option<OutputDestination>,
+        extra: Option<Tween>,
+    ) -> Result<f32, Error> {
+        let (duration, handle) =
+            self.play(manager, id, entity_id, destination, extra.into_tween())?;
         handle.store(id, entity_id, emitter_name)?;
         Ok(duration)
     }
@@ -307,44 +347,48 @@ where
         tween: U,
     ) -> Result<f32, Error> {
         match Banks.data(id) {
-            either::Either::Left(data) => {
-                data.play_and_store(manager, id, entity_id, emitter_name, destination, tween)
-            }
-            either::Either::Right(data) => {
-                data.play_and_store(manager, id, entity_id, emitter_name, destination, tween)
-            }
+            either::Either::Left(data) => data.play_and_store(
+                manager,
+                id,
+                entity_id,
+                emitter_name,
+                destination,
+                tween.into_tween(),
+            ),
+            either::Either::Right(data) => data.play_and_store(
+                manager,
+                id,
+                entity_id,
+                emitter_name,
+                destination,
+                tween.into_tween(),
+            ),
         }
     }
 }
 
-impl<T> Play<Ref<AudioSettingsExt>> for T
+impl PlayAndStore<Ref<AudioSettingsExt>> for StaticSoundData
 where
-    T: Data + SoundData + MergeArgs,
-    PlaySoundError<<T as SoundData>::Error>: Into<Error>,
+    <Self as SoundData>::Handle: Store,
 {
-    type Handle = <T as SoundData>::Handle;
-
-    fn play(
+    fn play_and_store(
         self,
         manager: &mut AudioManager,
         id: &Id,
         entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
         destination: Option<OutputDestination>,
         ext: Ref<AudioSettingsExt>,
-    ) -> Result<(f32, Self::Handle), Error> {
-        let duration = self.duration_as_secs();
-        let handle = manager
-            .play(self.merge_args(&ext).with_route(id, entity_id, destination))
-            .map_err(Into::into)?;
-        Ok((duration, handle))
+    ) -> Result<f32, Error> {
+        let (duration, handle) = self.play(manager, id, entity_id, destination, ext)?;
+        handle.store(id, entity_id, emitter_name)?;
+        Ok(duration)
     }
 }
 
-impl<T> PlayAndStore<Ref<AudioSettingsExt>> for T
+impl PlayAndStore<Ref<AudioSettingsExt>> for StreamingSoundData<FromFileError>
 where
-    T: Data + SoundData + MergeArgs,
-    PlaySoundError<<T as SoundData>::Error>: Into<Error>,
-    <T as SoundData>::Handle: Store,
+    <Self as SoundData>::Handle: Store,
 {
     fn play_and_store(
         self,
