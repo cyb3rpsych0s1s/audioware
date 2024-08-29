@@ -313,9 +313,11 @@ where
     }
 }
 
-impl PlayAndStore<Option<Tween>> for StreamingSoundData<FromFileError>
+impl<T> PlayAndStore<Option<Tween>> for StreamingSoundData<T>
 where
-    <Self as SoundData>::Handle: Store,
+    T: Send + 'static,
+    Self: Play<Option<Tween>>,
+    <StreamingSoundData<T> as Play<Option<Tween>>>::Handle: Store,
 {
     fn play_and_store(
         self,
@@ -455,7 +457,7 @@ impl State for StaticSoundHandle {
     }
 }
 
-impl State for StreamingSoundHandle<FromFileError> {
+impl<T> State for StreamingSoundHandle<T> where T: Send + 'static {
     #[inline]
     fn state(&self) -> PlaybackState {
         Self::state(self)
@@ -481,7 +483,7 @@ impl Stop for StaticSoundHandle {
     }
 }
 
-impl Stop for StreamingSoundHandle<FromFileError> {
+impl<T> Stop for StreamingSoundHandle<T> where T: Send + 'static {
     type Output = ();
 
     #[inline]
@@ -618,7 +620,7 @@ impl Pause for StaticSoundHandle {
     }
 }
 
-impl Pause for StreamingSoundHandle<FromFileError> {
+impl<T> Pause for StreamingSoundHandle<T> where T: Send + 'static {
     type Output = ();
 
     #[inline]
@@ -663,7 +665,7 @@ impl Resume for StaticSoundHandle {
     }
 }
 
-impl Resume for StreamingSoundHandle<FromFileError> {
+impl<T> Resume for StreamingSoundHandle<T> where T: Send + 'static {
     type Output = ();
 
     #[inline]
