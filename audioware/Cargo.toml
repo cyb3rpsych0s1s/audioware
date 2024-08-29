@@ -12,6 +12,7 @@ crate-type = ["cdylib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+audioware-core.workspace = true
 audioware-bank.workspace = true
 audioware-manifest.workspace = true
 cpal = "0.15"

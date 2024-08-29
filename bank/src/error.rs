@@ -69,10 +69,7 @@ pub mod validation {
             display("invalid audio setting {which}: {why}"),
             visibility(pub(crate))
         )]
-        InvalidAudioSetting {
-            which: &'static str,
-            why: &'static str,
-        },
+        InvalidAudioSetting { which: &'static str, why: String },
         #[snafu(display("invalid audio caption"), visibility(pub(crate)))]
         InvalidAudioCaption { which: String, why: String },
         #[snafu(display("cannot store data: {key}"), visibility(pub(crate)))]

@@ -6,18 +6,14 @@ use std::{
     time::{Duration, Instant},
 };
 
+use audioware_core::AudioData;
 use audioware_manifest::{
     error::{CannotParseManifest, CannotReadManifest},
     Depot, DialogLine, Locale, Manifest, PlayerGender, R6Audioware, REDmod, Settings, SpokenLocale,
-    WrittenLocale,
 };
 use either::Either;
 use ensure::*;
-use kira::sound::{
-    static_sound::{StaticSoundData, StaticSoundSettings},
-    streaming::{StreamingSoundData, StreamingSoundSettings},
-    FromFileError,
-};
+use kira::sound::static_sound::StaticSoundData;
 use red4ext_rs::types::CName;
 use snafu::ResultExt;
 
@@ -29,69 +25,12 @@ mod id;
 mod key;
 pub use id::*;
 pub use key::*;
+mod storage;
+pub use storage::*;
 
 use crate::error::registry::Error as RegistryError;
 
-static UNIQUES: OnceLock<HashMap<UniqueKey, StaticSoundData>> = OnceLock::new();
-static GENDERS: OnceLock<HashMap<GenderKey, StaticSoundData>> = OnceLock::new();
-static LOCALES: OnceLock<HashMap<LocaleKey, StaticSoundData>> = OnceLock::new();
-static MULTIS: OnceLock<HashMap<BothKey, StaticSoundData>> = OnceLock::new();
-
-static LOC_SUB: OnceLock<HashMap<LocaleKey, DialogLine>> = OnceLock::new();
-static MUL_SUB: OnceLock<HashMap<BothKey, DialogLine>> = OnceLock::new();
-
-static UNI_SET: OnceLock<HashMap<UniqueKey, Settings>> = OnceLock::new();
-static GEN_SET: OnceLock<HashMap<GenderKey, Settings>> = OnceLock::new();
-static LOC_SET: OnceLock<HashMap<LocaleKey, Settings>> = OnceLock::new();
-static MUL_SET: OnceLock<HashMap<BothKey, Settings>> = OnceLock::new();
-
 static KEYS: OnceLock<HashSet<Id>> = OnceLock::new();
-
-/// Returns raw entries to create a [localization package](https://github.com/psiberx/cp2077-codeware/wiki#localization-packages).
-pub trait Package {
-    fn package(&self, locale: Locale) -> Vec<(CName, (String, String))>;
-}
-
-impl Package for HashMap<LocaleKey, DialogLine> {
-    fn package(&self, locale: Locale) -> Vec<(CName, (String, String))> {
-        let mut out = Vec::new();
-        for (k, v) in self {
-            if k.1 == locale {
-                out.push((k.0, (v.msg.clone(), v.msg.clone())));
-            }
-        }
-        out
-    }
-}
-
-impl Package for HashMap<BothKey, DialogLine> {
-    fn package(&self, locale: Locale) -> Vec<(CName, (String, String))> {
-        let mut out = Vec::new();
-        let mut female: String;
-        let mut male: String;
-        for (k, v) in self {
-            if k.1 == locale {
-                if k.2 == PlayerGender::Female {
-                    female = v.msg.clone();
-                    male = self
-                        .get(&BothKey(k.0, k.1, PlayerGender::Male))
-                        .expect("genders cannot be partially defined")
-                        .msg
-                        .clone();
-                } else {
-                    male = v.msg.clone();
-                    female = self
-                        .get(&BothKey(k.0, k.1, PlayerGender::Female))
-                        .expect("genders cannot be partially defined")
-                        .msg
-                        .clone();
-                }
-                out.push((k.0, (female, male)));
-            }
-        }
-        out
-    }
-}
 
 pub struct Banks;
 impl Banks {
@@ -119,14 +58,14 @@ impl Banks {
                 Id::OnDemand(_, _) => false,
                 Id::InMemory(_, _) => true,
             };
-            match (total, in_memory, Banks::data(id)) {
+            match (total, in_memory, Banks.data(id)) {
                 // if no need for total and in-memory, just return its duration
                 (false, true, data) => data
                     .left()
                     .expect("streaming cannot be stored in-memory")
-                    .duration(),
+                    .current_duration(),
                 // if no need for total and on-demand, check for settings
-                (false, false, data) => match (data, Banks::settings(id)) {
+                (false, false, data) => match (data, Banks.settings(id)) {
                     (
                         Either::Left(x),
                         Some(Settings {
@@ -134,7 +73,7 @@ impl Banks {
                             ..
                         }),
                     ) => x.slice(region).duration(),
-                    (Either::Left(x), _) => x.duration(),
+                    (Either::Left(x), _) => x.current_duration(),
                     (
                         Either::Right(x),
                         Some(Settings {
@@ -142,12 +81,12 @@ impl Banks {
                             ..
                         }),
                     ) => x.slice(region).duration(),
-                    (Either::Right(x), _) => x.duration(),
+                    (Either::Right(x), _) => x.current_duration(),
                 },
                 // if need total
                 (true, _, data) => match data {
-                    Either::Left(x) => x.slice(None).duration(),
-                    Either::Right(x) => x.slice(None).duration(),
+                    Either::Left(x) => x.total_duration(),
+                    Either::Right(x) => x.total_duration(),
                 },
             }
             .as_secs_f32()
@@ -158,26 +97,13 @@ impl Banks {
     /// All languages found in [Manifest]s.
     pub fn languages() -> HashSet<Locale> {
         let mut out = HashSet::new();
-        for key in LOC_SUB.get().unwrap().keys() {
+        for key in LOC_SUB.keys() {
             out.insert(key.1);
         }
-        for key in MUL_SUB.get().unwrap().keys() {
+        for key in MUL_SUB.keys() {
             out.insert(key.1);
         }
         out
-    }
-    /// All subtitles stored in banks for a given [written locale](WrittenLocale),
-    /// returned as raw values.
-    pub fn subtitles(locale: WrittenLocale) -> Vec<(CName, (String, String))> {
-        let simple_package = LOC_SUB
-            .get()
-            .map(|x| x.package(locale.into_inner()))
-            .unwrap_or_default();
-        let complex_package = MUL_SUB
-            .get()
-            .map(|x| x.package(locale.into_inner()))
-            .unwrap_or_default();
-        [simple_package, complex_package].concat()
     }
     pub fn try_get<'a>(
         name: &CName,
@@ -235,104 +161,6 @@ impl Banks {
             .into());
         }
         Err(RegistryError::NotFound { cname: *name }.into())
-    }
-    /// Retrieves sound data for a given [Id], including settings if any.
-    pub fn data(id: &Id) -> Either<StaticSoundData, StreamingSoundData<FromFileError>> {
-        let settings = Self::settings(id);
-        match id {
-            Id::OnDemand(Usage::Static(_, path), ..) => {
-                let data = StaticSoundData::from_file(path)
-                    .expect("static sound data has already been validated");
-                if let Some(settings) = settings {
-                    match (settings.region.clone(), settings.r#loop) {
-                        (Some(region), l) if !l.unwrap_or_default() => {
-                            return Either::Left(
-                                data.slice(region)
-                                    .with_settings(StaticSoundSettings::from(settings)),
-                            );
-                        }
-                        _ => {
-                            return Either::Left(
-                                data.with_settings(StaticSoundSettings::from(settings)),
-                            )
-                        }
-                    };
-                }
-                Either::Left(data)
-            }
-            Id::OnDemand(Usage::Streaming(_, path), ..) => {
-                let data = StreamingSoundData::from_file(path)
-                    .expect("streaming sound data has already been validated");
-                if let Some(settings) = settings {
-                    match (settings.region.clone(), settings.r#loop) {
-                        (Some(region), l) if !l.unwrap_or_default() => {
-                            return Either::Right(
-                                data.slice(region)
-                                    .with_settings(StreamingSoundSettings::from(settings)),
-                            );
-                        }
-                        _ => {
-                            return Either::Right(
-                                data.with_settings(StreamingSoundSettings::from(settings)),
-                            )
-                        }
-                    };
-                }
-                Either::Right(data)
-            }
-            // in-memory sound data already embed settings
-            Id::InMemory(Key::Unique(key), ..) => Either::Left(
-                UNIQUES
-                    .get()
-                    .expect("insertion guarantees")
-                    .get(key)
-                    .expect("insertion guarantees")
-                    .clone(),
-            ),
-            Id::InMemory(Key::Gender(key), ..) => Either::Left(
-                GENDERS
-                    .get()
-                    .expect("insertion guarantees")
-                    .get(key)
-                    .expect("insertion guarantees")
-                    .clone(),
-            ),
-            Id::InMemory(Key::Locale(key), ..) => Either::Left(
-                LOCALES
-                    .get()
-                    .expect("insertion guarantees")
-                    .get(key)
-                    .expect("insertion guarantees")
-                    .clone(),
-            ),
-            Id::InMemory(Key::Both(key), ..) => Either::Left(
-                MULTIS
-                    .get()
-                    .expect("insertion guarantees")
-                    .get(key)
-                    .expect("insertion guarantees")
-                    .clone(),
-            ),
-        }
-    }
-    /// Retrieves sound settings for a given [Id] if any.
-    fn settings(id: &Id) -> Option<Settings> {
-        match id {
-            Id::OnDemand(Usage::Static(key, _), ..) => match key {
-                Key::Unique(key) => UNI_SET.get().and_then(|x| x.get(key).cloned()),
-                Key::Gender(key) => GEN_SET.get().and_then(|x| x.get(key).cloned()),
-                Key::Locale(key) => LOC_SET.get().and_then(|x| x.get(key).cloned()),
-                Key::Both(key) => MUL_SET.get().and_then(|x| x.get(key).cloned()),
-            },
-            Id::OnDemand(Usage::Streaming(key, ..), ..) => match key {
-                Key::Unique(key) => UNI_SET.get().and_then(|x| x.get(key).cloned()),
-                Key::Gender(key) => GEN_SET.get().and_then(|x| x.get(key).cloned()),
-                Key::Locale(key) => LOC_SET.get().and_then(|x| x.get(key).cloned()),
-                Key::Both(key) => MUL_SET.get().and_then(|x| x.get(key).cloned()),
-            },
-            // settings are already stored in-memory
-            Id::InMemory(..) => None,
-        }
     }
     /// Initialize banks.
     pub fn setup() -> Initialization {

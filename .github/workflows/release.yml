@@ -17,7 +17,7 @@ env:
 
 jobs:
   bundle:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - uses: actions/checkout@v4
         with:
@@ -58,7 +58,7 @@ jobs:
           if-no-files-found: error
   release:
     if: ${{ startsWith(github.event.ref, 'refs/tags') }}
-    runs-on: windows-latest
+    runs-on: windows-2019
     needs: bundle
     steps:
       - name: Download artifact

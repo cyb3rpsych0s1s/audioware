@@ -1,9 +1,9 @@
 [workspace]
-members = ["manifest", "bank", "audioware"]
+members = ["manifest", "bank", "audioware", "core"]
 resolver = "2"
 
 [workspace.package]
-version = "1.0.0-rc.4"
+version = "1.0.0-rc.5"
 edition = "2021"
 rust-version = "1.80.1"
 
@@ -13,6 +13,7 @@ strip = true
 codegen-units = 1
 
 [workspace.dependencies]
+audioware-core = { path = "core" }
 audioware-manifest = { path = "manifest" }
 audioware-bank = { path = "bank" }
 either = "1.13"

@@ -4,16 +4,16 @@
 use std::{
     collections::{HashMap, HashSet},
     hash::Hash,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
+use audioware_core::With;
 use audioware_manifest::*;
 use either::Either;
 use kira::{
     sound::{
-        static_sound::{StaticSoundData, StaticSoundSettings},
-        streaming::{StreamingSoundData, StreamingSoundSettings},
-        EndPosition, FromFileError, PlaybackPosition,
+        static_sound::StaticSoundData, streaming::StreamingSoundData, EndPosition, FromFileError,
+        PlaybackPosition,
     },
     Volume,
 };
@@ -144,26 +144,18 @@ pub fn ensure_valid_audio(
     let filepath = m.as_ref().join(path.as_ref());
     ensure_located_in_depot(path, m)?;
     let data = match usage {
-        Usage::OnDemand | Usage::InMemory => {
-            let data = StaticSoundData::from_file(filepath).context(InvalidAudioSnafu {
+        Usage::OnDemand | Usage::InMemory => StaticSoundData::from_file(filepath)
+            .context(InvalidAudioSnafu {
                 path: path.as_ref().display().to_string(),
-            })?;
-            match settings.map(|x| StaticSoundSettings::from(x.clone())) {
-                Some(settings) => Either::Left(data.with_settings(settings)),
-                None => Either::Left(data),
-            }
-        }
-        Usage::Streaming => {
-            let data = StreamingSoundData::from_file(filepath).context(InvalidAudioSnafu {
+            })
+            .map(Either::Left)?,
+        Usage::Streaming => StreamingSoundData::from_file(filepath)
+            .context(InvalidAudioSnafu {
                 path: path.as_ref().display().to_string(),
-            })?;
-            match settings.map(|x| StreamingSoundSettings::from(x.clone())) {
-                Some(settings) => Either::Right(data.with_settings(settings)),
-                None => Either::Right(data),
-            }
-        }
+            })
+            .map(Either::Right)?,
     };
-    ensure_valid_audio_settings(&data, settings)?;
+    ensure_valid_audio_settings(&data, settings, path.as_ref())?;
     if let Some(captions) = captions {
         ensure_valid_jingle_captions(&data, captions)?;
     }
@@ -174,18 +166,20 @@ pub fn ensure_valid_audio(
 pub fn ensure_valid_audio_settings(
     audio: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
     settings: Option<&Settings>,
+    path: &Path,
 ) -> Result<(), Error> {
     if let Some(settings) = settings {
         let duration = match audio {
-            Either::Left(x) => x.duration().as_secs_f64(),
-            Either::Right(x) => x.duration().as_secs_f64(),
-        };
+            Either::Left(x) => x.duration(),
+            Either::Right(x) => x.duration(),
+        }
+        .as_secs_f64();
         if let Some(start_position) = settings.start_position.map(|x| x.as_secs_f64()) {
             ensure!(
                 start_position < duration,
                 InvalidAudioSettingSnafu {
                     which: "start_position",
-                    why: "greater than audio duration"
+                    why: format!("greater than audio duration: {}", path.display())
                 }
             );
         }
@@ -194,7 +188,10 @@ pub fn ensure_valid_audio_settings(
                 (0.0..=1.0).contains(&panning),
                 InvalidAudioSettingSnafu {
                     which: "panning",
-                    why: "must be a value between 0.0 and 1.0 (inclusive)"
+                    why: format!(
+                        "must be a value between 0.0 and 1.0 (inclusive): {}",
+                        path.display()
+                    )
                 }
             );
         }
@@ -203,7 +200,10 @@ pub fn ensure_valid_audio_settings(
                 Volume::Amplitude(volume).as_decibels() <= 85.0,
                 InvalidAudioSettingSnafu {
                     which: "volume",
-                    why: "audio should not be louder than 85.0 dB"
+                    why: format!(
+                        "audio should not be louder than 85.0 dB: {}",
+                        path.display()
+                    )
                 }
             );
         }
@@ -217,7 +217,10 @@ pub fn ensure_valid_audio_settings(
                 (Some(PlaybackPosition::Samples(_)), Either::Right(_)) => {
                     return InvalidAudioSettingSnafu {
                         which: "region.starts",
-                        why: "samples unit is not supported with streaming sound yet",
+                        why: format!(
+                            "samples unit is not supported with streaming sound yet: {}",
+                            path.display()
+                        ),
                     }
                     .fail()
                     .map_err(Into::<Error>::into)
@@ -226,8 +229,6 @@ pub fn ensure_valid_audio_settings(
                 (None, _) => 0.0,
             };
             let end: f64 = match (region.ends(), audio) {
-                (Some(EndPosition::EndOfAudio), Either::Left(_)) => duration,
-                (Some(EndPosition::EndOfAudio), Either::Right(_)) => duration,
                 (Some(EndPosition::Custom(PlaybackPosition::Seconds(x))), _) => x,
                 (
                     Some(EndPosition::Custom(PlaybackPosition::Samples(samples))),
@@ -237,11 +238,13 @@ pub fn ensure_valid_audio_settings(
                 (Some(EndPosition::Custom(PlaybackPosition::Samples(_))), Either::Right(_)) => {
                     return InvalidAudioSettingSnafu {
                         which: "region.ends",
-                        why: "samples unit is not supported with streaming sound yet",
+                        why: format!("samples unit is not supported with streaming sound yet: {}", path.display()),
                     }
                     .fail()
                     .map_err(Into::<Error>::into)
                 }
+                (Some(EndPosition::EndOfAudio), Either::Left(_)) |
+                (Some(EndPosition::EndOfAudio), Either::Right(_)) |
                 // none implicitly means end of the audio
                 (None, _) => duration,
             };
@@ -249,7 +252,10 @@ pub fn ensure_valid_audio_settings(
                 start >= 0.0 && end > 0.0 && start < duration && end <= duration && start < end,
                 InvalidAudioSettingSnafu {
                     which: "region",
-                    why: "must be within audio duration and starts before it ends"
+                    why: format!(
+                        "must be within audio duration and starts before it ends: {}",
+                        path.display()
+                    )
                 }
             );
         }
@@ -302,7 +308,7 @@ pub fn ensure_store_data<T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     store: &mut HashMap<T, StaticSoundData>,
 ) -> Result<(), Error> {
     let value = match settings {
-        Some(settings) => value.with_settings(settings.into()),
+        Some(settings) => value.with(settings),
         None => value,
     };
     ensure!(

@@ -1,13 +1,17 @@
 use std::time::Duration;
 
+use audioware_core::With;
 use kira::{
-    sound::{EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate},
+    sound::{
+        static_sound::StaticSoundData, streaming::StreamingSoundData, EndPosition,
+        IntoOptionalRegion, PlaybackPosition, PlaybackRate,
+    },
     tween::Tween,
     StartTime, Volume,
 };
 use serde::Deserialize;
 
-/// Interop type
+/// Deserialization type
 /// for [kira::sound::static_sound::StaticSoundSettings]
 /// and [kira::sound::streaming::StreamingSoundSettings].
 #[derive(Debug, Deserialize, Clone)]
@@ -26,7 +30,64 @@ pub struct Settings {
     pub fade_in_tween: Option<Interpolation>,
 }
 
-/// Interop type
+macro_rules! impl_with {
+    ($self:expr, $settings:expr) => {{
+        if let Some(x) = $settings.start_time.map(StartTime::Delayed) {
+            $self = $self.start_time(x);
+        }
+        if let Some(x) = $settings
+            .start_position
+            .as_ref()
+            .map(Duration::as_secs_f64)
+            .map(PlaybackPosition::Seconds)
+        {
+            $self = $self.start_position(x);
+        }
+        if let Some(x) = $settings.volume.map(Volume::Amplitude) {
+            $self = $self.volume(x);
+        }
+        if let Some(x) = $settings.panning {
+            $self = $self.panning(x);
+        }
+        if let Some(x) = $settings.region {
+            if $settings.r#loop.unwrap_or(false) {
+                $self = $self.loop_region(x);
+            } else {
+                $self = $self.slice(x);
+            }
+        }
+        if let Some(x) = $settings.playback_rate {
+            $self = $self.playback_rate(x);
+        }
+        if let Some(x) = $settings.fade_in_tween.map(Into::<Tween>::into) {
+            $self = $self.fade_in_tween(x);
+        }
+        $self
+    }};
+}
+
+impl With<Settings> for StaticSoundData {
+    fn with(mut self, settings: Settings) -> Self
+    where
+        Self: Sized,
+    {
+        impl_with!(self, settings)
+    }
+}
+
+impl<T> With<Settings> for StreamingSoundData<T>
+where
+    T: Send + 'static,
+{
+    fn with(mut self, settings: Settings) -> Self
+    where
+        Self: Sized,
+    {
+        impl_with!(self, settings)
+    }
+}
+
+/// Deserialization type
 /// for [kira::sound::Region].
 #[derive(Debug, Deserialize, Clone)]
 pub struct Region {
@@ -39,32 +100,39 @@ pub struct Region {
 impl Region {
     pub fn starts(&self) -> Option<PlaybackPosition> {
         self.starts
-            .map(|x| PlaybackPosition::Seconds(x.as_secs_f64()))
+            .as_ref()
+            .map(Duration::as_secs_f64)
+            .map(PlaybackPosition::Seconds)
     }
     pub fn ends(&self) -> Option<EndPosition> {
         self.ends
-            .map(|x| PlaybackPosition::Seconds(x.as_secs_f64()))
+            .as_ref()
+            .map(Duration::as_secs_f64)
+            .map(PlaybackPosition::Seconds)
             .map(EndPosition::Custom)
     }
 }
 
 impl IntoOptionalRegion for self::Region {
     fn into_optional_region(self) -> Option<kira::sound::Region> {
-        match (self.starts, self.ends) {
-            (None, None) => None,
-            (None, Some(ends)) => Some(kira::sound::Region {
-                start: PlaybackPosition::Seconds(0.),
-                end: EndPosition::Custom(PlaybackPosition::Seconds(ends.as_secs_f64())),
-            }),
-            (Some(starts), None) => Some(kira::sound::Region {
-                start: PlaybackPosition::Seconds(starts.as_secs_f64()),
-                end: EndPosition::EndOfAudio,
-            }),
-            (Some(starts), Some(ends)) => Some(kira::sound::Region {
-                start: PlaybackPosition::Seconds(starts.as_secs_f64()),
-                end: EndPosition::Custom(PlaybackPosition::Seconds(ends.as_secs_f64())),
-            }),
+        if self.starts.is_none() && self.ends.is_none() {
+            return None;
         }
+        Some(kira::sound::Region {
+            start: PlaybackPosition::Seconds(
+                self.starts
+                    .as_ref()
+                    .map(Duration::as_secs_f64)
+                    .unwrap_or(0.),
+            ),
+            end: self
+                .ends
+                .as_ref()
+                .map(Duration::as_secs_f64)
+                .map(PlaybackPosition::Seconds)
+                .map(EndPosition::Custom)
+                .unwrap_or(EndPosition::EndOfAudio),
+        })
     }
 }
 
@@ -100,7 +168,7 @@ where
     Ok(None)
 }
 
-/// Interop type for [kira::tween::Tween].
+/// Deserialization type for [kira::tween::Tween].
 #[derive(Debug, Deserialize, Clone)]
 pub struct Interpolation {
     #[serde(with = "humantime_serde", default)]
@@ -116,7 +184,10 @@ impl From<Interpolation> for Tween {
         Self {
             start_time: value
                 .start_time
-                .map(StartTime::Delayed)
+                .map(|x| match x {
+                    x if x == Duration::default() => StartTime::Immediate,
+                    x => StartTime::Delayed(x),
+                })
                 .unwrap_or(StartTime::Immediate),
             duration: value.duration,
             easing: value.easing,
@@ -162,8 +233,8 @@ macro_rules! impl_from_settings {
     };
 }
 
-impl_from_settings!(kira::sound::static_sound::StaticSoundSettings);
-impl_from_settings!(kira::sound::streaming::StreamingSoundSettings);
+impl_from_settings!(::kira::sound::static_sound::StaticSoundSettings);
+impl_from_settings!(::kira::sound::streaming::StreamingSoundSettings);
 
 #[cfg(test)]
 mod tests {
