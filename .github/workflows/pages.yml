@@ -16,7 +16,7 @@ env:
 
 jobs:
   docs:
-    runs-on: windows-latest
+    runs-on: windows-2019
     concurrency:
       group: pages-docs
       cancel-in-progress: true
