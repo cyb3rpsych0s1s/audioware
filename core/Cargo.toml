@@ -5,5 +5,4 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-either.workspace = true
 kira.workspace = true
