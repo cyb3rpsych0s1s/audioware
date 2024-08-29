@@ -3,7 +3,7 @@ use std::{cell::Cell, time::Duration};
 use audioware_core::With;
 use kira::{
     sound::{
-        static_sound::StaticSoundData, streaming::StreamingSoundData, EndPosition, FromFileError,
+        static_sound::StaticSoundData, streaming::StreamingSoundData, EndPosition,
         PlaybackPosition, PlaybackRate,
     },
     Volume,
@@ -283,7 +283,10 @@ impl With<AudioSettingsExt> for StaticSoundData {
     }
 }
 
-impl With<AudioSettingsExt> for StreamingSoundData<FromFileError> {
+impl<T> With<AudioSettingsExt> for StreamingSoundData<T>
+where
+    T: Send + 'static,
+{
     fn with(mut self, settings: AudioSettingsExt) -> Self
     where
         Self: Sized,
