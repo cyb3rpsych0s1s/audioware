@@ -457,7 +457,10 @@ impl State for StaticSoundHandle {
     }
 }
 
-impl<T> State for StreamingSoundHandle<T> where T: Send + 'static {
+impl<T> State for StreamingSoundHandle<T>
+where
+    T: Send + 'static,
+{
     #[inline]
     fn state(&self) -> PlaybackState {
         Self::state(self)
@@ -483,7 +486,10 @@ impl Stop for StaticSoundHandle {
     }
 }
 
-impl<T> Stop for StreamingSoundHandle<T> where T: Send + 'static {
+impl<T> Stop for StreamingSoundHandle<T>
+where
+    T: Send + 'static,
+{
     type Output = ();
 
     #[inline]
@@ -620,7 +626,10 @@ impl Pause for StaticSoundHandle {
     }
 }
 
-impl<T> Pause for StreamingSoundHandle<T> where T: Send + 'static {
+impl<T> Pause for StreamingSoundHandle<T>
+where
+    T: Send + 'static,
+{
     type Output = ();
 
     #[inline]
@@ -665,7 +674,10 @@ impl Resume for StaticSoundHandle {
     }
 }
 
-impl<T> Resume for StreamingSoundHandle<T> where T: Send + 'static {
+impl<T> Resume for StreamingSoundHandle<T>
+where
+    T: Send + 'static,
+{
     type Output = ();
 
     #[inline]
