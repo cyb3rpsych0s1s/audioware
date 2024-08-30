@@ -65,11 +65,10 @@ impl From<(&Dialog, Option<&Settings>)> for Audio {
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-#[allow(clippy::large_enum_variant)]
 pub enum Dialogs {
     Different {
         #[serde(flatten)]
-        dialogs: GenderBased<Dialog>,
+        dialogs: Box<GenderBased<Dialog>>,
     },
     Shared {
         #[serde(flatten)]
@@ -153,29 +152,30 @@ impl From<Voice> for AnyVoice {
                     HashMap::with_capacity(dialogs.len());
                 for (k, v) in dialogs.into_iter() {
                     match v {
-                        super::Dialogs::Different {
-                            dialogs: GenderBased { fem, male },
-                        } => {
+                        super::Dialogs::Different { dialogs } => {
+                            let dialogs = *dialogs;
                             aud.insert(
                                 k,
                                 GenderBased {
-                                    fem: settings
-                                        .clone()
-                                        .map_or(fem.basic.clone(), |x| fem.basic.merge_settings(x)),
-                                    male: settings.clone().map_or(male.basic.clone(), |x| {
-                                        male.basic.merge_settings(x)
+                                    fem: settings.clone().map_or(dialogs.fem.basic.clone(), |x| {
+                                        dialogs.fem.basic.merge_settings(x)
                                     }),
+                                    male: settings
+                                        .clone()
+                                        .map_or(dialogs.male.basic.clone(), |x| {
+                                            dialogs.male.basic.merge_settings(x)
+                                        }),
                                 },
                             );
                             sub.insert(
                                 k,
                                 GenderBased {
                                     fem: DialogLine {
-                                        msg: fem.subtitle.clone(),
+                                        msg: dialogs.fem.subtitle.clone(),
                                         line: line.unwrap_or(ScnDialogLineType::Regular),
                                     },
                                     male: DialogLine {
-                                        msg: fem.subtitle.clone(),
+                                        msg: dialogs.male.subtitle.clone(),
                                         line: line.unwrap_or(ScnDialogLineType::Regular),
                                     },
                                 },
