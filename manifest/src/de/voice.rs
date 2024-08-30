@@ -2,6 +2,7 @@
 
 use std::{collections::HashMap, path::PathBuf};
 
+use audioware_core::With;
 use either::Either;
 use serde::Deserialize;
 
@@ -57,7 +58,7 @@ impl From<(&Dialog, Option<&Settings>)> for Audio {
     fn from(value: (&Dialog, Option<&Settings>)) -> Self {
         let mut audio: Audio = value.into();
         if let Some(settings) = value.1 {
-            audio = audio.merge_settings(settings.clone());
+            audio = audio.with(settings.clone());
         }
         audio
     }
@@ -158,12 +159,12 @@ impl From<Voice> for AnyVoice {
                                 k,
                                 GenderBased {
                                     fem: settings.clone().map_or(dialogs.fem.basic.clone(), |x| {
-                                        dialogs.fem.basic.merge_settings(x)
+                                        dialogs.fem.basic.with(x)
                                     }),
                                     male: settings
                                         .clone()
                                         .map_or(dialogs.male.basic.clone(), |x| {
-                                            dialogs.male.basic.merge_settings(x)
+                                            dialogs.male.basic.with(x)
                                         }),
                                 },
                             );

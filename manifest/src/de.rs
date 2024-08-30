@@ -3,6 +3,7 @@
 use std::{collections::HashMap, fmt, hash::Hash, path::PathBuf};
 
 use crate::{PlayerGender, ScnDialogLineType};
+use audioware_core::With;
 use semver::Version;
 use serde::Deserialize;
 
@@ -189,7 +190,7 @@ impl From<(AnyAudio, Option<&Settings>)> for Audio {
     fn from((audio, settings): (AnyAudio, Option<&Settings>)) -> Self {
         let mut audio: Audio = audio.into();
         if let Some(settings) = settings {
-            audio = audio.merge_settings(settings.clone());
+            audio = audio.with(settings.clone());
         }
         audio
     }
@@ -234,17 +235,19 @@ pub fn any_audios_into_audios<K: PartialEq + Eq + Hash>(
         .map(|(k, v)| {
             let mut v: Audio = v.into();
             if let Some(ref settings) = settings {
-                v = v.merge_settings(settings.clone());
+                v = v.with(settings.clone());
             }
             (k, v)
         })
         .collect()
 }
 
-impl Audio {
+impl With<Settings> for Audio {
     /// Merge nested and parent settings.
-    #[must_use]
-    pub fn merge_settings(mut self, parent: Settings) -> Self {
+    fn with(mut self, parent: Settings) -> Self
+    where
+        Self: Sized,
+    {
         match &mut self.settings {
             Some(me) => {
                 if me.start_time.is_none() && parent.start_time.is_some() {
