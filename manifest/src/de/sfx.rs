@@ -16,17 +16,6 @@ pub enum Sfx {
     },
 }
 
-impl From<&Sfx> for Usage {
-    fn from(value: &Sfx) -> Self {
-        match value {
-            Sfx::Inline(_) => Usage::InMemory,
-            Sfx::Nested {
-                props: UsableAudio { usage, .. },
-            } => usage.unwrap_or(Usage::InMemory),
-        }
-    }
-}
-
 impl From<Sfx> for UsableAudio {
     fn from(value: Sfx) -> Self {
         match value {

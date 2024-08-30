@@ -48,12 +48,6 @@ pub struct Dialog {
     pub subtitle: String,
 }
 
-impl From<&Dialog> for Audio {
-    fn from(value: &Dialog) -> Self {
-        value.basic.clone()
-    }
-}
-
 impl From<(&Dialog, Option<&Settings>)> for Audio {
     fn from(value: (&Dialog, Option<&Settings>)) -> Self {
         let mut audio: Audio = value.into();
