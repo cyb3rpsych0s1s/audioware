@@ -513,7 +513,7 @@ pub fn ensure_voice<'a>(
         }
         Either::Right((aud, usage, subs)) => {
             for (locale, genders) in aud {
-                for (gender, Audio { file, settings }) in genders {
+                for (gender, Audio { file, settings }) in genders.iter() {
                     complex_key = BothKey(cname, locale, gender);
                     if let Some(ref subs) = subs {
                         ensure_store_subtitle::<BothKey>(
@@ -525,7 +525,7 @@ pub fn ensure_voice<'a>(
                     ensure(
                         k,
                         complex_key,
-                        file,
+                        file.to_path_buf(),
                         m,
                         usage,
                         settings.clone(),

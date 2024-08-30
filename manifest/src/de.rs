@@ -2,7 +2,7 @@
 
 use std::{collections::HashMap, fmt, hash::Hash, path::PathBuf};
 
-use crate::ScnDialogLineType;
+use crate::{PlayerGender, ScnDialogLineType};
 use semver::Version;
 use serde::Deserialize;
 
@@ -68,6 +68,104 @@ pub struct Audio {
     pub settings: Option<Settings>,
 }
 
+/// Gender-based audio resource.
+#[derive(Debug, Deserialize, Clone)]
+pub struct GenderBased<T> {
+    pub fem: T,
+    pub male: T,
+}
+
+impl<T> GenderBased<T> {
+    pub fn iter(&self) -> GenderBasedIterator<T> {
+        GenderBasedIterator {
+            entries: self,
+            index: 0,
+        }
+    }
+    pub fn get(&self, k: &PlayerGender) -> Option<&T> {
+        match k {
+            PlayerGender::Female => Some(&self.fem),
+            PlayerGender::Male => Some(&self.male),
+        }
+    }
+}
+
+pub struct GenderBasedIterator<'a, T> {
+    entries: &'a GenderBased<T>,
+    index: usize,
+}
+
+impl<'a, T> Iterator for GenderBasedIterator<'a, T> {
+    type Item = (PlayerGender, &'a T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index < 2 {
+            if self.index == 0 {
+                self.index += 1;
+                return Some((PlayerGender::Female, &self.entries.fem));
+            } else {
+                self.index += 1;
+                return Some((PlayerGender::Male, &self.entries.male));
+            }
+        }
+        None
+    }
+}
+
+impl From<GenderBased<PathBuf>> for GenderBased<Audio> {
+    fn from(value: GenderBased<PathBuf>) -> Self {
+        Self {
+            fem: Audio {
+                file: value.fem,
+                settings: None,
+            },
+            male: Audio {
+                file: value.male,
+                settings: None,
+            },
+        }
+    }
+}
+
+impl<T> From<HashMap<PlayerGender, T>> for GenderBased<T>
+where
+    T: Clone,
+{
+    fn from(value: HashMap<PlayerGender, T>) -> Self {
+        Self {
+            fem: value
+                .get(&PlayerGender::Female)
+                .expect("female-based resource")
+                .clone(),
+            male: value
+                .get(&PlayerGender::Male)
+                .expect("male-based resource")
+                .clone(),
+        }
+    }
+}
+
+impl From<(HashMap<PlayerGender, PathBuf>, Option<Settings>)> for GenderBased<Audio> {
+    fn from((values, settings): (HashMap<PlayerGender, PathBuf>, Option<Settings>)) -> Self {
+        Self {
+            fem: Audio {
+                file: values
+                    .get(&PlayerGender::Female)
+                    .expect("female-based resource")
+                    .clone(),
+                settings: settings.clone(),
+            },
+            male: Audio {
+                file: values
+                    .get(&PlayerGender::Male)
+                    .expect("male-based resource")
+                    .clone(),
+                settings,
+            },
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum AnyAudio {
@@ -88,10 +186,10 @@ impl From<AnyAudio> for Audio {
 }
 
 impl From<(AnyAudio, Option<&Settings>)> for Audio {
-    fn from(value: (AnyAudio, Option<&Settings>)) -> Self {
-        let mut audio: Audio = value.0.into();
-        if let Some(settings) = value.1 {
-            audio.merge_settings(settings.clone());
+    fn from((audio, settings): (AnyAudio, Option<&Settings>)) -> Self {
+        let mut audio: Audio = audio.into();
+        if let Some(settings) = settings {
+            audio = audio.merge_settings(settings.clone());
         }
         audio
     }
@@ -136,7 +234,7 @@ pub fn any_audios_into_audios<K: PartialEq + Eq + Hash>(
         .map(|(k, v)| {
             let mut v: Audio = v.into();
             if let Some(ref settings) = settings {
-                v.merge_settings(settings.clone());
+                v = v.merge_settings(settings.clone());
             }
             (k, v)
         })
@@ -145,7 +243,8 @@ pub fn any_audios_into_audios<K: PartialEq + Eq + Hash>(
 
 impl Audio {
     /// Merge nested and parent settings.
-    pub fn merge_settings(&mut self, parent: Settings) {
+    #[must_use]
+    pub fn merge_settings(mut self, parent: Settings) -> Self {
         match &mut self.settings {
             Some(me) => {
                 if me.start_time.is_none() && parent.start_time.is_some() {
@@ -177,6 +276,7 @@ impl Audio {
                 self.settings = Some(parent);
             }
         };
+        self
     }
 }
 

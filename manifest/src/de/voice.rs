@@ -7,7 +7,7 @@ use serde::Deserialize;
 
 use crate::{Locale, PlayerGender, ScnDialogLineType};
 
-use super::{paths_into_audios, Audio, DialogLine, Settings, Usage};
+use super::{paths_into_audios, Audio, DialogLine, GenderBased, Settings, Usage};
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -57,7 +57,7 @@ impl From<(&Dialog, Option<&Settings>)> for Audio {
     fn from(value: (&Dialog, Option<&Settings>)) -> Self {
         let mut audio: Audio = value.into();
         if let Some(settings) = value.1 {
-            audio.merge_settings(settings.clone());
+            audio = audio.merge_settings(settings.clone());
         }
         audio
     }
@@ -65,14 +65,15 @@ impl From<(&Dialog, Option<&Settings>)> for Audio {
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
+#[allow(clippy::large_enum_variant)]
 pub enum Dialogs {
     Different {
         #[serde(flatten)]
-        dialogs: HashMap<PlayerGender, Dialog>,
+        dialogs: GenderBased<Dialog>,
     },
     Shared {
         #[serde(flatten)]
-        paths: HashMap<PlayerGender, PathBuf>,
+        paths: GenderBased<PathBuf>,
         subtitle: String,
     },
 }
@@ -89,9 +90,9 @@ pub type AnyVoice = Either<
         Option<HashMap<Locale, DialogLine>>,
     ),
     (
-        HashMap<Locale, HashMap<PlayerGender, Audio>>,
+        HashMap<Locale, GenderBased<Audio>>,
         Usage,
-        Option<HashMap<Locale, HashMap<PlayerGender, DialogLine>>>,
+        Option<HashMap<Locale, GenderBased<DialogLine>>>,
     ),
 >;
 
@@ -134,16 +135,9 @@ impl From<Voice> for AnyVoice {
                 usage,
                 settings,
             } => {
-                let dialogs: HashMap<Locale, HashMap<PlayerGender, Audio>> = dialogs
+                let dialogs: HashMap<Locale, GenderBased<Audio>> = dialogs
                     .into_iter()
-                    .map(|(k, v)| {
-                        (
-                            k,
-                            v.into_iter()
-                                .map(|(k, v)| (k, (v, settings.as_ref()).into()))
-                                .collect(),
-                        )
-                    })
+                    .map(|(k, v)| (k, GenderBased::<Audio>::from((v, settings.clone()))))
                     .collect();
                 Either::Right((dialogs, usage.unwrap_or(default_usage), None))
             }
@@ -153,72 +147,52 @@ impl From<Voice> for AnyVoice {
                 line,
                 settings,
             } => {
-                let mut aud: HashMap<Locale, HashMap<PlayerGender, Audio>> =
+                let mut aud: HashMap<Locale, GenderBased<Audio>> =
                     HashMap::with_capacity(dialogs.len());
-                let mut sub: HashMap<Locale, HashMap<PlayerGender, DialogLine>> =
+                let mut sub: HashMap<Locale, GenderBased<DialogLine>> =
                     HashMap::with_capacity(dialogs.len());
                 for (k, v) in dialogs.into_iter() {
                     match v {
-                        super::Dialogs::Different { dialogs } => {
-                            let aud_dialogs = dialogs
-                                .iter()
-                                .map(|(k, v)| {
-                                    let mut basic = v.basic.clone();
-                                    if let Some(settings) = settings.clone() {
-                                        basic.merge_settings(settings);
-                                    }
-                                    (*k, basic)
-                                })
-                                .collect();
-                            let aud_subs = dialogs
-                                .iter()
-                                .map(|(k, v)| {
-                                    (
-                                        *k,
-                                        DialogLine {
-                                            msg: v.subtitle.clone(),
-                                            line: line.unwrap_or(ScnDialogLineType::Regular),
-                                        },
-                                    )
-                                })
-                                .collect();
-                            aud.insert(k, aud_dialogs);
-                            sub.insert(k, aud_subs);
-                        }
-                        super::Dialogs::Shared { paths, subtitle } => {
-                            let (fem, male) = (
-                                paths.get(&PlayerGender::Female).unwrap(),
-                                paths.get(&PlayerGender::Male).unwrap(),
-                            );
+                        super::Dialogs::Different {
+                            dialogs: GenderBased { fem, male },
+                        } => {
                             aud.insert(
                                 k,
-                                HashMap::from([
-                                    (
-                                        PlayerGender::Female,
-                                        Audio {
-                                            file: fem.clone(),
-                                            settings: settings.clone(),
-                                        },
-                                    ),
-                                    (
-                                        PlayerGender::Male,
-                                        Audio {
-                                            file: male.clone(),
-                                            settings: settings.clone(),
-                                        },
-                                    ),
-                                ]),
+                                GenderBased {
+                                    fem: settings
+                                        .clone()
+                                        .map_or(fem.basic.clone(), |x| fem.basic.merge_settings(x)),
+                                    male: settings.clone().map_or(male.basic.clone(), |x| {
+                                        male.basic.merge_settings(x)
+                                    }),
+                                },
                             );
+                            sub.insert(
+                                k,
+                                GenderBased {
+                                    fem: DialogLine {
+                                        msg: fem.subtitle.clone(),
+                                        line: line.unwrap_or(ScnDialogLineType::Regular),
+                                    },
+                                    male: DialogLine {
+                                        msg: fem.subtitle.clone(),
+                                        line: line.unwrap_or(ScnDialogLineType::Regular),
+                                    },
+                                },
+                            );
+                        }
+                        super::Dialogs::Shared { paths, subtitle } => {
+                            aud.insert(k, paths.into());
                             let same = DialogLine {
                                 msg: subtitle.clone(),
                                 line: line.unwrap_or(default_line),
                             };
                             sub.insert(
                                 k,
-                                HashMap::from([
-                                    (PlayerGender::Female, same.clone()),
-                                    (PlayerGender::Male, same),
-                                ]),
+                                GenderBased {
+                                    fem: same.clone(),
+                                    male: same,
+                                },
                             );
                         }
                     }
@@ -339,6 +313,10 @@ mod tests {
             assert!(dual_dialog.is_ok());
         }
 
+        #[test_case(r##"id:
+    en-us:
+        fem: ./somewhere/sfx.wav
+        subtitle: "hello world""## ; "format must be consistent, partially defined gender is not allowed")]
         #[test_case(r##"id:
     en-us:
         fem: ./somewhere/sfx.wav
