@@ -342,6 +342,10 @@ mod tests {
         #[test_case(r##"id:
     en-us:
         fem: ./somewhere/sfx.wav
+        subtitle: "hello world""## ; "format must be consistent, partially defined gender is not allowed")]
+        #[test_case(r##"id:
+    en-us:
+        fem: ./somewhere/sfx.wav
         male: ./somewhere/else/sfx.wav
         subtitle: "hello world"
     fr-fr:
