@@ -3,26 +3,7 @@ use kira::{
     tween::Tween,
 };
 
-use crate::{AudioData, AudioDuration, SampleRate, With};
-
-impl AudioData for StaticSoundData {
-    type Settings = StaticSoundSettings;
-
-    #[inline]
-    fn settings(&self) -> &Self::Settings {
-        &self.settings
-    }
-
-    #[inline]
-    fn slice(&self) -> Option<(usize, usize)> {
-        self.slice
-    }
-
-    #[inline]
-    fn with_slice(self, region: impl kira::sound::IntoOptionalRegion) -> Self {
-        self.slice(region)
-    }
-}
+use crate::{AudioDuration, SampleRate, With};
 
 impl AudioDuration for StaticSoundData {
     fn slice_duration(&self) -> std::time::Duration {

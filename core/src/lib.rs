@@ -16,15 +16,6 @@ pub trait With<T> {
         Self: Sized;
 }
 
-/// Audio data.
-pub trait AudioData {
-    /// Associated settings.
-    type Settings: AudioSettings;
-    fn settings(&self) -> &Self::Settings;
-    fn slice(&self) -> Option<(usize, usize)>;
-    fn with_slice(self, region: impl IntoOptionalRegion) -> Self;
-}
-
 pub trait AudioDuration {
     /// Current audio duration, based on its slice.
     ///

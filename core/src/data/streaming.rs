@@ -3,29 +3,7 @@ use kira::{
     tween::Tween,
 };
 
-use crate::{AudioData, AudioDuration, With};
-
-impl<T> AudioData for StreamingSoundData<T>
-where
-    T: Send + 'static,
-{
-    type Settings = StreamingSoundSettings;
-
-    #[inline]
-    fn settings(&self) -> &Self::Settings {
-        &self.settings
-    }
-
-    #[inline]
-    fn slice(&self) -> Option<(usize, usize)> {
-        self.slice
-    }
-
-    #[inline]
-    fn with_slice(self, region: impl kira::sound::IntoOptionalRegion) -> Self {
-        self.slice(region)
-    }
-}
+use crate::{AudioDuration, With};
 
 impl<T> AudioDuration for StreamingSoundData<T>
 where
