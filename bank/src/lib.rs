@@ -53,19 +53,14 @@ impl Banks {
     pub fn duration(cname: &CName, locale: Locale, gender: PlayerGender, total: bool) -> f32 {
         let locale = SpokenLocale::from(locale);
         if let Ok(id) = Self::try_get(cname, &locale, Some(&gender)) {
-            // in-memory sound data already embed settings
-            let in_memory = match id {
-                Id::OnDemand(_, _) => false,
-                Id::InMemory(_, _) => true,
-            };
-            match (total, in_memory, Banks.data(id)) {
-                // if no need for total and in-memory, just return its duration
-                (false, true, data) => data
+            match (total, id, Banks.data(id)) {
+                // if no need for total and in-memory, sound data already embed settings
+                (false, Id::InMemory(..), data) => data
                     .left()
                     .expect("streaming cannot be stored in-memory")
                     .slice_duration(),
                 // if no need for total and on-demand, check settings
-                (false, false, data) => match (data, Banks.settings(id)) {
+                (false, Id::OnDemand(..), data) => match (data, Banks.settings(id)) {
                     (Either::Left(x), settings) => x.with(settings).slice_duration(),
                     (Either::Right(x), settings) => x.with(settings).slice_duration(),
                 },
