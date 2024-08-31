@@ -3,23 +3,13 @@ use kira::{
     tween::Tween,
 };
 
-use crate::{AudioData, With};
+use crate::{AudioData, AudioDuration, With};
 
 impl<T> AudioData for StreamingSoundData<T>
 where
     T: Send + 'static,
 {
     type Settings = StreamingSoundSettings;
-
-    #[inline]
-    fn current_duration(&self) -> std::time::Duration {
-        self.duration()
-    }
-
-    #[inline]
-    fn total_duration(self) -> std::time::Duration {
-        self.slice(None).loop_region(None).duration()
-    }
 
     #[inline]
     fn settings(&self) -> &Self::Settings {
@@ -34,6 +24,25 @@ where
     #[inline]
     fn with_slice(self, region: impl kira::sound::IntoOptionalRegion) -> Self {
         self.slice(region)
+    }
+}
+
+impl<T> AudioDuration for StreamingSoundData<T>
+where
+    T: Send + 'static,
+{
+    fn slice_duration(&self) -> std::time::Duration {
+        self.duration()
+    }
+
+    fn loop_duration(self) -> Option<std::time::Duration> {
+        self.settings
+            .loop_region
+            .map(|x| x.duration(self.decoder_num_frames(), self.sample_rate()))
+    }
+
+    fn total_duration(self) -> std::time::Duration {
+        self.slice(None).loop_region(None).duration()
     }
 }
 

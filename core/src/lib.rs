@@ -20,17 +20,24 @@ pub trait With<T> {
 pub trait AudioData {
     /// Associated settings.
     type Settings: AudioSettings;
-    /// Current audio duration, based on its slice or settings.
-    ///
-    /// Equivalent to [kira] duration.
-    fn current_duration(&self) -> Duration;
-    /// Total duration, full slice ignoring settings.
-    ///
-    /// Requires `self` for [StreamingSoundData][kira::sound::streaming::StreamingSoundData].
-    fn total_duration(self) -> Duration;
     fn settings(&self) -> &Self::Settings;
     fn slice(&self) -> Option<(usize, usize)>;
     fn with_slice(self, region: impl IntoOptionalRegion) -> Self;
+}
+
+pub trait AudioDuration {
+    /// Current audio duration, based on its slice.
+    ///
+    /// Equivalent to [kira] duration.
+    fn slice_duration(&self) -> Duration;
+
+    /// Current audio duration, based on its setting.
+    fn loop_duration(self) -> Option<Duration>;
+
+    /// Total duration, regardless of slice and settings.
+    ///
+    /// Requires `self` for [StreamingSoundData][kira::sound::streaming::StreamingSoundData].
+    fn total_duration(self) -> Duration;
 }
 
 /// Any audio whose sample rate is known.

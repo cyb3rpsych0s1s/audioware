@@ -6,7 +6,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use audioware_core::AudioData;
+use audioware_core::{AudioDuration, With};
 use audioware_manifest::{
     error::{CannotParseManifest, CannotReadManifest},
     Depot, DialogLine, Locale, Manifest, PlayerGender, R6Audioware, REDmod, Settings, SpokenLocale,
@@ -63,25 +63,11 @@ impl Banks {
                 (false, true, data) => data
                     .left()
                     .expect("streaming cannot be stored in-memory")
-                    .current_duration(),
-                // if no need for total and on-demand, check for settings
+                    .slice_duration(),
+                // if no need for total and on-demand, check settings
                 (false, false, data) => match (data, Banks.settings(id)) {
-                    (
-                        Either::Left(x),
-                        Some(Settings {
-                            region: Some(region),
-                            ..
-                        }),
-                    ) => x.slice(region).duration(),
-                    (Either::Left(x), _) => x.current_duration(),
-                    (
-                        Either::Right(x),
-                        Some(Settings {
-                            region: Some(region),
-                            ..
-                        }),
-                    ) => x.slice(region).duration(),
-                    (Either::Right(x), _) => x.current_duration(),
+                    (Either::Left(x), settings) => x.with(settings).slice_duration(),
+                    (Either::Right(x), settings) => x.with(settings).slice_duration(),
                 },
                 // if need total
                 (true, _, data) => match data {

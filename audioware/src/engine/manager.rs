@@ -1,6 +1,6 @@
 use audioware_bank::Banks;
 use audioware_bank::Id;
-use audioware_core::AudioData;
+use audioware_core::AudioDuration;
 use audioware_core::With;
 use crossbeam::channel::bounded;
 use dashmap::DashMap;
@@ -155,7 +155,7 @@ pub trait Play<T> {
 
 impl<T> Play<Option<Tween>> for T
 where
-    T: SoundData + AudioData + WithContextualRoute + With<Option<Tween>>,
+    T: SoundData + AudioDuration + WithContextualRoute + With<Option<Tween>>,
     PlaySoundError<<T as SoundData>::Error>: Into<Error>,
 {
     type Handle = <Self as SoundData>::Handle;
@@ -168,7 +168,7 @@ where
         destination: Option<OutputDestination>,
         tween: Option<Tween>,
     ) -> Result<(f32, Self::Handle), Error> {
-        let duration = self.current_duration().as_secs_f32();
+        let duration = self.slice_duration().as_secs_f32();
         let handle = manager
             .play(self.with(tween).with_route(id, entity_id, destination))
             .map_err(Into::into)?;
@@ -178,7 +178,7 @@ where
 
 impl<T> Play<Ref<AudioSettingsExt>> for T
 where
-    T: SoundData + AudioData + WithContextualRoute + With<Option<AudioSettingsExt>>,
+    T: SoundData + AudioDuration + WithContextualRoute + With<Option<AudioSettingsExt>>,
     PlaySoundError<<T as SoundData>::Error>: Into<Error>,
 {
     type Handle = <Self as SoundData>::Handle;
@@ -191,7 +191,7 @@ where
         destination: Option<OutputDestination>,
         ext: Ref<AudioSettingsExt>,
     ) -> Result<(f32, Self::Handle), Error> {
-        let duration = self.current_duration().as_secs_f32();
+        let duration = self.slice_duration().as_secs_f32();
         let ext = ext
             .is_null()
             .not()
