@@ -2,7 +2,7 @@
 
 use std::{collections::HashMap, fmt, hash::Hash, path::PathBuf};
 
-use crate::ScnDialogLineType;
+use crate::{PlayerGender, ScnDialogLineType};
 use semver::Version;
 use serde::Deserialize;
 
@@ -127,20 +127,18 @@ pub fn paths_into_audios<K: PartialEq + Eq + Hash>(
 
 /// Convert any audio into audios,
 /// merging settings in the process.
-pub fn any_audios_into_audios<K: PartialEq + Eq + Hash>(
-    value: HashMap<K, AnyAudio>,
+pub fn any_audios_into_audios(
+    value: GenderBased<AnyAudio>,
     settings: Option<Settings>,
-) -> HashMap<K, Audio> {
-    value
-        .into_iter()
-        .map(|(k, v)| {
-            let mut v: Audio = v.into();
-            if let Some(ref settings) = settings {
-                v.merge_settings(settings.clone());
-            }
-            (k, v)
-        })
-        .collect()
+) -> GenderBased<Audio> {
+    let GenderBased { female, male } = value;
+    let (mut female, mut male) = (Audio::from(female), Audio::from(male));
+    if let Some(settings) = settings {
+        female.merge_settings(settings.clone());
+        male.merge_settings(settings);
+        return GenderBased { female, male };
+    }
+    GenderBased { female, male }
 }
 
 impl Audio {
@@ -177,6 +175,68 @@ impl Audio {
                 self.settings = Some(parent);
             }
         };
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GenderBased<T> {
+    #[serde(rename = "fem")]
+    pub female: T,
+    pub male: T,
+}
+
+impl<T> GenderBased<T> {
+    pub fn iter(&self) -> Iter<'_, T> {
+        Iter {
+            values: self,
+            index: 0,
+        }
+    }
+}
+
+impl<T> Clone for GenderBased<T>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            female: self.female.clone(),
+            male: self.male.clone(),
+        }
+    }
+}
+
+impl<T> IntoIterator for GenderBased<T> {
+    type Item = (PlayerGender, T);
+
+    type IntoIter = std::collections::hash_map::IntoIter<PlayerGender, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let mut map = HashMap::with_capacity(2);
+        map.insert(PlayerGender::Female, self.female);
+        map.insert(PlayerGender::Male, self.male);
+        map.into_iter()
+    }
+}
+
+pub struct Iter<'a, T: 'a> {
+    values: &'a GenderBased<T>,
+    index: usize,
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = (&'a PlayerGender, &'a T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let current = self.index;
+        if current >= 2 {
+            return None;
+        }
+        self.index += 1;
+        if current == 0 {
+            return Some((&PlayerGender::Female, &self.values.female));
+        }
+        Some((&PlayerGender::Male, &self.values.male))
     }
 }
 

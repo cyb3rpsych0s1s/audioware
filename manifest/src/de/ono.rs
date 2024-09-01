@@ -1,22 +1,18 @@
 //! Onomatopeia definitions.
 
-use std::collections::HashMap;
-
 use serde::Deserialize;
 
-use crate::PlayerGender;
-
-use super::{any_audios_into_audios, AnyAudio, Audio, Settings, Usage};
+use super::{any_audios_into_audios, AnyAudio, Audio, GenderBased, Settings, Usage};
 
 #[derive(Debug, Deserialize)]
 pub struct Ono {
     #[serde(flatten)]
-    genders: HashMap<PlayerGender, AnyAudio>,
+    genders: GenderBased<AnyAudio>,
     usage: Option<Usage>,
     settings: Option<Settings>,
 }
 
-impl From<Ono> for (Usage, HashMap<PlayerGender, Audio>) {
+impl From<Ono> for (Usage, GenderBased<Audio>) {
     fn from(value: Ono) -> Self {
         (
             value.usage.unwrap_or(Usage::InMemory),

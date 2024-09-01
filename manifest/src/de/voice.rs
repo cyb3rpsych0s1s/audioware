@@ -7,7 +7,7 @@ use serde::Deserialize;
 
 use crate::{Locale, PlayerGender, ScnDialogLineType};
 
-use super::{paths_into_audios, Audio, DialogLine, Settings, Usage};
+use super::{paths_into_audios, Audio, DialogLine, GenderBased, Settings, Usage};
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -27,7 +27,7 @@ pub enum Voice {
     },
     DualInline {
         #[serde(flatten)]
-        dialogs: HashMap<Locale, HashMap<PlayerGender, PathBuf>>,
+        dialogs: HashMap<Locale, GenderBased<PathBuf>>,
         usage: Option<Usage>,
         settings: Option<Settings>,
     },
@@ -65,14 +65,15 @@ impl From<(&Dialog, Option<&Settings>)> for Audio {
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
+#[allow(clippy::large_enum_variant)]
 pub enum Dialogs {
     Different {
         #[serde(flatten)]
-        dialogs: HashMap<PlayerGender, Dialog>,
+        dialogs: GenderBased<Dialog>,
     },
     Shared {
         #[serde(flatten)]
-        paths: HashMap<PlayerGender, PathBuf>,
+        paths: GenderBased<PathBuf>,
         subtitle: String,
     },
 }
@@ -186,10 +187,7 @@ impl From<Voice> for AnyVoice {
                             sub.insert(k, aud_subs);
                         }
                         super::Dialogs::Shared { paths, subtitle } => {
-                            let (fem, male) = (
-                                paths.get(&PlayerGender::Female).unwrap(),
-                                paths.get(&PlayerGender::Male).unwrap(),
-                            );
+                            let (fem, male) = (paths.female, paths.male);
                             aud.insert(
                                 k,
                                 HashMap::from([
