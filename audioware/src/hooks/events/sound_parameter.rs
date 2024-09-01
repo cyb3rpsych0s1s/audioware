@@ -11,7 +11,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(crate::hooks::offsets::SOUND_PARAMETER_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for SoundParameter event handler");
+    crate::utils::lifecycle!("attached hook for SoundParameter event handler");
 }
 
 #[allow(unused_variables)]
@@ -26,14 +26,14 @@ unsafe extern "C" fn detour(
             parameter_value,
             ..
         } = unsafe { &*a2 };
-        log::info!(
+        crate::utils::lifecycle!(
             Audioware::env(),
             "intercepted SoundParameter:
 - parameter_name: {parameter_name}
 - parameter_value: {parameter_value}",
         );
     } else {
-        log::info!(Audioware::env(), "intercepted SoundParameter (null)");
+        crate::utils::lifecycle!(Audioware::env(), "intercepted SoundParameter (null)");
     }
 
     cb(a1, a2);

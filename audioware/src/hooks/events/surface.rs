@@ -1,6 +1,6 @@
-use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, PluginOps, SdkEnv};
+use red4ext_rs::{addr_hashes, hooks, types::IScriptable, SdkEnv};
 
-use crate::{types::Surface, Audioware};
+use crate::types::Surface;
 
 hooks! {
    static HOOK: fn(a1: *mut IScriptable, a2: *mut Surface) -> ();
@@ -11,7 +11,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(crate::hooks::offsets::SURFACE_EVENT_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for Surface event handler");
+    crate::utils::lifecycle!("attached hook for Surface event handler");
 }
 
 #[allow(unused_variables)]
@@ -21,9 +21,9 @@ unsafe extern "C" fn detour(
     cb: unsafe extern "C" fn(a1: *mut IScriptable, a2: *mut Surface),
 ) {
     if !a2.is_null() {
-        log::info!(Audioware::env(), "intercepted Surface",);
+        crate::utils::lifecycle!("intercepted Surface",);
     } else {
-        log::info!(Audioware::env(), "intercepted Surface (null)");
+        crate::utils::lifecycle!("intercepted Surface (null)");
     }
 
     cb(a1, a2);

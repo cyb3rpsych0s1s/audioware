@@ -1,14 +1,11 @@
 use red4ext_rs::{
-    addr_hashes, hooks, log,
+    addr_hashes, hooks,
     types::{IScriptable, Ref, StackFrame},
-    PluginOps, SdkEnv, VoidPtr,
+    SdkEnv, VoidPtr,
 };
 use std::mem;
 
-use crate::{
-    types::{Entity, Event, VehicleObject},
-    Audioware,
-};
+use crate::types::{Entity, Event, VehicleObject};
 
 hooks! {
    static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
@@ -19,7 +16,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(super::offsets::QUEUE_EVENT);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for Entity.QueueEvent");
+    crate::utils::lifecycle!("attached hook for Entity.QueueEvent");
 }
 
 #[allow(unused_variables)]
@@ -43,8 +40,7 @@ unsafe extern "C" fn detour(
             if i.as_ref().as_serializable().is_a::<VehicleObject>() {
                 let iscriptable = fields.as_ref();
                 let serializable = iscriptable.as_serializable();
-                log::info!(
-                    Audioware::env(),
+                crate::utils::lifecycle!(
                     "Entity.QueueEvent: intercepted {} on {:?} (VehicleObject)",
                     serializable.class().name(),
                     entity_id

@@ -8,6 +8,41 @@ use red4ext_rs::{
 
 use crate::Audioware;
 
+#[allow(unused_macros)]
+macro_rules! silly {
+    ($($arg:tt)*) => {
+        #[cfg(debug_assertions)]
+        {
+            use ::red4ext_rs::PluginOps;
+            ::red4ext_rs::log::info!($crate::Audioware::env(), $($arg)*)
+        }
+    };
+}
+#[allow(unused_imports)]
+pub(crate) use silly;
+
+#[allow(unused_macros)]
+macro_rules! lifecycle {
+    ($($arg:tt)*) => {
+        $crate::utils::silly!($($arg)*)
+    };
+}
+#[allow(unused_imports)]
+pub(crate) use lifecycle;
+
+#[allow(unused_macros)]
+macro_rules! fails {
+    ($env:expr, $($arg:tt)*) => {
+        #[cfg(debug_assertions)]
+        {
+            use ::red4ext_rs::PluginOps;
+            ::red4ext_rs::log::error!($crate::Audioware::env(), $($arg)*)
+        }
+    };
+}
+#[allow(unused_imports)]
+pub(crate) use fails;
+
 /// Exposes `PLog` to Redscript.
 pub fn plog_info(msg: String) {
     plog(msg, "PLog");

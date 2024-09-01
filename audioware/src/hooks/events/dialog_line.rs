@@ -1,9 +1,6 @@
-use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, PluginOps, SdkEnv};
+use red4ext_rs::{addr_hashes, hooks, types::IScriptable, SdkEnv};
 
-use crate::{
-    types::{DialogLine, DialogLineEventData},
-    Audioware,
-};
+use crate::types::{DialogLine, DialogLineEventData};
 
 hooks! {
    static HOOK: fn(a1: *mut IScriptable, a2: *mut DialogLine) -> ();
@@ -14,7 +11,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(crate::hooks::offsets::DIALOG_LINE_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for DialogLine event handler");
+    crate::utils::lifecycle!("attached hook for DialogLine event handler");
 }
 
 #[allow(unused_variables)]
@@ -37,8 +34,7 @@ unsafe extern "C" fn detour(
             playback_speed_parameter,
             ..
         } = data;
-        log::info!(
-            Audioware::env(),
+        crate::utils::lifecycle!(
             "intercepted DialogLine:
 - data.string_id {string_id:?}
 - data.context {context}
@@ -51,7 +47,7 @@ unsafe extern "C" fn detour(
 - data.playback_speed_parameter {playback_speed_parameter}",
         );
     } else {
-        log::info!(Audioware::env(), "intercepted DialogLine (null)");
+        crate::utils::lifecycle!("intercepted DialogLine (null)");
     }
 
     cb(a1, a2);

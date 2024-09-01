@@ -1,6 +1,6 @@
-use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, PluginOps, SdkEnv};
+use red4ext_rs::{addr_hashes, hooks, types::IScriptable, SdkEnv};
 
-use crate::{types::SpawnEffectEvent, Audioware};
+use crate::types::SpawnEffectEvent;
 
 hooks! {
    static HOOK: fn(a1: *mut IScriptable, a2: *mut SpawnEffectEvent) -> ();
@@ -11,7 +11,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(crate::hooks::offsets::SPAWN_EFFECT_EVENT_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for SpawnEffectEvent event handler");
+    crate::utils::lifecycle!("attached hook for SpawnEffectEvent event handler");
 }
 
 #[allow(unused_variables)]
@@ -31,8 +31,7 @@ unsafe extern "C" fn detour(
             break_all_on_destroy,
             ..
         } = unsafe { &*a2 };
-        log::info!(
-            Audioware::env(),
+        crate::utils::lifecycle!(
             "intercepted SpawnEffectEvent:
 - e3hack_defer_count: {e3hack_defer_count}
 - effect_name: {effect_name}
@@ -44,7 +43,7 @@ unsafe extern "C" fn detour(
             i64::from(id_for_randomized_effect)
         );
     } else {
-        log::info!(Audioware::env(), "intercepted SpawnEffectEvent (null)");
+        crate::utils::lifecycle!("intercepted SpawnEffectEvent (null)");
     }
 
     cb(a1, a2);

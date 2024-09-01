@@ -5,9 +5,9 @@ use std::{
     sync::{atomic::AtomicU8, OnceLock},
 };
 
-use red4ext_rs::{log, NativeRepr, PluginOps};
+use red4ext_rs::NativeRepr;
 
-use crate::{engine::Engine, Audioware};
+use crate::engine::Engine;
 
 use super::{State, ToggleState};
 
@@ -20,13 +20,12 @@ fn state() -> &'static AtomicU8 {
 impl State for GameState {
     type Value = Self;
     fn swap(state: GameState) -> Self {
-        let env = Audioware::env();
         let prev = self::state()
             .swap(state as u8, std::sync::atomic::Ordering::SeqCst)
             .try_into()
             .expect("game state is internally managed");
         if prev != state {
-            log::info!(env, "game state: {prev} -> {state}");
+            crate::utils::silly!("game state: {prev} -> {state}");
         }
         prev
     }

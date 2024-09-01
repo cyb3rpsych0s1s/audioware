@@ -1,10 +1,7 @@
-use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, PluginOps, SdkEnv};
+use red4ext_rs::{addr_hashes, hooks, types::IScriptable, SdkEnv};
 use std::mem;
 
-use crate::{
-    types::{Event, SoundParameter, StopTaggedSounds},
-    Audioware,
-};
+use crate::types::{Event, SoundParameter, StopTaggedSounds};
 
 hooks! {
    static HOOK: fn(a1: *mut IScriptable, a2: *mut Event) -> ();
@@ -16,10 +13,7 @@ pub fn attach_hook(env: &SdkEnv) {
         addr_hashes::resolve(crate::hooks::offsets::STOP_TAGGED_SOUNDS_OR_SOUND_PARAMETER_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(
-        env,
-        "attached hook for StopTaggedSounds/SoundParameter event handler"
-    );
+    crate::utils::lifecycle!("attached hook for StopTaggedSounds/SoundParameter event handler");
 }
 
 #[allow(unused_variables)]
@@ -33,8 +27,7 @@ unsafe extern "C" fn detour(
         if event.as_ref().as_serializable().is_a::<StopTaggedSounds>() {
             let &StopTaggedSounds { audio_tag, .. } =
                 unsafe { mem::transmute::<&Event, &StopTaggedSounds>(event) };
-            log::info!(
-                Audioware::env(),
+            crate::utils::lifecycle!(
                 "intercepted StopTaggedSounds:
 - audio_tag: {audio_tag}",
             );
@@ -46,25 +39,20 @@ unsafe extern "C" fn detour(
             } = unsafe { mem::transmute::<&Event, &SoundParameter>(event) };
             // this one fires repeatedly
             if parameter_name.as_str() != "g_player_health" {
-                log::info!(
-                    Audioware::env(),
+                crate::utils::lifecycle!(
                     "intercepted SoundParameter:
     - parameter_name: {parameter_name}
     - parameter_value: {parameter_value}",
                 );
             }
         } else {
-            log::info!(
-                Audioware::env(),
+            crate::utils::lifecycle!(
                 "intercepted unknown event: {}",
                 event.as_ref().as_serializable().class().name()
             );
         }
     } else {
-        log::info!(
-            Audioware::env(),
-            "intercepted StopTaggedSounds or SoundParameter (null)"
-        );
+        crate::utils::lifecycle!("intercepted StopTaggedSounds or SoundParameter (null)");
     }
 
     cb(a1, a2);

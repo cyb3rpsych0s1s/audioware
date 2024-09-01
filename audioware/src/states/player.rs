@@ -26,13 +26,11 @@ impl State for PlayerGender {
     type Value = Option<PlayerGender>;
 
     fn swap(value: Self::Value) -> Self::Value {
-        let env = Audioware::env();
         match gender().try_write() {
             Ok(mut x) => {
                 let prior = *x;
                 *x = value;
-                log::info!(
-                    env,
+                crate::utils::silly!(
                     "gender: {} -> {}",
                     prior.map(|x| x.to_string()).unwrap_or("None".to_string()),
                     value.map(|x| x.to_string()).unwrap_or("None".to_string())
@@ -77,12 +75,11 @@ impl State for SpokenLocale {
     type Value = SpokenLocale;
 
     fn swap(value: Self::Value) -> Self::Value {
-        let env = Audioware::env();
         match spoken_language().try_write() {
             Ok(mut x) => {
                 let prior = *x;
                 *x = value;
-                log::info!(env, "spoken locale: {prior} -> {value}");
+                crate::utils::silly!("spoken locale: {prior} -> {value}");
                 return prior;
             }
             Err(_) => {
@@ -128,7 +125,7 @@ impl State for WrittenLocale {
             Ok(mut x) => {
                 let prior = *x;
                 *x = value;
-                log::info!(env, "written locale: {prior} -> {value}");
+                crate::utils::silly!("written locale: {prior} -> {value}");
                 return prior;
             }
             Err(_) => {

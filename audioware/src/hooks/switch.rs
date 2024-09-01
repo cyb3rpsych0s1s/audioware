@@ -1,11 +1,11 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
-    addr_hashes, hooks, log,
+    addr_hashes, hooks,
     types::{CName, EntityId, IScriptable, Ref, StackFrame},
-    PluginOps, SdkEnv, VoidPtr,
+    SdkEnv, VoidPtr,
 };
 
-use crate::{engine::Engine, Audioware};
+use crate::engine::Engine;
 
 hooks! {
    static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
@@ -16,7 +16,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(super::offsets::SWITCH);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for AudioSystem.Switch");
+    crate::utils::lifecycle!("attached hook for AudioSystem.Switch");
 }
 
 #[allow(unused_variables)]
@@ -39,11 +39,7 @@ unsafe extern "C" fn detour(
     let next = Banks::exists(&switch_value);
 
     if prev || next {
-        let env = Audioware::env();
-        log::info!(
-            env,
-            "AudioSystem.Switch: intercepted {switch_name}/{switch_value}"
-        );
+        crate::utils::lifecycle!("AudioSystem.Switch: intercepted {switch_name}/{switch_value}");
 
         Engine::send(crate::engine::commands::Command::Switch {
             switch_name,

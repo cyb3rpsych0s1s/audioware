@@ -1,9 +1,6 @@
-use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, PluginOps, SdkEnv};
+use red4ext_rs::{addr_hashes, hooks, types::IScriptable, SdkEnv};
 
-use crate::{
-    types::{EmitterEvent, SetParameterOnEmitter},
-    Audioware,
-};
+use crate::types::{EmitterEvent, SetParameterOnEmitter};
 
 hooks! {
    static HOOK: fn(a1: *mut IScriptable, a2: *mut SetParameterOnEmitter) -> ();
@@ -14,7 +11,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(crate::hooks::offsets::SET_PARAMETER_ON_EMITTER_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for SetParameterOnEmitter event handler");
+    crate::utils::lifecycle!("attached hook for SetParameterOnEmitter event handler");
 }
 
 #[allow(unused_variables)]
@@ -31,15 +28,14 @@ unsafe extern "C" fn detour(
             ..
         } = event;
         let &EmitterEvent { emitter_name, .. } = event.as_ref();
-        log::info!(
-            Audioware::env(),
+        crate::utils::lifecycle!(
             "intercepted SetParameterOnEmitter:
 - base.emitter_name: {emitter_name}
 - param_name: {param_name}
 - param_value: {param_value}",
         );
     } else {
-        log::info!(Audioware::env(), "intercepted SetParameterOnEmitter (null)");
+        crate::utils::lifecycle!("intercepted SetParameterOnEmitter (null)");
     }
 
     cb(a1, a2);

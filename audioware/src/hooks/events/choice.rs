@@ -1,6 +1,6 @@
-use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, PluginOps, SdkEnv};
+use red4ext_rs::{addr_hashes, hooks, types::IScriptable, SdkEnv};
 
-use crate::{types::ChoiceEvent, Audioware};
+use crate::types::ChoiceEvent;
 
 hooks! {
    static HOOK: fn(a1: *mut IScriptable, a2: *mut ChoiceEvent) -> ();
@@ -11,7 +11,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(crate::hooks::offsets::INTERACTION_CHOICE_EVENT_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for ChoiceEvent event handler");
+    crate::utils::lifecycle!("attached hook for ChoiceEvent event handler");
 }
 
 #[allow(unused_variables)]
@@ -26,14 +26,13 @@ unsafe extern "C" fn detour(
             action_type,
             ..
         } = unsafe { &*a2 };
-        log::info!(
-            Audioware::env(),
+        crate::utils::lifecycle!(
             "intercepted ChoiceEvent:
 - choice: {choice:#?}
 - action_type: {action_type}",
         );
     } else {
-        log::info!(Audioware::env(), "intercepted ChoiceEvent (null)");
+        crate::utils::lifecycle!("intercepted ChoiceEvent (null)");
     }
 
     cb(a1, a2);

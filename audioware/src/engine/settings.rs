@@ -17,7 +17,7 @@ use red4ext_rs::{
 
 use crate::{
     types::{Easing, ElasticTween, LinearTween, Tween},
-    Audioware,
+    utils, Audioware,
 };
 
 #[derive(Debug, Default, Clone)]
@@ -91,7 +91,7 @@ impl AudioSettingsExtBuilder {
     }
     pub fn set_start_position(&self, value: f32) {
         self.start_position.set(Some(value));
-        log::info!(Audioware::env(), "set start_position to {value}");
+        utils::silly!("set start_position to {value}");
     }
     pub fn set_loop_region_starts(&self, value: f32) {
         self.set_region_starts(value);
@@ -103,19 +103,19 @@ impl AudioSettingsExtBuilder {
     }
     pub fn set_region_starts(&self, value: f32) {
         self.region_starts.set(Some(value));
-        log::info!(Audioware::env(), "set region starts to {value}");
+        utils::silly!("set region starts to {value}");
     }
     pub fn set_region_ends(&self, value: f32) {
         self.region_ends.set(Some(value));
-        log::info!(Audioware::env(), "set region ends to {value}");
+        utils::silly!("set region ends to {value}");
     }
     pub fn set_loop(&self, value: bool) {
         self.r#loop.set(Some(value));
-        log::info!(Audioware::env(), "set loop to {value}");
+        utils::silly!("set loop to {value}");
     }
     pub fn set_volume(&self, value: f32) {
         self.volume.set(Some(value));
-        log::info!(Audioware::env(), "set volume to {value}");
+        utils::silly!("set volume to {value}");
     }
     pub fn set_fade_in_tween(&self, value: Ref<Tween>) {
         if value.is_null() {
@@ -144,19 +144,19 @@ impl AudioSettingsExtBuilder {
         } else {
             log::error!(Audioware::env(), "unknown tween variant");
         }
-        log::info!(Audioware::env(), "set fade_in_tween");
+        utils::silly!("set fade_in_tween");
     }
     pub fn set_panning(&self, value: f32) {
         self.panning.set(Some(value));
-        log::info!(Audioware::env(), "set panning to {value}");
+        utils::silly!("set panning to {value}");
     }
     pub fn set_playback_rate(&self, value: f32) {
         self.playback_rate.set(Some(value));
-        log::info!(Audioware::env(), "set playback_rate to {value}");
+        utils::silly!("set playback_rate to {value}");
     }
     pub fn build(&self) -> Ref<AudioSettingsExt> {
         Ref::<AudioSettingsExt>::new_with(|x| {
-            log::info!(Audioware::env(), "build...");
+            utils::silly!("build...");
             if let Some(start_position) = self.start_position.get() {
                 x.start_position = Some(PlaybackPosition::Seconds(start_position.into()));
             }
@@ -222,7 +222,7 @@ impl AudioSettingsExtBuilder {
             if let Some(playback_rate) = self.playback_rate.get() {
                 x.playback_rate = Some(PlaybackRate::Factor(playback_rate.into()));
             }
-            log::info!(Audioware::env(), "built!");
+            utils::silly!("built!");
         })
         .unwrap_or_default()
     }

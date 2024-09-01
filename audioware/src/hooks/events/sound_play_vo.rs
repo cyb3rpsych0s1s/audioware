@@ -1,6 +1,6 @@
-use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, PluginOps, SdkEnv};
+use red4ext_rs::{addr_hashes, hooks, types::IScriptable, SdkEnv};
 
-use crate::{types::SoundPlayVO, Audioware};
+use crate::types::SoundPlayVO;
 
 hooks! {
    static HOOK: fn(a1: *mut IScriptable, a2: *mut SoundPlayVO) -> ();
@@ -11,7 +11,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(crate::hooks::offsets::SOUND_PLAY_VO_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for SoundPlayVO event handler");
+    crate::utils::lifecycle!("attached hook for SoundPlayVO event handler");
 }
 
 #[allow(unused_variables)]
@@ -36,8 +36,7 @@ unsafe extern "C" fn detour(
             override_visual_style,
             ..
         } = unsafe { &*a2 };
-        log::info!(
-            Audioware::env(),
+        crate::utils::lifecycle!(
             "intercepted SoundPlayVO:
 - vo_context: {vo_context}
 - is_quest: {is_quest}
@@ -53,7 +52,7 @@ unsafe extern "C" fn detour(
 - override_visual_style: {override_visual_style}",
         );
     } else {
-        log::info!(Audioware::env(), "intercepted SoundPlayVO (null)");
+        crate::utils::lifecycle!("intercepted SoundPlayVO (null)");
     }
 
     cb(a1, a2);

@@ -11,13 +11,13 @@ use engine::{
 use ext::AudioSystemExt;
 use hooks::*;
 use red4ext_rs::{
-    call, export_plugin_symbols, exports, global, log, methods, static_methods,
+    export_plugin_symbols, exports, global, log, methods, static_methods,
     types::{CName, GameEngine, IScriptable, Opt, Ref},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
 use states::{GameState, State, ToggleState};
-use types::{AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings, GameObject, Vector4};
+use types::{AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod config;
@@ -244,7 +244,7 @@ unsafe extern "C" fn post_register() {}
 
 /// Once plugin initialized.
 unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
-    log::info!(Audioware::env(), "on exit initialization: Audioware");
+    utils::lifecycle!("on exit initialization: Audioware");
     Audioware::report_after_rtti();
 
     #[cfg(debug_assertions)]
@@ -263,8 +263,7 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
 
 /// Unload [Plugin].
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
-    let env = Audioware::env();
-    log::info!(env, "on exit running: Audioware");
+    utils::lifecycle!("on exit running: Audioware");
     GameState::set(GameState::Unload);
     Engine::shutdown();
 }
@@ -323,6 +322,7 @@ fn test_play() {
 
 #[doc(hidden)]
 #[allow(dead_code)]
+#[cfg(debug_assertions)]
 fn test_static() {
     // CallbackSystemTarget => native: true, size: 0x40, value holder size: 0x0, align: 0x4, parent: IScriptable
     #[rustfmt::skip] #[cfg(debug_assertions)] scan_repr("CallbackSystemTarget");
@@ -335,41 +335,40 @@ fn test_static() {
     // e.g. static => FindEntityByID (FindEntityByID)
     // #[rustfmt::skip] #[cfg(debug_assertions)] scan_class("ScriptGameInstance");
 
-    let env = Audioware::env();
-    let from = Vector4 {
+    let from = crate::types::Vector4 {
         x: 0.,
         y: 1.,
         z: 2.,
         w: 3.,
     };
-    let to = Vector4 {
+    let to = crate::types::Vector4 {
         x: 3.,
         y: 2.,
         z: 1.,
         w: 0.,
     };
-    let distance = call!("Vector4"::"Distance"(from, to) -> f32).unwrap();
-    log::info!(env, "distance: {distance}");
+    let distance = red4ext_rs::call!("Vector4"::"Distance"(from, to) -> f32).unwrap();
+    utils::silly!("distance: {distance}");
 
-    let euler = call!("MathHelper"::"EulerNumber;"() -> f32).unwrap();
-    log::info!(env, "Euler number: {euler}");
+    let euler = red4ext_rs::call!("MathHelper"::"EulerNumber;"() -> f32).unwrap();
+    utils::silly!("Euler number: {euler}");
 
-    let threshold = call!("PlayerPuppet"::"GetCriticalHealthThreshold;"() -> f32).unwrap();
-    log::info!(env, "player critical health threshold: {threshold}");
+    let threshold = red4ext_rs::call!("PlayerPuppet"::"GetCriticalHealthThreshold;"() -> f32).unwrap();
+    utils::silly!("player critical health threshold: {threshold}");
 }
 
 #[doc(hidden)]
 #[allow(dead_code)]
+#[cfg(debug_assertions)]
 fn test_is_player() {
-    let env = Audioware::env();
     let rtti = RttiSystem::get();
-    let cls = rtti.get_class(CName::new(GameObject::NAME)).unwrap();
+    let cls = rtti.get_class(CName::new(crate::types::GameObject::NAME)).unwrap();
     match cls.get_method(CName::new("IsPlayer;")) {
         Ok(x) => {
-            log::info!(env, "IsPlayer ====> {x:#?}");
+            utils::silly!("IsPlayer ====> {x:#?}");
         }
         Err(e) => {
-            log::error!(
+            utils::fails!(
                 env,
                 "IsPlayer ====> {}",
                 e.into_iter()

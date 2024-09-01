@@ -1,6 +1,6 @@
 use audioware_bank::Banks;
 use red4ext_rs::{
-    addr_hashes, hooks, log,
+    addr_hashes, hooks,
     types::{CName, EntityId, IScriptable, StackFrame},
     PluginOps, SdkEnv, VoidPtr,
 };
@@ -16,7 +16,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(super::offsets::PLAY);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for AudioSystem.Play");
+    crate::utils::lifecycle!("attached hook for AudioSystem.Play");
 }
 
 #[allow(unused_variables)]
@@ -36,7 +36,7 @@ unsafe extern "C" fn detour(
 
     if Banks::exists(&event_name) {
         let env = Audioware::env();
-        log::info!(env, "AudioSystem.Play: intercepted {event_name}");
+        crate::utils::lifecycle!("AudioSystem.Play: intercepted {event_name}");
         Engine::send(crate::engine::commands::Command::PlayVanilla {
             event_name,
             entity_id: entity_id.into(),

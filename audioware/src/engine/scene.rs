@@ -21,7 +21,7 @@ use red4ext_rs::{
 use crate::{
     error::{Error, InternalError, SceneError},
     types::{get_player, AIActionHelper, AsEntity, AsGameInstance, Entity, GameObject, Vector4},
-    Audioware,
+    utils, Audioware,
 };
 
 use super::{effects::IMMEDIATELY, id::EmitterId, Tracks};
@@ -153,18 +153,13 @@ impl Scene {
         if busy {
             Self::try_write_busy_emitters()?.push(entity_id);
         }
-        log::info!(
-            Audioware::env(),
-            "registered emitter: {:?} -> {:?}",
-            entity_id,
-            position
-        );
+        utils::silly!("registered emitter: {:?} -> {:?}", entity_id, position);
         Ok(())
     }
     pub fn unregister_emitter(entity_id: &EntityId) -> Result<(), Error> {
-        log::info!(Audioware::env(), "unregistering emitter: {:?}", entity_id);
+        utils::silly!("unregistering emitter: {:?}", entity_id);
         Self::try_write_dead_emitters()?.push(*entity_id);
-        log::info!(Audioware::env(), "unregistered emitter: {:?}", entity_id);
+        utils::silly!("unregistered emitter: {:?}", entity_id);
         Ok(())
     }
     pub fn emitters_count() -> Result<usize, Error> {
@@ -182,7 +177,7 @@ impl Scene {
         SCENE_SYNC_ENABLED.load(std::sync::atomic::Ordering::Relaxed)
     }
     pub fn sync_emitters() -> Result<(), Error> {
-        // log::info!(Audioware::env(), "syncing emitters positions...");
+        // utils::silly!("syncing emitters positions...");
         let mut entity: Ref<Entity>;
         let mut position: Vector4;
         if let (Ok(ref mut actives), Ok(mut deaths), Ok(mut busy)) = (
@@ -215,7 +210,7 @@ impl Scene {
         } else {
             log::warn!(Audioware::env(), "sync emitters contention");
         }
-        // log::info!(Audioware::env(), "synced emitters positions!");
+        // utils::silly!("synced emitters positions!");
         Ok(())
     }
     pub fn sync_listener() -> Result<(), Error> {

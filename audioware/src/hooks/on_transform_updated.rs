@@ -1,7 +1,7 @@
 use std::{sync::RwLock, time::Instant};
 
 use once_cell::sync::Lazy;
-use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, SdkEnv};
+use red4ext_rs::{addr_hashes, hooks, types::IScriptable, SdkEnv};
 
 use crate::engine::Engine;
 
@@ -20,7 +20,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(super::offsets::ON_TRANSFORM_UPDATED);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for GameObject.OnTransformUpdated");
+    crate::utils::lifecycle!("attached hook for GameObject.OnTransformUpdated");
 }
 
 #[allow(unused_variables)]

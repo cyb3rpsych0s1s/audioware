@@ -1,5 +1,5 @@
 use red4ext_rs::{
-    addr_hashes, hooks, log,
+    addr_hashes, hooks,
     types::{CName, EntityId, IScriptable, StackFrame},
     PluginOps, SdkEnv, VoidPtr,
 };
@@ -15,7 +15,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(super::offsets::PARAMETER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for AudioSystem.Parameter");
+    crate::utils::lifecycle!("attached hook for AudioSystem.Parameter");
 }
 
 #[allow(unused_variables)]
@@ -35,7 +35,7 @@ unsafe extern "C" fn detour(
     let emitter_name: CName = StackFrame::get_arg(frame);
 
     let env = Audioware::env();
-    log::info!(env, "AudioSystem.Parameter: called {parameter_name}");
+    crate::utils::lifecycle!("AudioSystem.Parameter: called {parameter_name}");
     frame.restore_args(state);
     cb(i, f, a3, a4);
 }

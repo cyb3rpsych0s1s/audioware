@@ -1,10 +1,7 @@
-use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, PluginOps, SdkEnv};
+use red4ext_rs::{addr_hashes, hooks, types::IScriptable, SdkEnv};
 use std::mem;
 
-use crate::{
-    types::{Event, PlaySound, StopSound},
-    Audioware,
-};
+use crate::types::{Event, PlaySound, StopSound};
 
 hooks! {
    static HOOK: fn(a1: *mut IScriptable, a2: *mut Event) -> ();
@@ -15,7 +12,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(crate::hooks::offsets::PLAY_OR_STOP_SOUND_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for PlaySound/StopSound event handler");
+    crate::utils::lifecycle!("attached hook for PlaySound/StopSound event handler");
 }
 
 #[allow(unused_variables)]
@@ -35,8 +32,7 @@ unsafe extern "C" fn detour(
                 play_unique,
                 ..
             } = unsafe { mem::transmute::<&Event, &PlaySound>(event) };
-            log::info!(
-                Audioware::env(),
+            crate::utils::lifecycle!(
                 "intercepted PlaySound:
 - sound_name: {sound_name}
 - emitter_name: {emitter_name}
@@ -47,20 +43,18 @@ unsafe extern "C" fn detour(
         } else if event.as_ref().as_serializable().is_a::<StopSound>() {
             let &StopSound { sound_name, .. } =
                 unsafe { mem::transmute::<&Event, &StopSound>(event) };
-            log::info!(
-                Audioware::env(),
+            crate::utils::lifecycle!(
                 "intercepted StopSound:
 - sound_name: {sound_name}",
             );
         } else {
-            log::info!(
-                Audioware::env(),
+            crate::utils::lifecycle!(
                 "intercepted unknown event: {}",
                 event.as_ref().as_serializable().class().name()
             );
         }
     } else {
-        log::info!(Audioware::env(), "intercepted PlaySound/StopSound (null)");
+        crate::utils::lifecycle!("intercepted PlaySound/StopSound (null)");
     }
 
     cb(a1, a2);

@@ -1,6 +1,6 @@
-use red4ext_rs::{addr_hashes, hooks, log, types::IScriptable, PluginOps, SdkEnv};
+use red4ext_rs::{addr_hashes, hooks, types::IScriptable, SdkEnv};
 
-use crate::{types::VoiceEvent, Audioware};
+use crate::types::VoiceEvent;
 
 hooks! {
    static HOOK: fn(a1: *mut IScriptable, a2: *mut VoiceEvent) -> ();
@@ -11,7 +11,7 @@ pub fn attach_hook(env: &SdkEnv) {
     let addr = addr_hashes::resolve(crate::hooks::offsets::VOICE_EVENT_HANDLER);
     let addr = unsafe { std::mem::transmute(addr) };
     unsafe { env.attach_hook(HOOK, addr, detour) };
-    log::info!(env, "attached hook for VoiceEvent event handler");
+    crate::utils::lifecycle!("attached hook for VoiceEvent event handler");
 }
 
 #[allow(unused_variables)]
@@ -28,8 +28,7 @@ unsafe extern "C" fn detour(
             is_v,
             ..
         } = unsafe { &*a2 };
-        log::info!(
-            Audioware::env(),
+        crate::utils::lifecycle!(
             "intercepted VoiceEvent:
 - event_name: {event_name}
 - grunt_type: {grunt_type}
@@ -37,7 +36,7 @@ unsafe extern "C" fn detour(
 - is_v: {is_v}",
         );
     } else {
-        log::info!(Audioware::env(), "intercepted VoiceEvent (null)");
+        crate::utils::lifecycle!("intercepted VoiceEvent (null)");
     }
 
     cb(a1, a2);

@@ -1,7 +1,7 @@
 use kira::effect::filter::FilterHandle;
-use red4ext_rs::{log, NativeRepr, PluginOps};
+use red4ext_rs::NativeRepr;
 
-use crate::Audioware;
+use crate::utils;
 
 use super::effects::DEFAULT;
 
@@ -93,7 +93,6 @@ impl EqPass for EQ {
     fn set_preset(&mut self, preset: Preset) {
         self.lowpass.set_preset(preset);
         self.highpass.set_preset(preset);
-        let env = Audioware::env();
-        log::info!(env, "updated preset successfully to {preset}");
+        utils::silly!("updated preset successfully to {preset}");
     }
 }

@@ -25,7 +25,7 @@ use crate::{
         propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, EmitterSettings,
         GameObject, LocalizationPackage, Subtitle, ToTween, Tween,
     },
-    Audioware,
+    utils, Audioware,
 };
 
 pub mod commands;
@@ -323,7 +323,7 @@ impl Engine {
         let entity_id = entity_id.into_option();
         let emitter_name = emitter_name.into_option();
         let tween = tween.into_tween();
-        log::info!(env, "stop called: {entity_id:?} {emitter_name:?} {tween:?}");
+        utils::silly!("stop called: {entity_id:?} {emitter_name:?} {tween:?}");
         if let Err(e) = Manager.stop_by(
             &event_name,
             entity_id.as_ref(),
