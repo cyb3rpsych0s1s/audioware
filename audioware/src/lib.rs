@@ -353,7 +353,8 @@ fn test_static() {
     let euler = red4ext_rs::call!("MathHelper"::"EulerNumber;"() -> f32).unwrap();
     utils::silly!("Euler number: {euler}");
 
-    let threshold = red4ext_rs::call!("PlayerPuppet"::"GetCriticalHealthThreshold;"() -> f32).unwrap();
+    let threshold =
+        red4ext_rs::call!("PlayerPuppet"::"GetCriticalHealthThreshold;"() -> f32).unwrap();
     utils::silly!("player critical health threshold: {threshold}");
 }
 
@@ -362,7 +363,9 @@ fn test_static() {
 #[cfg(debug_assertions)]
 fn test_is_player() {
     let rtti = RttiSystem::get();
-    let cls = rtti.get_class(CName::new(crate::types::GameObject::NAME)).unwrap();
+    let cls = rtti
+        .get_class(CName::new(crate::types::GameObject::NAME))
+        .unwrap();
     match cls.get_method(CName::new("IsPlayer;")) {
         Ok(x) => {
             utils::silly!("IsPlayer ====> {x:#?}");
