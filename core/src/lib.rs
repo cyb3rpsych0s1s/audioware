@@ -22,9 +22,6 @@ pub trait AudioDuration {
     /// Equivalent to [kira] duration.
     fn slice_duration(&self) -> Duration;
 
-    /// Current audio duration, based on its setting.
-    fn loop_duration(self) -> Option<Duration>;
-
     /// Total duration, regardless of slice and settings.
     ///
     /// Requires `self` for [StreamingSoundData][kira::sound::streaming::StreamingSoundData].

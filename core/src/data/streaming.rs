@@ -13,12 +13,6 @@ where
         self.duration()
     }
 
-    fn loop_duration(self) -> Option<std::time::Duration> {
-        self.settings
-            .loop_region
-            .map(|x| x.duration(self.decoder_num_frames(), self.sample_rate()))
-    }
-
     fn total_duration(self) -> std::time::Duration {
         self.slice(None).loop_region(None).duration()
     }
