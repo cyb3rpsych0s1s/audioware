@@ -62,7 +62,8 @@ lldb TO=game_dir: dev
   @just copy '{{ join(red4ext_bin_dir, "debug", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
   @just now
 
-ci TO: (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
+ci TO RELEASE='false': (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
+  @'{{ if RELEASE == "true" { `just no-debug '{{TO}}'; Write-Host "Packaged without debug files";` } else { `Write-Host "Packaged with debug files";` } }}'
 
 optimize TO:
     upx --best --lzma '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
