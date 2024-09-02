@@ -13,6 +13,7 @@ env:
   CARGO_TERM_COLOR: always
   IS_DRAFT: ${{ startsWith(github.ref_name, 'beta') || startsWith(github.ref_name, 'alpha') }}
   IS_PRERELEASE: ${{ startsWith(github.ref_name, 'rc') }}
+  IS_RELEASE: ${{ startsWith(github.ref_name, 'v') }}
   CARGO_NET_GIT_FETCH_WITH_CLI: true
 
 jobs:
@@ -36,22 +37,13 @@ jobs:
       - name: Bundle mod files
         run: just ci 'Audioware-windows-latest-${{ github.ref_name }}'
       - name: Zip files
-        if: ${{ fromJSON(env.IS_DRAFT) || fromJSON(env.IS_PRERELEASE) }}
         uses: thedoctor0/zip-release@0.7.6
         with:
           type: zip
           filename: Audioware-windows-latest-${{ github.ref_name }}.zip
           directory: Audioware-windows-latest-${{ github.ref_name }}
           path: .
-      - name: Zip files
-        if: ${{ !fromJSON(env.IS_DRAFT) && !fromJSON(env.IS_PRERELEASE) }}
-        uses: thedoctor0/zip-release@0.7.6
-        with:
-          type: zip
-          filename: Audioware-windows-latest-${{ github.ref_name }}.zip
-          directory: Audioware-windows-latest-${{ github.ref_name }}
-          path: .
-          exclusions: 'Debug*.reds'
+          exclusions: ${{ fromJSON(env.IS_RELEASE) && 'Debug*.reds' || '' }}
       - name: Generate zip checksum
         run: Get-FileHash -Path "Audioware-windows-latest-${{ github.ref_name }}\Audioware-windows-latest-${{ github.ref_name }}.zip" -Algorithm SHA256 | Select-Object -ExpandProperty Hash > "checksum.txt"
       - name: Upload artifact
