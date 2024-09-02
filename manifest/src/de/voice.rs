@@ -5,7 +5,7 @@ use std::{collections::HashMap, path::PathBuf};
 use either::Either;
 use serde::Deserialize;
 
-use crate::{Locale, PlayerGender, ScnDialogLineType};
+use crate::{Locale, ScnDialogLineType};
 
 use super::{paths_into_audios, Audio, DialogLine, GenderBased, Settings, Usage};
 
@@ -90,9 +90,9 @@ pub type AnyVoice = Either<
         Option<HashMap<Locale, DialogLine>>,
     ),
     (
-        HashMap<Locale, HashMap<PlayerGender, Audio>>,
+        HashMap<Locale, GenderBased<Audio>>,
         Usage,
-        Option<HashMap<Locale, HashMap<PlayerGender, DialogLine>>>,
+        Option<HashMap<Locale, GenderBased<DialogLine>>>,
     ),
 >;
 
@@ -135,14 +135,21 @@ impl From<Voice> for AnyVoice {
                 usage,
                 settings,
             } => {
-                let dialogs: HashMap<Locale, HashMap<PlayerGender, Audio>> = dialogs
+                let dialogs: HashMap<Locale, GenderBased<Audio>> = dialogs
                     .into_iter()
                     .map(|(k, v)| {
                         (
                             k,
-                            v.into_iter()
-                                .map(|(k, v)| (k, (v, settings.as_ref()).into()))
-                                .collect(),
+                            GenderBased::<Audio> {
+                                female: Audio {
+                                    file: v.female,
+                                    settings: settings.clone(),
+                                },
+                                male: Audio {
+                                    file: v.male,
+                                    settings: settings.clone(),
+                                },
+                            },
                         )
                     })
                     .collect();
@@ -154,35 +161,30 @@ impl From<Voice> for AnyVoice {
                 line,
                 settings,
             } => {
-                let mut aud: HashMap<Locale, HashMap<PlayerGender, Audio>> =
+                let mut aud: HashMap<Locale, GenderBased<Audio>> =
                     HashMap::with_capacity(dialogs.len());
-                let mut sub: HashMap<Locale, HashMap<PlayerGender, DialogLine>> =
+                let mut sub: HashMap<Locale, GenderBased<DialogLine>> =
                     HashMap::with_capacity(dialogs.len());
                 for (k, v) in dialogs.into_iter() {
                     match v {
                         super::Dialogs::Different { dialogs } => {
-                            let aud_dialogs = dialogs
-                                .iter()
-                                .map(|(k, v)| {
-                                    let mut basic = v.basic.clone();
-                                    if let Some(settings) = settings.clone() {
-                                        basic.merge_settings(settings);
-                                    }
-                                    (*k, basic)
-                                })
-                                .collect();
-                            let aud_subs = dialogs
-                                .iter()
-                                .map(|(k, v)| {
-                                    (
-                                        *k,
-                                        DialogLine {
-                                            msg: v.subtitle.clone(),
-                                            line: line.unwrap_or(ScnDialogLineType::Regular),
-                                        },
-                                    )
-                                })
-                                .collect();
+                            let mut female = dialogs.female.basic.clone();
+                            let mut male = dialogs.male.basic.clone();
+                            if let Some(ref settings) = settings {
+                                female.merge_settings(settings.clone());
+                                male.merge_settings(settings.clone());
+                            }
+                            let aud_dialogs = GenderBased { female, male };
+                            let aud_subs = GenderBased {
+                                female: DialogLine {
+                                    msg: dialogs.female.subtitle.clone(),
+                                    line: line.unwrap_or(ScnDialogLineType::Regular),
+                                },
+                                male: DialogLine {
+                                    msg: dialogs.male.subtitle.clone(),
+                                    line: line.unwrap_or(ScnDialogLineType::Regular),
+                                },
+                            };
                             aud.insert(k, aud_dialogs);
                             sub.insert(k, aud_subs);
                         }
@@ -190,22 +192,16 @@ impl From<Voice> for AnyVoice {
                             let (fem, male) = (paths.female, paths.male);
                             aud.insert(
                                 k,
-                                HashMap::from([
-                                    (
-                                        PlayerGender::Female,
-                                        Audio {
-                                            file: fem.clone(),
-                                            settings: settings.clone(),
-                                        },
-                                    ),
-                                    (
-                                        PlayerGender::Male,
-                                        Audio {
-                                            file: male.clone(),
-                                            settings: settings.clone(),
-                                        },
-                                    ),
-                                ]),
+                                GenderBased {
+                                    female: Audio {
+                                        file: fem.clone(),
+                                        settings: settings.clone(),
+                                    },
+                                    male: Audio {
+                                        file: male.clone(),
+                                        settings: settings.clone(),
+                                    },
+                                },
                             );
                             let same = DialogLine {
                                 msg: subtitle.clone(),
@@ -213,10 +209,10 @@ impl From<Voice> for AnyVoice {
                             };
                             sub.insert(
                                 k,
-                                HashMap::from([
-                                    (PlayerGender::Female, same.clone()),
-                                    (PlayerGender::Male, same),
-                                ]),
+                                GenderBased {
+                                    female: same.clone(),
+                                    male: same,
+                                },
                             );
                         }
                     }
