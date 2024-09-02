@@ -327,6 +327,29 @@ mod tests {
             settings:
                 region:
                     starts: 300ms"## ; "dual dialog with different subtitles, default line and custom settings")]
+        #[test_case(r##"id:
+    en-us:
+      fem: some.mp3
+      male: another.mp3
+      subtitle: "Shared subtitle!"
+    settings:
+      region:
+        starts: 1s
+    usage: streaming"## ; "dual dialog with shared subtitle, default line, custom usage and setting")]
+        #[test_case(r##"id:
+    en-us:
+      fem: ./nested/fem_intro.mp3
+      male: ./nested/male_intro.mp3
+      subtitle: "Yadi yada."
+    usage: streaming"## ; "dual dialog with shared subtitle, default line and setting but custom usage")]
+        #[test_case(r##"id:
+    en-us:
+      fem:
+        file: ./thai/fem_intro.mp3
+        subtitle: "hi friend!"
+      male:
+        file: ./thai/male_intro.mp3
+        subtitle: "heya""## ; "dual dialog with different subtitles")]
         fn basic_format_with_subtitles(yaml: &str) {
             let dual_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
             dbg!("{}", &dual_dialog);
