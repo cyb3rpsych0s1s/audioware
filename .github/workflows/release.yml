@@ -43,7 +43,7 @@ jobs:
           filename: Audioware-windows-latest-${{ github.ref_name }}.zip
           directory: Audioware-windows-latest-${{ github.ref_name }}
           path: .
-          recursive_exclusions: ${{ fromJSON(env.IS_RELEASE) && 'Debug*.reds' || '' }}
+          recursive_exclusions: ${{ fromJSON(env.IS_RELEASE) && '*Debug*.reds' || '' }}
       - name: Generate zip checksum
         run: Get-FileHash -Path "Audioware-windows-latest-${{ github.ref_name }}\Audioware-windows-latest-${{ github.ref_name }}.zip" -Algorithm SHA256 | Select-Object -ExpandProperty Hash > "checksum.txt"
       - name: Upload artifact
