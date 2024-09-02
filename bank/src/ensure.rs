@@ -490,10 +490,10 @@ pub fn ensure_voice<'a>(
         Either::Left((aud, usage, subs)) => {
             for (locale, Audio { file, settings }) in aud {
                 simple_key = LocaleKey(cname, locale);
-                if let Some(ref subs) = subs {
+                if let Some(subs) = subs.as_ref().and_then(|x| x.get(&locale)) {
                     ensure_store_subtitle::<LocaleKey>(
                         simple_key.clone(),
-                        subs.get(&locale).unwrap().clone(),
+                        subs.clone(),
                         simple_subs,
                     )?;
                 }
@@ -515,10 +515,14 @@ pub fn ensure_voice<'a>(
             for (locale, genders) in aud {
                 for (gender, Audio { file, settings }) in genders {
                     complex_key = BothKey(cname, locale, gender);
-                    if let Some(ref subs) = subs {
+                    if let Some(subs) = subs.as_ref().and_then(|x| x.get(&locale)) {
                         ensure_store_subtitle::<BothKey>(
                             complex_key.clone(),
-                            subs.get(&locale).unwrap().get(&gender).unwrap().clone(),
+                            if gender == PlayerGender::Female {
+                                subs.female.clone()
+                            } else {
+                                subs.male.clone()
+                            },
                             complex_subs,
                         )?;
                     }
