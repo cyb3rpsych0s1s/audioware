@@ -36,7 +36,7 @@ jobs:
       - name: Bundle mod files
         run: just ci 'Audioware-windows-latest-${{ github.ref_name }}'
       - name: Zip files
-        if: ${{ env.IS_DRAFT || env.IS_PRERELEASE }}
+        if: ${{ fromJSON(env.IS_DRAFT) || fromJSON(env.IS_PRERELEASE) }}
         uses: thedoctor0/zip-release@0.7.6
         with:
           type: zip
@@ -44,7 +44,7 @@ jobs:
           directory: Audioware-windows-latest-${{ github.ref_name }}
           path: .
       - name: Zip files
-        if: ${{ !env.IS_DRAFT && !env.IS_PRERELEASE }}
+        if: ${{ !fromJSON(env.IS_DRAFT) && !fromJSON(env.IS_PRERELEASE) }}
         uses: thedoctor0/zip-release@0.7.6
         with:
           type: zip
