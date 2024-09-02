@@ -9,6 +9,7 @@ on:
       - "book/pages/**"
       - "**.md"
       - "**.rs"
+      - "**.toml"
 env:
   MDBOOK_VERSION: '0.4.40'
   MDBOOK_CODEBLOCKS_VERSION: '0.1.15'
