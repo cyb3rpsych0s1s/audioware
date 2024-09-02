@@ -11,6 +11,7 @@ use super::{paths_into_audios, Audio, DialogLine, GenderBased, Settings, Usage};
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
+// variants declaration order matters: see https://github.com/cyb3rpsych0s1s/audioware/pull/39
 pub enum Voice {
     SingleMulti {
         #[serde(flatten)]
