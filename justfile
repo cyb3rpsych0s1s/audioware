@@ -31,7 +31,7 @@ delete path:
 
 [private]
 no-debug path:
-  @if (Test-Path '{{path}}') { Get-ChildItem -Path '{{path}}' -Recurse -Filter 'Debug*.reds' | Remove-Item -Force; }
+  @if (Test-Path '{{path}}') { Get-ChildItem -Path '{{path}}' -Recurse -Filter 'Debug*.reds' | Remove-Item -Force; } else { Write-Host "Unknown folder: {{path}}"; exit 1 }
 
 [private]
 copy from to:
@@ -63,7 +63,7 @@ lldb TO=game_dir: dev
   @just now
 
 ci TO RELEASE='false': (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
-  @'{{ if RELEASE == "true" { `just no-debug '{{TO}}'; Write-Host "Packaged without debug files";` } else { `Write-Host "Packaged with debug files";` } }}'
+  @if(RELEASE -ieq 'true') { just no-debug '{{TO}}'; Write-Host "Removed debug files"; } else { Write-Host "Kept debug files untouched"; }
 
 optimize TO:
     upx --best --lzma '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
