@@ -30,6 +30,10 @@ delete path:
   @if (Test-Path '{{path}}') { [void](Remove-Item -Force -Recurse '{{path}}'); Write-Host "Deleted folder at {{path}}"; }
 
 [private]
+no-debug path:
+  @if (Test-Path '{{path}}') { Get-ChildItem -Path '{{path}}' -Recurse -Filter 'Debug*.reds' | Remove-Item -Force; }
+
+[private]
 copy from to:
   @Copy-Item -Force '{{from}}' '{{to}}'
   @Write-Host "Copied {{from}} -> {{to}}"
