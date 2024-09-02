@@ -12,12 +12,6 @@ use super::{paths_into_audios, Audio, DialogLine, GenderBased, Settings, Usage};
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
-    SingleInline {
-        #[serde(flatten)]
-        dialogs: HashMap<Locale, PathBuf>,
-        usage: Option<Usage>,
-        settings: Option<Settings>,
-    },
     SingleMulti {
         #[serde(flatten)]
         dialogs: HashMap<Locale, Dialog>,
@@ -25,9 +19,9 @@ pub enum Voice {
         line: Option<ScnDialogLineType>,
         settings: Option<Settings>,
     },
-    DualInline {
+    SingleInline {
         #[serde(flatten)]
-        dialogs: HashMap<Locale, GenderBased<PathBuf>>,
+        dialogs: HashMap<Locale, PathBuf>,
         usage: Option<Usage>,
         settings: Option<Settings>,
     },
@@ -36,6 +30,12 @@ pub enum Voice {
         dialogs: HashMap<Locale, Dialogs>,
         usage: Option<Usage>,
         line: Option<ScnDialogLineType>,
+        settings: Option<Settings>,
+    },
+    DualInline {
+        #[serde(flatten)]
+        dialogs: HashMap<Locale, GenderBased<PathBuf>>,
+        usage: Option<Usage>,
         settings: Option<Settings>,
     },
 }
