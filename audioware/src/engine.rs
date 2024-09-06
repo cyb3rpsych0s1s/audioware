@@ -4,8 +4,11 @@ use std::sync::{MutexGuard, OnceLock};
 
 use audioware_bank::{BankSubtitles, Banks, Id};
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Source, SpokenLocale, WrittenLocale};
-use commands::{Command, CommandOps, OuterCommand, OuterCommandOps};
-use crossbeam::channel::{Receiver, Sender, TryRecvError, TrySendError};
+use commands::{Command, CommandOps, Lifecycle, OuterCommand, OuterCommandOps};
+use crossbeam::{
+    channel::{Receiver, Sender, TrySendError},
+    select,
+};
 use kira::{manager::AudioManager, OutputDestination, Volume};
 use manager::{Pause, PlayAndStore, Resume, StopBy, StopFor};
 use modulators::{
@@ -47,17 +50,28 @@ pub use settings::*;
 pub use tracks::Tracks;
 
 /// Use to enqueue [sound commands][Command].
-static SENDER: OnceLock<Sender<OuterCommand>> = OnceLock::new();
+static COMMANDS: OnceLock<Sender<OuterCommand>> = OnceLock::new();
+
+/// Use to enqueue [lifecycle updates][Lifecycle] internally.
+static UPDATES: OnceLock<Sender<Lifecycle>> = OnceLock::new();
 
 /// Execute queued [sound commands][Command].
-fn handle_receive(r: Receiver<OuterCommand>) {
+fn handle_receive(rc: Receiver<OuterCommand>, rl: Receiver<Lifecycle>) {
     'game: loop {
-        match r.try_recv() {
-            Ok(command) => command.into_inner().execute(),
-            Err(TryRecvError::Empty) => {}
-            Err(TryRecvError::Disconnected) => {
-                break 'game;
-            }
+        select! {
+            recv(rc) -> msg => match msg {
+                Ok(command) => command.into_inner().execute(),
+                Err(_) => {
+                    break 'game;
+                }
+            },
+            recv(rl) -> msg => match msg {
+                Ok(lifecycle) => lifecycle.execute(),
+                Err(_) => {
+                    break 'game;
+                }
+            },
+            default => {},
         }
     }
 }
@@ -108,6 +122,31 @@ impl Engine {
             log::error!(Audioware::env(), "couldn't clear emitters in scene: {e}");
         }
     }
+    /// Notify lifecycle updates.
+    pub fn notify(update: Lifecycle) {
+        if let Err(e) = UPDATES
+            .get()
+            .expect("should have been initialized")
+            .try_send(update)
+        {
+            match e {
+                TrySendError::Full(lifecycle) => {
+                    log::warn!(
+                        Audioware::env(),
+                        "couldn't send lifecycle update, channel full: {:#?}",
+                        lifecycle
+                    );
+                }
+                TrySendError::Disconnected(lifecycle) => {
+                    log::warn!(
+                        Audioware::env(),
+                        "error sending lifecycle update, channel disconnected: {:#?}",
+                        lifecycle
+                    );
+                }
+            }
+        }
+    }
     /// Send sound command (cancelable).
     pub fn send(command: Command) {
         Self::send_as(command, true);
@@ -117,7 +156,7 @@ impl Engine {
         Self::send_as(command, false)
     }
     fn send_as(command: Command, cancelable: bool) {
-        if let Err(e) = SENDER
+        if let Err(e) = COMMANDS
             .get()
             .expect("should have been initialized")
             .try_send(if cancelable {
@@ -139,7 +178,7 @@ impl Engine {
                     }
                 }
                 TrySendError::Disconnected(command) => {
-                    log::error!(
+                    log::warn!(
                         Audioware::env(),
                         "error sending command, channel disconnected: {:#?}",
                         command.into_inner()

@@ -4,7 +4,10 @@ use red4ext_rs::{
     SdkEnv, VoidPtr,
 };
 
-use crate::{engine::Engine, utils};
+use crate::{
+    engine::{commands::Lifecycle, Engine},
+    utils,
+};
 
 hooks! {
    static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
@@ -29,6 +32,6 @@ unsafe extern "C" fn detour(
     cb: unsafe extern "C" fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr),
 ) {
     crate::utils::lifecycle!("gameuiSaveHandlingController.LoadSaveInGame/LoadModdedSave: called");
-    Engine::shutdown();
+    Engine::notify(Lifecycle::Shutdown);
     cb(i, f, a3, a4);
 }
