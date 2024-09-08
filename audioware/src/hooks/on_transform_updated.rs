@@ -3,7 +3,7 @@ use std::{sync::RwLock, time::Instant};
 use once_cell::sync::Lazy;
 use red4ext_rs::{addr_hashes, hooks, types::IScriptable, SdkEnv};
 
-use crate::engine::Engine;
+use crate::engine::{commands::Lifecycle, Engine};
 
 hooks! {
    static HOOK: fn(i: *mut IScriptable) -> ();
@@ -45,14 +45,13 @@ unsafe extern "C" fn detour(i: *mut IScriptable, cb: unsafe extern "C" fn(i: *mu
     if sync {
         if let Ok(x) = SYNC_DELTA_TIME.try_write().as_deref_mut() {
             *x = now;
-            Engine::sync_listener();
-            Engine::sync_emitters();
+            Engine::notify(Lifecycle::SyncScene);
         }
     }
     if reclaim {
         if let Ok(x) = RECLAIM_DELTA_TIME.try_write().as_deref_mut() {
             *x = now;
-            Engine::reclaim();
+            Engine::notify(Lifecycle::Reclaim);
         }
     }
 }

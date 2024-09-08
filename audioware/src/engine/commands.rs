@@ -3,7 +3,7 @@
 use audioware_manifest::{PlayerGender, ScnDialogLineType};
 use red4ext_rs::types::{CName, EntityId, Opt, Ref};
 
-use crate::types::{RedRef, Tween};
+use crate::types::{EmitterSettings, RedRef, Tween};
 
 use super::{AudioSettingsExt, Engine, Preset};
 
@@ -217,5 +217,45 @@ impl Command {
     }
     pub(super) fn non_cancelable(self) -> OuterCommand {
         OuterCommand::NonCancellable(self)
+    }
+}
+
+#[derive(Debug)]
+pub enum Lifecycle {
+    RegisterEmitter {
+        entity_id: EntityId,
+        emitter_name: Opt<CName>,
+        emitter_settings: Opt<EmitterSettings>,
+    },
+    UnregisterEmitter {
+        entity_id: EntityId,
+    },
+    SyncScene,
+    Reclaim,
+    Shutdown,
+    Terminate,
+}
+
+impl CommandOps for Lifecycle {
+    fn execute(self) {
+        match self {
+            Lifecycle::RegisterEmitter {
+                entity_id,
+                emitter_name,
+                emitter_settings,
+            } => {
+                Engine::register_emitter(entity_id, emitter_name, emitter_settings);
+            }
+            Lifecycle::UnregisterEmitter { entity_id } => {
+                Engine::unregister_emitter(entity_id);
+            }
+            Lifecycle::SyncScene => {
+                Engine::sync_listener();
+                Engine::sync_emitters();
+            }
+            Lifecycle::Reclaim => Engine::reclaim(),
+            Lifecycle::Shutdown => Engine::shutdown(),
+            Lifecycle::Terminate => Engine::terminate(),
+        }
     }
 }

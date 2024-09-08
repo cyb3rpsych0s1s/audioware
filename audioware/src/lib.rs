@@ -6,13 +6,14 @@ use std::sync::OnceLock;
 use audioware_bank::{Banks, Initialization};
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::{
-    commands::Command, AudioRegion, AudioSettingsExt, AudioSettingsExtBuilder, Engine, Preset,
+    commands::{Command, Lifecycle},
+    AudioRegion, AudioSettingsExt, AudioSettingsExtBuilder, Engine, Preset,
 };
 use ext::AudioSystemExt;
 use hooks::*;
 use red4ext_rs::{
     export_plugin_symbols, exports, global, log, methods, static_methods,
-    types::{CName, GameEngine, IScriptable, Opt, Ref},
+    types::{CName, EntityId, GameEngine, IScriptable, Opt, Ref},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
 };
@@ -157,15 +158,9 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
             GlobalExport(global!(c"Audioware.PLogError", plog_error)),
-            GlobalExport(global!(c"Audioware.Shutdown", Engine::shutdown)),
-            GlobalExport(global!(
-                c"Audioware.RegisterEmitter",
-                Engine::register_emitter
-            )),
-            GlobalExport(global!(
-                c"Audioware.UnregisterEmitter",
-                Engine::unregister_emitter
-            )),
+            GlobalExport(global!(c"Audioware.Shutdown", shutdown)),
+            GlobalExport(global!(c"Audioware.RegisterEmitter", register_emitter)),
+            GlobalExport(global!(c"Audioware.UnregisterEmitter", unregister_emitter)),
             GlobalExport(global!(
                 c"Audioware.DefineSubtitles",
                 Engine::define_subtitles
@@ -264,8 +259,7 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
 /// Unload [Plugin].
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     utils::lifecycle!("on exit running: Audioware");
-    GameState::set(GameState::Unload);
-    Engine::shutdown();
+    Engine::notify(Lifecycle::Terminate);
 }
 
 const fn is_debug() -> bool {
@@ -304,6 +298,28 @@ fn set_player_gender(value: PlayerGender) {
 /// Unset V's [gender][PlayerGender].
 fn unset_player_gender() {
     PlayerGender::set(None);
+}
+
+fn register_emitter(
+    entity_id: EntityId,
+    emitter_name: Opt<CName>,
+    emitter_settings: Opt<EmitterSettings>,
+) -> bool {
+    Engine::notify(Lifecycle::RegisterEmitter {
+        entity_id,
+        emitter_name,
+        emitter_settings,
+    });
+    true
+}
+
+fn unregister_emitter(entity_id: EntityId) -> bool {
+    Engine::notify(Lifecycle::UnregisterEmitter { entity_id });
+    true
+}
+
+fn shutdown() {
+    Engine::notify(Lifecycle::Shutdown);
 }
 
 #[doc(hidden)]

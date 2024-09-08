@@ -35,10 +35,12 @@ use once_cell::sync::Lazy;
 use red4ext_rs::types::{CName, EntityId};
 
 use crate::config::BufferSize;
+use crate::engine::commands::Lifecycle;
 use crate::engine::commands::OuterCommand;
 use crate::engine::handle_receive;
 use crate::engine::modulators::Modulators;
-use crate::engine::SENDER;
+use crate::engine::COMMANDS;
+use crate::engine::UPDATES;
 use crate::error::Error;
 use crate::error::InternalError;
 use crate::types::ToTween;
@@ -89,9 +91,11 @@ impl Manager {
                 let mut manager =
                     AudioManager::new(manager_settings).expect("instantiate audio manager");
                 Modulators::setup(&mut manager).expect("modulators");
-                let (s, r) = bounded::<OuterCommand>(commands_capacity);
-                let _ = SENDER.set(s);
-                thread::spawn(move || handle_receive(r));
+                let (sc, rc) = bounded::<OuterCommand>(commands_capacity);
+                let (sl, rl) = bounded::<Lifecycle>(32);
+                let _ = COMMANDS.set(sc);
+                let _ = UPDATES.set(sl);
+                thread::spawn(move || handle_receive(rc, rl));
                 Mutex::new(manager)
             })
             .try_lock()
