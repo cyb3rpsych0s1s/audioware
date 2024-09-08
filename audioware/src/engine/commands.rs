@@ -233,6 +233,7 @@ pub enum Lifecycle {
     SyncScene,
     Reclaim,
     Shutdown,
+    Terminate,
 }
 
 impl CommandOps for Lifecycle {
@@ -254,6 +255,7 @@ impl CommandOps for Lifecycle {
             }
             Lifecycle::Reclaim => Engine::reclaim(),
             Lifecycle::Shutdown => Engine::shutdown(),
+            Lifecycle::Terminate => Engine::terminate(),
         }
     }
 }

@@ -259,8 +259,7 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
 /// Unload [Plugin].
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     utils::lifecycle!("on exit running: Audioware");
-    GameState::set(GameState::Unload);
-    Engine::notify(Lifecycle::Shutdown);
+    Engine::notify(Lifecycle::Terminate);
 }
 
 const fn is_debug() -> bool {

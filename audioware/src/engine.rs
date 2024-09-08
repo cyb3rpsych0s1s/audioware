@@ -23,7 +23,7 @@ use red4ext_rs::{
 use crate::{
     error::Error,
     macros::{ok_or_return, some_or_return},
-    states::State,
+    states::{GameState, State},
     types::{
         propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, EmitterSettings,
         GameObject, LocalizationPackage, Subtitle, ToTween, Tween,
@@ -62,12 +62,18 @@ fn handle_receive(rc: Receiver<OuterCommand>, rl: Receiver<Lifecycle>) {
             recv(rc) -> msg => match msg {
                 Ok(command) => command.into_inner().execute(),
                 Err(_) => {
+                    crate::utils::lifecycle!("sound commands disconnected");
                     break 'game;
                 }
             },
             recv(rl) -> msg => match msg {
+                Ok(Lifecycle::Terminate) => {
+                    Lifecycle::Terminate.execute();
+                    break 'game;
+                }
                 Ok(lifecycle) => lifecycle.execute(),
                 Err(_) => {
+                    crate::utils::lifecycle!("lifecycle updates disconnected");
                     break 'game;
                 }
             },
@@ -121,6 +127,11 @@ impl Engine {
         if let Err(e) = Scene::clear_emitters() {
             log::error!(Audioware::env(), "couldn't clear emitters in scene: {e}");
         }
+    }
+    /// Terminate engine.
+    pub(crate) fn terminate() {
+        GameState::set(GameState::Unload);
+        Self::shutdown();
     }
     /// Notify lifecycle updates.
     pub fn notify(update: Lifecycle) {
