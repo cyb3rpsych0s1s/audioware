@@ -15,7 +15,7 @@ use red4ext_rs::{
     export_plugin_symbols, exports, global, log, methods, static_methods,
     types::{CName, EntityId, GameEngine, IScriptable, Opt, Ref},
     wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
-    RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, U16CStr,
+    RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, StructExport, U16CStr,
 };
 use states::{GameState, State, ToggleState};
 use types::{AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings};
@@ -152,8 +152,8 @@ impl Plugin for Audioware {
     #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
     fn exports() -> impl Exportable {
         exports![
-            ClassExport::<EmitterDistances>::builder().build(),
-            ClassExport::<EmitterSettings>::builder().build(),
+            StructExport::<EmitterDistances>::builder().build(),
+            StructExport::<EmitterSettings>::builder().build(),
             GlobalExport(global!(c"Audioware.IsDebug", is_debug)),
             GlobalExport(global!(c"Audioware.PLog", plog_info)),
             GlobalExport(global!(c"Audioware.PLogWarning", plog_warn)),
