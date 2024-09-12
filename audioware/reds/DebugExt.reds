@@ -1,19 +1,5 @@
 import Audioware.*
 
-public class DummyService extends ScriptableService {
-    private cb func OnLoad() {
-        GameInstance.GetCallbackSystem().UnregisterCallback(n"Entity/Attached", this);
-        GameInstance.GetCallbackSystem().UnregisterCallback(n"Entity/Uninitialize", this);
-        GameInstance.GetCallbackSystem().UnregisterCallback(n"Entity/Detach", this);
-    }
-}
-
-public class AutoEmittersService extends ScriptableService {
-    private func OnAttach() {
-        GameInstance.GetCallbackSystem().UnregisterCallback(n"Entity/Detach", this);
-    }
-}
-
 public class AutoEmittersSystem extends ScriptableSystem {
     private func OnAttach() {
         if IsDebug() { FTLog(s"on attach: AutoEmittersSystem"); }
