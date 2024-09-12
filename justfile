@@ -62,6 +62,10 @@ lldb TO=game_dir: dev
   @just copy '{{ join(red4ext_bin_dir, "debug", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
   @just now
 
+staging TO=game_dir: (build 'release') reload
+  @just copy '{{ join(red4ext_bin_dir, "release", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
+  @just now
+
 ci TO RELEASE='false': (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
   @if('{{RELEASE}}' -ieq 'true') { just no-debug '{{TO}}'; Write-Host "Removed debug files"; } else { Write-Host "Kept debug files untouched"; }
 
