@@ -23,3 +23,21 @@ pub struct SoundBankInfo {
     pub is_resident: bool,
     pub path: PathBuf,
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use super::SoundBankInfo;
+    use test_case::test_case;
+
+    #[test_case(r##"id:
+    name: custom_bank
+    is_resident: true
+    path: my_mod\\sound\\soundbanks\\custom_bank.bnk"## ; "simple .bnk")]
+    fn bnk(yaml: &str) {
+        let bnk = serde_yaml::from_str::<HashMap<String, SoundBankInfo>>(yaml);
+        dbg!("{}", &bnk);
+        assert!(bnk.is_ok());
+    }
+}
