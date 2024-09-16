@@ -78,6 +78,8 @@ pub mod validation {
         CannotStoreSubtitle,
         #[snafu(display("cannot store audio settings"), visibility(pub(crate)))]
         CannotStoreSettings,
+        #[snafu(display("cannot store .bnk entry"), visibility(pub(crate)))]
+        CannotStoreBnk,
         #[snafu(display("cannot store id: {id}"), visibility(pub(crate)))]
         CannotStoreAgnosticId { id: Id },
         #[snafu(display("IO: {source}"), visibility(pub(crate)))]

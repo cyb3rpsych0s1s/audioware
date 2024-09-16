@@ -344,6 +344,20 @@ pub fn ensure_store_settings<T: PartialEq + Eq + Hash + Clone>(
     Ok(())
 }
 
+/// Ensure .bnk entries are properly stored.
+pub fn ensure_store_bnk<T: PartialEq + Eq + Hash + Clone>(
+    key: &T,
+    value: audioware_manifest::SoundBankInfo,
+    store: &mut HashMap<T, crate::bnk::SoundBankInfo>,
+) -> Result<(), Error> {
+    let value = crate::bnk::SoundBankInfo::try_from(value)?;
+    ensure!(
+        store.insert(key.clone(), value).is_none(),
+        CannotStoreBnkSnafu
+    );
+    Ok(())
+}
+
 /// Ensure [Id] is properly indexed in appropriate bank.
 #[inline]
 pub fn ensure_store_id(id: Id, store: &mut HashSet<Id>) -> Result<(), Error> {
@@ -602,6 +616,23 @@ pub fn ensure_jingles<'a>(
         ensure_store_settings::<UniqueKey>(&key, settings, smap)?;
     }
     ensure_store_id(id, set)?;
+    CNamePool::add_cstr(&c_string);
+    Ok(())
+}
+
+/// Ensure `.bnk` guarantees are partially upheld (since not all can).
+pub fn ensure_bnk<'a>(
+    k: &'a str,
+    v: SoundBankInfo,
+    map: &'a mut HashMap<UniqueKey, crate::bnk::SoundBankInfo>,
+    set: &'a mut HashSet<Id>,
+) -> Result<(), Error> {
+    ensure_key_unique(k)?;
+    let c_string = std::ffi::CString::new(k)?;
+    let cname = CName::new(k);
+    let key = UniqueKey(cname);
+    ensure_key_no_conflict(&key, k, set)?;
+    ensure_store_bnk(&key, v, map)?;
     CNamePool::add_cstr(&c_string);
     Ok(())
 }
