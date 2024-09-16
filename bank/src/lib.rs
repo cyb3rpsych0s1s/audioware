@@ -17,6 +17,7 @@ use kira::sound::static_sound::StaticSoundData;
 use red4ext_rs::types::CName;
 use snafu::ResultExt;
 
+mod bnk;
 pub mod conflict;
 mod ensure;
 pub mod error;
@@ -180,6 +181,8 @@ impl Banks {
         let mut gender_settings: HashMap<GenderKey, Settings> = HashMap::new();
         let mut single_settings: HashMap<LocaleKey, Settings> = HashMap::new();
         let mut dual_settings: HashMap<BothKey, Settings> = HashMap::new();
+        let mut bnks: HashMap<UniqueKey, crate::bnk::SoundBankInfo> = HashMap::new();
+        let mut bnks_count: usize = 0;
 
         for m in mods {
             let paths = m.manifests_paths();
@@ -303,6 +306,19 @@ impl Banks {
                         };
                     }
                 }
+                if let Some(banks) = manifest.banks {
+                    for (key, value) in banks {
+                        match ensure_bnk(key.as_str(), value, &mut bnks, &mut ids) {
+                            Ok(_) => {
+                                bnks_count += 1;
+                            }
+                            Err(e) => {
+                                errors.push(e);
+                                continue;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -322,8 +338,9 @@ impl Banks {
                 r##"ids:
 - on-demand static audio    -> {}
 - on-demand streaming audio -> {}
-- in-memory static audio    -> {}"##,
-                lengths.0, lengths.1, lengths.2
+- in-memory static audio    -> {}
+- .bnk                      -> {}"##,
+                lengths.0, lengths.1, lengths.2, bnks_count,
             ),
             len_ids: ids.len(),
             errors,
@@ -340,6 +357,7 @@ impl Banks {
         let _ = GEN_SET.set(gender_settings);
         let _ = LOC_SET.set(single_settings);
         let _ = MUL_SET.set(dual_settings);
+        let _ = BNKS.set(bnks);
 
         report
     }

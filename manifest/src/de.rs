@@ -6,6 +6,7 @@ use crate::{PlayerGender, ScnDialogLineType};
 use semver::Version;
 use serde::Deserialize;
 
+mod bnk;
 #[doc(hidden)]
 mod jingle;
 mod music;
@@ -16,6 +17,7 @@ mod setting;
 mod sfx;
 mod voice;
 
+pub use bnk::*;
 #[doc(hidden)]
 pub use jingle::*;
 pub use music::*;
@@ -34,6 +36,7 @@ pub struct Manifest {
     pub onos: Option<HashMap<String, Ono>>,
     pub voices: Option<HashMap<String, Voice>>,
     pub music: Option<HashMap<String, Music>>,
+    pub banks: Option<HashMap<String, SoundBankInfo>>,
     #[doc(hidden)]
     pub playlist: Option<HashMap<String, Playlist>>,
     #[doc(hidden)]

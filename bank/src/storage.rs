@@ -14,7 +14,7 @@ use audioware_manifest::{
 };
 use red4ext_rs::types::CName;
 
-use crate::{Banks, BothKey, GenderKey, Id, Key, LocaleKey, UniqueKey, Usage};
+use crate::{bnk::SoundBankInfo, Banks, BothKey, GenderKey, Id, Key, LocaleKey, UniqueKey, Usage};
 
 pub trait BankData {
     type Key;
@@ -108,6 +108,8 @@ pub(super) static MUL_SET: OnceStorage<BothKey, ManifestSettings> = OnceStorage:
 
 pub(super) static LOC_SUB: OnceStorage<LocaleKey, DialogLine> = OnceStorage::new();
 pub(super) static MUL_SUB: OnceStorage<BothKey, DialogLine> = OnceStorage::new();
+
+pub(super) static BNKS: OnceStorage<UniqueKey, SoundBankInfo> = OnceStorage::new();
 
 impl BankSettings for Banks {
     type Key = Id;
