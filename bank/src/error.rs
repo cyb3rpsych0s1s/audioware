@@ -82,6 +82,8 @@ pub mod validation {
         CannotStoreAgnosticId { id: Id },
         #[snafu(display("IO: {source}"), visibility(pub(crate)))]
         IO { source: std::io::Error },
+        #[snafu(display("invalid resource path: {}", path.display()), visibility(pub(crate)))]
+        InvalidResourcePath { path: std::path::PathBuf },
     }
 }
 
