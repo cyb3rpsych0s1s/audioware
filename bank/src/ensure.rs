@@ -345,16 +345,13 @@ pub fn ensure_store_settings<T: PartialEq + Eq + Hash + Clone>(
 }
 
 /// Ensure .bnk entries are properly stored.
-pub fn ensure_store_bnk<T: PartialEq + Eq + Hash + Clone>(
-    key: &T,
+pub fn ensure_store_bnk(
+    key: &CName,
     value: audioware_manifest::SoundBankInfo,
-    store: &mut HashMap<T, crate::bnk::SoundBankInfo>,
+    store: &mut HashMap<CName, crate::bnk::SoundBankInfo>,
 ) -> Result<(), Error> {
-    let value = crate::bnk::SoundBankInfo::try_from(value)?;
-    ensure!(
-        store.insert(key.clone(), value).is_none(),
-        CannotStoreBnkSnafu
-    );
+    let value = crate::bnk::SoundBankInfo::try_from((*key, value))?;
+    ensure!(store.insert(*key, value).is_none(), CannotStoreBnkSnafu);
     Ok(())
 }
 
@@ -624,15 +621,14 @@ pub fn ensure_jingles<'a>(
 pub fn ensure_bnk<'a>(
     k: &'a str,
     v: SoundBankInfo,
-    map: &'a mut HashMap<UniqueKey, crate::bnk::SoundBankInfo>,
+    map: &'a mut HashMap<CName, crate::bnk::SoundBankInfo>,
     set: &'a mut HashSet<Id>,
 ) -> Result<(), Error> {
     ensure_key_unique(k)?;
     let c_string = std::ffi::CString::new(k)?;
     let cname = CName::new(k);
-    let key = UniqueKey(cname);
-    ensure_key_no_conflict(&key, k, set)?;
-    ensure_store_bnk(&key, v, map)?;
+    ensure_key_no_conflict(&UniqueKey(cname), k, set)?;
+    ensure_store_bnk(&cname, v, map)?;
     CNamePool::add_cstr(&c_string);
     Ok(())
 }

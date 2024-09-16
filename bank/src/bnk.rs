@@ -19,12 +19,14 @@ unsafe impl ScriptClass for SoundBankInfo {
     const NAME: &'static str = "SoundBankInfo";
 }
 
-impl TryFrom<audioware_manifest::SoundBankInfo> for self::SoundBankInfo {
+impl TryFrom<(CName, audioware_manifest::SoundBankInfo)> for self::SoundBankInfo {
     type Error = Error;
 
-    fn try_from(value: audioware_manifest::SoundBankInfo) -> Result<Self, Self::Error> {
+    fn try_from(
+        (key, value): (CName, audioware_manifest::SoundBankInfo),
+    ) -> Result<Self, Self::Error> {
         Ok(Self {
-            name: CName::new(&value.name),
+            name: key,
             is_resident: value.is_resident,
             path: ResRef::new(value.path.clone()).map_err(|_| {
                 Error::from(crate::error::validation::Error::InvalidResourcePath {

@@ -109,7 +109,7 @@ pub(super) static MUL_SET: OnceStorage<BothKey, ManifestSettings> = OnceStorage:
 pub(super) static LOC_SUB: OnceStorage<LocaleKey, DialogLine> = OnceStorage::new();
 pub(super) static MUL_SUB: OnceStorage<BothKey, DialogLine> = OnceStorage::new();
 
-pub(super) static BNKS: OnceStorage<UniqueKey, SoundBankInfo> = OnceStorage::new();
+pub(super) static BNKS: OnceStorage<CName, SoundBankInfo> = OnceStorage::new();
 
 impl BankSettings for Banks {
     type Key = Id;

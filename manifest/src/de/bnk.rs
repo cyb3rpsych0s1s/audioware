@@ -19,7 +19,6 @@ use serde::Deserialize;
 /// ```
 #[derive(Debug, Deserialize)]
 pub struct SoundBankInfo {
-    pub name: String,
     pub is_resident: bool,
     pub path: PathBuf,
 }
@@ -32,9 +31,8 @@ mod tests {
     use test_case::test_case;
 
     #[test_case(r##"id:
-    name: custom_bank
-    is_resident: true
-    path: my_mod\\sound\\soundbanks\\custom_bank.bnk"## ; "simple .bnk")]
+    path: my_mod\\sound\\soundbanks\\custom_bank.bnk
+    is_resident: true"## ; "simple .bnk")]
     fn bnk(yaml: &str) {
         let bnk = serde_yaml::from_str::<HashMap<String, SoundBankInfo>>(yaml);
         dbg!("{}", &bnk);
