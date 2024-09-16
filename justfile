@@ -62,20 +62,25 @@ lldb TO=game_dir: dev
   @just copy '{{ join(red4ext_bin_dir, "debug", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
   @just now
 
+staging TO=game_dir: (build 'release') reload
+  @just copy '{{ join(red4ext_bin_dir, "release", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
+  @just now
+
 ci TO RELEASE='false': (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
   @if('{{RELEASE}}' -ieq 'true') { just no-debug '{{TO}}'; Write-Host "Removed debug files"; } else { Write-Host "Kept debug files untouched"; }
 
 optimize TO:
     upx --best --lzma '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
 
-clear:
-    @if(Test-Path "{{ join(red_cache_dir, 'final.redscripts.bk') }}" ) { \
-        Write-Host "replacing {{ join(red_cache_dir, 'final.redscripts.bk') }} with {{ join(red_cache_dir, 'final.redscripts.bk') }}"; \
-        cp -Force '{{ join(red_cache_dir, "final.redscripts.bk") }}' '{{ join(red_cache_dir, "final.redscripts") }}'; \
-        Remove-Item -Force -Path '{{ join(red_cache_dir, "final.redscripts.bk") }}'; \
-    } else { \
-        Write-Host "missing {{ join(red_cache_dir, 'final.redscripts.bk') }}"; \
-    }
+# FIXME:
+# clear TO=game_dir:
+#     @if(Test-Path "{{ join(TO, red_cache_dir, 'final.redscripts') }}" ) { \
+#         Write-Host "replacing {{ join(TO, red_cache_dir, 'final.redscripts.modded') }} with {{ join(TO, red_cache_dir, 'final.redscripts') }}"; \
+#         cp -Force '{{ join(TO, red_cache_dir, "final.redscripts") }}' '{{ join(TO, red_cache_dir, "final.redscripts.modded") }}'; \
+#         Remove-Item -Force -Path '{{ join(TO, red_cache_dir, "final.redscripts") }}'; \
+#     } else { \
+#         Write-Host "missing {{ join(TO, red_cache_dir, 'final.redscripts') }}"; \
+#     }
 
 reload TO=game_dir: (setup join(TO, redscript_deploy_dir))
   @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{ join(TO, redscript_deploy_dir) }}'
