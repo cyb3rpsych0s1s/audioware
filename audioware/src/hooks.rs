@@ -3,6 +3,8 @@
 #[rustfmt::skip]
 #[doc(hidden)]
 mod offsets {
+    // lifecycle
+    pub(super) const LOAD_SOUNDBANKS: u32                   = 0xEC201278; // 0x1409B551C (2.13)
     // AudioSystem
     pub(super) const PARAMETER: u32                         = 0x7A491F19; // 0x14244FE90
     #[allow(dead_code)]
@@ -55,6 +57,7 @@ mod offsets {
 
 pub mod global_parameter;
 pub mod load_save_in_game;
+pub mod load_soundbanks;
 pub mod on_transform_updated;
 pub mod parameter;
 pub mod play;
