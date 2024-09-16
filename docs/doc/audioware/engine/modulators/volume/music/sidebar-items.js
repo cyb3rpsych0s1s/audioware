@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["MODULATOR_NAME"],"static":["MODULATOR"],"struct":["MusicVolume"]};

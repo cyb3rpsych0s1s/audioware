@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["gender","spoken_language","written_language"]};

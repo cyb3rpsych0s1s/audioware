@@ -1,0 +1,1 @@
+searchState.loadedDescShard("audioware_core", 0, "Audio settings.\nAny audio whose sample rate is known.\nConsumes <code>T</code>, absorbing its data.\nAudio data.\nAudio settings.\nCurrent audio duration, based on its slice.\nTotal duration, regardless of slice and settings.")

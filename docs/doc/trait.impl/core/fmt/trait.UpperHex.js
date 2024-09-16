@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"symphonia_core":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.81.0/core/fmt/trait.UpperHex.html\" title=\"trait core::fmt::UpperHex\">UpperHex</a> for <a class=\"struct\" href=\"symphonia_core/audio/struct.Channels.html\" title=\"struct symphonia_core::audio::Channels\">Channels</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

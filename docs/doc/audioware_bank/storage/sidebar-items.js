@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"static":["GENDERS","GEN_SET","LOCALES","LOC_SET","LOC_SUB","MULTIS","MUL_SET","MUL_SUB","UNIQUES","UNI_SET"],"struct":["OnceStorage"],"trait":["BankData","BankSettings","BankSubtitles","Package"]};

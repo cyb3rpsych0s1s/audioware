@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":["ok_or_return","some_or_return"]};

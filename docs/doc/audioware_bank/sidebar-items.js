@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Id","Key","Usage"],"mod":["conflict","ensure","error","id","key","storage"],"static":["KEYS"],"struct":["Banks","BothKey","GenderKey","Initialization","LocaleKey","OnceStorage","UniqueKey"],"trait":["BankData","BankSettings","BankSubtitles","Package"]};

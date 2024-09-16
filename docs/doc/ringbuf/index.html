@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Lock-free SPSC FIFO ring buffer with direct access to inner data."><title>ringbuf - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="ringbuf" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../ringbuf/index.html">ringbuf</a><span class="version">0.3.3</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#functions">Functions</a></li><li><a href="#types">Type Aliases</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">ringbuf</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/ringbuf/lib.rs.html#1-163">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Lock-free SPSC FIFO ring buffer with direct access to inner data.</p>
+<h2 id="features"><a class="doc-anchor" href="#features">§</a>Features</h2>
+<ul>
+<li>Lock-free operations - they succeed or fail immediately without blocking or waiting.</li>
+<li>Arbitrary item type (not only <a href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Copy.html" title="trait core::marker::Copy"><code>Copy</code></a>).</li>
+<li>Items can be inserted and removed one by one or many at once.</li>
+<li>Thread-safe direct access to the internal ring buffer memory.</li>
+<li><a href="https://doc.rust-lang.org/1.81.0/std/io/trait.Read.html" title="trait std::io::Read"><code>Read</code></a> and <a href="https://doc.rust-lang.org/1.81.0/std/io/trait.Write.html" title="trait std::io::Write"><code>Write</code></a> implementation.</li>
+<li>Can be used without <code>std</code> and even without <code>alloc</code> (using only statically-allocated memory).</li>
+<li><a href="https://github.com/agerasev/async-ringbuf">Experimental <code>async</code>/<code>.await</code> support</a>.</li>
+</ul>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<p>At first you need to create the ring buffer itself. <a href="type.HeapRb.html" title="type ringbuf::HeapRb"><code>HeapRb</code></a> is recommended but you may <a href="#types">choose another one</a>.</p>
+<p>After the ring buffer is created it may be splitted into pair of <a href="producer/struct.Producer.html" title="struct ringbuf::producer::Producer"><code>Producer</code></a> and <a href="consumer/struct.Consumer.html" title="struct ringbuf::consumer::Consumer"><code>Consumer</code></a>.
+<a href="producer/struct.Producer.html" title="struct ringbuf::producer::Producer"><code>Producer</code></a> is used to insert items to the ring buffer, <a href="consumer/struct.Consumer.html" title="struct ringbuf::consumer::Consumer"><code>Consumer</code></a> - to remove items from it.
+For <a href="ring_buffer/struct.SharedRb.html" title="struct ringbuf::ring_buffer::SharedRb"><code>SharedRb</code></a> and its derivatives they can be used in different threads.</p>
+<p>Also you can use the ring buffer without splitting at all via methods provided by <a href="ring_buffer/trait.Rb.html" title="trait ringbuf::ring_buffer::Rb"><code>Rb</code></a> trait.</p>
+<h2 id="types"><a class="doc-anchor" href="#types">§</a>Types</h2>
+<p>There are several types of ring buffers provided:</p>
+<ul>
+<li><a href="ring_buffer/struct.LocalRb.html" title="struct ringbuf::ring_buffer::LocalRb"><code>LocalRb</code></a>. Only for single-threaded use.</li>
+<li><a href="ring_buffer/struct.SharedRb.html" title="struct ringbuf::ring_buffer::SharedRb"><code>SharedRb</code></a>. Can be shared between threads. Its derivatives:
+<ul>
+<li><a href="type.HeapRb.html" title="type ringbuf::HeapRb"><code>HeapRb</code></a>. Contents are stored in dynamic memory. <em>Recommended for use in most cases.</em></li>
+<li><a href="type.StaticRb.html" title="type ringbuf::StaticRb"><code>StaticRb</code></a>. Contents can be stored in statically-allocated memory.</li>
+</ul>
+</li>
+</ul>
+<h2 id="performance"><a class="doc-anchor" href="#performance">§</a>Performance</h2>
+<p><a href="ring_buffer/struct.SharedRb.html" title="struct ringbuf::ring_buffer::SharedRb"><code>SharedRb</code></a> needs to synchronize CPU cache between CPU cores. This synchronization has some overhead.
+To avoid multiple unnecessary synchronizations you may use postponed mode of operation (see description for <a href="producer/struct.Producer.html#mode" title="struct ringbuf::producer::Producer"><code>Producer</code></a> and <a href="consumer/struct.Consumer.html#mode" title="struct ringbuf::consumer::Consumer"><code>Consumer</code></a>)
+or methods that operate many items at once (<a href="producer/struct.Producer.html#method.push_slice" title="method ringbuf::producer::Producer::push_slice"><code>Producer::push_slice</code></a>/<a href="producer/struct.Producer.html#method.push_iter" title="method ringbuf::producer::Producer::push_iter"><code>Producer::push_iter</code></a>, <a href="consumer/struct.Consumer.html#method.pop_slice" title="method ringbuf::consumer::Consumer::pop_slice"><code>Consumer::pop_slice</code></a>, etc.).</p>
+<p>For single-threaded usage <a href="ring_buffer/struct.LocalRb.html" title="struct ringbuf::ring_buffer::LocalRb"><code>LocalRb</code></a> is recommended because it is faster than <a href="ring_buffer/struct.SharedRb.html" title="struct ringbuf::ring_buffer::SharedRb"><code>SharedRb</code></a> due to absence of CPU cache synchronization.</p>
+<h3 id="benchmarks"><a class="doc-anchor" href="#benchmarks">§</a>Benchmarks</h3>
+<p>You may see typical performance of different methods in benchmarks:</p>
+<div class="example-wrap"><pre class="language-bash"><code>cargo +nightly bench --features bench
+</code></pre></div>
+<p>Nightly toolchain is required.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2><h3 id="simple"><a class="doc-anchor" href="#simple">§</a>Simple</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>ringbuf::HeapRb;
+
+<span class="kw">let </span>rb = HeapRb::&lt;i32&gt;::new(<span class="number">2</span>);
+<span class="kw">let </span>(<span class="kw-2">mut </span>prod, <span class="kw-2">mut </span>cons) = rb.split();
+
+prod.push(<span class="number">0</span>).unwrap();
+prod.push(<span class="number">1</span>).unwrap();
+<span class="macro">assert_eq!</span>(prod.push(<span class="number">2</span>), <span class="prelude-val">Err</span>(<span class="number">2</span>));
+
+<span class="macro">assert_eq!</span>(cons.pop(), <span class="prelude-val">Some</span>(<span class="number">0</span>));
+
+prod.push(<span class="number">2</span>).unwrap();
+
+<span class="macro">assert_eq!</span>(cons.pop(), <span class="prelude-val">Some</span>(<span class="number">1</span>));
+<span class="macro">assert_eq!</span>(cons.pop(), <span class="prelude-val">Some</span>(<span class="number">2</span>));
+<span class="macro">assert_eq!</span>(cons.pop(), <span class="prelude-val">None</span>);</code></pre></div>
+<h3 id="no-heap"><a class="doc-anchor" href="#no-heap">§</a>No heap</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>ringbuf::StaticRb;
+
+<span class="kw">const </span>RB_SIZE: usize = <span class="number">1</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>rb = StaticRb::&lt;i32, RB_SIZE&gt;::default();
+<span class="kw">let </span>(<span class="kw-2">mut </span>prod, <span class="kw-2">mut </span>cons) = rb.split_ref();
+
+<span class="macro">assert_eq!</span>(prod.push(<span class="number">123</span>), <span class="prelude-val">Ok</span>(()));
+<span class="macro">assert_eq!</span>(prod.push(<span class="number">321</span>), <span class="prelude-val">Err</span>(<span class="number">321</span>));
+
+<span class="macro">assert_eq!</span>(cons.pop(), <span class="prelude-val">Some</span>(<span class="number">123</span>));
+<span class="macro">assert_eq!</span>(cons.pop(), <span class="prelude-val">None</span>);</code></pre></div>
+<h3 id="overwrite"><a class="doc-anchor" href="#overwrite">§</a>Overwrite</h3>
+<p>Ring buffer can be used in overwriting mode when insertion overwrites the latest element if the buffer is full.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>ringbuf::{HeapRb, Rb};
+
+<span class="kw">let </span><span class="kw-2">mut </span>rb = HeapRb::&lt;i32&gt;::new(<span class="number">2</span>);
+
+<span class="macro">assert_eq!</span>(rb.push_overwrite(<span class="number">0</span>), <span class="prelude-val">None</span>);
+<span class="macro">assert_eq!</span>(rb.push_overwrite(<span class="number">1</span>), <span class="prelude-val">None</span>);
+<span class="macro">assert_eq!</span>(rb.push_overwrite(<span class="number">2</span>), <span class="prelude-val">Some</span>(<span class="number">0</span>));
+
+<span class="macro">assert_eq!</span>(rb.pop(), <span class="prelude-val">Some</span>(<span class="number">1</span>));
+<span class="macro">assert_eq!</span>(rb.pop(), <span class="prelude-val">Some</span>(<span class="number">2</span>));
+<span class="macro">assert_eq!</span>(rb.pop(), <span class="prelude-val">None</span>);</code></pre></div>
+<p>Note that <a href="ring_buffer/trait.Rb.html#method.push_overwrite" title="method ringbuf::ring_buffer::Rb::push_overwrite"><code>push_overwrite</code></a> requires exclusive access to the ring buffer
+so to perform it concurrently you need to guard the ring buffer with <a href="https://doc.rust-lang.org/1.81.0/std/sync/mutex/struct.Mutex.html" title="struct std::sync::mutex::Mutex"><code>Mutex</code></a> or some other lock.</p>
+<h3 id="asyncawait"><a class="doc-anchor" href="#asyncawait">§</a><code>async</code>/<code>.await</code></h3>
+<p>There is an experimental crate <a href="https://github.com/agerasev/async-ringbuf"><code>async-ringbuf</code></a>
+which is built on top of <code>ringbuf</code> and implements asynchronous ring buffer operations.</p>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name" id="reexport.Consumer"><code>pub use consumer::<a class="struct" href="consumer/struct.Consumer.html" title="struct ringbuf::consumer::Consumer">Consumer</a>;</code></div></li><li><div class="item-name" id="reexport.Producer"><code>pub use producer::<a class="struct" href="producer/struct.Producer.html" title="struct ringbuf::producer::Producer">Producer</a>;</code></div></li><li><div class="item-name" id="reexport.LocalRb"><code>pub use ring_buffer::<a class="struct" href="ring_buffer/struct.LocalRb.html" title="struct ringbuf::ring_buffer::LocalRb">LocalRb</a>;</code></div></li><li><div class="item-name" id="reexport.Rb"><code>pub use ring_buffer::<a class="trait" href="ring_buffer/trait.Rb.html" title="trait ringbuf::ring_buffer::Rb">Rb</a>;</code></div></li><li><div class="item-name" id="reexport.SharedRb"><code>pub use ring_buffer::<a class="struct" href="ring_buffer/struct.SharedRb.html" title="struct ringbuf::ring_buffer::SharedRb">SharedRb</a>;</code></div></li></ul><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="consumer/index.html" title="mod ringbuf::consumer">consumer</a></div><div class="desc docblock-short"><a href="consumer/struct.Consumer.html" title="struct ringbuf::consumer::Consumer"><code>Consumer</code></a> and additional types.</div></li><li><div class="item-name"><a class="mod" href="producer/index.html" title="mod ringbuf::producer">producer</a></div><div class="desc docblock-short"><a href="producer/struct.Producer.html" title="struct ringbuf::producer::Producer"><code>Producer</code></a> and additional types.</div></li><li><div class="item-name"><a class="mod" href="ring_buffer/index.html" title="mod ringbuf::ring_buffer">ring_buffer</a></div><div class="desc docblock-short">Ring buffer traits and implementations.</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.transfer.html" title="fn ringbuf::transfer">transfer</a></div><div class="desc docblock-short">Moves at most <code>count</code> items from the <code>src</code> consumer to the <code>dst</code> producer.</div></li></ul><h2 id="types-1" class="section-header">Type Aliases<a href="#types-1" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="type" href="type.HeapConsumer.html" title="type ringbuf::HeapConsumer">HeapConsumer</a></div><div class="desc docblock-short">Alias for <a href="type.HeapRb.html" title="type ringbuf::HeapRb"><code>HeapRb</code></a> <a href="consumer/struct.Consumer.html" title="struct ringbuf::consumer::Consumer"><code>Consumer</code></a>.</div></li><li><div class="item-name"><a class="type" href="type.HeapProducer.html" title="type ringbuf::HeapProducer">HeapProducer</a></div><div class="desc docblock-short">Alias for <a href="type.HeapRb.html" title="type ringbuf::HeapRb"><code>HeapRb</code></a> <a href="producer/struct.Producer.html" title="struct ringbuf::producer::Producer"><code>Producer</code></a>.</div></li><li><div class="item-name"><a class="type" href="type.HeapRb.html" title="type ringbuf::HeapRb">HeapRb</a></div><div class="desc docblock-short">Heap-allocated ring buffer.</div></li><li><div class="item-name"><a class="type" href="type.StaticConsumer.html" title="type ringbuf::StaticConsumer">StaticConsumer</a></div><div class="desc docblock-short">Alias for <a href="type.StaticRb.html" title="type ringbuf::StaticRb"><code>StaticRb</code></a> <a href="consumer/struct.Consumer.html" title="struct ringbuf::consumer::Consumer"><code>Consumer</code></a>.</div></li><li><div class="item-name"><a class="type" href="type.StaticProducer.html" title="type ringbuf::StaticProducer">StaticProducer</a></div><div class="desc docblock-short">Alias for <a href="type.StaticRb.html" title="type ringbuf::StaticRb"><code>StaticRb</code></a> <a href="producer/struct.Producer.html" title="struct ringbuf::producer::Producer"><code>Producer</code></a>.</div></li><li><div class="item-name"><a class="type" href="type.StaticRb.html" title="type ringbuf::StaticRb">StaticRb</a></div><div class="desc docblock-short">Stack-allocated ring buffer with static capacity.</div></li></ul></section></div></main></body></html>
