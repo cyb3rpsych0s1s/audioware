@@ -28,14 +28,20 @@ mod tests {
     use std::collections::HashMap;
 
     use super::SoundBankInfo;
+    use red4ext_rs::types::ResRef;
     use test_case::test_case;
 
     #[test_case(r##"id:
     path: my_mod\\sound\\soundbanks\\custom_bank.bnk
-    is_resident: true"## ; "simple .bnk")]
+    is_resident: true"## ; "simple .bnk double slashed path")]
+    #[test_case(r##"id:
+    path: my_mod\sound\soundbanks\custom_bank.bnk
+    is_resident: true"## ; "simple .bnk single slashed path")]
     fn bnk(yaml: &str) {
         let bnk = serde_yaml::from_str::<HashMap<String, SoundBankInfo>>(yaml);
         dbg!("{}", &bnk);
         assert!(bnk.is_ok());
+        let path = ResRef::new(bnk.unwrap().iter().next().unwrap().1.path.clone());
+        assert!(path.is_ok());
     }
 }

@@ -6,7 +6,7 @@ use red4ext_rs::{
 
 use crate::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Default, Clone)]
 #[repr(C)]
 pub struct SoundBankInfo {
     pub name: CName,

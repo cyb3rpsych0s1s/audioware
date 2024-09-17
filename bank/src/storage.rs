@@ -1,7 +1,10 @@
 //! Bank storage for data and settings.
 
 use std::{
-    collections::{hash_map::Keys, HashMap},
+    collections::{
+        hash_map::{Iter, Keys, Values},
+        HashMap,
+    },
     hash::Hash,
     sync::OnceLock,
 };
@@ -52,6 +55,12 @@ impl<K, V> OnceStorage<K, V> {
     }
     pub fn keys(&self) -> Keys<'_, K, V> {
         self.0.get().expect("should be initialized").keys()
+    }
+    pub fn values(&self) -> Values<'_, K, V> {
+        self.0.get().expect("should be initialized").values()
+    }
+    pub fn iter(&self) -> Iter<'_, K, V> {
+        self.0.get().expect("should be initialized").iter()
     }
 }
 impl<K: Eq + Hash> BankData for OnceStorage<K, StaticSoundData> {
@@ -109,7 +118,7 @@ pub(super) static MUL_SET: OnceStorage<BothKey, ManifestSettings> = OnceStorage:
 pub(super) static LOC_SUB: OnceStorage<LocaleKey, DialogLine> = OnceStorage::new();
 pub(super) static MUL_SUB: OnceStorage<BothKey, DialogLine> = OnceStorage::new();
 
-pub(super) static BNKS: OnceStorage<CName, SoundBankInfo> = OnceStorage::new();
+pub static BNKS: OnceStorage<CName, SoundBankInfo> = OnceStorage::new();
 
 impl BankSettings for Banks {
     type Key = Id;

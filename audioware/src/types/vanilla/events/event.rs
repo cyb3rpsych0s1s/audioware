@@ -2,7 +2,7 @@ use std::fmt;
 
 use red4ext_rs::{
     class_kind::Native,
-    types::{CName, IScriptable, RedArray},
+    types::{CName, IScriptable, ISerializable, RedArray, Ref},
     NativeRepr, ScriptClass,
 };
 
@@ -388,4 +388,80 @@ impl fmt::Display for AudioEventFlags {
             }
         )
     }
+}
+
+const PADDING_31: usize = 0x38 - 0x31;
+
+#[repr(C)]
+pub struct AudioEventArray {
+    base: ISerializable,
+    pub is_sorted_by_red_hash: bool,
+    unk31: [u8; PADDING_31],
+    pub events: RedArray<Ref<AudioEventMetadataArrayElement>>,
+    pub switch_group: RedArray<Ref<AudioEventMetadataArrayElement>>,
+    pub switch: RedArray<Ref<AudioEventMetadataArrayElement>>,
+    pub state_group: RedArray<Ref<AudioEventMetadataArrayElement>>,
+    pub state: RedArray<Ref<AudioEventMetadataArrayElement>>,
+    pub game_parameter: RedArray<Ref<AudioEventMetadataArrayElement>>,
+    pub bus: RedArray<Ref<AudioEventMetadataArrayElement>>,
+}
+
+impl fmt::Debug for AudioEventArray {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AudioEventArray")
+            .field("base", &self.base)
+            .field("is_sorted_by_red_hash", &self.is_sorted_by_red_hash)
+            .field("unk31", &self.unk31)
+            .finish_non_exhaustive()
+    }
+}
+
+unsafe impl ScriptClass for AudioEventArray {
+    type Kind = Native;
+    const NAME: &'static str = "audioAudioEventArray";
+}
+
+const PADDING_41: usize = 0x48 - 0x41;
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct AudioEventMetadata {
+    base: ISerializable,
+    pub wwise_id: u32,
+    pub max_attenuation: f32,
+    pub min_duration: f32,
+    pub max_duration: f32,
+    pub is_looping: bool,
+    unk41: [u8; PADDING_41],
+    pub stop_action_events: RedArray<CName>,
+    pub tags: RedArray<CName>,
+}
+
+unsafe impl ScriptClass for AudioEventMetadata {
+    type Kind = Native;
+    const NAME: &'static str = "audioAudioEventMetadata";
+}
+
+const PADDING_41_BIS: usize = 0x44 - 0x41;
+const PADDING_4C_BIS: usize = 0x50 - 0x4C;
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct AudioEventMetadataArrayElement {
+    base: ISerializable,
+    pub red_id: CName,
+    pub wwise_id: u32,
+    pub max_attenuation: f32,
+    pub is_looping: bool,
+    unk41: [u8; PADDING_41_BIS],
+    pub min_duration: f32,
+    pub max_duration: f32,
+    unk4c: [u8; PADDING_4C_BIS],
+    pub stop_action_events: RedArray<CName>,
+    pub tags: RedArray<CName>,
+}
+
+unsafe impl ScriptClass for AudioEventMetadataArrayElement {
+    type Kind = Native;
+    const NAME: &'static str = "audioAudioEventMetadataArrayElement";
 }

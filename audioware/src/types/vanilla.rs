@@ -32,6 +32,8 @@ mod world_position;
 pub use world_position::*;
 mod world_transform;
 pub use world_transform::*;
+mod resource;
+pub use resource::*;
 
 pub trait AsGameInstance {
     /// `public static native func FindEntityByID(self: GameInstance, entityId: EntityID) -> ref<Entity>`

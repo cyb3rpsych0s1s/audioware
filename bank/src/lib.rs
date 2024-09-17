@@ -24,6 +24,7 @@ pub mod error;
 pub use error::Error;
 mod id;
 mod key;
+pub use bnk::*;
 pub use id::*;
 pub use key::*;
 mod storage;

@@ -5,10 +5,12 @@ use red4ext_rs::{
     class_kind::{Native, Scripted},
     log,
     types::{CName, Class, EntityId, IScriptable, Ref, ResRef, TweakDbId},
-    PluginOps, ScriptClass,
+    PluginOps, RttiSystem, ScriptClass,
 };
 
 use crate::Audioware;
+
+use super::CResource;
 
 /// Interop type for [localization package](https://github.com/psiberx/cp2077-codeware/wiki#localization-packages).
 #[repr(C)]
@@ -60,4 +62,41 @@ pub struct EntityTarget {
 unsafe impl ScriptClass for EntityTarget {
     type Kind = Native;
     const NAME: &'static str = "EntityTarget";
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct ResourceEvent {
+    base: IScriptable,
+}
+
+unsafe impl ScriptClass for ResourceEvent {
+    type Kind = Native;
+    const NAME: &'static str = "ResourceEvent";
+}
+
+impl AsRef<IScriptable> for ResourceEvent {
+    fn as_ref(&self) -> &IScriptable {
+        &self.base
+    }
+}
+
+pub trait AsResourceEvent {
+    fn get_resource(&self) -> Ref<CResource>;
+}
+
+impl AsResourceEvent for Ref<ResourceEvent> {
+    fn get_resource(&self) -> Ref<CResource> {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(ResourceEvent::NAME)).unwrap();
+        let method = cls
+            .methods()
+            .iter()
+            .find(|x| x.as_function().short_name() == CName::new("GetResource"))
+            .unwrap();
+        method
+            .as_function()
+            .execute::<_, Ref<CResource>>(unsafe { self.instance() }.map(AsRef::as_ref), ())
+            .unwrap()
+    }
 }
