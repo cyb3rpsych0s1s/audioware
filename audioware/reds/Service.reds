@@ -25,6 +25,10 @@ class AudiowareService extends ScriptableService {
             .RegisterCallback(n"Session/BeforeEnd", this, n"OnSessionChange");
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Session/End", this, n"OnSessionChange");
+        GameInstance.GetCallbackSystem()
+            .RegisterCallback(n"Resource/Loaded", this, n"OnResourceLoaded")
+            .AddTarget(ResourceTarget.Path(r"base\\sound\\event\\eventsmetadata.json"))
+            .SetRunMode(CallbackRunMode.Once);
         // main menu (pre-game)
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Resource/Ready", this, n"OnMainMenuResourceReady")
@@ -36,6 +40,13 @@ class AudiowareService extends ScriptableService {
 
     private cb func OnUninitialize() {
         this.UnregisterModSettings();
+    }
+
+    private cb func OnResourceLoaded(event: ref<ResourceEvent>) {
+        FTLog(AsRef(s"on resource loaded"));
+        let resource: ref<JsonResource> = event.GetResource() as JsonResource;
+        let root: ref<audioAudioEventArray> = resource.root as audioAudioEventArray;
+        FTLog(AsRef(s"json resource has \(ToString(ArraySize(root.events))) entries"));
     }
 
     private cb func OnSessionChange(event: ref<GameSessionEvent>) {
