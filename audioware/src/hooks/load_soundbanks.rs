@@ -31,7 +31,11 @@ unsafe extern "C" fn detour(a1: i64, cb: unsafe extern "C" fn(a1: i64) -> bool) 
         red4ext_rs::types::Ref<audioware_bank::SoundBankInfo>,
     >;
     let map: &mut RedHashMap<CName, Ref<audioware_bank::SoundBankInfo>> = unsafe { &mut *map };
-    crate::utils::lifecycle!("LoadSoundBanks: after transmuting");
+    crate::utils::lifecycle!(
+        "LoadSoundBanks: after transmuting, map size({})/capacity({})",
+        map.size(),
+        map.capacity()
+    );
     for (key, value) in BNKS.iter() {
         let reference: Ref<audioware_bank::SoundBankInfo> =
             Ref::new_with(|x: &mut audioware_bank::SoundBankInfo| {
