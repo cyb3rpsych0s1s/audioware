@@ -397,13 +397,13 @@ pub struct AudioEventArray {
     base: ISerializable,
     pub is_sorted_by_red_hash: bool,
     unk31: [u8; PADDING_31],
-    pub events: RedArray<Ref<AudioEventMetadataArrayElement>>,
-    pub switch_group: RedArray<Ref<AudioEventMetadataArrayElement>>,
-    pub switch: RedArray<Ref<AudioEventMetadataArrayElement>>,
-    pub state_group: RedArray<Ref<AudioEventMetadataArrayElement>>,
-    pub state: RedArray<Ref<AudioEventMetadataArrayElement>>,
-    pub game_parameter: RedArray<Ref<AudioEventMetadataArrayElement>>,
-    pub bus: RedArray<Ref<AudioEventMetadataArrayElement>>,
+    pub events: RedArray<AudioEventMetadataArrayElement>,
+    pub switch_group: RedArray<AudioEventMetadataArrayElement>,
+    pub switch: RedArray<AudioEventMetadataArrayElement>,
+    pub state_group: RedArray<AudioEventMetadataArrayElement>,
+    pub state: RedArray<AudioEventMetadataArrayElement>,
+    pub game_parameter: RedArray<AudioEventMetadataArrayElement>,
+    pub bus: RedArray<AudioEventMetadataArrayElement>,
 }
 
 impl fmt::Debug for AudioEventArray {
@@ -461,7 +461,6 @@ pub struct AudioEventMetadataArrayElement {
     pub tags: RedArray<CName>,
 }
 
-unsafe impl ScriptClass for AudioEventMetadataArrayElement {
-    type Kind = Native;
+unsafe impl NativeRepr for AudioEventMetadataArrayElement {
     const NAME: &'static str = "audioAudioEventMetadataArrayElement";
 }
