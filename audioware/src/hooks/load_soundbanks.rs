@@ -5,7 +5,7 @@ use audioware_manifest::SoundBankInfo;
 use red4ext_rs::{
     addr_hashes::{self, resolve},
     hooks,
-    types::{CName, CNamePool, IScriptable, ISerializable, RedHashMap, Ref},
+    types::{CName, CNamePool, IScriptable, ISerializable, RedHashMap, Ref, SharedPtr},
     RttiSystemMut, SdkEnv,
 };
 
@@ -26,26 +26,40 @@ unsafe extern "C" fn detour(a1: i64, cb: unsafe extern "C" fn(a1: i64) -> bool) 
     crate::utils::lifecycle!("LoadSoundBanks called");
     let res = cb(a1);
 
-    let map = (a1 + 104) as i128;
-    let map = unsafe { std::mem::transmute::<i128, Ref<ISerializable>>(map) };
-    if let Some(map) = map.clone().fields_mut() {
-        let map = unsafe {
-            std::mem::transmute::<
-                &mut ISerializable,
-                &mut RedHashMap<CName, Ref<audioware_bank::SoundBankInfo>>,
-            >(map)
-        };
-        for (key, value) in BNKS.iter() {
-            let reference: Ref<audioware_bank::SoundBankInfo> =
-                Ref::new_with(|x: &mut audioware_bank::SoundBankInfo| {
-                    x.name = value.name;
-                    x.is_resident = value.is_resident;
-                    x.path = value.path.clone();
-                })
-                .unwrap();
-            let existing = map.insert(*key, reference.clone());
-        }
+    crate::utils::lifecycle!("LoadSoundBanks: before pointer cast");
+    let map = a1 + 104;
+    let map = map as *mut RedHashMap<CName, SharedPtr<audioware_bank::SoundBankInfo>>;
+    let map = unsafe { &mut *map };
+    crate::utils::lifecycle!("LoadSoundBanks: after pointer cast");
+    for (key, value) in BNKS.iter() {
+        let reference = SharedPtr::new_with(value.clone());
+        let existing = map.insert(*key, reference);
+        crate::utils::lifecycle!(
+            "LoadSoundBanks: after map insertion ({})",
+            existing.is_none()
+        );
     }
+
+    // let map = (a1 + 104) as i128;
+    // let map = unsafe { std::mem::transmute::<i128, Ref<ISerializable>>(map) };
+    // if let Some(map) = map.clone().fields_mut() {
+    //     let map = unsafe {
+    //         std::mem::transmute::<
+    //             &mut ISerializable,
+    //             &mut RedHashMap<CName, BaseRef<audioware_bank::SoundBankInfo>>,
+    //         >(map)
+    //     };
+    //     for (key, value) in BNKS.iter() {
+    //         let reference: Ref<audioware_bank::SoundBankInfo> =
+    //             Ref::new_with(|x: &mut audioware_bank::SoundBankInfo| {
+    //                 x.name = value.name;
+    //                 x.is_resident = value.is_resident;
+    //                 x.path = value.path.clone();
+    //             })
+    //             .unwrap();
+    //         let existing = map.insert(*key, reference.clone());
+    //     }
+    // }
 
     res
 }
