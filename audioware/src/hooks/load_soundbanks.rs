@@ -26,21 +26,20 @@ unsafe extern "C" fn detour(a1: i64, cb: unsafe extern "C" fn(a1: i64) -> bool) 
     crate::utils::lifecycle!("LoadSoundBanks called");
     let res = cb(a1);
 
-    let map = (a1 + 104) as i128;
-    let map = unsafe { std::mem::transmute::<i128, Ref<ISerializable>>(map) };
-    if let Some(map) = map.clone().fields_mut() {
-        let map = unsafe {
-            std::mem::transmute::<
-                &mut ISerializable,
-                &mut RedHashMap<CName, SharedPtr<audioware_bank::SoundBankInfo>>,
-            >(map)
-        };
-        for (key, value) in BNKS.iter() {
-            let reference = SharedPtr::new_with(value.clone());
-            let _ = map.insert(*key, reference);
-            if let Some(inserted) = map.get(key) {
-                crate::utils::lifecycle!("LoadSoundBanks inserted: {:?}", inserted.instance());
-            }
+    let map = a1 + 104;
+    let map = map as *mut RedHashMap<CName, Ref<audioware_bank::SoundBankInfo>>;
+    let map = unsafe { &mut *map };
+    for (key, value) in BNKS.iter() {
+        let reference: Ref<audioware_bank::SoundBankInfo> =
+            Ref::new_with(|x: &mut audioware_bank::SoundBankInfo| {
+                x.name = value.name;
+                x.is_resident = value.is_resident;
+                x.path = value.path.clone();
+            })
+            .unwrap();
+        let _ = map.insert(*key, reference.clone());
+        if let Some(inserted) = map.get(key) {
+            crate::utils::lifecycle!("LoadSoundBanks inserted: {:?}", inserted.fields());
         }
     }
 

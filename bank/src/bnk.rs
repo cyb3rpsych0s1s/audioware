@@ -1,5 +1,7 @@
 use red4ext_rs::{
-    class_kind::Native, types::{CName, ResRef}, NativeRepr, ScriptClass
+    class_kind::Native,
+    types::{CName, ResRef},
+    NativeRepr, ScriptClass,
 };
 
 use crate::Error;
