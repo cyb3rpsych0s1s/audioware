@@ -32,20 +32,14 @@ unsafe extern "C" fn detour(a1: i64, cb: unsafe extern "C" fn(a1: i64) -> bool) 
         let map = unsafe {
             std::mem::transmute::<
                 &mut ISerializable,
-                &mut RedHashMap<CName, Ref<audioware_bank::SoundBankInfo>>,
+                &mut RedHashMap<CName, SharedPtr<audioware_bank::SoundBankInfo>>,
             >(map)
         };
         for (key, value) in BNKS.iter() {
-            let reference: Ref<audioware_bank::SoundBankInfo> =
-                Ref::new_with(|x: &mut audioware_bank::SoundBankInfo| {
-                    x.name = value.name;
-                    x.is_resident = value.is_resident;
-                    x.path = value.path.clone();
-                })
-                .unwrap();
-            let _ = map.insert(*key, reference.clone());
+            let reference = SharedPtr::new_with(value.clone());
+            let _ = map.insert(*key, reference);
             if let Some(inserted) = map.get(key) {
-                crate::utils::lifecycle!("LoadSoundBanks inserted: {:?}", inserted.fields());
+                crate::utils::lifecycle!("LoadSoundBanks inserted: {:?}", inserted.instance());
             }
         }
     }

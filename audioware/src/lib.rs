@@ -154,7 +154,7 @@ impl Plugin for Audioware {
     #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
     fn exports() -> impl Exportable {
         exports![
-            ClassExport::<audioware_bank::SoundBankInfo>::builder().build(),
+            StructExport::<audioware_bank::SoundBankInfo>::builder().build(),
             StructExport::<EmitterDistances>::builder().build(),
             StructExport::<EmitterSettings>::builder().build(),
             GlobalExport(global!(c"Audioware.IsDebug", is_debug)),
