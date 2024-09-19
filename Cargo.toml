@@ -20,7 +20,7 @@ either = "1.13"
 glam = "0.29"
 kira = { version = "0.9.5", features = ["serde"] }
 rayon = "1.10"
-red4ext-rs = { path = "../red4ext-rs" }
+red4ext-rs = { git = "https://github.com/Roms1383/red4ext-rs", branch = "feat/shared-ptr" }
 # red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "v0.9.0" }
 # red4ext-rs-bindings = { git = "https://github.com/jac3km4/red4ext-rs-bindings", rev = "v0.3.0" }
 serde = "1.0"
