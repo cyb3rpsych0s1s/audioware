@@ -1,7 +1,6 @@
 use red4ext_rs::{
-    class_kind::Native,
     types::{CName, ResRef},
-    ScriptClass,
+    NativeRepr,
 };
 
 use crate::Error;
@@ -14,8 +13,7 @@ pub struct SoundBankInfo {
     pub path: ResRef,
 }
 
-unsafe impl ScriptClass for SoundBankInfo {
-    type Kind = Native;
+unsafe impl NativeRepr for SoundBankInfo {
     const NAME: &'static str = "SoundBankInfo";
 }
 

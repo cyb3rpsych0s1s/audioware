@@ -5,7 +5,7 @@ use audioware_manifest::SoundBankInfo;
 use red4ext_rs::{
     addr_hashes::{self, resolve},
     hooks,
-    types::{CName, CNamePool, IScriptable, ISerializable, RedHashMap, Ref},
+    types::{CName, CNamePool, IScriptable, ISerializable, RedHashMap, Ref, SharedPtr},
     RttiSystemMut, SdkEnv,
 };
 
@@ -27,16 +27,14 @@ unsafe extern "C" fn detour(a1: i64, cb: unsafe extern "C" fn(a1: i64) -> bool) 
     let res = cb(a1);
 
     let map = a1 + 104;
-    let map = map as *mut RedHashMap<CName, Ref<audioware_bank::SoundBankInfo>>;
+    let map = map as *mut RedHashMap<CName, SharedPtr<audioware_bank::SoundBankInfo>>;
     let map = unsafe { &mut *map };
     for (key, value) in BNKS.iter() {
-        let reference = Ref::new_with(|x: &mut audioware_bank::SoundBankInfo| {
-            x.name = value.name;
-            x.is_resident = value.is_resident;
-            x.path = value.path.clone();
-        })
-        .unwrap();
+        let reference = SharedPtr::new_with(value.clone());
         let _ = map.insert(*key, reference);
+        if let Some(inserted) = map.get(key) {
+            crate::utils::lifecycle!("LoadSoundBanks inserted: {:?}", inserted);
+        }
     }
 
     res
