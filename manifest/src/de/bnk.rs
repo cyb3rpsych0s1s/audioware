@@ -36,7 +36,7 @@ pub struct AudioEventArray {
     pub switch_group: Option<Vec<AudioEventMetadataArrayElement>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AudioEventMetadataArrayElement {
     pub is_looping: Option<bool>,

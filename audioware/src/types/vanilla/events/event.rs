@@ -6,7 +6,10 @@ use red4ext_rs::{
     NativeRepr, ScriptClass,
 };
 
-use crate::error::Error;
+use crate::{
+    error::Error,
+    types::{AsReflection, AsReflectionClass, Reflection},
+};
 
 #[derive(Debug)]
 #[repr(transparent)]
@@ -450,7 +453,7 @@ const PADDING_4C_BIS: usize = 0x50 - 0x4C;
 #[derive(Debug)]
 #[repr(C)]
 pub struct AudioEventMetadataArrayElement {
-    base: ISerializable,
+    pub base: ISerializable,
     pub red_id: CName,                       // 30
     pub wwise_id: u32,                       // 38
     pub max_attenuation: f32,                // 3C
@@ -461,6 +464,52 @@ pub struct AudioEventMetadataArrayElement {
     unk4c: [u8; PADDING_4C_BIS],             // 4C
     pub stop_action_events: RedArray<CName>, // 50
     pub tags: RedArray<CName>,               // 60
+}
+
+impl AudioEventMetadataArrayElement {
+    pub fn new(
+        audioware_manifest::AudioEventMetadataArrayElement {
+            red_id,
+            wwise_id,
+            max_attenuation,
+            is_looping,
+            min_duration,
+            max_duration,
+            stop_action_events,
+            tags,
+            ..
+        }: audioware_manifest::AudioEventMetadataArrayElement,
+    ) -> Self {
+        let handle = Reflection::get_class(CName::new(<Self as NativeRepr>::NAME)).make_handle();
+        let reference = unsafe { handle.instance() }.unwrap();
+        let red_id = CName::new(&red_id);
+        let me = Self {
+            base: unsafe { std::ptr::read(reference) },
+            red_id,
+            wwise_id,
+            max_attenuation: max_attenuation.unwrap_or_default(),
+            is_looping: is_looping.unwrap_or_default(),
+            min_duration: min_duration.unwrap_or_default(),
+            max_duration: max_duration.unwrap_or_default(),
+            stop_action_events: RedArray::from_iter(
+                stop_action_events
+                    .unwrap_or_default()
+                    .iter()
+                    .map(String::as_str)
+                    .map(CName::new),
+            ),
+            tags: RedArray::from_iter(
+                tags.unwrap_or_default()
+                    .iter()
+                    .map(String::as_str)
+                    .map(CName::new),
+            ),
+            unk41: [0; PADDING_41_BIS],
+            unk4c: [0; PADDING_4C_BIS],
+        };
+        std::mem::forget(handle);
+        me
+    }
 }
 
 unsafe impl NativeRepr for AudioEventMetadataArrayElement {
