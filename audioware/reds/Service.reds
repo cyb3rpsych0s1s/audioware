@@ -47,6 +47,7 @@ class AudiowareService extends ScriptableService {
         let resource: ref<JsonResource> = event.GetResource() as JsonResource;
         let root: ref<audioAudioEventArray> = resource.root as audioAudioEventArray;
         FTLog(AsRef(s"json resource has \(ToString(ArraySize(root.events))) entries"));
+        AddEvents(root);
     }
 
     private cb func OnSessionChange(event: ref<GameSessionEvent>) {

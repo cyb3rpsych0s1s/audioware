@@ -182,7 +182,7 @@ impl Banks {
         let mut gender_settings: HashMap<GenderKey, Settings> = HashMap::new();
         let mut single_settings: HashMap<LocaleKey, Settings> = HashMap::new();
         let mut dual_settings: HashMap<BothKey, Settings> = HashMap::new();
-        let mut bnks: HashMap<CName, crate::bnk::SoundBankInfo> = HashMap::new();
+        let mut bnks: HashMap<CName, crate::bnk::SoundBank> = HashMap::new();
         let mut bnks_count: usize = 0;
 
         for m in mods {

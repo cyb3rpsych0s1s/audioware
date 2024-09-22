@@ -17,6 +17,8 @@ pub enum Error {
     Engine { source: EngineError },
     #[snafu(display("Scene error: {source}"))]
     Scene { source: SceneError },
+    #[snafu(display("Reference error"))]
+    Reference,
 }
 
 #[derive(Debug, Snafu)]

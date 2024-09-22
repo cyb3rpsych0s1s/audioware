@@ -3,7 +3,7 @@
 
 use std::sync::OnceLock;
 
-use audioware_bank::{Banks, Initialization};
+use audioware_bank::{Banks, Initialization, BNKS};
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::{
     commands::{Command, Lifecycle},
@@ -18,7 +18,10 @@ use red4ext_rs::{
     RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, StructExport, U16CStr,
 };
 use states::{GameState, State, ToggleState};
-use types::{AsAudioSystem, AudioSystem, EmitterDistances, EmitterSettings};
+use types::{
+    AsAudioSystem, AudioEventArray, AudioEventMetadataArrayElement, AudioSystem, EmitterDistances,
+    EmitterSettings,
+};
 use utils::{plog_error, plog_info, plog_warn};
 
 mod config;
@@ -184,6 +187,7 @@ impl Plugin for Audioware {
             GlobalExport(global!(c"Audioware.SetReverbMix", set_reverb_mix)),
             GlobalExport(global!(c"Audioware.SetPreset", set_preset)),
             GlobalExport(global!(c"Audioware.SetVolume", set_volume)),
+            GlobalExport(global!(c"Audioware.AddEvents", add_events)),
             ClassExport::<AudioSystemExt>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![
@@ -531,4 +535,58 @@ fn whoami(cname_hash: u64) {
     let env = Audioware::env();
     let cname = CName::from(cname_hash);
     log::info!(env, "whoami: {}", cname.as_str());
+}
+
+#[rustfmt::skip]
+fn add_events(mut events_metadata: Ref<AudioEventArray>) {
+    if events_metadata.is_null() {
+        return;
+    }
+    let bus_count = Banks::bus_count();
+    let events_count = Banks::events_count();
+    let game_parameter_count = Banks::game_parameter_count();
+    let state_count = Banks::state_count();
+    let state_group_count = Banks::state_group_count();
+    let switch_count = Banks::switch_count();
+    let switch_group_count = Banks::switch_group_count();
+
+    if (bus_count
+        + events_count
+        + game_parameter_count
+        + state_count
+        + state_group_count
+        + switch_count
+        + switch_group_count)
+        > 0
+    {
+        if let Some(fields) = unsafe {events_metadata.fields_mut()} {
+            if bus_count > 0 { fields.bus.reserve(bus_count as u32); }
+            if events_count > 0 { fields.events.reserve(events_count as u32); }
+            if game_parameter_count > 0 { fields.game_parameter.reserve(game_parameter_count as u32); }
+            if state_count > 0 { fields.state.reserve(state_count as u32); }
+            if state_group_count > 0 { fields.state_group.reserve(state_group_count as u32); }
+            if switch_count > 0 { fields.switch.reserve(switch_count as u32); }
+            if switch_group_count > 0 { fields.switch_group.reserve(switch_group_count as u32); }
+            
+            for elem in Banks::bus_metadata() {
+                if let Some(reference) = Ref::<AudioEventMetadataArrayElement>::new_with(|x| {}) {
+                //     if let Some(instance) = unsafe { reference.instance() } {
+                //         fields.bus.push(AudioEventMetadataArrayElement {
+                //             base: todo!(),
+                //             red_id: todo!(),
+                //             wwise_id: todo!(),
+                //             max_attenuation: todo!(),
+                //             is_looping: todo!(),
+                //             unk41: todo!(),
+                //             min_duration: todo!(),
+                //             max_duration: todo!(),
+                //             unk4c: todo!(),
+                //             stop_action_events: todo!(),
+                //             tags: todo!() })
+                //     }
+                }
+
+            }
+        }
+    }
 }

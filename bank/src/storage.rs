@@ -13,11 +13,12 @@ use either::Either;
 use kira::sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError};
 
 use audioware_manifest::{
-    DialogLine, Locale, PlayerGender, Settings as ManifestSettings, WrittenLocale,
+    AudioEventMetadataArrayElement, DialogLine, Locale, PlayerGender, Settings as ManifestSettings,
+    WrittenLocale,
 };
 use red4ext_rs::types::CName;
 
-use crate::{bnk::SoundBankInfo, Banks, BothKey, GenderKey, Id, Key, LocaleKey, UniqueKey, Usage};
+use crate::{Banks, BothKey, GenderKey, Id, Key, LocaleKey, SoundBank, UniqueKey, Usage};
 
 pub trait BankData {
     type Key;
@@ -118,7 +119,7 @@ pub(super) static MUL_SET: OnceStorage<BothKey, ManifestSettings> = OnceStorage:
 pub(super) static LOC_SUB: OnceStorage<LocaleKey, DialogLine> = OnceStorage::new();
 pub(super) static MUL_SUB: OnceStorage<BothKey, DialogLine> = OnceStorage::new();
 
-pub static BNKS: OnceStorage<CName, SoundBankInfo> = OnceStorage::new();
+pub static BNKS: OnceStorage<CName, SoundBank> = OnceStorage::new();
 
 impl BankSettings for Banks {
     type Key = Id;
@@ -232,4 +233,67 @@ impl Package for HashMap<BothKey, DialogLine> {
         }
         out
     }
+}
+
+macro_rules! count_metadata {
+    ($metadata:ident) => {
+        BNKS.iter().fold(0, |acc, (k, v)| {
+            acc + v
+                .metadata
+                .as_ref()
+                .and_then(|x| x.$metadata.as_ref().map(|x| x.len()))
+                .unwrap_or(0)
+        })
+    };
+}
+
+impl Banks {
+    pub fn bus_count() -> usize {
+        count_metadata!(bus)
+    }
+    pub fn events_count() -> usize {
+        count_metadata!(events)
+    }
+    pub fn game_parameter_count() -> usize {
+        count_metadata!(game_parameter)
+    }
+    pub fn state_count() -> usize {
+        count_metadata!(state)
+    }
+    pub fn state_group_count() -> usize {
+        count_metadata!(state_group)
+    }
+    pub fn switch_count() -> usize {
+        count_metadata!(switch)
+    }
+    pub fn switch_group_count() -> usize {
+        count_metadata!(switch_group)
+    }
+}
+
+macro_rules! metadata_ref {
+    ($metadata:ident, $count:ident) => {{
+        let mut references = Vec::with_capacity(Self::$count());
+        for (_, v) in BNKS.iter() {
+            if let Some(x) = v.metadata.as_ref() {
+                if let Some(x) = x.$metadata.as_ref() {
+                    for elem in x.iter() {
+                        references.push(elem);
+                    }
+                }
+            }
+        }
+        references
+    }};
+}
+
+#[rustfmt::skip]
+impl Banks {
+    pub fn bus_metadata<'a>() -> Vec<&'a AudioEventMetadataArrayElement> { metadata_ref!(bus, bus_count) }
+    pub fn events_metadata<'a>() -> Vec<&'a AudioEventMetadataArrayElement> { metadata_ref!(events, events_count) }
+    pub fn game_parameter_metadata<'a>() -> Vec<&'a AudioEventMetadataArrayElement> { metadata_ref!(game_parameter, game_parameter_count) }
+    pub fn state_metadata<'a>() -> Vec<&'a AudioEventMetadataArrayElement> { metadata_ref!(state, state_count) }
+    pub fn state_group_metadata<'a>() -> Vec<&'a AudioEventMetadataArrayElement> { metadata_ref!(state_group, state_group_count) }
+    pub fn switch_metadata<'a>() -> Vec<&'a AudioEventMetadataArrayElement> { metadata_ref!(switch, switch_count) }
+    pub fn switch_group_metadata<'a>() -> Vec<&'a AudioEventMetadataArrayElement> { metadata_ref!(switch_group, switch_group_count) }
 }

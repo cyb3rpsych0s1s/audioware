@@ -6,6 +6,8 @@ use red4ext_rs::{
     NativeRepr, ScriptClass,
 };
 
+use crate::error::Error;
+
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct Event(IScriptable);
@@ -463,4 +465,9 @@ pub struct AudioEventMetadataArrayElement {
 
 unsafe impl NativeRepr for AudioEventMetadataArrayElement {
     const NAME: &'static str = "audioAudioEventMetadataArrayElement";
+}
+
+unsafe impl ScriptClass for AudioEventMetadataArrayElement {
+    type Kind = Native;
+    const NAME: &'static str = <Self as NativeRepr>::NAME;
 }

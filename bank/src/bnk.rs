@@ -6,6 +6,11 @@ use red4ext_rs::{
 
 use crate::Error;
 
+pub struct SoundBank {
+    pub info: SoundBankInfo,
+    pub metadata: Option<audioware_manifest::AudioEventArray>,
+}
+
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
 pub struct SoundBankInfo {
@@ -23,18 +28,18 @@ unsafe impl NativeRepr for SoundBankInfo {
     const NAME: &'static str = "SoundBankInfo";
 }
 
-impl TryFrom<(CName, audioware_manifest::SoundBankInfo)> for self::SoundBankInfo {
+impl<'a> TryFrom<(CName, &'a audioware_manifest::SoundBankInfo)> for self::SoundBankInfo {
     type Error = Error;
 
     fn try_from(
-        (key, value): (CName, audioware_manifest::SoundBankInfo),
+        (key, value): (CName, &'a audioware_manifest::SoundBankInfo),
     ) -> Result<Self, Self::Error> {
         Ok(Self {
             name: key,
             is_resident: value.is_resident,
             path: ResRef::new(value.path.clone()).map_err(|_| {
                 Error::from(crate::error::validation::Error::InvalidResourcePath {
-                    path: value.path,
+                    path: value.path.clone(),
                 })
             })?,
         })

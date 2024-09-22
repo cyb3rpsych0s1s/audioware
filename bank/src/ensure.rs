@@ -22,7 +22,7 @@ use snafu::ensure;
 
 use crate::{
     error::validation::{self, *},
-    Id,
+    Id, SoundBank,
 };
 
 use super::{
@@ -348,9 +348,12 @@ pub fn ensure_store_settings<T: PartialEq + Eq + Hash + Clone>(
 pub fn ensure_store_bnk(
     key: &CName,
     value: audioware_manifest::SoundBankInfo,
-    store: &mut HashMap<CName, crate::bnk::SoundBankInfo>,
+    store: &mut HashMap<CName, SoundBank>,
 ) -> Result<(), Error> {
-    let value = crate::bnk::SoundBankInfo::try_from((*key, value))?;
+    let value = SoundBank {
+        info: crate::bnk::SoundBankInfo::try_from((*key, &value))?,
+        metadata: value.metadata,
+    };
     ensure!(store.insert(*key, value).is_none(), CannotStoreBnkSnafu);
     Ok(())
 }
@@ -620,8 +623,8 @@ pub fn ensure_jingles<'a>(
 /// Ensure `.bnk` guarantees are partially upheld (since not all can).
 pub fn ensure_bnk<'a>(
     k: &'a str,
-    v: SoundBankInfo,
-    map: &'a mut HashMap<CName, crate::bnk::SoundBankInfo>,
+    v: audioware_manifest::SoundBankInfo,
+    map: &'a mut HashMap<CName, crate::bnk::SoundBank>,
     set: &'a mut HashSet<Id>,
 ) -> Result<(), Error> {
     ensure_key_unique(k)?;
