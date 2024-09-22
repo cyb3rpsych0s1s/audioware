@@ -3,7 +3,7 @@
 
 use std::sync::OnceLock;
 
-use audioware_bank::{Banks, Initialization, BNKS};
+use audioware_bank::{Banks, Initialization};
 use audioware_manifest::{PlayerGender, SpokenLocale, WrittenLocale};
 use engine::{
     commands::{Command, Lifecycle},
@@ -14,13 +14,13 @@ use hooks::*;
 use red4ext_rs::{
     export_plugin_symbols, exports, global, log, methods, static_methods,
     types::{CName, EntityId, GameEngine, IScriptable, Opt, Ref},
-    wcstr, ClassExport, Exportable, GameApp, GlobalExport, Plugin, PluginOps, RttiRegistrator,
-    RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, StructExport, U16CStr,
+    wcstr, ClassExport, Exportable, GameApp, GlobalExport, NativeRepr, Plugin, PluginOps,
+    RttiRegistrator, RttiSystem, ScriptClass, SdkEnv, SemVer, StateListener, StructExport, U16CStr,
 };
 use states::{GameState, State, ToggleState};
 use types::{
-    AsAudioSystem, AudioEventArray, AudioEventMetadataArrayElement, AudioSystem, EmitterDistances,
-    EmitterSettings,
+    AsAudioSystem, AsReflection, AudioEventArray, AudioEventMetadataArrayElement, AudioSystem,
+    EmitterDistances, EmitterSettings,
 };
 use utils::{plog_error, plog_info, plog_warn};
 
@@ -559,34 +559,24 @@ fn add_events(mut events_metadata: Ref<AudioEventArray>) {
         + switch_group_count)
         > 0
     {
-        if let Some(fields) = unsafe {events_metadata.fields_mut()} {
-            if bus_count > 0 { fields.bus.reserve(bus_count as u32); }
-            if events_count > 0 { fields.events.reserve(events_count as u32); }
-            if game_parameter_count > 0 { fields.game_parameter.reserve(game_parameter_count as u32); }
-            if state_count > 0 { fields.state.reserve(state_count as u32); }
-            if state_group_count > 0 { fields.state_group.reserve(state_group_count as u32); }
-            if switch_count > 0 { fields.switch.reserve(switch_count as u32); }
-            if switch_group_count > 0 { fields.switch_group.reserve(switch_group_count as u32); }
+        if let Some(array) = unsafe { events_metadata.fields_mut() } {
+            if bus_count > 0            { array.bus.reserve(bus_count as u32); }
+            if events_count > 0         { array.events.reserve(events_count as u32); }
+            if game_parameter_count > 0 { array.game_parameter.reserve(game_parameter_count as u32); }
+            if state_count > 0          { array.state.reserve(state_count as u32); }
+            if state_group_count > 0    { array.state_group.reserve(state_group_count as u32); }
+            if switch_count > 0         { array.switch.reserve(switch_count as u32); }
+            if switch_group_count > 0   { array.switch_group.reserve(switch_group_count as u32); }
             
-            for elem in Banks::bus_metadata() {
-                if let Some(reference) = Ref::<AudioEventMetadataArrayElement>::new_with(|x| {}) {
-                //     if let Some(instance) = unsafe { reference.instance() } {
-                //         fields.bus.push(AudioEventMetadataArrayElement {
-                //             base: todo!(),
-                //             red_id: todo!(),
-                //             wwise_id: todo!(),
-                //             max_attenuation: todo!(),
-                //             is_looping: todo!(),
-                //             unk41: todo!(),
-                //             min_duration: todo!(),
-                //             max_duration: todo!(),
-                //             unk4c: todo!(),
-                //             stop_action_events: todo!(),
-                //             tags: todo!() })
-                //     }
-                }
-
-            }
+            for e in Banks::bus_metadata()            { array.bus.push(AudioEventMetadataArrayElement::new(e.clone())); }
+            for e in Banks::events_metadata()         { array.events.push(AudioEventMetadataArrayElement::new(e.clone())); }
+            for e in Banks::game_parameter_metadata() { array.game_parameter.push(AudioEventMetadataArrayElement::new(e.clone())); }
+            for e in Banks::state_metadata()          { array.state.push(AudioEventMetadataArrayElement::new(e.clone())); }
+            for e in Banks::state_group_metadata()    { array.state_group.push(AudioEventMetadataArrayElement::new(e.clone())); }
+            for e in Banks::switch_metadata()         { array.switch.push(AudioEventMetadataArrayElement::new(e.clone())); }
+            for e in Banks::switch_group_metadata()   { array.switch_group.push(AudioEventMetadataArrayElement::new(e.clone())); }
+        } else {
+            log::error!(Audioware::env(), "unable to add metadata events");
         }
     }
 }
