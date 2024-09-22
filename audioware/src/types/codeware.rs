@@ -4,8 +4,8 @@ use red4ext_rs::{
     call,
     class_kind::{Native, Scripted},
     log,
-    types::{CName, Class, EntityId, IScriptable, Ref, ResRef, TweakDbId},
-    PluginOps, RttiSystem, ScriptClass,
+    types::{CName, Class, EntityId, IScriptable, ISerializable, Ref, ResRef, TweakDbId},
+    NativeRepr, PluginOps, RttiSystem, ScriptClass,
 };
 
 use crate::Audioware;
@@ -97,6 +97,71 @@ impl AsResourceEvent for Ref<ResourceEvent> {
         method
             .as_function()
             .execute::<_, Ref<CResource>>(unsafe { self.instance() }.map(AsRef::as_ref), ())
+            .unwrap()
+    }
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct Reflection;
+
+unsafe impl NativeRepr for Reflection {
+    const NAME: &'static str = "Reflection";
+}
+
+pub trait AsReflection {
+    fn get_class(name: CName) -> Ref<ReflectionClass>;
+}
+
+impl AsReflection for Reflection {
+    fn get_class(name: CName) -> Ref<ReflectionClass> {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(Reflection::NAME)).unwrap();
+        let method = cls
+            .static_methods()
+            .iter()
+            .find(|x| x.as_function().name() == CName::new("GetClass"))
+            .unwrap();
+        method
+            .as_function()
+            .execute::<_, Ref<ReflectionClass>>(None, (name,))
+            .unwrap()
+    }
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct ReflectionClass {
+    base: IScriptable,
+}
+
+unsafe impl ScriptClass for ReflectionClass {
+    type Kind = Native;
+    const NAME: &'static str = "ReflectionClass";
+}
+
+pub trait AsReflectionClass {
+    fn make_handle(&self) -> Ref<ISerializable>;
+}
+
+impl AsRef<IScriptable> for ReflectionClass {
+    fn as_ref(&self) -> &IScriptable {
+        &self.base
+    }
+}
+
+impl AsReflectionClass for Ref<ReflectionClass> {
+    fn make_handle(&self) -> Ref<ISerializable> {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(ReflectionClass::NAME)).unwrap();
+        let method = cls
+            .methods()
+            .iter()
+            .find(|x| x.as_function().short_name() == CName::new("MakeHandle"))
+            .unwrap();
+        method
+            .as_function()
+            .execute::<_, Ref<ISerializable>>(unsafe { self.instance() }.map(AsRef::as_ref), ())
             .unwrap()
     }
 }
