@@ -395,15 +395,15 @@ const PADDING_31: usize = 0x38 - 0x31;
 #[repr(C)]
 pub struct AudioEventArray {
     base: ISerializable,
-    pub is_sorted_by_red_hash: bool,
-    unk31: [u8; PADDING_31],
-    pub events: RedArray<AudioEventMetadataArrayElement>,
-    pub switch_group: RedArray<AudioEventMetadataArrayElement>,
-    pub switch: RedArray<AudioEventMetadataArrayElement>,
-    pub state_group: RedArray<AudioEventMetadataArrayElement>,
-    pub state: RedArray<AudioEventMetadataArrayElement>,
-    pub game_parameter: RedArray<AudioEventMetadataArrayElement>,
-    pub bus: RedArray<AudioEventMetadataArrayElement>,
+    pub is_sorted_by_red_hash: bool,                            // 30
+    unk31: [u8; PADDING_31],                                    // 31
+    pub events: RedArray<AudioEventMetadataArrayElement>,       // 38
+    pub switch_group: RedArray<AudioEventMetadataArrayElement>, // 48
+    pub switch: RedArray<AudioEventMetadataArrayElement>,       // 58
+    pub state_group: RedArray<AudioEventMetadataArrayElement>,  // 68
+    pub state: RedArray<AudioEventMetadataArrayElement>,        // 78
+    pub game_parameter: RedArray<AudioEventMetadataArrayElement>, // 88
+    pub bus: RedArray<AudioEventMetadataArrayElement>,          // 98
 }
 
 impl fmt::Debug for AudioEventArray {
@@ -427,14 +427,14 @@ const PADDING_41: usize = 0x48 - 0x41;
 #[repr(C)]
 pub struct AudioEventMetadata {
     base: ISerializable,
-    pub wwise_id: u32,
-    pub max_attenuation: f32,
-    pub min_duration: f32,
-    pub max_duration: f32,
-    pub is_looping: bool,
-    unk41: [u8; PADDING_41],
-    pub stop_action_events: RedArray<CName>,
-    pub tags: RedArray<CName>,
+    pub wwise_id: u32,                       // 30
+    pub max_attenuation: f32,                // 34
+    pub min_duration: f32,                   // 38
+    pub max_duration: f32,                   // 3C
+    pub is_looping: bool,                    // 40
+    unk41: [u8; PADDING_41],                 // 41
+    pub stop_action_events: RedArray<CName>, // 48
+    pub tags: RedArray<CName>,               // 58
 }
 
 unsafe impl ScriptClass for AudioEventMetadata {
@@ -449,16 +449,16 @@ const PADDING_4C_BIS: usize = 0x50 - 0x4C;
 #[repr(C)]
 pub struct AudioEventMetadataArrayElement {
     base: ISerializable,
-    pub red_id: CName,
-    pub wwise_id: u32,
-    pub max_attenuation: f32,
-    pub is_looping: bool,
-    unk41: [u8; PADDING_41_BIS],
-    pub min_duration: f32,
-    pub max_duration: f32,
-    unk4c: [u8; PADDING_4C_BIS],
-    pub stop_action_events: RedArray<CName>,
-    pub tags: RedArray<CName>,
+    pub red_id: CName,                       // 30
+    pub wwise_id: u32,                       // 38
+    pub max_attenuation: f32,                // 3C
+    pub is_looping: bool,                    // 40
+    unk41: [u8; PADDING_41_BIS],             // 41
+    pub min_duration: f32,                   // 44
+    pub max_duration: f32,                   // 48
+    unk4c: [u8; PADDING_4C_BIS],             // 4C
+    pub stop_action_events: RedArray<CName>, // 50
+    pub tags: RedArray<CName>,               // 60
 }
 
 unsafe impl NativeRepr for AudioEventMetadataArrayElement {
