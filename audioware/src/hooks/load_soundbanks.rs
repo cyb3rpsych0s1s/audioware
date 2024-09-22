@@ -31,7 +31,7 @@ unsafe extern "C" fn detour(a1: i64, cb: unsafe extern "C" fn(a1: i64) -> bool) 
     let map = unsafe { &mut *map };
     for (key, value) in BNKS.iter() {
         let reference = SharedPtr::new_with(value.clone());
-        let _ = map.insert(*key, reference.clone());
+        let _ = map.insert(*key, reference);
         if let Some(inserted) = map.get(key) {
             crate::utils::lifecycle!("LoadSoundBanks inserted: {:?}", inserted);
         }
