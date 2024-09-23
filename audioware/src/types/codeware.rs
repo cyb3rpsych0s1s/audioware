@@ -81,6 +81,7 @@ impl AsRef<IScriptable> for ResourceEvent {
     }
 }
 
+#[allow(dead_code)]
 pub trait AsResourceEvent {
     fn get_resource(&self) -> Ref<CResource>;
 }
@@ -109,6 +110,7 @@ unsafe impl NativeRepr for Reflection {
     const NAME: &'static str = "Reflection";
 }
 
+#[allow(dead_code)]
 pub trait AsReflection {
     fn get_class(name: CName) -> Ref<ReflectionClass>;
 }
@@ -140,6 +142,7 @@ unsafe impl ScriptClass for ReflectionClass {
     const NAME: &'static str = "ReflectionClass";
 }
 
+#[allow(dead_code)]
 pub trait AsReflectionClass {
     fn make_handle(&self) -> Ref<ISerializable>;
 }

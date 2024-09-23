@@ -46,8 +46,6 @@ private native func SetReverbMix(value: Float) -> Void;
 private native func SetPreset(value: Preset) -> Void;
 private native func SetVolume(setting: CName, value: Double) -> Void;
 
-private native func AddEvents(eventsMetadata: ref<audioAudioEventArray>) -> Void;
-
 enum GameState {
     Load = 0,
     Menu = 1,

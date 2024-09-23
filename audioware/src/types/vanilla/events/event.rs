@@ -1,14 +1,14 @@
-use std::fmt;
+use std::{ffi::CStr, fmt};
 
 use red4ext_rs::{
     class_kind::Native,
-    types::{CName, IScriptable, ISerializable, RedArray, Ref},
+    types::{CName, CNamePool, IScriptable, ISerializable, RedArray, Ref},
     NativeRepr, ScriptClass,
 };
 
 use crate::{
     error::Error,
-    types::{AsReflection, AsReflectionClass, Reflection},
+    types::{AsReflection, AsReflectionClass, Reflection, ReflectionClass},
 };
 
 #[derive(Debug)]
@@ -480,35 +480,69 @@ impl AudioEventMetadataArrayElement {
             ..
         }: audioware_manifest::AudioEventMetadataArrayElement,
     ) -> Self {
-        let handle = Reflection::get_class(CName::new(<Self as NativeRepr>::NAME)).make_handle();
-        let reference = unsafe { handle.instance() }.unwrap();
-        let red_id = CName::new(&red_id);
-        let me = Self {
-            base: unsafe { std::ptr::read(reference) },
-            red_id,
-            wwise_id,
-            max_attenuation: max_attenuation.unwrap_or_default(),
-            is_looping: is_looping.unwrap_or_default(),
-            min_duration: min_duration.unwrap_or_default(),
-            max_duration: max_duration.unwrap_or_default(),
-            stop_action_events: RedArray::from_iter(
-                stop_action_events
-                    .unwrap_or_default()
-                    .iter()
-                    .map(String::as_str)
-                    .map(CName::new),
-            ),
-            tags: RedArray::from_iter(
-                tags.unwrap_or_default()
-                    .iter()
-                    .map(String::as_str)
-                    .map(CName::new),
-            ),
-            unk41: [0; PADDING_41_BIS],
-            unk4c: [0; PADDING_4C_BIS],
-        };
+        let handle = Reflection::get_class(CName::new(<Self as ScriptClass>::NAME))
+            .make_handle()
+            .cast::<Self>()
+            .unwrap();
+        let mut instance = unsafe { std::ptr::read(handle.instance().unwrap()) };
+        let red = CName::new(&red_id);
+        if red.as_str() == "" {
+            let c_string = std::ffi::CString::new(red_id).unwrap();
+            CNamePool::add_cstr(&c_string);
+        }
+        instance.red_id = red;
+        instance.wwise_id = wwise_id;
+        instance.max_attenuation = max_attenuation.unwrap_or_default();
+        instance.is_looping = is_looping.unwrap_or_default();
+        instance.min_duration = min_duration.unwrap_or_default();
+        instance.max_duration = max_duration.unwrap_or_default();
+        instance.stop_action_events = RedArray::from_iter(
+            stop_action_events
+                .unwrap_or_default()
+                .iter()
+                .map(String::as_str)
+                .map(CName::new),
+        );
+        instance.tags = RedArray::from_iter(
+            tags.unwrap_or_default()
+                .iter()
+                .map(String::as_str)
+                .map(CName::new),
+        );
         std::mem::forget(handle);
-        me
+        let boxes = Box::leak(Box::new(instance));
+        todo!()
+        // if let Some(x) = unsafe { handle.fields_mut() } {
+        //     let red = CName::new(&red_id);
+        //     if red.as_str() == "" {
+        //         let c_string = std::ffi::CString::new(red_id).unwrap();
+        //         CNamePool::add_cstr(&c_string);
+        //     }
+        //     x.red_id = red;
+        //     x.wwise_id = wwise_id;
+        //     x.max_attenuation = max_attenuation.unwrap_or_default();
+        //     x.is_looping = is_looping.unwrap_or_default();
+        //     x.min_duration = min_duration.unwrap_or_default();
+        //     x.max_duration = max_duration.unwrap_or_default();
+        //     x.stop_action_events = RedArray::from_iter(
+        //         stop_action_events
+        //             .unwrap_or_default()
+        //             .iter()
+        //             .map(String::as_str)
+        //             .map(CName::new),
+        //     );
+        //     x.tags = RedArray::from_iter(
+        //         tags.unwrap_or_default()
+        //             .iter()
+        //             .map(String::as_str)
+        //             .map(CName::new),
+        //     );
+        // }
+        // let instance = unsafe { handle.instance() }.unwrap();
+        // let instance = Box::new(unsafe { std::ptr::read(instance) });
+        // let instance = Box::leak(instance);
+        // std::mem::forget(handle);
+        // unsafe{*instance}
     }
 }
 

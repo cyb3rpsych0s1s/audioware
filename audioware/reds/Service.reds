@@ -27,8 +27,7 @@ class AudiowareService extends ScriptableService {
             .RegisterCallback(n"Session/End", this, n"OnSessionChange");
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Resource/Loaded", this, n"OnResourceLoaded")
-            .AddTarget(ResourceTarget.Path(r"base\\sound\\event\\eventsmetadata.json"))
-            .SetRunMode(CallbackRunMode.Once);
+            .AddTarget(ResourceTarget.Path(r"base\\sound\\event\\eventsmetadata.json"));
         // main menu (pre-game)
         GameInstance.GetCallbackSystem()
             .RegisterCallback(n"Resource/Ready", this, n"OnMainMenuResourceReady")
@@ -45,9 +44,33 @@ class AudiowareService extends ScriptableService {
     private cb func OnResourceLoaded(event: ref<ResourceEvent>) {
         FTLog(AsRef(s"on resource loaded"));
         let resource: ref<JsonResource> = event.GetResource() as JsonResource;
-        let root: ref<audioAudioEventArray> = resource.root as audioAudioEventArray;
-        FTLog(AsRef(s"json resource has \(ToString(ArraySize(root.events))) entries"));
-        AddEvents(root);
+        let play: audioAudioEventMetadataArrayElement;
+        play.isLooping = false;
+        play.maxAttenuation = 0;
+        play.maxDuration = 0;
+        play.minDuration = 0;
+        play.redId = n"mus_lizzies_bds_music_01_play";
+        play.wwiseId = 2519536634u;
+        play.stopActionEvents = [];
+        play.tags = [];
+        let stop: audioAudioEventMetadataArrayElement;
+        stop.isLooping = false;
+        stop.maxAttenuation = 0;
+        stop.maxDuration = 0;
+        stop.minDuration = 0;
+        stop.redId = n"mus_lizzies_bds_music_01_stop";
+        stop.wwiseId = 3960092164u;
+        stop.stopActionEvents = [];
+        stop.tags = [];
+        
+        let before = ArraySize((resource.root as audioAudioEventArray).events);
+        FTLog(AsRef(s"before modifications, root.events size is: \(ToString(before))"));
+
+        ArrayInsert((resource.root as audioAudioEventArray).events, 0, stop);
+        ArrayInsert((resource.root as audioAudioEventArray).events, 0, play);
+
+        let after = ArraySize((resource.root as audioAudioEventArray).events);
+        FTLog(AsRef(s"after modifications, root.events size is: \(ToString(after))"));
     }
 
     private cb func OnSessionChange(event: ref<GameSessionEvent>) {

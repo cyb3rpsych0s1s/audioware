@@ -237,7 +237,7 @@ impl Package for HashMap<BothKey, DialogLine> {
 
 macro_rules! count_metadata {
     ($metadata:ident) => {
-        BNKS.iter().fold(0, |acc, (k, v)| {
+        BNKS.iter().fold(0, |acc, (_, v)| {
             acc + v
                 .metadata
                 .as_ref()
