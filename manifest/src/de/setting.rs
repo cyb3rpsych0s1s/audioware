@@ -275,6 +275,10 @@ mod tests {
     #[test_case(r##"settings:
     start_time: 120ms"## ; "start time")]
     #[test_case(r##"settings:
+    playback_rate: 2♯"## ; "playback rate with sharp semitones")]
+    #[test_case(r##"settings:
+    playback_rate: 2♭"## ; "playback rate with flat semitones")]
+    #[test_case(r##"settings:
     region:
         ends: 8s"## ; "region with only ends specified")]
     #[test_case(r##"settings:
