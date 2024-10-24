@@ -91,11 +91,13 @@ impl Manager {
                 let mut manager =
                     AudioManager::new(manager_settings).expect("instantiate audio manager");
                 Modulators::setup(&mut manager).expect("modulators");
-                let (sc, rc) = bounded::<OuterCommand>(commands_capacity);
-                let (sl, rl) = bounded::<Lifecycle>(32);
-                let _ = COMMANDS.set(sc);
-                let _ = UPDATES.set(sl);
-                thread::spawn(move || handle_receive(rc, rl));
+                thread::spawn(move || {
+                    let (sc, rc) = bounded::<OuterCommand>(commands_capacity);
+                    let (sl, rl) = bounded::<Lifecycle>(32);
+                    let _ = COMMANDS.set(sc);
+                    let _ = UPDATES.set(sl);
+                    handle_receive(rc, rl);
+                });
                 Mutex::new(manager)
             })
             .try_lock()
