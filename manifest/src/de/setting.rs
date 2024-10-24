@@ -150,7 +150,7 @@ where
         }
         if s.ends_with('♯') {
             return Ok(Some(PlaybackRate::Semitones(
-                s[..s.len() - 1]
+                s[..(s.len() - '♯'.len_utf8())]
                     .trim()
                     .parse()
                     .map_err(serde::de::Error::custom)?,
@@ -158,7 +158,10 @@ where
         }
         if s.ends_with('♭') {
             return Ok(Some(PlaybackRate::Semitones(
-                -s[1..].trim().parse().map_err(serde::de::Error::custom)?,
+                -s[..(s.len() - '♭'.len_utf8())]
+                    .trim()
+                    .parse()
+                    .map_err(serde::de::Error::custom)?,
             )));
         }
         return Err(serde::de::Error::custom(format!(
