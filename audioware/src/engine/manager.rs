@@ -19,6 +19,7 @@ use red4ext_rs::types::Ref;
 use red4ext_rs::PluginOps;
 use std::ops::DerefMut;
 use std::ops::Not;
+use std::sync::RwLock;
 use std::sync::{Mutex, MutexGuard, OnceLock};
 use std::thread;
 
@@ -39,6 +40,7 @@ use crate::engine::commands::Lifecycle;
 use crate::engine::commands::OuterCommand;
 use crate::engine::handle_receive;
 use crate::engine::modulators::Modulators;
+use crate::engine::BACKGROUND;
 use crate::engine::COMMANDS;
 use crate::engine::UPDATES;
 use crate::error::Error;
@@ -91,13 +93,13 @@ impl Manager {
                 let mut manager =
                     AudioManager::new(manager_settings).expect("instantiate audio manager");
                 Modulators::setup(&mut manager).expect("modulators");
-                thread::spawn(move || {
+                let _ = BACKGROUND.set(Mutex::new(Some(thread::spawn(move || {
                     let (sc, rc) = bounded::<OuterCommand>(commands_capacity);
                     let (sl, rl) = bounded::<Lifecycle>(32);
-                    let _ = COMMANDS.set(sc);
-                    let _ = UPDATES.set(sl);
+                    let _ = COMMANDS.set(RwLock::new(Some(sc)));
+                    let _ = UPDATES.set(RwLock::new(Some(sl)));
                     handle_receive(rc, rl);
-                });
+                }))));
                 Mutex::new(manager)
             })
             .try_lock()

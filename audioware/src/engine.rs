@@ -1,6 +1,9 @@
 //! Audio engine.
 
-use std::sync::{MutexGuard, OnceLock};
+use std::{
+    sync::{Mutex, MutexGuard, OnceLock, RwLock},
+    thread::JoinHandle,
+};
 
 use audioware_bank::{BankSubtitles, Banks, Id};
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Source, SpokenLocale, WrittenLocale};
@@ -49,11 +52,13 @@ pub use scene::Scene;
 pub use settings::*;
 pub use tracks::Tracks;
 
+static BACKGROUND: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
+
 /// Use to enqueue [sound commands][Command].
-static COMMANDS: OnceLock<Sender<OuterCommand>> = OnceLock::new();
+static COMMANDS: OnceLock<RwLock<Option<Sender<OuterCommand>>>> = OnceLock::new();
 
 /// Use to enqueue [lifecycle updates][Lifecycle] internally.
-static UPDATES: OnceLock<Sender<Lifecycle>> = OnceLock::new();
+static UPDATES: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 
 /// Execute queued [sound commands][Command].
 fn handle_receive(rc: Receiver<OuterCommand>, rl: Receiver<Lifecycle>) {
@@ -132,28 +137,54 @@ impl Engine {
     pub(crate) fn terminate() {
         GameState::set(GameState::Unload);
         Self::shutdown();
+        let _ = COMMANDS
+            .get()
+            .expect("should have been initialized")
+            .try_write()
+            .ok()
+            .and_then(|mut x| x.take());
+        let _ = UPDATES
+            .get()
+            .expect("should have been initialized")
+            .try_write()
+            .ok()
+            .and_then(|mut x| x.take());
+        if let Ok(mut x) = BACKGROUND
+            .get()
+            .expect("should have been initialized")
+            .try_lock()
+        {
+            if let Some(x) = x.take() {
+                if let Err(e) = x.join() {
+                    log::error!(Audioware::env(), "unable to join thread {e:?}");
+                }
+            }
+        }
     }
     /// Notify lifecycle updates.
     pub fn notify(update: Lifecycle) {
-        if let Err(e) = UPDATES
+        if let Ok(Some(x)) = UPDATES
             .get()
             .expect("should have been initialized")
-            .try_send(update)
+            .try_read()
+            .as_deref()
         {
-            match e {
-                TrySendError::Full(lifecycle) => {
-                    log::warn!(
-                        Audioware::env(),
-                        "couldn't send lifecycle update, channel full: {:#?}",
-                        lifecycle
-                    );
-                }
-                TrySendError::Disconnected(lifecycle) => {
-                    log::warn!(
-                        Audioware::env(),
-                        "error sending lifecycle update, channel disconnected: {:#?}",
-                        lifecycle
-                    );
+            if let Err(e) = x.try_send(update) {
+                match e {
+                    TrySendError::Full(lifecycle) => {
+                        log::warn!(
+                            Audioware::env(),
+                            "couldn't send lifecycle update, channel full: {:#?}",
+                            lifecycle
+                        );
+                    }
+                    TrySendError::Disconnected(lifecycle) => {
+                        log::warn!(
+                            Audioware::env(),
+                            "error sending lifecycle update, channel disconnected: {:#?}",
+                            lifecycle
+                        );
+                    }
                 }
             }
         }
@@ -167,33 +198,36 @@ impl Engine {
         Self::send_as(command, false)
     }
     fn send_as(command: Command, cancelable: bool) {
-        if let Err(e) = COMMANDS
+        if let Ok(Some(x)) = COMMANDS
             .get()
             .expect("should have been initialized")
-            .try_send(if cancelable {
+            .try_read()
+            .as_deref()
+        {
+            if let Err(e) = x.try_send(if cancelable {
                 command.cancelable()
             } else {
                 command.non_cancelable()
-            })
-        {
-            match e {
-                TrySendError::Full(command) => {
-                    if command.cancelable() {
+            }) {
+                match e {
+                    TrySendError::Full(command) => {
+                        if command.cancelable() {
+                            log::warn!(
+                                Audioware::env(),
+                                "couldn't send command, channel full: {:#?}",
+                                command.into_inner()
+                            );
+                        } else {
+                            Self::send_non_cancelable(command.into_inner());
+                        }
+                    }
+                    TrySendError::Disconnected(command) => {
                         log::warn!(
                             Audioware::env(),
-                            "couldn't send command, channel full: {:#?}",
+                            "error sending command, channel disconnected: {:#?}",
                             command.into_inner()
                         );
-                    } else {
-                        Self::send_non_cancelable(command.into_inner());
                     }
-                }
-                TrySendError::Disconnected(command) => {
-                    log::warn!(
-                        Audioware::env(),
-                        "error sending command, channel disconnected: {:#?}",
-                        command.into_inner()
-                    );
                 }
             }
         }
