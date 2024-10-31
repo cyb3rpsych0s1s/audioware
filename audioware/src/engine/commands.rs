@@ -255,7 +255,7 @@ impl CommandOps for Lifecycle {
             }
             Lifecycle::Reclaim => Engine::reclaim(),
             Lifecycle::Shutdown => Engine::shutdown(),
-            Lifecycle::Terminate => Engine::terminate(),
+            Lifecycle::Terminate => unreachable!(),
         }
     }
 }

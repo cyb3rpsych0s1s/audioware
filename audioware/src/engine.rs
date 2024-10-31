@@ -26,7 +26,7 @@ use red4ext_rs::{
 use crate::{
     error::Error,
     macros::{ok_or_return, some_or_return},
-    states::{GameState, State},
+    states::State,
     types::{
         propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, EmitterSettings,
         GameObject, LocalizationPackage, Subtitle, ToTween, Tween,
@@ -52,7 +52,7 @@ pub use scene::Scene;
 pub use settings::*;
 pub use tracks::Tracks;
 
-static BACKGROUND: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
+pub(super) static BACKGROUND: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
 
 /// Use to enqueue [sound commands][Command].
 static COMMANDS: OnceLock<RwLock<Option<Sender<OuterCommand>>>> = OnceLock::new();
@@ -73,7 +73,7 @@ fn handle_receive(rc: Receiver<OuterCommand>, rl: Receiver<Lifecycle>) {
             },
             recv(rl) -> msg => match msg {
                 Ok(Lifecycle::Terminate) => {
-                    Lifecycle::Terminate.execute();
+                    crate::utils::lifecycle!("lifecycle termination");
                     break 'game;
                 }
                 Ok(lifecycle) => lifecycle.execute(),
@@ -131,34 +131,6 @@ impl Engine {
         }
         if let Err(e) = Scene::clear_emitters() {
             log::error!(Audioware::env(), "couldn't clear emitters in scene: {e}");
-        }
-    }
-    /// Terminate engine.
-    pub(crate) fn terminate() {
-        GameState::set(GameState::Unload);
-        Self::shutdown();
-        let _ = COMMANDS
-            .get()
-            .expect("should have been initialized")
-            .try_write()
-            .ok()
-            .and_then(|mut x| x.take());
-        let _ = UPDATES
-            .get()
-            .expect("should have been initialized")
-            .try_write()
-            .ok()
-            .and_then(|mut x| x.take());
-        if let Ok(mut x) = BACKGROUND
-            .get()
-            .expect("should have been initialized")
-            .try_lock()
-        {
-            if let Some(x) = x.take() {
-                if let Err(e) = x.join() {
-                    log::error!(Audioware::env(), "unable to join thread {e:?}");
-                }
-            }
         }
     }
     /// Notify lifecycle updates.

@@ -259,7 +259,23 @@ unsafe extern "C" fn on_exit_initialization(_game: &GameApp) {
 /// Unload [Plugin].
 unsafe extern "C" fn on_exit_running(_game: &GameApp) {
     utils::lifecycle!("on exit running: Audioware");
-    Engine::notify(Lifecycle::Terminate);
+    if let Ok(mut x) = crate::engine::BACKGROUND
+        .get()
+        .expect("should have been initialized")
+        .try_lock()
+    {
+        Engine::notify(Lifecycle::Terminate);
+        if let Some(x) = x.take() {
+            if let Err(e) = x.join() {
+                log::error!(
+                    Audioware::env(),
+                    "unable to join background thread handle: {e:?}"
+                );
+            }
+        }
+    }
+    GameState::set(GameState::Unload);
+    Engine::shutdown();
 }
 
 const fn is_debug() -> bool {
