@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Context"],"fn":["handle_receive"],"mod":["commands","effects","eq","id","manager","modulators","scene","settings","tracks"],"static":["BACKGROUND","COMMANDS","UPDATES"],"struct":["Engine"],"trait":["ToOutputDestination"],"type":["EngineContext"]};

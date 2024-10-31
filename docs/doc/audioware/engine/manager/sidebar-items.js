@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"static":["STATICS","STREAMS"],"struct":["Manager","StaticStorage","StreamStorage"],"trait":["Pause","Play","PlayAndStore","Resume","State","Stop","StopBy","StopFor","Stopped","Store","WithContextualRoute"]};

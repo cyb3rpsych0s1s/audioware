@@ -1,0 +1,1 @@
+searchState.loadedDescShard("snowflake", 0, "A crate for quickly generating unique IDs with guaranteed …\nProcess unique IDs are guaranteed to be unique within the …\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.\nCreate a new unique ID.")

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":["impl_with"],"struct":["AudioRegion","AudioSettingsExt","AudioSettingsExtBuilder"]};
