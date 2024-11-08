@@ -21,6 +21,7 @@ pub enum BufferSize {
     Option256 = 256,
     Option512 = 512,
     Option1024 = 1024,
+    Option2048 = 2048,
 }
 
 impl BufferSize {
@@ -59,6 +60,7 @@ impl TryFrom<Ini> for BufferSize {
                     "Option256" => return Ok(Self::Option256),
                     "Option512" => return Ok(Self::Option512),
                     "Option1024" => return Ok(Self::Option1024),
+                    "Option2048" => return Ok(Self::Option2048),
                     _ => {
                         return Err(ConversionError::InvalidBufferSize {
                             value: value.to_string(),
