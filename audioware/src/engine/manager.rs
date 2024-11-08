@@ -2,7 +2,6 @@ use audioware_bank::Banks;
 use audioware_bank::Id;
 use audioware_core::AudioDuration;
 use audioware_core::With;
-use crossbeam::channel::bounded;
 use dashmap::DashMap;
 use kira::manager::backend::cpal::CpalBackend;
 use kira::manager::backend::cpal::CpalBackendSettings;
@@ -19,9 +18,7 @@ use red4ext_rs::types::Ref;
 use red4ext_rs::PluginOps;
 use std::ops::DerefMut;
 use std::ops::Not;
-use std::sync::RwLock;
 use std::sync::{Mutex, MutexGuard, OnceLock};
-use std::thread;
 
 use super::id::HandleId;
 use super::AudioSettingsExt;
@@ -36,13 +33,7 @@ use once_cell::sync::Lazy;
 use red4ext_rs::types::{CName, EntityId};
 
 use crate::config::BufferSize;
-use crate::engine::commands::Lifecycle;
-use crate::engine::commands::OuterCommand;
-use crate::engine::handle_receive;
 use crate::engine::modulators::Modulators;
-use crate::engine::BACKGROUND;
-use crate::engine::COMMANDS;
-use crate::engine::UPDATES;
 use crate::error::Error;
 use crate::error::InternalError;
 use crate::types::ToTween;
@@ -69,53 +60,44 @@ pub struct StreamStorage;
 static STATICS: Lazy<Mutex<DashMap<HandleId, StaticSoundHandle>>> = Lazy::new(Default::default);
 static STREAMS: Lazy<Mutex<DashMap<HandleId, StreamingSoundHandle<FromFileError>>>> =
     Lazy::new(Default::default);
+static MANAGER: OnceLock<Mutex<AudioManager<CpalBackend>>> = OnceLock::new();
 
 impl Manager {
-    pub(super) fn try_lock<'a>() -> Result<MutexGuard<'a, AudioManager>, Error> {
-        static INSTANCE: OnceLock<Mutex<AudioManager<CpalBackend>>> = OnceLock::new();
-        INSTANCE
-            .get_or_init(|| {
-                let mut backend_settings = CpalBackendSettings::default();
-                let buffer_size = BufferSize::read_ini();
-                if buffer_size != BufferSize::Auto {
-                    backend_settings.buffer_size = cpal::BufferSize::Fixed(buffer_size as u32);
-                    log::info!(
-                        Audioware::env(),
-                        "buffer size read from .ini: {}",
-                        buffer_size as u32
-                    );
-                }
-                let manager_settings = AudioManagerSettings {
-                    backend_settings,
-                    ..Default::default()
-                };
-                let commands_capacity = manager_settings.capacities.command_capacity;
-                let mut manager =
-                    AudioManager::new(manager_settings).expect("instantiate audio manager");
-                Modulators::setup(&mut manager).expect("modulators");
-                let _ = BACKGROUND.set(Mutex::new(Some(thread::spawn(move || {
-                    let (sc, rc) = bounded::<OuterCommand>(commands_capacity);
-                    let (sl, rl) = bounded::<Lifecycle>(32);
-                    let _ = COMMANDS.set(RwLock::new(Some(sc)));
-                    let _ = UPDATES.set(RwLock::new(Some(sl)));
-                    handle_receive(rc, rl);
-                }))));
-                Mutex::new(manager)
-            })
+    pub fn setup() -> Result<(), Error> {
+        let mut backend_settings = CpalBackendSettings::default();
+        let buffer_size = BufferSize::read_ini();
+        if buffer_size != BufferSize::Auto {
+            backend_settings.buffer_size = cpal::BufferSize::Fixed(buffer_size as u32);
+            log::info!(
+                Audioware::env(),
+                "buffer size read from .ini: {}",
+                buffer_size as u32
+            );
+        }
+        let manager_settings = AudioManagerSettings {
+            backend_settings,
+            ..Default::default()
+        };
+        let mut manager = AudioManager::new(manager_settings).expect("instantiate audio manager");
+        Modulators::setup(&mut manager).expect("modulators");
+        let _ = MANAGER.set(Mutex::new(manager));
+        Ok(())
+    }
+    pub fn try_lock<'a>() -> Result<MutexGuard<'a, AudioManager>, Error> {
+        MANAGER
+            .get()
+            .expect("should have been initialized")
             .try_lock()
-            .map_err(|_| {
-                InternalError::Contention {
+            .map_err(|_| Error::Internal {
+                source: InternalError::Contention {
                     origin: "audio manager",
-                }
-                .into()
+                },
             })
     }
     /// Retain non-stopped sounds only.
     pub(super) fn reclaim() -> Result<(), Error> {
-        let storage = StaticStorage::try_lock()?;
-        storage.retain(|_, v| !v.stopped());
-        let storage = StreamStorage::try_lock()?;
-        storage.retain(|_, v| !v.stopped());
+        StaticStorage::try_lock()?.retain(|_, v| !v.stopped());
+        StreamStorage::try_lock()?.retain(|_, v| !v.stopped());
         Ok(())
     }
 }
@@ -141,8 +123,8 @@ impl StreamStorage {
 
 impl Manager {
     /// Stop and clear all tracks.
-    pub fn clear_tracks(&mut self, tween: Option<Tween>) -> Result<(), InternalError> {
-        self.stop(tween)?;
+    pub fn clear_tracks(&mut self) -> Result<(), InternalError> {
+        self.stop(None)?;
         StaticStorage::try_lock()?.deref_mut().clear();
         StreamStorage::try_lock()?.deref_mut().clear();
         Ok(())

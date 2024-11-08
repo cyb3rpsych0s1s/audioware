@@ -8,10 +8,7 @@ use std::{
 use audioware_bank::{BankSubtitles, Banks, Id};
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Source, SpokenLocale, WrittenLocale};
 use commands::{Command, CommandOps, Lifecycle, OuterCommand, OuterCommandOps};
-use crossbeam::{
-    channel::{Receiver, Sender, TrySendError},
-    select,
-};
+use crossbeam::channel::{Receiver, Sender, TryRecvError, TrySendError};
 use kira::{manager::AudioManager, OutputDestination, Volume};
 use manager::{Pause, PlayAndStore, Resume, StopBy, StopFor};
 use modulators::{
@@ -26,7 +23,7 @@ use red4ext_rs::{
 use crate::{
     error::Error,
     macros::{ok_or_return, some_or_return},
-    states::State,
+    states::{GameState, State},
     types::{
         propagate_subtitles, AsAudioSystem, AsGameInstance, AsGameObject, EmitterSettings,
         GameObject, LocalizationPackage, Subtitle, ToTween, Tween,
@@ -52,7 +49,7 @@ pub use scene::Scene;
 pub use settings::*;
 pub use tracks::Tracks;
 
-pub(super) static BACKGROUND: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
+static BACKGROUND: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
 
 /// Use to enqueue [sound commands][Command].
 static COMMANDS: OnceLock<RwLock<Option<Sender<OuterCommand>>>> = OnceLock::new();
@@ -63,28 +60,42 @@ static UPDATES: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 /// Execute queued [sound commands][Command].
 fn handle_receive(rc: Receiver<OuterCommand>, rl: Receiver<Lifecycle>) {
     'game: loop {
-        select! {
-            recv(rc) -> msg => match msg {
-                Ok(command) => command.into_inner().execute(),
-                Err(_) => {
-                    crate::utils::lifecycle!("sound commands disconnected");
-                    break 'game;
-                }
-            },
-            recv(rl) -> msg => match msg {
-                Ok(Lifecycle::Terminate) => {
-                    crate::utils::lifecycle!("lifecycle termination");
-                    break 'game;
-                }
-                Ok(lifecycle) => lifecycle.execute(),
-                Err(_) => {
-                    crate::utils::lifecycle!("lifecycle updates disconnected");
-                    break 'game;
-                }
-            },
-            default => {},
-        }
+        match rl.try_recv() {
+            Ok(Lifecycle::Terminate) => {
+                crate::utils::lifecycle!("lifecycle termination");
+                let _ = UPDATES
+                    .get()
+                    .unwrap()
+                    .write()
+                    .ok()
+                    .as_deref_mut()
+                    .and_then(Option::take);
+                let _ = COMMANDS
+                    .get()
+                    .unwrap()
+                    .write()
+                    .ok()
+                    .as_deref_mut()
+                    .and_then(Option::take);
+                break 'game;
+            }
+            Ok(lifecycle) => lifecycle.execute(),
+            Err(TryRecvError::Empty) => {}
+            Err(TryRecvError::Disconnected) => {
+                crate::utils::lifecycle!("lifecycle updates disconnected");
+                break 'game;
+            }
+        };
+        match rc.try_recv() {
+            Ok(command) => command.into_inner().execute(),
+            Err(TryRecvError::Empty) => {}
+            Err(TryRecvError::Disconnected) => {
+                crate::utils::lifecycle!("sound commands disconnected");
+                break 'game;
+            }
+        };
     }
+    crate::utils::lifecycle!("exit game receive loop");
 }
 
 /// Audio engine built on top of [kira].
@@ -105,11 +116,45 @@ pub type EngineContext<'a> = (
 );
 
 impl Engine {
+    pub(crate) fn terminate() -> Result<(), Error> {
+        GameState::set(GameState::Unload);
+        Self::notify(Lifecycle::Terminate);
+        if let Ok(mut x) = BACKGROUND
+            .get()
+            .expect("should have been initialized")
+            .try_lock()
+        {
+            if let Some(x) = x.take() {
+                if let Err(e) = x.join() {
+                    log::error!(
+                        Audioware::env(),
+                        "unable to join background thread handle: {e:?}"
+                    );
+                }
+            }
+            crate::utils::lifecycle!("background thread termination");
+        }
+        Ok(())
+    }
     /// Engine setup for [Manager], [Tracks] and [Scene].
     pub(crate) fn setup() -> Result<(), Error> {
-        let mut manager = Manager::try_lock()?;
+        Manager::setup()?;
+        let Ok(mut manager) = Manager::try_lock() else {
+            return Err(Error::Internal {
+                source: crate::error::InternalError::Init {
+                    origin: "audio manager",
+                },
+            });
+        };
         Tracks::setup(&mut manager)?;
         Scene::setup(&mut manager, Tracks::get())?;
+        let _ = BACKGROUND.set(Mutex::new(Some(std::thread::spawn(move || {
+            let (sc, rc) = crossbeam::channel::bounded::<OuterCommand>(128);
+            let (sl, rl) = crossbeam::channel::bounded::<Lifecycle>(32);
+            let _ = COMMANDS.set(RwLock::new(Some(sc)));
+            let _ = UPDATES.set(RwLock::new(Some(sl)));
+            handle_receive(rc, rl);
+        }))));
         Ok(())
     }
     /// Define [LocalizationPackage] subtitles from [Manifest][audioware_manifest::Manifest]s.
@@ -126,12 +171,13 @@ impl Engine {
     }
     /// Shutdown engine.
     pub(crate) fn shutdown() {
-        if let Err(e) = Manager.clear_tracks(None) {
+        if let Err(e) = Manager.clear_tracks() {
             log::error!(Audioware::env(), "couldn't clear tracks on manager: {e}");
         }
         if let Err(e) = Scene::clear_emitters() {
             log::error!(Audioware::env(), "couldn't clear emitters in scene: {e}");
         }
+        crate::utils::lifecycle!("shutdown processed");
     }
     /// Notify lifecycle updates.
     pub fn notify(update: Lifecycle) {
@@ -141,6 +187,7 @@ impl Engine {
             .try_read()
             .as_deref()
         {
+            crate::utils::lifecycle!("about to notify update {update}...");
             if let Err(e) = x.try_send(update) {
                 match e {
                     TrySendError::Full(lifecycle) => {
@@ -170,6 +217,7 @@ impl Engine {
         Self::send_as(command, false)
     }
     fn send_as(command: Command, cancelable: bool) {
+        crate::utils::lifecycle!("about to send command {command}...");
         if let Ok(Some(x)) = COMMANDS
             .get()
             .expect("should have been initialized")
