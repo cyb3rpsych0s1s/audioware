@@ -2,7 +2,6 @@
 
 use std::{
     collections::{HashMap, HashSet},
-    sync::OnceLock,
     time::{Duration, Instant},
 };
 
@@ -30,37 +29,58 @@ pub use storage::*;
 
 use crate::error::registry::Error as RegistryError;
 
-static KEYS: OnceLock<HashSet<Id>> = OnceLock::new();
+pub struct Banks {
+    pub ids: HashSet<Id>,
+    pub uniques: HashMap<UniqueKey, StaticSoundData>,
+    pub genders: HashMap<GenderKey, StaticSoundData>,
+    pub single_voices: HashMap<LocaleKey, StaticSoundData>,
+    pub dual_voices: HashMap<BothKey, StaticSoundData>,
+    pub single_subs: HashMap<LocaleKey, DialogLine>,
+    pub dual_subs: HashMap<BothKey, DialogLine>,
+    pub unique_settings: HashMap<UniqueKey, Settings>,
+    pub gender_settings: HashMap<GenderKey, Settings>,
+    pub single_settings: HashMap<LocaleKey, Settings>,
+    pub dual_settings: HashMap<BothKey, Settings>,
+    pub initialization: Initialization,
+}
+impl Default for Banks {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
-pub struct Banks;
 impl Banks {
     /// # Safety
     ///
     /// Will panic if [Banks] are not initialized yet.
-    pub unsafe fn ids<'a>() -> &'a HashSet<Id> {
-        KEYS.get().unwrap_unchecked()
+    pub unsafe fn ids(&self) -> &HashSet<Id> {
+        &self.ids
     }
     /// Whether audio ID exists in banks or not.
-    pub fn exists(cname: &CName) -> bool {
+    pub fn exists(&self, cname: &CName) -> bool {
         if cname == &CName::undefined() {
             return false;
         }
-        KEYS.get()
-            .and_then(|x| x.iter().find(|x| AsRef::<CName>::as_ref(x) == cname))
-            .is_some()
+        self.ids.iter().any(|x| AsRef::<CName>::as_ref(&x) == cname)
     }
     /// Return audio duration (as seconds) if any, otherwise `-1.0`.
-    pub fn duration(cname: &CName, locale: Locale, gender: PlayerGender, total: bool) -> f32 {
+    pub fn duration(
+        &self,
+        cname: &CName,
+        locale: Locale,
+        gender: PlayerGender,
+        total: bool,
+    ) -> f32 {
         let locale = SpokenLocale::from(locale);
-        if let Ok(id) = Self::try_get(cname, &locale, Some(&gender)) {
-            match (total, id, Banks.data(id)) {
+        if let Ok(id) = self.try_get(cname, &locale, Some(&gender)) {
+            match (total, id, self.data(id)) {
                 // if no need for total and in-memory, sound data already embed settings
                 (false, Id::InMemory(..), data) => data
                     .left()
                     .expect("streaming cannot be stored in-memory")
                     .slice_duration(),
                 // if no need for total and on-demand, check settings
-                (false, Id::OnDemand(..), data) => match (data, Banks.settings(id)) {
+                (false, Id::OnDemand(..), data) => match (data, self.settings(id)) {
                     (Either::Left(x), settings) => x.with(settings).slice_duration(),
                     (Either::Right(x), settings) => x.with(settings).slice_duration(),
                 },
@@ -76,7 +96,7 @@ impl Banks {
         }
     }
     /// All languages found in [Manifest]s.
-    pub fn languages() -> HashSet<Locale> {
+    pub fn languages(&self) -> HashSet<Locale> {
         let mut out = HashSet::new();
         for key in LOC_SUB.keys() {
             out.insert(key.1);
@@ -86,49 +106,48 @@ impl Banks {
         }
         out
     }
-    pub fn try_get<'a>(
+    pub fn try_get(
+        &self,
         name: &CName,
         spoken: &SpokenLocale,
         gender: Option<&PlayerGender>,
-    ) -> Result<&'a Id, Error> {
+    ) -> Result<&Id, Error> {
         let mut maybe_missing_locale = false;
-        if let Some(ids) = KEYS.get() {
-            let mut key: &Key;
-            for id in ids {
-                key = id.as_ref();
-                if let Some(key) = key.as_unique() {
-                    if key.as_ref() == name {
+        let mut key: &Key;
+        for id in self.ids.iter() {
+            key = id.as_ref();
+            if let Some(key) = key.as_unique() {
+                if key.as_ref() == name {
+                    return Ok(id);
+                }
+            }
+            if let Some(GenderKey(k, g)) = key.as_gender() {
+                if k == name {
+                    if gender.is_none() {
+                        return Err(RegistryError::RequireGender { cname: *name }.into());
+                    }
+                    if Some(g) == gender {
                         return Ok(id);
                     }
                 }
-                if let Some(GenderKey(k, g)) = key.as_gender() {
-                    if k == name {
+            }
+            if let Some(LocaleKey(k, l)) = key.as_locale() {
+                if k == name {
+                    maybe_missing_locale = true;
+                    if l == spoken {
+                        return Ok(id);
+                    }
+                }
+            }
+            if let Some(BothKey(k, l, g)) = key.as_both() {
+                if k == name {
+                    maybe_missing_locale = true;
+                    if l == spoken {
                         if gender.is_none() {
                             return Err(RegistryError::RequireGender { cname: *name }.into());
                         }
-                        if Some(g) == gender {
+                        if gender == Some(g) {
                             return Ok(id);
-                        }
-                    }
-                }
-                if let Some(LocaleKey(k, l)) = key.as_locale() {
-                    if k == name {
-                        maybe_missing_locale = true;
-                        if l == spoken {
-                            return Ok(id);
-                        }
-                    }
-                }
-                if let Some(BothKey(k, l, g)) = key.as_both() {
-                    if k == name {
-                        maybe_missing_locale = true;
-                        if l == spoken {
-                            if gender.is_none() {
-                                return Err(RegistryError::RequireGender { cname: *name }.into());
-                            }
-                            if gender == Some(g) {
-                                return Ok(id);
-                            }
                         }
                     }
                 }
@@ -144,7 +163,7 @@ impl Banks {
         Err(RegistryError::NotFound { cname: *name }.into())
     }
     /// Initialize banks.
-    pub fn setup() -> Initialization {
+    pub fn new() -> Self {
         let since = Instant::now();
 
         let mut errors: Vec<Error> = vec![];
@@ -329,19 +348,20 @@ impl Banks {
             errors,
         };
 
-        let _ = KEYS.set(ids);
-        let _ = UNIQUES.set(uniques);
-        let _ = GENDERS.set(genders);
-        let _ = LOCALES.set(single_voices);
-        let _ = MULTIS.set(dual_voices);
-        let _ = LOC_SUB.set(single_subs);
-        let _ = MUL_SUB.set(dual_subs);
-        let _ = UNI_SET.set(unique_settings);
-        let _ = GEN_SET.set(gender_settings);
-        let _ = LOC_SET.set(single_settings);
-        let _ = MUL_SET.set(dual_settings);
-
-        report
+        Self {
+            ids,
+            uniques,
+            genders,
+            single_voices,
+            dual_voices,
+            single_subs,
+            dual_subs,
+            unique_settings,
+            gender_settings,
+            single_settings,
+            dual_settings,
+            initialization: report,
+        }
     }
 }
 
