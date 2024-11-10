@@ -32,7 +32,7 @@ impl BufferSize {
                 match conf.try_into() {
                     Ok(x) => return x,
                     Err(ConversionError::InvalidBufferSize { value }) => {
-                        log::warn!(
+                        log::error!(
                             Audioware::env(),
                             "Error reading ModSettings .ini: {}",
                             ConversionError::InvalidBufferSize { value }

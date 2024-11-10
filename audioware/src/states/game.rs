@@ -7,8 +7,6 @@ use std::{
 
 use red4ext_rs::NativeRepr;
 
-use crate::engine::Engine;
-
 use super::{State, ToggleState};
 
 /// Retrieve raw game [State].
@@ -41,7 +39,7 @@ impl ToggleState for GameState {
         let before = before.should_sync();
         let after = after.should_sync();
         if before != after {
-            Engine::toggle_sync_emitters(after);
+            // Engine::toggle_sync_emitters(after);
         }
     }
 }

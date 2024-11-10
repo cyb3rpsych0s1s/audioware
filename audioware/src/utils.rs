@@ -3,20 +3,20 @@
 use red4ext_rs::{
     log,
     types::{CName, ScriptRef},
-    IntoRepr, PluginOps, RttiSystem,
+    IntoRepr, RttiSystem,
 };
 
 use crate::Audioware;
 
 #[allow(unused_macros)]
 macro_rules! silly {
-    ($($arg:tt)*) => {
+    ($($arg:tt)*) => {{
         #[cfg(debug_assertions)]
         {
             use ::red4ext_rs::PluginOps;
             ::red4ext_rs::log::info!($crate::Audioware::env(), $($arg)*)
         }
-    };
+    }};
 }
 #[allow(unused_imports)]
 pub(crate) use silly;
@@ -32,13 +32,13 @@ pub(crate) use lifecycle;
 
 #[allow(unused_macros)]
 macro_rules! fails {
-    ($env:expr, $($arg:tt)*) => {
+    ($env:expr, $($arg:tt)*) => {{
         #[cfg(debug_assertions)]
         {
             use ::red4ext_rs::PluginOps;
             ::red4ext_rs::log::error!($crate::Audioware::env(), $($arg)*)
         }
-    };
+    }};
 }
 #[allow(unused_imports)]
 pub(crate) use fails;
@@ -60,6 +60,7 @@ pub fn plog_error(msg: String) {
 
 #[inline]
 fn plog(msg: String, func_name: &str) {
+    use ::red4ext_rs::PluginOps;
     match func_name {
         "PLog" => {
             log::info!(Audioware::env(), "{msg}");
@@ -72,6 +73,12 @@ fn plog(msg: String, func_name: &str) {
         }
         _ => unreachable!(),
     }
+}
+
+/// Exposes `FTLog` to Rust on debug builds only.
+pub fn dbg(msg: impl Into<String>) {
+    #[cfg(debug_assertions)]
+    console(msg, "FTLog");
 }
 
 /// Exposes `FTLog` to Rust.
@@ -91,6 +98,7 @@ pub fn error(msg: impl Into<String>) {
 
 #[inline]
 fn console(msg: impl Into<String>, func_name: &str) {
+    use ::red4ext_rs::PluginOps;
     let env = Audioware::env();
     if let Some(ft_log) = RttiSystem::get()
         .get_global_functions()
