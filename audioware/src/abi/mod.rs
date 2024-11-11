@@ -1,8 +1,14 @@
+use std::ops::Not;
+
 use audioware_manifest::ScnDialogLineType;
 use command::Command;
 use lifecycle::{Board, Lifecycle, Session, System};
 use red4ext_rs::{
-    class_kind::Native, exports, methods, types::{CName, EntityId, IScriptable, Opt, Ref}, ClassExport, Exportable, GameApp, RttiRegistrator, ScriptClass, SdkEnv, StateListener, StateType
+    class_kind::{Native, Scripted},
+    exports, methods,
+    types::{CName, EntityId, IScriptable, Opt, Ref},
+    ClassExport, Exportable, GameApp, RttiRegistrator, ScriptClass, SdkEnv, StateListener,
+    StateType,
 };
 
 use crate::{queue, utils::lifecycle, Audioware};
@@ -34,6 +40,12 @@ macro_rules! g {
 #[rustfmt::skip]
 pub fn exports() -> impl Exportable {
     exports![
+        // ClassExport::<AudioSystemExt>::builder()
+        //         .base(IScriptable::NAME)
+        //         // .methods(methods![
+        //         //     final c"Play" => AudioSystemExt::play,
+        //         // ])
+        //         .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
         g!(c"Audioware.OnGameSessionStart",         Audioware::on_game_session_start),
         g!(c"Audioware.OnGameSessionReady",         Audioware::on_game_session_ready),
@@ -46,15 +58,7 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.OnGameSystemPlayerAttach",   Audioware::on_game_system_player_attach),
         g!(c"Audioware.OnGameSystemPlayerDetach",   Audioware::on_game_system_player_detach),
         g!(c"Audioware.OnUIMenu",                   Audioware::on_ui_menu),
-        // ClassExport::<AudioSettingsExt>::builder()
-        //         .base(IScriptable::NAME)
-        //         .build(),
-        // ClassExport::<AudioSystemExt>::builder()
-        //         .base(IScriptable::NAME)
-        //         .methods(methods![
-        //             final c"Play" => AudioSystemExt::play,
-        //         ])
-        //         .build(),
+        g!(c"Audioware.Yolo",                       Audioware::yolo),
     ]
 }
 
@@ -156,12 +160,11 @@ impl BlackboardLifecycle for Audioware {
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
 pub struct AudioSettingsExt {
-    base: IScriptable,
     start_position: f32,
 }
 
 unsafe impl ScriptClass for AudioSettingsExt {
-    type Kind = Native;
+    type Kind = Scripted;
     const NAME: &'static str = "Audioware.AudioSettingsExt";
 }
 
@@ -177,32 +180,45 @@ unsafe impl ScriptClass for AudioSystemExt {
     const NAME: &'static str = "AudioSystemExt";
 }
 
-// pub trait ExtCommand {
-//     fn play(
-//         &self,
-//         sound_name: CName,
-//         entity_id: Opt<EntityId>,
-//         emitter_name: Opt<CName>,
-//         line_type: Opt<ScnDialogLineType>,
-//         ext: Ref<AudioSettingsExt>,
-//     );
-// }
+pub trait ExtCommand {
+    // fn play(
+    //     &self,
+    //     sound_name: CName,
+    //     entity_id: Opt<EntityId>,
+    //     emitter_name: Opt<CName>,
+    //     line_type: Opt<ScnDialogLineType>,
+    //     ext: Ref<AudioSettingsExt>,
+    // );
+    fn yolo(value: Ref<AudioSettingsExt>);
+}
+
+impl ExtCommand for Audioware {
+    fn yolo(value: Ref<AudioSettingsExt>) {
+        if !value.is_null() {
+            if let Some(fields) = unsafe { value.fields() } {
+                lifecycle!("yolo {{ start_position: {} }}", fields.start_position);
+            }
+        } else {
+            lifecycle!("yolo is null");
+        }
+    }
+}
 
 impl AudioSystemExt {
-    fn play(
-        &self,
-        sound_name: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
-        line_type: Opt<ScnDialogLineType>,
-        ext: Ref<AudioSettingsExt>,
-    ) {
-        queue::send(Command::PlayExt {
-            sound_name,
-            entity_id,
-            emitter_name,
-            line_type,
-            ext,
-        });
-    }
+    // fn play(
+    //     &self,
+    //     sound_name: CName,
+    //     entity_id: Opt<EntityId>,
+    //     emitter_name: Opt<CName>,
+    //     line_type: Opt<ScnDialogLineType>,
+    //     ext: Ref<AudioSettingsExt>,
+    // ) {
+    //     // queue::send(Command::PlayExt {
+    //     //     sound_name,
+    //     //     entity_id,
+    //     //     emitter_name,
+    //     //     line_type,
+    //     //     ext,
+    //     // });
+    // }
 }

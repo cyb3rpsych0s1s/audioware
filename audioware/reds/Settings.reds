@@ -1,3 +1,5 @@
-// module Audioware
+module Audioware
 
-// public native class AudioSettingsExt {}
+public class AudioSettingsExt {
+    public let startPosition: Float;
+}
