@@ -11,12 +11,15 @@ use audioware_manifest::{PlayerGender, SpokenLocale};
 use bitflags::bitflags;
 use crossbeam::channel::{bounded, Receiver, Sender};
 use either::Either;
-use kira::manager::{
-    backend::{
-        cpal::{CpalBackend, CpalBackendSettings},
-        Backend,
+use kira::{
+    manager::{
+        backend::{
+            cpal::{CpalBackend, CpalBackendSettings},
+            Backend,
+        },
+        AudioManagerSettings,
     },
-    AudioManagerSettings,
+    sound::PlaybackState,
 };
 use red4ext_rs::{
     log::{self},
@@ -114,7 +117,36 @@ pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engin
                 Lifecycle::System(System::Detach) => {}
                 Lifecycle::System(System::PlayerAttach) => {}
                 Lifecycle::System(System::PlayerDetach) => {}
-                Lifecycle::Board(Board::UIMenu(value)) => {}
+                Lifecycle::Board(Board::UIMenu(value)) => match value {
+                    true => {
+                        for ref mut ref_multi in engine.statics.iter_mut() {
+                            if ref_multi.value_mut().handle.state() == PlaybackState::Playing {
+                                ref_multi.value_mut().handle.pause(Default::default());
+                            }
+                        }
+                        for ref mut ref_multi in engine.streams.iter_mut() {
+                            if ref_multi.value_mut().handle.state() == PlaybackState::Playing {
+                                ref_multi.value_mut().handle.pause(Default::default());
+                            }
+                        }
+                    }
+                    false => {
+                        for ref mut ref_multi in engine.statics.iter_mut() {
+                            if ref_multi.value_mut().handle.state() == PlaybackState::Paused
+                                || ref_multi.value_mut().handle.state() == PlaybackState::Pausing
+                            {
+                                ref_multi.value_mut().handle.resume(Default::default());
+                            }
+                        }
+                        for ref mut ref_multi in engine.streams.iter_mut() {
+                            if ref_multi.value_mut().handle.state() == PlaybackState::Paused
+                                || ref_multi.value_mut().handle.state() == PlaybackState::Pausing
+                            {
+                                ref_multi.value_mut().handle.resume(Default::default());
+                            }
+                        }
+                    }
+                },
                 _ => {}
             }
         }
