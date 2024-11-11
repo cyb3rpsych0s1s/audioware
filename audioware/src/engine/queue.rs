@@ -96,9 +96,7 @@ where
                 Lifecycle::RegisterEmitter { .. } => {}
                 Lifecycle::UnregisterEmitter { .. } => {}
                 Lifecycle::SyncScene => {}
-                Lifecycle::Reclaim => {
-                    engine.reclaim();
-                }
+                Lifecycle::Reclaim => engine.reclaim(),
                 Lifecycle::Session(Session::BeforeStart) => {
                     // engine.reset();
                 }
