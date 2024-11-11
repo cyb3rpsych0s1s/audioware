@@ -40,12 +40,12 @@ macro_rules! g {
 #[rustfmt::skip]
 pub fn exports() -> impl Exportable {
     exports![
-        // ClassExport::<AudioSystemExt>::builder()
-        //         .base(IScriptable::NAME)
-        //         // .methods(methods![
-        //         //     final c"Play" => AudioSystemExt::play,
-        //         // ])
-        //         .build(),
+        ClassExport::<AudioSystemExt>::builder()
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    final c"Play" => AudioSystemExt::play,
+                ])
+                .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
         g!(c"Audioware.OnGameSessionStart",         Audioware::on_game_session_start),
         g!(c"Audioware.OnGameSessionReady",         Audioware::on_game_session_ready),
@@ -58,7 +58,6 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.OnGameSystemPlayerAttach",   Audioware::on_game_system_player_attach),
         g!(c"Audioware.OnGameSystemPlayerDetach",   Audioware::on_game_system_player_detach),
         g!(c"Audioware.OnUIMenu",                   Audioware::on_ui_menu),
-        g!(c"Audioware.Yolo",                       Audioware::yolo),
     ]
 }
 
@@ -181,44 +180,31 @@ unsafe impl ScriptClass for AudioSystemExt {
 }
 
 pub trait ExtCommand {
-    // fn play(
-    //     &self,
-    //     sound_name: CName,
-    //     entity_id: Opt<EntityId>,
-    //     emitter_name: Opt<CName>,
-    //     line_type: Opt<ScnDialogLineType>,
-    //     ext: Ref<AudioSettingsExt>,
-    // );
-    fn yolo(value: Ref<AudioSettingsExt>);
+    fn play(
+        &self,
+        sound_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        line_type: Opt<ScnDialogLineType>,
+        ext: Ref<AudioSettingsExt>,
+    );
 }
 
-impl ExtCommand for Audioware {
-    fn yolo(value: Ref<AudioSettingsExt>) {
-        if !value.is_null() {
-            if let Some(fields) = unsafe { value.fields() } {
-                lifecycle!("yolo {{ start_position: {} }}", fields.start_position);
-            }
-        } else {
-            lifecycle!("yolo is null");
-        }
+impl ExtCommand for AudioSystemExt {
+    fn play(
+        &self,
+        _sound_name: CName,
+        _entity_id: Opt<EntityId>,
+        _emitter_name: Opt<CName>,
+        _line_type: Opt<ScnDialogLineType>,
+        _ext: Ref<AudioSettingsExt>,
+    ) {
+        // queue::send(Command::PlayExt {
+        //     sound_name,
+        //     entity_id,
+        //     emitter_name,
+        //     line_type,
+        //     ext,
+        // });
     }
-}
-
-impl AudioSystemExt {
-    // fn play(
-    //     &self,
-    //     sound_name: CName,
-    //     entity_id: Opt<EntityId>,
-    //     emitter_name: Opt<CName>,
-    //     line_type: Opt<ScnDialogLineType>,
-    //     ext: Ref<AudioSettingsExt>,
-    // ) {
-    //     // queue::send(Command::PlayExt {
-    //     //     sound_name,
-    //     //     entity_id,
-    //     //     emitter_name,
-    //     //     line_type,
-    //     //     ext,
-    //     // });
-    // }
 }

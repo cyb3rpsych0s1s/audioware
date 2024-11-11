@@ -14,5 +14,3 @@ private static native func OnGameSystemPlayerDetach();
 private static native func OnGameSystemDetach();
 
 private static native func OnUIMenu(value: Bool);
-
-public static native func Yolo(settings: ref<AudioSettingsExt>);
