@@ -6,8 +6,11 @@ use std::{
     thread::JoinHandle,
 };
 
+use audioware_bank::BankData;
+use audioware_manifest::{PlayerGender, SpokenLocale};
 use bitflags::bitflags;
 use crossbeam::channel::{bounded, Receiver, Sender};
+use either::Either;
 use kira::manager::{
     backend::{
         cpal::{CpalBackend, CpalBackendSettings},
@@ -19,6 +22,7 @@ use red4ext_rs::{
     log::{self},
     PluginOps, SdkEnv,
 };
+use snowflake::ProcessUniqueId;
 use std::sync::{Mutex, RwLock};
 
 use crate::{
@@ -27,9 +31,10 @@ use crate::{
         lifecycle::{Board, Lifecycle, Session, System},
     },
     config::BufferSize,
-    engine::Engine,
+    engine::{Emitter, Engine, Handle},
     error::Error,
     utils::{fails, lifecycle},
+    ToTween,
 };
 
 bitflags! {
@@ -74,9 +79,12 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, engine: Engine<B>) {
+pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<B>) {
+    use crate::states::State;
     let force_sync = false;
     let force_reclaim = false;
+    let spoken = SpokenLocale::get();
+    let gender = PlayerGender::get();
     'game: loop {
         let synced = false;
         let reclaimed = false;
@@ -112,6 +120,80 @@ pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, engine: E
         }
         for c in rc.try_iter().take(8) {
             lifecycle!("> {c:?}");
+            match c {
+                Command::PlayVanilla { .. } => {}
+                Command::Play { .. } => {}
+                Command::PlayExt {
+                    sound_name,
+                    entity_id,
+                    emitter_name,
+                    ..
+                } => {
+                    if let Ok(key) = engine.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
+                        let data = engine.banks.data(key);
+                        let emitter = Emitter::new(entity_id, emitter_name);
+                        match data {
+                            Either::Left(data) => {
+                                if let Ok(handle) = engine.manager.play(data) {
+                                    engine.statics.insert(
+                                        ProcessUniqueId::new(),
+                                        Handle::new(handle, sound_name, emitter),
+                                    );
+                                }
+                            }
+                            Either::Right(data) => {
+                                if let Ok(handle) = engine.manager.play(data) {
+                                    engine.streams.insert(
+                                        ProcessUniqueId::new(),
+                                        Handle::new(handle, sound_name, emitter),
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+                Command::PlayOnEmitter { .. } => {}
+                Command::PlayOverThePhone { .. } => {}
+                Command::StopOnEmitter { .. } => {}
+                Command::Pause { .. } => {}
+                Command::Resume { .. } => {}
+                Command::StopVanilla { .. } => {}
+                Command::Stop {
+                    event_name,
+                    entity_id,
+                    emitter_name,
+                    tween,
+                } => {
+                    if engine.banks.exists(&event_name) {
+                        let emitter = Emitter::new(entity_id, emitter_name);
+                        for ref mut ref_multi in engine.statics.iter_mut() {
+                            if ref_multi.value().event_name == event_name
+                                && ref_multi.value().emitter == emitter
+                            {
+                                ref_multi
+                                    .value_mut()
+                                    .handle
+                                    .stop(tween.clone().into_tween().unwrap_or_default());
+                            }
+                        }
+                        for ref mut ref_multi in engine.streams.iter_mut() {
+                            if ref_multi.value().event_name == event_name
+                                && ref_multi.value().emitter == emitter
+                            {
+                                ref_multi
+                                    .value_mut()
+                                    .handle
+                                    .stop(tween.clone().into_tween().unwrap_or_default());
+                            }
+                        }
+                    }
+                }
+                Command::StopFor { .. } => {}
+                Command::Switch { .. } => {}
+                Command::SetVolume { .. } => {}
+                Command::SetPreset { .. } => {}
+                Command::SetReverbMix { .. } => {}
+            }
         }
     }
     let _ = LIFECYCLE

@@ -1,5 +1,3 @@
-use std::ops::Not;
-
 use audioware_manifest::ScnDialogLineType;
 use command::Command;
 use lifecycle::{Board, Lifecycle, Session, System};
@@ -11,7 +9,7 @@ use red4ext_rs::{
     StateType,
 };
 
-use crate::{queue, utils::lifecycle, Audioware};
+use crate::{queue, utils::lifecycle, Audioware, Tween};
 
 pub mod command;
 pub mod lifecycle;
@@ -44,6 +42,7 @@ pub fn exports() -> impl Exportable {
                 .base(IScriptable::NAME)
                 .methods(methods![
                     final c"Play" => AudioSystemExt::play,
+                    final c"Stop" => AudioSystemExt::stop,
                 ])
                 .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
@@ -188,23 +187,45 @@ pub trait ExtCommand {
         line_type: Opt<ScnDialogLineType>,
         ext: Ref<AudioSettingsExt>,
     );
+    fn stop(
+        &self,
+        event_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        tween: Ref<Tween>,
+    );
 }
 
 impl ExtCommand for AudioSystemExt {
     fn play(
         &self,
-        _sound_name: CName,
-        _entity_id: Opt<EntityId>,
-        _emitter_name: Opt<CName>,
-        _line_type: Opt<ScnDialogLineType>,
-        _ext: Ref<AudioSettingsExt>,
+        sound_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        line_type: Opt<ScnDialogLineType>,
+        ext: Ref<AudioSettingsExt>,
     ) {
-        // queue::send(Command::PlayExt {
-        //     sound_name,
-        //     entity_id,
-        //     emitter_name,
-        //     line_type,
-        //     ext,
-        // });
+        queue::send(Command::PlayExt {
+            sound_name,
+            entity_id,
+            emitter_name,
+            line_type,
+            ext,
+        });
+    }
+
+    fn stop(
+        &self,
+        event_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        tween: Ref<Tween>,
+    ) {
+        queue::send(Command::Stop {
+            event_name,
+            entity_id,
+            emitter_name,
+            tween,
+        });
     }
 }
