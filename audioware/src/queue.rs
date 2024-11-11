@@ -1,6 +1,6 @@
 use std::{sync::OnceLock, thread::JoinHandle};
 
-use crossbeam::channel::{bounded, Receiver, Sender, TryRecvError};
+use crossbeam::channel::{bounded, Receiver, Sender};
 use kira::manager::{
     backend::{
         cpal::{CpalBackend, CpalBackendSettings},
@@ -46,11 +46,12 @@ pub fn spawn(_env: &SdkEnv) -> Result<(), Error> {
         backend_settings,
         ..Default::default()
     };
+    let command_capacity = manager_settings.capacities.command_capacity;
     let engine = Engine::try_new(manager_settings)?;
     let _ = THREAD.set(Mutex::new(Some(std::thread::spawn(move || {
         lifecycle!("initialize channels...");
         let (sl, rl) = bounded::<Lifecycle>(32);
-        let (sc, rc) = bounded::<Command>(128);
+        let (sc, rc) = bounded::<Command>(command_capacity);
         let _ = LIFECYCLE.set(RwLock::new(Some(sl)));
         let _ = COMMAND.set(RwLock::new(Some(sc)));
         lifecycle!("initialized channels");
