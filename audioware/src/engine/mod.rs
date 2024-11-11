@@ -5,6 +5,8 @@ use kira::manager::{backend::Backend, AudioManager, AudioManagerSettings};
 
 use crate::error::{EngineError, Error};
 
+pub mod queue;
+
 pub struct Engine<B: Backend> {
     pub banks: Banks,
     pub manager: AudioManager<B>,

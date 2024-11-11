@@ -12,10 +12,11 @@ mod abi;
 mod config;
 mod engine;
 mod error;
-mod queue;
 mod states;
 mod types;
 mod utils;
+
+use engine::queue;
 
 /// Audio [Plugin] for Cyberpunk 2077.
 pub struct Audioware;

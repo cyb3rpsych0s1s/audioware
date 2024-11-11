@@ -32,7 +32,7 @@ pub(crate) use lifecycle;
 
 #[allow(unused_macros)]
 macro_rules! fails {
-    ($env:expr, $($arg:tt)*) => {{
+    ($($arg:tt)*) => {{
         #[cfg(debug_assertions)]
         {
             use ::red4ext_rs::PluginOps;
