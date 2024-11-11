@@ -83,3 +83,26 @@ pub enum Command {
         value: f32,
     },
 }
+
+impl std::fmt::Display for Command {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // write!(f, "{self:?}")
+        write!(f, "{}", match self {
+            Command::PlayVanilla { .. } => "play vanilla",
+            Command::Play { .. } => "play",
+            Command::PlayExt { ..} => "play ext",
+            Command::PlayOnEmitter { ..} => "play on emitter",
+            Command::PlayOverThePhone { ..} => "play over the phone",
+            Command::StopOnEmitter { ..} => "stop on emitter",
+            Command::Pause { ..} => "pause",
+            Command::Resume { ..} => "resume",
+            Command::StopVanilla { ..} => "stop vanilla",
+            Command::Stop { ..} => "stop",
+            Command::StopFor { ..} => "stop for",
+            Command::Switch { ..} => "switch",
+            Command::SetVolume { ..} => "set volume",
+            Command::SetPreset { ..} => "set preset",
+            Command::SetReverbMix { ..} => "set reverb mix",
+        })
+    }
+}
