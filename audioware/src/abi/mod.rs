@@ -1,15 +1,16 @@
 use audioware_manifest::ScnDialogLineType;
 use command::Command;
+use crossbeam::channel::bounded;
 use lifecycle::{Board, Lifecycle, Session, System};
 use red4ext_rs::{
     class_kind::{Native, Scripted},
     exports, methods,
     types::{CName, EntityId, IScriptable, Opt, Ref},
     ClassExport, Exportable, GameApp, RttiRegistrator, ScriptClass, SdkEnv, StateListener,
-    StateType,
+    StateType, StructExport,
 };
 
-use crate::{queue, utils::lifecycle, Audioware, Tween};
+use crate::{queue, utils::lifecycle, Audioware, EmitterDistances, EmitterSettings, Tween};
 
 pub mod command;
 pub mod lifecycle;
@@ -38,11 +39,15 @@ macro_rules! g {
 #[rustfmt::skip]
 pub fn exports() -> impl Exportable {
     exports![
+        StructExport::<EmitterDistances>::builder().build(),
+        StructExport::<EmitterSettings>::builder().build(),
         ClassExport::<AudioSystemExt>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![
                     final c"Play" => AudioSystemExt::play,
                     final c"Stop" => AudioSystemExt::stop,
+                    final c"RegisterEmitter" => AudioSystemExt::register_emitter,
+                    final c"UnregisterEmitter" => AudioSystemExt::unregister_emitter,
                 ])
                 .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
@@ -152,6 +157,46 @@ impl GameSystemLifecycle for Audioware {
 impl BlackboardLifecycle for Audioware {
     fn on_ui_menu(value: bool) {
         queue::notify(Lifecycle::Board(Board::UIMenu(value)));
+    }
+}
+
+pub trait SceneLifecycle {
+    fn register_emitter(
+        &self,
+        entity_id: EntityId,
+        emitter_name: Opt<CName>,
+        emitter_settings: Opt<EmitterSettings>,
+    ) -> bool;
+    fn unregister_emitter(&self, entity_id: EntityId) -> bool;
+}
+
+impl SceneLifecycle for AudioSystemExt {
+    fn register_emitter(
+        &self,
+        entity_id: EntityId,
+        emitter_name: Opt<CName>,
+        emitter_settings: Opt<EmitterSettings>,
+    ) -> bool {
+        let (sender, receiver) = bounded(1);
+        queue::notify(Lifecycle::RegisterEmitter {
+            entity_id,
+            emitter_name,
+            emitter_settings,
+            sender,
+        });
+        if let Ok(registered) = receiver.recv() {
+            return registered;
+        }
+        false
+    }
+
+    fn unregister_emitter(&self, entity_id: EntityId) -> bool {
+        let (sender, receiver) = bounded(1);
+        queue::notify(Lifecycle::UnregisterEmitter { entity_id, sender });
+        if let Ok(unregistered) = receiver.recv() {
+            return unregistered;
+        }
+        false
     }
 }
 

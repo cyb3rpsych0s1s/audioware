@@ -93,8 +93,20 @@ where
             };
             match l {
                 Lifecycle::Shutdown => {}
-                Lifecycle::RegisterEmitter { .. } => {}
-                Lifecycle::UnregisterEmitter { .. } => {}
+                Lifecycle::RegisterEmitter {
+                    entity_id,
+                    emitter_name,
+                    emitter_settings,
+                    sender,
+                } => {
+                    let registered =
+                        engine.register_emitter(entity_id, emitter_name, emitter_settings);
+                    let _ = sender.try_send(registered);
+                }
+                Lifecycle::UnregisterEmitter { entity_id, sender } => {
+                    let unregistered = engine.unregister_emitter(entity_id);
+                    let _ = sender.try_send(unregistered);
+                }
                 Lifecycle::SyncScene => {}
                 Lifecycle::Reclaim => engine.reclaim(),
                 Lifecycle::Session(Session::BeforeStart) => {

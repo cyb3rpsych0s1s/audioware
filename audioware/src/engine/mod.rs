@@ -3,22 +3,33 @@ use std::fmt::Debug;
 use audioware_bank::{BankData, Banks};
 use audioware_manifest::{PlayerGender, SpokenLocale};
 use either::Either;
+use glam::Vec3;
 use handles::{Emitter, Handles};
-use kira::manager::{backend::Backend, AudioManager, AudioManagerSettings};
+use kira::{
+    manager::{backend::Backend, AudioManager, AudioManagerSettings},
+    track::TrackBuilder,
+};
 use red4ext_rs::types::{CName, EntityId, Opt, Ref};
+use scene::Scene;
+use track::Tracks;
 
 use crate::{
     error::{EngineError, Error},
-    Tween,
+    EmitterSettings, Tween,
 };
 
-mod handles;
 pub mod queue;
+
+mod handles;
+mod scene;
+mod track;
 
 pub struct Engine<B: Backend> {
     pub banks: Banks,
-    pub manager: AudioManager<B>,
     pub handles: Handles,
+    pub tracks: Tracks,
+    pub scene: Scene,
+    pub manager: AudioManager<B>,
 }
 
 impl<B> Engine<B>
@@ -29,15 +40,19 @@ where
     pub fn try_new(settings: AudioManagerSettings<B>) -> Result<Engine<B>, Error> {
         let banks = Banks::new();
         let capacity = settings.capacities.sound_capacity as usize;
-        let manager = AudioManager::new(settings).map_err(|_| Error::Engine {
+        let mut manager = AudioManager::new(settings).map_err(|_| Error::Engine {
             source: EngineError::Manager {
                 origin: "audio manager",
             },
         })?;
+        let ambience = manager.add_sub_track(TrackBuilder::new())?;
+        let scene = Scene::try_new(&mut manager, &ambience)?;
         Ok(Engine {
             banks,
             manager,
             handles: Handles::with_capacity(capacity),
+            scene,
+            tracks: Tracks { ambience },
         })
     }
 
@@ -90,5 +105,20 @@ where
 
     pub fn reclaim(&mut self) {
         self.handles.reclaim();
+    }
+
+    pub fn register_emitter(
+        &mut self,
+        entity_id: EntityId,
+        emitter_name: Opt<CName>,
+        emitter_settings: Opt<EmitterSettings>,
+    ) -> bool {
+        self.scene
+            .add_emitter(Vec3::ZERO, entity_id, emitter_name, emitter_settings)
+            .is_ok()
+    }
+
+    pub fn unregister_emitter(&mut self, entity_id: EntityId) -> bool {
+        self.scene.remove_emitter(entity_id).unwrap_or(false)
     }
 }
