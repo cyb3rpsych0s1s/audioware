@@ -62,8 +62,8 @@ pub fn spawn(_env: &SdkEnv) -> Result<(), Error> {
 
 pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, engine: Engine<B>) {
     'game: loop {
-        match rl.try_recv() {
-            Ok(x) => match x {
+        for l in rl.try_iter() {
+            match l {
                 Lifecycle::Terminate => {
                     lifecycle!("> terminate");
                     break 'game;
@@ -115,26 +115,10 @@ pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, engine: E
                 Lifecycle::Board(Board::UIMenu(value)) => {
                     lifecycle!("> board ui menu {value}");
                 }
-            },
-            Err(TryRecvError::Empty) => {}
-            Err(TryRecvError::Disconnected) => {
-                error!(
-                    Audioware::env(),
-                    "plugin game lifecycle channel is disconnected"
-                );
-                break 'game;
             }
         }
-        match rc.try_recv() {
-            Ok(x) => {}
-            Err(TryRecvError::Empty) => {}
-            Err(TryRecvError::Disconnected) => {
-                error!(
-                    Audioware::env(),
-                    "plugin game commands channel is disconnected"
-                );
-                break 'game;
-            }
+        for c in rc.try_iter() {
+            log::info!(Audioware::env(), "{c:?}");
         }
     }
     let _ = LIFECYCLE
