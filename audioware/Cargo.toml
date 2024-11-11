@@ -29,6 +29,7 @@ red4ext-rs.workspace = true
 rust-ini = "0.21"
 snafu.workspace = true
 snowflake.workspace = true
+bitflags = "2.6.0"
 
 [build-dependencies]
 semver = "1.0"

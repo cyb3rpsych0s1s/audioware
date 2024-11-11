@@ -1,5 +1,12 @@
-use std::{sync::OnceLock, thread::JoinHandle};
+use std::{
+    sync::{
+        atomic::{AtomicU32, Ordering},
+        LazyLock, OnceLock,
+    },
+    thread::JoinHandle,
+};
 
+use bitflags::bitflags;
 use crossbeam::channel::{bounded, Receiver, Sender};
 use kira::manager::{
     backend::{
@@ -26,12 +33,23 @@ use crate::{
     Audioware,
 };
 
+bitflags! {
+    struct Flags: u32 {
+        const INITIALIZING = 1 << 0;
+        const LOADING = 1 << 1;
+        const IN_MENU = 1 << 2;
+        const IN_GAME = 1 << 3;
+    }
+}
+
 static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
 static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
+static STATE: LazyLock<AtomicU32> = LazyLock::new(|| AtomicU32::new(Flags::empty().bits()));
 
 pub fn spawn(_env: &SdkEnv) -> Result<(), Error> {
     lifecycle!("spawn plugin thread");
+    STATE.store(Flags::LOADING.bits(), Ordering::Release);
     let buffer_size = BufferSize::read_ini();
     let mut backend_settings = CpalBackendSettings::default();
     if buffer_size != BufferSize::Auto {
@@ -62,7 +80,11 @@ pub fn spawn(_env: &SdkEnv) -> Result<(), Error> {
 }
 
 pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, engine: Engine<B>) {
+    let force_sync = false;
+    let force_reclaim = false;
     'game: loop {
+        let synced = false;
+        let reclaimed = false;
         for l in rl.try_iter() {
             match l {
                 Lifecycle::Terminate => {
@@ -116,9 +138,10 @@ pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, engine: E
                 Lifecycle::Board(Board::UIMenu(value)) => {
                     lifecycle!("> board ui menu {value}");
                 }
+                _ => {}
             }
         }
-        for c in rc.try_iter() {
+        for c in rc.try_iter().take(8) {
             log::info!(Audioware::env(), "{c:?}");
         }
     }
