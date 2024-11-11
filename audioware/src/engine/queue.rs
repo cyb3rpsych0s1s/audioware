@@ -1,4 +1,5 @@
 use std::{
+    fmt::Debug,
     sync::{
         atomic::{AtomicU32, Ordering},
         LazyLock, OnceLock,
@@ -6,26 +7,20 @@ use std::{
     thread::JoinHandle,
 };
 
-use audioware_bank::BankData;
 use audioware_manifest::{PlayerGender, SpokenLocale};
 use bitflags::bitflags;
 use crossbeam::channel::{bounded, Receiver, Sender};
-use either::Either;
-use kira::{
-    manager::{
-        backend::{
-            cpal::{CpalBackend, CpalBackendSettings},
-            Backend,
-        },
-        AudioManagerSettings,
+use kira::manager::{
+    backend::{
+        cpal::{CpalBackend, CpalBackendSettings},
+        Backend,
     },
-    sound::PlaybackState,
+    AudioManagerSettings,
 };
 use red4ext_rs::{
     log::{self},
     PluginOps, SdkEnv,
 };
-use snowflake::ProcessUniqueId;
 use std::sync::{Mutex, RwLock};
 
 use crate::{
@@ -34,11 +29,11 @@ use crate::{
         lifecycle::{Board, Lifecycle, Session, System},
     },
     config::BufferSize,
-    engine::{Emitter, Engine, Handle},
     error::Error,
     utils::{fails, lifecycle},
-    ToTween,
 };
+
+use super::Engine;
 
 bitflags! {
     struct Flags: u32 {
@@ -82,27 +77,27 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<B>) {
+pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<B>)
+where
+    <B as Backend>::Error: Debug,
+{
     use crate::states::State;
-    let force_sync = false;
-    let force_reclaim = false;
     let spoken = SpokenLocale::get();
     let gender = PlayerGender::get();
     'game: loop {
         let synced = false;
-        let reclaimed = false;
         for l in rl.try_iter() {
             lifecycle!("> {l}");
+            if let Lifecycle::Terminate = l {
+                break 'game;
+            };
             match l {
-                Lifecycle::Terminate => {
-                    break 'game;
-                }
                 Lifecycle::Shutdown => {}
                 Lifecycle::RegisterEmitter { .. } => {}
                 Lifecycle::UnregisterEmitter { .. } => {}
                 Lifecycle::SyncScene => {}
                 Lifecycle::Reclaim => {
-                    // engine.reclaim();
+                    engine.reclaim();
                 }
                 Lifecycle::Session(Session::BeforeStart) => {
                     // engine.reset();
@@ -117,36 +112,8 @@ pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engin
                 Lifecycle::System(System::Detach) => {}
                 Lifecycle::System(System::PlayerAttach) => {}
                 Lifecycle::System(System::PlayerDetach) => {}
-                Lifecycle::Board(Board::UIMenu(value)) => match value {
-                    true => {
-                        for ref mut ref_multi in engine.statics.iter_mut() {
-                            if ref_multi.value_mut().handle.state() == PlaybackState::Playing {
-                                ref_multi.value_mut().handle.pause(Default::default());
-                            }
-                        }
-                        for ref mut ref_multi in engine.streams.iter_mut() {
-                            if ref_multi.value_mut().handle.state() == PlaybackState::Playing {
-                                ref_multi.value_mut().handle.pause(Default::default());
-                            }
-                        }
-                    }
-                    false => {
-                        for ref mut ref_multi in engine.statics.iter_mut() {
-                            if ref_multi.value_mut().handle.state() == PlaybackState::Paused
-                                || ref_multi.value_mut().handle.state() == PlaybackState::Pausing
-                            {
-                                ref_multi.value_mut().handle.resume(Default::default());
-                            }
-                        }
-                        for ref mut ref_multi in engine.streams.iter_mut() {
-                            if ref_multi.value_mut().handle.state() == PlaybackState::Paused
-                                || ref_multi.value_mut().handle.state() == PlaybackState::Pausing
-                            {
-                                ref_multi.value_mut().handle.resume(Default::default());
-                            }
-                        }
-                    }
-                },
+                Lifecycle::Board(Board::UIMenu(true)) => engine.pause(),
+                Lifecycle::Board(Board::UIMenu(false)) => engine.resume(),
                 _ => {}
             }
         }
@@ -160,30 +127,7 @@ pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engin
                     entity_id,
                     emitter_name,
                     ..
-                } => {
-                    if let Ok(key) = engine.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
-                        let data = engine.banks.data(key);
-                        let emitter = Emitter::new(entity_id, emitter_name);
-                        match data {
-                            Either::Left(data) => {
-                                if let Ok(handle) = engine.manager.play(data) {
-                                    engine.statics.insert(
-                                        ProcessUniqueId::new(),
-                                        Handle::new(handle, sound_name, emitter),
-                                    );
-                                }
-                            }
-                            Either::Right(data) => {
-                                if let Ok(handle) = engine.manager.play(data) {
-                                    engine.streams.insert(
-                                        ProcessUniqueId::new(),
-                                        Handle::new(handle, sound_name, emitter),
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
+                } => engine.play(sound_name, entity_id, emitter_name, spoken, gender),
                 Command::PlayOnEmitter { .. } => {}
                 Command::PlayOverThePhone { .. } => {}
                 Command::StopOnEmitter { .. } => {}
@@ -195,31 +139,7 @@ pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engin
                     entity_id,
                     emitter_name,
                     tween,
-                } => {
-                    if engine.banks.exists(&event_name) {
-                        let emitter = Emitter::new(entity_id, emitter_name);
-                        for ref mut ref_multi in engine.statics.iter_mut() {
-                            if ref_multi.value().event_name == event_name
-                                && ref_multi.value().emitter == emitter
-                            {
-                                ref_multi
-                                    .value_mut()
-                                    .handle
-                                    .stop(tween.clone().into_tween().unwrap_or_default());
-                            }
-                        }
-                        for ref mut ref_multi in engine.streams.iter_mut() {
-                            if ref_multi.value().event_name == event_name
-                                && ref_multi.value().emitter == emitter
-                            {
-                                ref_multi
-                                    .value_mut()
-                                    .handle
-                                    .stop(tween.clone().into_tween().unwrap_or_default());
-                            }
-                        }
-                    }
-                }
+                } => engine.stop(event_name, entity_id, emitter_name, tween),
                 Command::StopFor { .. } => {}
                 Command::Switch { .. } => {}
                 Command::SetVolume { .. } => {}

@@ -1,54 +1,24 @@
 use std::fmt::Debug;
 
-use audioware_bank::Banks;
-use dashmap::DashMap;
-use kira::{
-    manager::{backend::Backend, AudioManager, AudioManagerSettings},
-    sound::{static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError},
+use audioware_bank::{BankData, Banks};
+use audioware_manifest::{PlayerGender, SpokenLocale};
+use either::Either;
+use handles::{Emitter, Handles};
+use kira::manager::{backend::Backend, AudioManager, AudioManagerSettings};
+use red4ext_rs::types::{CName, EntityId, Opt, Ref};
+
+use crate::{
+    error::{EngineError, Error},
+    Tween,
 };
-use red4ext_rs::types::{CName, EntityId, Opt};
-use snowflake::ProcessUniqueId;
 
-use crate::error::{EngineError, Error};
-
+mod handles;
 pub mod queue;
-
-#[derive(PartialEq)]
-pub struct Emitter {
-    pub id: EntityId,
-    pub name: CName,
-}
-impl Emitter {
-    pub fn new(id: Opt<EntityId>, name: Opt<CName>) -> Option<Self> {
-        let id = id.into_option();
-        let name = name.into_option();
-        match (id, name) {
-            (Some(id), Some(name)) => Some(Emitter { id, name }),
-            _ => None,
-        }
-    }
-}
-
-pub struct Handle<T> {
-    pub handle: T,
-    pub event_name: CName,
-    pub emitter: Option<Emitter>,
-}
-impl<T> Handle<T> {
-    pub fn new(handle: T, event_name: CName, emitter: Option<Emitter>) -> Self {
-        Self {
-            handle,
-            event_name,
-            emitter,
-        }
-    }
-}
 
 pub struct Engine<B: Backend> {
     pub banks: Banks,
     pub manager: AudioManager<B>,
-    pub statics: DashMap<ProcessUniqueId, Handle<StaticSoundHandle>>,
-    pub streams: DashMap<ProcessUniqueId, Handle<StreamingSoundHandle<FromFileError>>>,
+    pub handles: Handles,
 }
 
 impl<B> Engine<B>
@@ -58,6 +28,7 @@ where
 {
     pub fn try_new(settings: AudioManagerSettings<B>) -> Result<Engine<B>, Error> {
         let banks = Banks::new();
+        let capacity = settings.capacities.sound_capacity as usize;
         let manager = AudioManager::new(settings).map_err(|_| Error::Engine {
             source: EngineError::Manager {
                 origin: "audio manager",
@@ -66,8 +37,58 @@ where
         Ok(Engine {
             banks,
             manager,
-            statics: DashMap::new(),
-            streams: DashMap::new(),
+            handles: Handles::with_capacity(capacity),
         })
+    }
+
+    pub fn play(
+        &mut self,
+        event_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        spoken: SpokenLocale,
+        gender: Option<PlayerGender>,
+    ) {
+        if let Ok(key) = self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
+            let data = self.banks.data(key);
+            let emitter = Emitter::new(entity_id, emitter_name);
+            match data {
+                Either::Left(data) => {
+                    if let Ok(handle) = self.manager.play(data) {
+                        self.handles.store_static(handle, event_name, emitter);
+                    }
+                }
+                Either::Right(data) => {
+                    if let Ok(handle) = self.manager.play(data) {
+                        self.handles.store_stream(handle, event_name, emitter);
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn stop(
+        &mut self,
+        event_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        tween: Ref<Tween>,
+    ) {
+        if self.banks.exists(&event_name) {
+            self.handles
+                .stop(event_name, Emitter::new(entity_id, emitter_name), tween);
+        }
+    }
+
+    pub fn pause(&mut self) {
+        self.handles.pause();
+    }
+
+    pub fn resume(&mut self) {
+        self.handles.resume();
+    }
+
+    pub fn reclaim(&mut self) {
+        self.handles.reclaim();
     }
 }
