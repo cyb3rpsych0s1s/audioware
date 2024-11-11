@@ -1,5 +1,9 @@
+use audioware_manifest::ScnDialogLineType;
+use command::Command;
 use lifecycle::{Board, Lifecycle, Session, System};
-use red4ext_rs::{exports, Exportable, GameApp, RttiRegistrator, SdkEnv, StateListener, StateType};
+use red4ext_rs::{
+    class_kind::Native, exports, methods, types::{CName, EntityId, IScriptable, Opt, Ref}, ClassExport, Exportable, GameApp, RttiRegistrator, ScriptClass, SdkEnv, StateListener, StateType
+};
 
 use crate::{queue, utils::lifecycle, Audioware};
 
@@ -42,6 +46,15 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.OnGameSystemPlayerAttach",   Audioware::on_game_system_player_attach),
         g!(c"Audioware.OnGameSystemPlayerDetach",   Audioware::on_game_system_player_detach),
         g!(c"Audioware.OnUIMenu",                   Audioware::on_ui_menu),
+        // ClassExport::<AudioSettingsExt>::builder()
+        //         .base(IScriptable::NAME)
+        //         .build(),
+        // ClassExport::<AudioSystemExt>::builder()
+        //         .base(IScriptable::NAME)
+        //         .methods(methods![
+        //             final c"Play" => AudioSystemExt::play,
+        //         ])
+        //         .build(),
     ]
 }
 
@@ -137,5 +150,59 @@ impl GameSystemLifecycle for Audioware {
 impl BlackboardLifecycle for Audioware {
     fn on_ui_menu(value: bool) {
         queue::notify(Lifecycle::Board(Board::UIMenu(value)));
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct AudioSettingsExt {
+    base: IScriptable,
+    start_position: f32,
+}
+
+unsafe impl ScriptClass for AudioSettingsExt {
+    type Kind = Native;
+    const NAME: &'static str = "Audioware.AudioSettingsExt";
+}
+
+/// Interop type for [Ext.reds](https://github.com/cyb3rpsych0s1s/audioware/blob/main/audioware/reds/Ext.reds).
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct AudioSystemExt {
+    base: IScriptable,
+}
+
+unsafe impl ScriptClass for AudioSystemExt {
+    type Kind = Native;
+    const NAME: &'static str = "AudioSystemExt";
+}
+
+// pub trait ExtCommand {
+//     fn play(
+//         &self,
+//         sound_name: CName,
+//         entity_id: Opt<EntityId>,
+//         emitter_name: Opt<CName>,
+//         line_type: Opt<ScnDialogLineType>,
+//         ext: Ref<AudioSettingsExt>,
+//     );
+// }
+
+impl AudioSystemExt {
+    fn play(
+        &self,
+        sound_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        line_type: Opt<ScnDialogLineType>,
+        ext: Ref<AudioSettingsExt>,
+    ) {
+        queue::send(Command::PlayExt {
+            sound_name,
+            entity_id,
+            emitter_name,
+            line_type,
+            ext,
+        });
     }
 }
