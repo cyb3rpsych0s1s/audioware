@@ -1,8 +1,5 @@
 use lifecycle::{Board, Lifecycle, Session, System};
-use red4ext_rs::{
-    exports, global, Exportable, GameApp, GlobalExport, RttiRegistrator, SdkEnv, StateListener,
-    StateType,
-};
+use red4ext_rs::{exports, Exportable, GameApp, RttiRegistrator, SdkEnv, StateListener, StateType};
 
 use crate::{queue, utils::lifecycle, Audioware};
 
@@ -22,53 +19,29 @@ pub fn register_listeners(env: &SdkEnv) {
     );
 }
 
+macro_rules! g {
+    ($reds:literal, $rust:path) => {
+        ::red4ext_rs::GlobalExport(::red4ext_rs::global!($reds, $rust))
+    };
+}
+
+/// Register types in [RTTI][RttiSystem].
+#[allow(clippy::transmute_ptr_to_ref)] // upstream lint
+#[rustfmt::skip]
 pub fn exports() -> impl Exportable {
     exports![
-        GlobalExport(global!(
-            c"Audioware.OnGameSessionBeforeStart",
-            Audioware::on_game_session_before_start
-        )),
-        GlobalExport(global!(
-            c"Audioware.OnGameSessionStart",
-            Audioware::on_game_session_start
-        )),
-        GlobalExport(global!(
-            c"Audioware.OnGameSessionReady",
-            Audioware::on_game_session_ready
-        )),
-        GlobalExport(global!(
-            c"Audioware.OnGameSessionPause",
-            Audioware::on_game_session_pause
-        )),
-        GlobalExport(global!(
-            c"Audioware.OnGameSessionResume",
-            Audioware::on_game_session_resume
-        )),
-        GlobalExport(global!(
-            c"Audioware.OnGameSessionBeforeEnd",
-            Audioware::on_game_session_before_end
-        )),
-        GlobalExport(global!(
-            c"Audioware.OnGameSessionEnd",
-            Audioware::on_game_session_end
-        )),
-        GlobalExport(global!(
-            c"Audioware.OnGameSystemAttach",
-            Audioware::on_game_system_attach
-        )),
-        GlobalExport(global!(
-            c"Audioware.OnGameSystemDetach",
-            Audioware::on_game_system_detach
-        )),
-        GlobalExport(global!(
-            c"Audioware.OnGameSystemPlayerAttach",
-            Audioware::on_game_system_player_attach
-        )),
-        GlobalExport(global!(
-            c"Audioware.OnGameSystemPlayerDetach",
-            Audioware::on_game_system_player_detach
-        )),
-        GlobalExport(global!(c"Audioware.OnUIMenu", Audioware::on_ui_menu)),
+        g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
+        g!(c"Audioware.OnGameSessionStart",         Audioware::on_game_session_start),
+        g!(c"Audioware.OnGameSessionReady",         Audioware::on_game_session_ready),
+        g!(c"Audioware.OnGameSessionPause",         Audioware::on_game_session_pause),
+        g!(c"Audioware.OnGameSessionResume",        Audioware::on_game_session_resume),
+        g!(c"Audioware.OnGameSessionBeforeEnd",     Audioware::on_game_session_before_end),
+        g!(c"Audioware.OnGameSessionEnd",           Audioware::on_game_session_end),
+        g!(c"Audioware.OnGameSystemAttach",         Audioware::on_game_system_attach),
+        g!(c"Audioware.OnGameSystemDetach",         Audioware::on_game_system_detach),
+        g!(c"Audioware.OnGameSystemPlayerAttach",   Audioware::on_game_system_player_attach),
+        g!(c"Audioware.OnGameSystemPlayerDetach",   Audioware::on_game_system_player_detach),
+        g!(c"Audioware.OnUIMenu",                   Audioware::on_ui_menu),
     ]
 }
 
