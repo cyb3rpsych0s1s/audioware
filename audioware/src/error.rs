@@ -29,6 +29,8 @@ pub enum InternalError {
 
 #[derive(Debug, Snafu)]
 pub enum EngineError {
+    #[snafu(display("Audio manager error: {origin}"))]
+    Manager { origin: &'static str },
     #[snafu(display("Resource limit error: {source}"))]
     Limit { source: ResourceLimitReached },
     #[snafu(display("Play sound error: {source}"))]
