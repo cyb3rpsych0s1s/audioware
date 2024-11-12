@@ -1,7 +1,6 @@
 use audioware_manifest::{PlayerGender, ScnDialogLineType};
-use red4ext_rs::types::{CName, EntityId, Opt, Ref};
-
-use crate::types::Tween;
+use kira::tween::Tween;
+use red4ext_rs::types::{CName, EntityId};
 
 use super::AudioSettingsExt;
 
@@ -10,29 +9,29 @@ use super::AudioSettingsExt;
 pub enum Command {
     PlayVanilla {
         event_name: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
     },
     #[allow(dead_code)]
     Play {
         sound_name: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
-        line_type: Opt<ScnDialogLineType>,
-        tween: Ref<Tween>,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        line_type: Option<ScnDialogLineType>,
+        tween: Option<Tween>,
     },
     PlayExt {
         sound_name: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
-        line_type: Opt<ScnDialogLineType>,
-        ext: Ref<AudioSettingsExt>,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        line_type: Option<ScnDialogLineType>,
+        ext: Option<AudioSettingsExt>,
     },
     PlayOnEmitter {
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        tween: Ref<Tween>,
+        tween: Option<Tween>,
     },
     PlayOverThePhone {
         event_name: CName,
@@ -43,24 +42,24 @@ pub enum Command {
         event_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        tween: Ref<Tween>,
+        tween: Option<Tween>,
     },
     Pause {
-        tween: Ref<Tween>,
+        tween: Option<Tween>,
     },
     Resume {
-        tween: Ref<Tween>,
+        tween: Option<Tween>,
     },
     StopVanilla {
         event_name: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
     },
     Stop {
         event_name: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
-        tween: Ref<Tween>,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        tween: Option<Tween>,
     },
     #[allow(dead_code)]
     StopFor {
@@ -69,10 +68,10 @@ pub enum Command {
     Switch {
         switch_name: CName,
         switch_value: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
-        switch_name_tween: Ref<Tween>,
-        // switch_value_settings: Ref<AudioSettingsExt>,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        switch_name_tween: Option<Tween>,
+        // switch_value_settings: Option<AudioSettingsExt>,
     },
     SetVolume {
         setting: CName,

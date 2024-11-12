@@ -1,11 +1,15 @@
 use dashmap::DashMap;
-use kira::sound::{
-    static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError, PlaybackState,
+use kira::{
+    sound::{
+        static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError,
+        PlaybackState,
+    },
+    tween::Tween,
 };
-use red4ext_rs::types::{CName, EntityId, Opt, Ref};
+use red4ext_rs::types::{CName, EntityId};
 use snowflake::ProcessUniqueId;
 
-use crate::{ToTween, Tween};
+use crate::ToTween;
 
 pub struct Handles {
     statics: DashMap<ProcessUniqueId, Handle<StaticSoundHandle>>,
@@ -81,13 +85,13 @@ impl Handles {
         }
     }
 
-    pub fn stop(&mut self, event_name: CName, emitter: Option<Emitter>, tween: Ref<Tween>) {
+    pub fn stop(&mut self, event_name: CName, emitter: Option<Emitter>, tween: Option<Tween>) {
         for ref mut ref_multi in self.statics.iter_mut() {
             if ref_multi.value().event_name == event_name && ref_multi.value().emitter == emitter {
                 ref_multi
                     .value_mut()
                     .handle
-                    .stop(tween.clone().into_tween().unwrap_or_default());
+                    .stop(tween.into_tween().unwrap_or_default());
             }
         }
         for ref mut ref_multi in self.streams.iter_mut() {
@@ -95,7 +99,7 @@ impl Handles {
                 ref_multi
                     .value_mut()
                     .handle
-                    .stop(tween.clone().into_tween().unwrap_or_default());
+                    .stop(tween.into_tween().unwrap_or_default());
             }
         }
     }
@@ -112,9 +116,7 @@ pub struct Emitter {
 }
 
 impl Emitter {
-    pub fn new(id: Opt<EntityId>, name: Opt<CName>) -> Option<Self> {
-        let id = id.into_option();
-        let name = name.into_option();
+    pub fn new(id: Option<EntityId>, name: Option<CName>) -> Option<Self> {
         match (id, name) {
             (Some(id), Some(name)) => Some(Emitter { id, name }),
             _ => None,

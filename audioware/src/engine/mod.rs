@@ -8,15 +8,16 @@ use handles::{Emitter, Handles};
 use kira::{
     manager::{backend::Backend, AudioManager, AudioManagerSettings},
     track::TrackBuilder,
+    tween::Tween,
 };
-use red4ext_rs::types::{CName, EntityId, Opt, Ref};
+use red4ext_rs::types::{CName, EntityId, Opt};
 use scene::{EmitterId, Scene};
 use track::Tracks;
 
 use crate::{
     error::{EngineError, Error},
     utils::lifecycle,
-    EmitterSettings, ToTween, Tween,
+    EmitterSettings, ToTween,
 };
 
 pub mod queue;
@@ -64,8 +65,8 @@ where
     pub fn play(
         &mut self,
         event_name: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
         spoken: SpokenLocale,
         gender: Option<PlayerGender>,
     ) {
@@ -92,14 +93,17 @@ where
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        tween: Ref<Tween>,
+        tween: Option<Tween>,
         spoken: SpokenLocale,
         gender: Option<PlayerGender>,
     ) {
         if let Some(ref scene) = self.scene {
             if let Ok(key) = self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
                 let data = self.banks.data(key);
-                let emitter = Emitter::new(Opt::from(entity_id), Opt::from(emitter_name));
+                let emitter = Emitter::new(
+                    Opt::from(entity_id).into_option(),
+                    Opt::from(emitter_name).into_option(),
+                );
                 if let Some(ref emit) = scene
                     .emitters
                     .get(&EmitterId::new(entity_id, Some(emitter_name)))
@@ -130,9 +134,9 @@ where
     pub fn stop(
         &mut self,
         event_name: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
-        tween: Ref<Tween>,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        tween: Option<Tween>,
     ) {
         if self.banks.exists(&event_name) {
             self.handles

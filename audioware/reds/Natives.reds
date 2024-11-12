@@ -14,3 +14,6 @@ private static native func OnGameSystemPlayerDetach();
 private static native func OnGameSystemDetach();
 
 private static native func OnUIMenu(value: Bool);
+
+public static native func RegisterEmitter(entityID: EntityID, opt emitterName: CName, opt emitterSettings: EmitterSettings) -> Bool;
+public static native func UnregisterEmitter(entityID: EntityID) -> Bool;

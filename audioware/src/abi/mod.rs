@@ -10,7 +10,9 @@ use red4ext_rs::{
     StateType, StructExport,
 };
 
-use crate::{queue, utils::lifecycle, Audioware, EmitterDistances, EmitterSettings, Tween};
+use crate::{
+    queue, utils::lifecycle, Audioware, EmitterDistances, EmitterSettings, ToTween, Tween,
+};
 
 pub mod command;
 pub mod lifecycle;
@@ -46,8 +48,7 @@ pub fn exports() -> impl Exportable {
                 .methods(methods![
                     final c"Play" => AudioSystemExt::play,
                     final c"Stop" => AudioSystemExt::stop,
-                    final c"RegisterEmitter" => AudioSystemExt::register_emitter,
-                    final c"UnregisterEmitter" => AudioSystemExt::unregister_emitter,
+                    final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
                 ])
                 .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
@@ -62,6 +63,8 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.OnGameSystemPlayerAttach",   Audioware::on_game_system_player_attach),
         g!(c"Audioware.OnGameSystemPlayerDetach",   Audioware::on_game_system_player_detach),
         g!(c"Audioware.OnUIMenu",                   Audioware::on_ui_menu),
+        g!(c"Audioware.RegisterEmitter",            Audioware::register_emitter),
+        g!(c"Audioware.UnregisterEmitter",          Audioware::unregister_emitter),
     ]
 }
 
@@ -162,17 +165,15 @@ impl BlackboardLifecycle for Audioware {
 
 pub trait SceneLifecycle {
     fn register_emitter(
-        &self,
         entity_id: EntityId,
         emitter_name: Opt<CName>,
         emitter_settings: Opt<EmitterSettings>,
     ) -> bool;
-    fn unregister_emitter(&self, entity_id: EntityId) -> bool;
+    fn unregister_emitter(entity_id: EntityId) -> bool;
 }
 
-impl SceneLifecycle for AudioSystemExt {
+impl SceneLifecycle for Audioware {
     fn register_emitter(
-        &self,
         entity_id: EntityId,
         emitter_name: Opt<CName>,
         emitter_settings: Opt<EmitterSettings>,
@@ -190,7 +191,7 @@ impl SceneLifecycle for AudioSystemExt {
         false
     }
 
-    fn unregister_emitter(&self, entity_id: EntityId) -> bool {
+    fn unregister_emitter(entity_id: EntityId) -> bool {
         let (sender, receiver) = bounded(1);
         queue::notify(Lifecycle::UnregisterEmitter { entity_id, sender });
         if let Ok(unregistered) = receiver.recv() {
@@ -241,6 +242,7 @@ pub trait ExtCommand {
     );
     /// Play sound on audio emitter with optional [tween][Tween].
     fn play_on_emitter(
+        &self,
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
@@ -255,14 +257,14 @@ impl ExtCommand for AudioSystemExt {
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         line_type: Opt<ScnDialogLineType>,
-        ext: Ref<AudioSettingsExt>,
+        _ext: Ref<AudioSettingsExt>, // TODO:
     ) {
         queue::send(Command::PlayExt {
             sound_name,
-            entity_id,
-            emitter_name,
-            line_type,
-            ext,
+            entity_id: entity_id.into_option(),
+            emitter_name: emitter_name.into_option(),
+            line_type: line_type.into_option(),
+            ext: None,
         });
     }
 
@@ -275,13 +277,14 @@ impl ExtCommand for AudioSystemExt {
     ) {
         queue::send(Command::Stop {
             event_name,
-            entity_id,
-            emitter_name,
-            tween,
+            entity_id: entity_id.into_option(),
+            emitter_name: emitter_name.into_option(),
+            tween: tween.into_tween(),
         });
     }
 
     fn play_on_emitter(
+        &self,
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
@@ -291,7 +294,7 @@ impl ExtCommand for AudioSystemExt {
             sound_name,
             entity_id,
             emitter_name,
-            tween,
+            tween: tween.clone().into_tween(),
         });
     }
 }
