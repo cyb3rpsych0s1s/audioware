@@ -14,4 +14,5 @@ public native class AudioSystemExt {
     // spatial scene
     public final native func RegisterEmitter(entityID: EntityID, opt emitterName: CName, opt emitterSettings: EmitterSettings) -> Bool;
     public final native func UnregisterEmitter(entityID: EntityID) -> Bool;
+    public final native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
 }

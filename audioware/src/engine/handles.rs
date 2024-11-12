@@ -99,6 +99,10 @@ impl Handles {
             }
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.statics.is_empty() && self.streams.is_empty()
+    }
 }
 
 #[derive(PartialEq)]

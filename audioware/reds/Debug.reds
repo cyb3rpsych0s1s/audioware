@@ -13,13 +13,37 @@ public static exec func TestStop(game: GameInstance, name: String) {
 }
 /// Game.TestRegisterEmitter();
 public static exec func TestRegisterEmitter(game: GameInstance) {
-    let v = GetPlayer(game).GetEntityID();
-    let added = GameInstance.GetAudioSystemExt(game).RegisterEmitter(v);
+    let emitterID: EntityID;
+    let emitterName: CName;
+
+    let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
+    emitterID = target.GetEntityID();
+    emitterName = n"Jean-Guy";
+    let added = GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID, emitterName);
     FTLog(s"registered? \(added)");
 }
 /// Game.TestUnregisterEmitter();
 public static exec func TestUnregisterEmitter(game: GameInstance) {
-    let v = GetPlayer(game).GetEntityID();
-    let added = GameInstance.GetAudioSystemExt(game).UnregisterEmitter(v);
+    let emitterID: EntityID;
+    let emitterName: CName;
+
+    let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
+    emitterID = target.GetEntityID();
+    emitterName = n"Jean-Guy";
+    let added = GameInstance.GetAudioSystemExt(game).UnregisterEmitter(emitterID);
     FTLog(s"unregistered? \(added)");
+}
+
+/// Game.TestPlayOnEmitter("straight_outta_compton", "Eazy-E");
+public static exec func TestPlayOnEmitter(game: GameInstance, soundName: String, opt emitterName: String) {
+    let soundCName = StringToName(soundName);
+    let emitterID: EntityID;
+    let emitterCName: CName = IsNameValid(StringToName(emitterName))
+    ? StringToName(emitterName)
+    : n"Unknown name";
+
+    let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
+    emitterID = target.GetEntityID();
+    GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID);
+    GameInstance.GetAudioSystemExt(game).PlayOnEmitter(soundCName, emitterID, emitterCName);
 }

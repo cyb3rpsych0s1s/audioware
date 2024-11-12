@@ -6,8 +6,8 @@ use red4ext_rs::{
 };
 
 use super::{
-    ECustomCameraTarget, Quaternion, RedTagList, RenderSceneLayerMask, Vector4, WorldRuntimeScene,
-    WorldTransform,
+    AIActionHelper, ECustomCameraTarget, GameObject, Quaternion, RedTagList, RenderSceneLayerMask,
+    Vector4, WorldRuntimeScene, WorldTransform,
 };
 
 const EVENT_MANAGER_PADDING: usize = 0x138 - 0xD8;
@@ -72,6 +72,7 @@ pub trait AsEntity {
     fn get_world_forward(&self) -> Vector4;
     fn get_world_orientation(&self) -> Quaternion;
     fn get_world_transform(&self) -> WorldTransform;
+    fn is_in_workspot(&self) -> bool;
 }
 
 impl AsEntity for Ref<Entity> {
@@ -145,5 +146,12 @@ impl AsEntity for Ref<Entity> {
             }
             _ => WorldTransform::default(),
         }
+    }
+
+    fn is_in_workspot(&self) -> bool {
+        self.clone()
+            .cast::<GameObject>()
+            .map(AIActionHelper::is_in_workspot)
+            .unwrap_or(false)
     }
 }

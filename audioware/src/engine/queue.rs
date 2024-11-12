@@ -5,11 +5,12 @@ use std::{
         LazyLock, OnceLock,
     },
     thread::JoinHandle,
+    time::Duration,
 };
 
 use audioware_manifest::{PlayerGender, SpokenLocale};
 use bitflags::bitflags;
-use crossbeam::channel::{bounded, Receiver, Sender};
+use crossbeam::channel::{bounded, tick, Receiver, Sender};
 use kira::manager::{
     backend::{
         cpal::{CpalBackend, CpalBackendSettings},
@@ -84,13 +85,38 @@ where
     use crate::states::State;
     let spoken = SpokenLocale::get();
     let gender = PlayerGender::get();
+    let s = |x| Duration::from_secs_f32(x);
+    let ms = |x| Duration::from_millis(x);
+    let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
+    let synchronization = tick(ms(15));
     'game: loop {
-        let synced = false;
+        let mut synced = false;
+        let mut reclaimed = false;
         for l in rl.try_iter() {
             lifecycle!("> {l}");
             if let Lifecycle::Terminate = l {
                 break 'game;
             };
+            if engine.scene.is_some() && !synced {
+                let mut synchronize = false;
+                for _ in synchronization.try_iter() {
+                    synchronize = true;
+                }
+                if synchronize {
+                    engine.sync_scene();
+                    synced = true;
+                }
+            }
+            if !engine.handles.is_empty() && !reclaimed {
+                let mut reclaim = false;
+                for _ in reclamation.try_iter() {
+                    reclaim = true;
+                }
+                if reclaim {
+                    engine.reclaim();
+                    reclaimed = true;
+                }
+            }
             match l {
                 Lifecycle::Shutdown => {}
                 Lifecycle::RegisterEmitter {
@@ -107,7 +133,7 @@ where
                     let unregistered = engine.unregister_emitter(entity_id);
                     let _ = sender.try_send(unregistered);
                 }
-                Lifecycle::SyncScene => {}
+                Lifecycle::SyncScene => engine.sync_scene(),
                 Lifecycle::Reclaim => engine.reclaim(),
                 Lifecycle::Session(Session::BeforeStart) => {
                     // engine.reset();
@@ -120,8 +146,14 @@ where
                 Lifecycle::Session(Session::BeforeEnd) => {}
                 Lifecycle::System(System::Attach) => {}
                 Lifecycle::System(System::Detach) => {}
-                Lifecycle::System(System::PlayerAttach) => {}
-                Lifecycle::System(System::PlayerDetach) => {}
+                Lifecycle::System(System::PlayerAttach) => {
+                    if let Err(e) = engine.try_new_scene() {
+                        lifecycle!("failed to create new scene: {e}");
+                    }
+                }
+                Lifecycle::System(System::PlayerDetach) => {
+                    engine.scene = None;
+                }
                 Lifecycle::Board(Board::UIMenu(true)) => engine.pause(),
                 Lifecycle::Board(Board::UIMenu(false)) => engine.resume(),
                 _ => {}
@@ -138,7 +170,19 @@ where
                     emitter_name,
                     ..
                 } => engine.play(sound_name, entity_id, emitter_name, spoken, gender),
-                Command::PlayOnEmitter { .. } => {}
+                Command::PlayOnEmitter {
+                    sound_name,
+                    entity_id,
+                    emitter_name,
+                    tween,
+                } => engine.play_on_emitter(
+                    sound_name,
+                    entity_id,
+                    emitter_name,
+                    tween,
+                    spoken,
+                    gender,
+                ),
                 Command::PlayOverThePhone { .. } => {}
                 Command::StopOnEmitter { .. } => {}
                 Command::Pause { .. } => {}

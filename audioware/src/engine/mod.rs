@@ -1,21 +1,22 @@
 use std::fmt::Debug;
 
 use audioware_bank::{BankData, Banks};
+use audioware_core::With;
 use audioware_manifest::{PlayerGender, SpokenLocale};
 use either::Either;
-use glam::Vec3;
 use handles::{Emitter, Handles};
 use kira::{
     manager::{backend::Backend, AudioManager, AudioManagerSettings},
     track::TrackBuilder,
 };
 use red4ext_rs::types::{CName, EntityId, Opt, Ref};
-use scene::Scene;
+use scene::{EmitterId, Scene};
 use track::Tracks;
 
 use crate::{
     error::{EngineError, Error},
-    EmitterSettings, Tween,
+    utils::lifecycle,
+    EmitterSettings, ToTween, Tween,
 };
 
 pub mod queue;
@@ -28,7 +29,7 @@ pub struct Engine<B: Backend> {
     pub banks: Banks,
     pub handles: Handles,
     pub tracks: Tracks,
-    pub scene: Scene,
+    pub scene: Option<Scene>,
     pub manager: AudioManager<B>,
 }
 
@@ -46,14 +47,18 @@ where
             },
         })?;
         let ambience = manager.add_sub_track(TrackBuilder::new())?;
-        let scene = Scene::try_new(&mut manager, &ambience)?;
         Ok(Engine {
             banks,
             manager,
             handles: Handles::with_capacity(capacity),
-            scene,
+            scene: None,
             tracks: Tracks { ambience },
         })
+    }
+
+    pub fn try_new_scene(&mut self) -> Result<(), Error> {
+        self.scene = Some(Scene::try_new(&mut self.manager, &self.tracks.ambience)?);
+        Ok(())
     }
 
     pub fn play(
@@ -76,6 +81,46 @@ where
                 Either::Right(data) => {
                     if let Ok(handle) = self.manager.play(data) {
                         self.handles.store_stream(handle, event_name, emitter);
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn play_on_emitter(
+        &mut self,
+        sound_name: CName,
+        entity_id: EntityId,
+        emitter_name: CName,
+        tween: Ref<Tween>,
+        spoken: SpokenLocale,
+        gender: Option<PlayerGender>,
+    ) {
+        if let Some(ref scene) = self.scene {
+            if let Ok(key) = self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
+                let data = self.banks.data(key);
+                let emitter = Emitter::new(Opt::from(entity_id), Opt::from(emitter_name));
+                if let Some(ref emit) = scene
+                    .emitters
+                    .get(&EmitterId::new(entity_id, Some(emitter_name)))
+                {
+                    match data {
+                        Either::Left(data) => {
+                            if let Ok(handle) = self.manager.play(
+                                data.output_destination(emit.value().handle())
+                                    .with(tween.into_tween()),
+                            ) {
+                                self.handles.store_static(handle, sound_name, emitter);
+                            }
+                        }
+                        Either::Right(data) => {
+                            if let Ok(handle) = self.manager.play(
+                                data.output_destination(emit.value().handle())
+                                    .with(tween.into_tween()),
+                            ) {
+                                self.handles.store_stream(handle, sound_name, emitter);
+                            }
+                        }
                     }
                 }
             }
@@ -113,12 +158,35 @@ where
         emitter_name: Opt<CName>,
         emitter_settings: Opt<EmitterSettings>,
     ) -> bool {
-        self.scene
-            .add_emitter(Vec3::ZERO, entity_id, emitter_name, emitter_settings)
-            .is_ok()
+        match self.scene {
+            Some(ref mut scene) => scene
+                .add_emitter(entity_id, emitter_name, emitter_settings)
+                .is_ok(),
+            None => {
+                lifecycle!("scene is not initialized");
+                false
+            }
+        }
     }
 
     pub fn unregister_emitter(&mut self, entity_id: EntityId) -> bool {
-        self.scene.remove_emitter(entity_id).unwrap_or(false)
+        match self.scene {
+            Some(ref mut scene) => scene.remove_emitter(entity_id).is_ok(),
+            None => {
+                lifecycle!("scene is not initialized");
+                false
+            }
+        }
+    }
+
+    pub fn sync_scene(&mut self) {
+        match self.scene {
+            Some(ref mut scene) => {
+                if let Err(e) = scene.sync() {
+                    lifecycle!("failed to sync scene: {e}")
+                }
+            }
+            None => lifecycle!("scene is not initialized"),
+        }
     }
 }

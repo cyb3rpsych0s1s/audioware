@@ -239,6 +239,13 @@ pub trait ExtCommand {
         emitter_name: Opt<CName>,
         tween: Ref<Tween>,
     );
+    /// Play sound on audio emitter with optional [tween][Tween].
+    fn play_on_emitter(
+        sound_name: CName,
+        entity_id: EntityId,
+        emitter_name: CName,
+        tween: Ref<Tween>,
+    );
 }
 
 impl ExtCommand for AudioSystemExt {
@@ -268,6 +275,20 @@ impl ExtCommand for AudioSystemExt {
     ) {
         queue::send(Command::Stop {
             event_name,
+            entity_id,
+            emitter_name,
+            tween,
+        });
+    }
+
+    fn play_on_emitter(
+        sound_name: CName,
+        entity_id: EntityId,
+        emitter_name: CName,
+        tween: Ref<Tween>,
+    ) {
+        queue::send(Command::PlayOnEmitter {
+            sound_name,
             entity_id,
             emitter_name,
             tween,
