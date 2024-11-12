@@ -173,7 +173,7 @@ pub trait SceneLifecycle {
     fn unregister_emitter(&self,entity_id: EntityId) -> bool;
 }
 
-impl SceneLifecycle for Audioware {
+impl SceneLifecycle for AudioSystemExt {
     fn register_emitter(
         &self,
         entity_id: EntityId,

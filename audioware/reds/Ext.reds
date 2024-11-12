@@ -2,8 +2,6 @@ import Audioware.AudioSettingsExt
 import Audioware.Tween
 import Audioware.EmitterDistances
 import Audioware.EmitterSettings
-import Audioware.RegisterEmitter
-import Audioware.UnregisterEmitter
 
 @addMethod(GameInstance)
 public static func GetAudioSystemExt(game: GameInstance) -> ref<AudioSystemExt> = new AudioSystemExt();
