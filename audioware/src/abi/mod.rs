@@ -49,6 +49,8 @@ pub fn exports() -> impl Exportable {
                     final c"Play" => AudioSystemExt::play,
                     final c"Stop" => AudioSystemExt::stop,
                     final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
+                    final c"RegisterEmitter" => AudioSystemExt::register_emitter,
+                    final c"UnregisterEmitter" => AudioSystemExt::unregister_emitter,
                 ])
                 .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
@@ -63,8 +65,6 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.OnGameSystemPlayerAttach",   Audioware::on_game_system_player_attach),
         g!(c"Audioware.OnGameSystemPlayerDetach",   Audioware::on_game_system_player_detach),
         g!(c"Audioware.OnUIMenu",                   Audioware::on_ui_menu),
-        g!(c"Audioware.RegisterEmitter",            Audioware::register_emitter),
-        g!(c"Audioware.UnregisterEmitter",          Audioware::unregister_emitter),
     ]
 }
 
@@ -165,15 +165,17 @@ impl BlackboardLifecycle for Audioware {
 
 pub trait SceneLifecycle {
     fn register_emitter(
+        &self,
         entity_id: EntityId,
         emitter_name: Opt<CName>,
         emitter_settings: Opt<EmitterSettings>,
     ) -> bool;
-    fn unregister_emitter(entity_id: EntityId) -> bool;
+    fn unregister_emitter(&self,entity_id: EntityId) -> bool;
 }
 
 impl SceneLifecycle for Audioware {
     fn register_emitter(
+        &self,
         entity_id: EntityId,
         emitter_name: Opt<CName>,
         emitter_settings: Opt<EmitterSettings>,
@@ -191,7 +193,7 @@ impl SceneLifecycle for Audioware {
         false
     }
 
-    fn unregister_emitter(entity_id: EntityId) -> bool {
+    fn unregister_emitter(&self, entity_id: EntityId) -> bool {
         let (sender, receiver) = bounded(1);
         queue::notify(Lifecycle::UnregisterEmitter { entity_id, sender });
         if let Ok(unregistered) = receiver.recv() {
