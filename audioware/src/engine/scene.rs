@@ -1,21 +1,20 @@
 use dashmap::DashMap;
-use glam::{Quat, Vec3};
 use kira::{
     manager::{backend::Backend, AudioManager},
     spatial::{
-        emitter::EmitterHandle,
+        emitter::{EmitterHandle, EmitterSettings},
         listener::{ListenerHandle, ListenerSettings},
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
-    track::TrackHandle,
 };
-use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
+use red4ext_rs::types::{CName, EntityId, GameInstance};
 
 use crate::{
     error::{Error, SceneError},
-    get_player, AIActionHelper, AsEntity, AsGameInstance, EmitterSettings, Entity, GameObject,
-    Vector4,
+    get_player, AIActionHelper, AsEntity, AsGameInstance, Entity, GameObject, Vector4,
 };
+
+use super::{tracks::Tracks, tweens::IMMEDIATELY};
 
 /// Audio spatial scene.
 pub struct Scene {
@@ -28,17 +27,23 @@ pub struct Scene {
 impl Scene {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
-        track: &TrackHandle,
+        tracks: &Tracks,
     ) -> Result<Self, Error> {
         let settings = SpatialSceneSettings::default();
         let capacity = settings.emitter_capacity as usize;
         let mut scene = manager.add_spatial_scene(settings)?;
-        let v = get_player(GameInstance::new());
-        let listener_id = v.cast::<Entity>().map(|x| x.get_entity_id()).unwrap();
+        let (listener_id, position, orientation) = {
+            let v = get_player(GameInstance::new()).cast::<Entity>().unwrap();
+            (
+                v.get_entity_id(),
+                v.get_world_position(),
+                v.get_world_orientation(),
+            )
+        };
         let v = scene.add_listener(
-            Vec3::ZERO,
-            Quat::IDENTITY,
-            ListenerSettings::default().track(track),
+            position,
+            orientation,
+            ListenerSettings::default().track(tracks.sfx.as_ref()),
         )?;
         Ok(Self {
             v,
@@ -73,8 +78,8 @@ impl Scene {
     pub fn add_emitter(
         &mut self,
         entity_id: EntityId,
-        emitter_name: Opt<CName>,
-        settings: Opt<EmitterSettings>,
+        emitter_name: Option<CName>,
+        settings: Option<EmitterSettings>,
     ) -> Result<(), Error> {
         if entity_id == self.listener_id {
             return Err(Error::Scene {
@@ -82,19 +87,16 @@ impl Scene {
             });
         }
         let (position, busy) = self.emitter_infos(entity_id)?;
-        let emitter = self.scene.add_emitter(
-            position,
-            settings.into_option().map(Into::into).unwrap_or_default(),
-        )?;
+        let emitter = self
+            .scene
+            .add_emitter(position, settings.unwrap_or_default())?;
         let handle = Handle {
             handle: emitter,
             last_known_position: position,
             busy,
         };
-        self.emitters.insert(
-            EmitterId::new(entity_id, emitter_name.into_option()),
-            handle,
-        );
+        self.emitters
+            .insert(EmitterId::new(entity_id, emitter_name), handle);
         Ok(())
     }
 
@@ -125,8 +127,8 @@ impl Scene {
         let entity = player.cast::<Entity>().unwrap();
         let position = entity.get_world_position();
         let orientation = entity.get_world_orientation();
-        self.v.set_position(position, Default::default());
-        self.v.set_orientation(orientation, Default::default());
+        self.v.set_position(position, IMMEDIATELY);
+        self.v.set_orientation(orientation, IMMEDIATELY);
         Ok(())
     }
 
@@ -141,9 +143,11 @@ impl Scene {
                 return false;
             }
             v.busy = entity.is_in_workspot();
-            v.last_known_position = entity.get_world_position();
-            v.handle
-                .set_position(v.last_known_position, Default::default());
+            let position = entity.get_world_position();
+            if position != v.last_known_position {
+                v.last_known_position = position;
+                v.handle.set_position(position, IMMEDIATELY);
+            }
             true
         });
         Ok(())
@@ -154,9 +158,18 @@ impl Scene {
         self.sync_emitters()?;
         Ok(())
     }
+
+    pub fn is_registered_emitter(&self, entity_id: EntityId) -> bool {
+        for pair in self.emitters.iter() {
+            if pair.key().id == entity_id {
+                return true;
+            }
+        }
+        false
+    }
 }
 
-/// Represents a currently registered spatial audio scene
+/// Represents a currently registered spatial audio scene emitter.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EmitterId {
     id: EntityId,
@@ -169,6 +182,7 @@ impl EmitterId {
     }
 }
 
+#[derive(Debug)]
 pub struct Handle {
     handle: EmitterHandle,
     last_known_position: Vector4,

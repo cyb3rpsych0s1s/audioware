@@ -1,7 +1,6 @@
 use crossbeam::channel::Sender;
-use red4ext_rs::types::{CName, EntityId, Opt};
-
-use crate::EmitterSettings;
+use kira::spatial::emitter::EmitterSettings;
+use red4ext_rs::types::{CName, EntityId};
 
 mod board;
 mod session;
@@ -13,10 +12,14 @@ pub use system::System;
 /// Engine inner lifecycle.
 #[derive(Debug)]
 pub enum Lifecycle {
+    IsRegisteredEmitter {
+        entity_id: EntityId,
+        sender: Sender<bool>,
+    },
     RegisterEmitter {
         entity_id: EntityId,
-        emitter_name: Opt<CName>,
-        emitter_settings: Opt<EmitterSettings>,
+        emitter_name: Option<CName>,
+        emitter_settings: Option<EmitterSettings>,
         sender: Sender<bool>,
     },
     UnregisterEmitter {
@@ -27,6 +30,7 @@ pub enum Lifecycle {
     Reclaim,
     Shutdown,
     Terminate,
+    SetVolume { setting: CName, value: f64 },
     Session(Session),
     System(System),
     Board(Board),
@@ -35,6 +39,9 @@ pub enum Lifecycle {
 impl std::fmt::Display for Lifecycle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Lifecycle::IsRegisteredEmitter { entity_id, .. } => {
+                write!(f, "is emitter registered? [{:?}]", entity_id)
+            }
             Lifecycle::RegisterEmitter { entity_id, .. } => {
                 write!(f, "register emitter [{:?}]", entity_id)
             }
@@ -48,6 +55,7 @@ impl std::fmt::Display for Lifecycle {
             Lifecycle::Session(x) => write!(f, "{x}"),
             Lifecycle::System(x) => write!(f, "{x}"),
             Lifecycle::Board(x) => write!(f, "{x}"),
+            Lifecycle::SetVolume { setting, value } => write!(f, "set volume {} {value}", setting.as_str()),
         }
     }
 }

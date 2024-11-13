@@ -14,3 +14,5 @@ private static native func OnGameSystemPlayerDetach();
 private static native func OnGameSystemDetach();
 
 private static native func OnUIMenu(value: Bool);
+
+private static native func SetVolume(setting: CName, value: Double);

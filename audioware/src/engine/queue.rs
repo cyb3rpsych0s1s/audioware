@@ -135,6 +135,7 @@ where
                 }
                 Lifecycle::SyncScene => engine.sync_scene(),
                 Lifecycle::Reclaim => engine.reclaim(),
+                Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
                 Lifecycle::Session(Session::BeforeStart) => {
                     // engine.reset();
                 }
@@ -156,11 +157,15 @@ where
                 }
                 Lifecycle::Board(Board::UIMenu(true)) => engine.pause(),
                 Lifecycle::Board(Board::UIMenu(false)) => engine.resume(),
+                Lifecycle::IsRegisteredEmitter { entity_id, sender } => {
+                    let registered = engine.is_registered_emitter(entity_id);
+                    let _ = sender.try_send(registered);
+                }
                 _ => {}
             }
         }
         for c in rc.try_iter().take(8) {
-            lifecycle!("> {c:?}");
+            lifecycle!("> {c}");
             match c {
                 Command::PlayVanilla { .. } => {}
                 Command::Play { .. } => {}
