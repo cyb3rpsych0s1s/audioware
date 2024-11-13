@@ -54,11 +54,6 @@ impl Scene {
     }
 
     fn emitter_infos(&self, entity_id: EntityId) -> Result<(Vector4, bool), Error> {
-        if !entity_id.is_defined() {
-            return Err(Error::Scene {
-                source: SceneError::InvalidEmitter,
-            });
-        }
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, entity_id);
         if entity.is_null() {
