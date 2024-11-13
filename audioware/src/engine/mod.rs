@@ -193,8 +193,6 @@ where
             Some(ref mut scene) => {
                 if let Err(e) = scene.sync() {
                     lifecycle!("failed to sync scene: {e}")
-                } else {
-                    lifecycle!("scene synced");
                 }
             }
             None => lifecycle!("scene is not initialized"),

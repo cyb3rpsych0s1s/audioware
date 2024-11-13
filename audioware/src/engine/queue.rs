@@ -91,31 +91,11 @@ where
         let mut reclaimed = false;
         for l in rl.try_iter() {
             lifecycle!("> {l}");
-            if let Lifecycle::Terminate = l {
-                engine.handles.stop(None);
-                break 'game;
-            };
-            if engine.scene.is_some() && !synced {
-                let mut synchronize = false;
-                for _ in synchronization.try_iter() {
-                    synchronize = true;
-                }
-                if synchronize {
-                    engine.sync_scene();
-                    synced = true;
-                }
-            }
-            if !engine.handles.is_empty() && !reclaimed {
-                let mut reclaim = false;
-                for _ in reclamation.try_iter() {
-                    reclaim = true;
-                }
-                if reclaim {
-                    engine.reclaim();
-                    reclaimed = true;
-                }
-            }
             match l {
+                Lifecycle::Terminate => {
+                    engine.handles.stop(None);
+                    break 'game;
+                },
                 Lifecycle::Shutdown => {}
                 Lifecycle::RegisterEmitter {
                     entity_id,
@@ -160,6 +140,26 @@ where
                     let _ = sender.try_send(registered);
                 }
                 _ => {}
+            }
+        }
+        if engine.scene.is_some() && !synced {
+            let mut synchronize = false;
+            for _ in synchronization.try_iter() {
+                synchronize = true;
+            }
+            if synchronize {
+                engine.sync_scene();
+                synced = true;
+            }
+        }
+        if !engine.handles.is_empty() && !reclaimed {
+            let mut reclaim = false;
+            for _ in reclamation.try_iter() {
+                reclaim = true;
+            }
+            if reclaim {
+                engine.reclaim();
+                reclaimed = true;
             }
         }
         for c in rc.try_iter().take(8) {
