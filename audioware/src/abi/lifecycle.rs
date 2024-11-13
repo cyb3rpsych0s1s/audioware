@@ -30,7 +30,10 @@ pub enum Lifecycle {
     Reclaim,
     Shutdown,
     Terminate,
-    SetVolume { setting: CName, value: f64 },
+    SetVolume {
+        setting: CName,
+        value: f64,
+    },
     Session(Session),
     System(System),
     Board(Board),
@@ -55,7 +58,9 @@ impl std::fmt::Display for Lifecycle {
             Lifecycle::Session(x) => write!(f, "{x}"),
             Lifecycle::System(x) => write!(f, "{x}"),
             Lifecycle::Board(x) => write!(f, "{x}"),
-            Lifecycle::SetVolume { setting, value } => write!(f, "set volume {} {value}", setting.as_str()),
+            Lifecycle::SetVolume { setting, value } => {
+                write!(f, "set volume {} {value}", setting.as_str())
+            }
         }
     }
 }

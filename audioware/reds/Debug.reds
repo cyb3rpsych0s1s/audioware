@@ -39,13 +39,11 @@ public static exec func TestUnregisterEmitter(game: GameInstance) {
 public static exec func TestPlayOnEmitter(game: GameInstance, soundName: String, opt emitterName: String) {
     let soundCName = StringToName(soundName);
     let emitterID: EntityID;
-    let emitterCName: CName = IsNameValid(StringToName(emitterName))
-    ? StringToName(emitterName)
-    : n"Unknown name";
+    let emitterCName: CName = StringToName(emitterName);
 
     let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
     emitterID = target.GetEntityID();
-    let registered = GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID);
+    let registered = GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID, emitterCName);
     FTLog(s"registered: \(registered)");
     if registered {
         GameInstance.GetAudioSystemExt(game).PlayOnEmitter(soundCName, emitterID, emitterCName);
@@ -84,7 +82,7 @@ public class AutoEmittersSystem extends ScriptableSystem {
         let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
         if !IsDefined(target) { return; }
         emitterID = target.GetEntityID();
-        if GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID) {
+        if GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID, emitterCName) {
             FTLog(s"play on emitter: AutoEmittersSystem");
             GameInstance.GetAudioSystemExt(game).PlayOnEmitter(eventName, emitterID, emitterCName);
         }
