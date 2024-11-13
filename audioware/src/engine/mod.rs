@@ -31,12 +31,12 @@ mod tracks;
 mod tweens;
 
 pub struct Engine<B: Backend> {
-    pub banks: Banks,
     pub handles: Handles,
     pub tracks: Tracks,
     pub scene: Option<Scene>,
     pub modulators: Modulators,
     pub manager: AudioManager<B>,
+    pub banks: Banks,
 }
 
 impl<B> Engine<B>
@@ -145,7 +145,7 @@ where
     ) {
         if self.banks.exists(&event_name) {
             self.handles
-                .stop(event_name, Emitter::new(entity_id, emitter_name), tween);
+                .stop_by(event_name, Emitter::new(entity_id, emitter_name), tween);
         }
     }
 
@@ -193,6 +193,8 @@ where
             Some(ref mut scene) => {
                 if let Err(e) = scene.sync() {
                     lifecycle!("failed to sync scene: {e}")
+                } else {
+                    lifecycle!("scene synced");
                 }
             }
             None => lifecycle!("scene is not initialized"),

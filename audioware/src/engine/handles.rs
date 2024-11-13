@@ -85,7 +85,7 @@ impl Handles {
         }
     }
 
-    pub fn stop(&mut self, event_name: CName, emitter: Option<Emitter>, tween: Option<Tween>) {
+    pub fn stop_by(&mut self, event_name: CName, emitter: Option<Emitter>, tween: Option<Tween>) {
         for ref mut ref_multi in self.statics.iter_mut() {
             if ref_multi.value().event_name == event_name && ref_multi.value().emitter == emitter {
                 ref_multi
@@ -101,6 +101,21 @@ impl Handles {
                     .handle
                     .stop(tween.into_tween().unwrap_or_default());
             }
+        }
+    }
+
+    pub fn stop(&mut self, tween: Option<Tween>) {
+        for ref mut ref_multi in self.statics.iter_mut() {
+            ref_multi
+                .value_mut()
+                .handle
+                .stop(tween.into_tween().unwrap_or_default());
+        }
+        for ref mut ref_multi in self.streams.iter_mut() {
+            ref_multi
+                .value_mut()
+                .handle
+                .stop(tween.into_tween().unwrap_or_default());
         }
     }
 

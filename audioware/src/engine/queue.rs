@@ -28,10 +28,7 @@ use crate::{
     abi::{
         command::Command,
         lifecycle::{Board, Lifecycle, Session, System},
-    },
-    config::BufferSize,
-    error::Error,
-    utils::{fails, lifecycle},
+    }, config::BufferSize, engine::tweens::IMMEDIATELY, error::Error, utils::{fails, lifecycle}
 };
 
 use super::Engine;
@@ -95,6 +92,7 @@ where
         for l in rl.try_iter() {
             lifecycle!("> {l}");
             if let Lifecycle::Terminate = l {
+                engine.handles.stop(None);
                 break 'game;
             };
             if engine.scene.is_some() && !synced {
