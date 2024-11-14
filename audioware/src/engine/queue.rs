@@ -186,8 +186,6 @@ where
                 ),
                 Command::PlayOverThePhone { .. } => {}
                 Command::StopOnEmitter { .. } => {}
-                Command::Pause { .. } => {}
-                Command::Resume { .. } => {}
                 Command::StopVanilla { .. } => {}
                 Command::Stop {
                     event_name,

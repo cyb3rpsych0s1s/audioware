@@ -44,12 +44,6 @@ pub enum Command {
         emitter_name: CName,
         tween: Option<Tween>,
     },
-    Pause {
-        tween: Option<Tween>,
-    },
-    Resume {
-        tween: Option<Tween>,
-    },
     StopVanilla {
         event_name: CName,
         entity_id: Option<EntityId>,
@@ -114,8 +108,6 @@ impl std::fmt::Debug for Command {
                 emitter_name,
                 ..
             } => write!(f, "Command::StopOnEmitter {{ event_name: {:?}, entity_id: {:?}, emitter_name: {:?}, .. }}", event_name, entity_id, emitter_name),
-            Command::Pause { .. } => write!(f, "Command::Pause {{ .. }}"),
-            Command::Resume { .. } => write!(f, "Command::Resume {{ .. }}"),
             Command::Stop {
                 event_name,
                 entity_id,
@@ -146,8 +138,6 @@ impl std::fmt::Display for Command {
                 Command::PlayOnEmitter { .. } => "play on emitter",
                 Command::PlayOverThePhone { .. } => "play over the phone",
                 Command::StopOnEmitter { .. } => "stop on emitter",
-                Command::Pause { .. } => "pause",
-                Command::Resume { .. } => "resume",
                 Command::StopVanilla { .. } => "stop vanilla",
                 Command::Stop { .. } => "stop",
                 Command::StopFor { .. } => "stop for",
