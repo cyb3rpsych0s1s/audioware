@@ -2,7 +2,7 @@ use std::{fmt::Debug, ops::DerefMut};
 
 use audioware_bank::{BankData, Banks, Initialization};
 use audioware_core::With;
-use audioware_manifest::{PlayerGender, SpokenLocale};
+use audioware_manifest::{PlayerGender, Settings, SpokenLocale};
 use either::Either;
 use eq::{EqPass, Preset};
 use handles::{Emitter, Handles};
@@ -95,18 +95,46 @@ where
         emitter_name: Option<CName>,
         spoken: SpokenLocale,
         gender: Option<PlayerGender>,
+        tween: Option<Tween>,
     ) {
         if let Ok(key) = self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
             let data = self.banks.data(key);
             let emitter = Emitter::new(entity_id, emitter_name);
             match data {
                 Either::Left(data) => {
-                    if let Ok(handle) = self.manager.play(data) {
+                    if let Ok(handle) = self.manager.play(data.with(tween)) {
                         self.handles.store_static(handle, event_name, emitter);
                     }
                 }
                 Either::Right(data) => {
-                    if let Ok(handle) = self.manager.play(data) {
+                    if let Ok(handle) = self.manager.play(data.with(tween)) {
+                        self.handles.store_stream(handle, event_name, emitter);
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn play_ext(
+        &mut self,
+        event_name: CName,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        spoken: SpokenLocale,
+        gender: Option<PlayerGender>,
+        ext: Option<Settings>,
+    ) {
+        if let Ok(key) = self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
+            let data = self.banks.data(key);
+            let emitter = Emitter::new(entity_id, emitter_name);
+            match data {
+                Either::Left(data) => {
+                    if let Ok(handle) = self.manager.play(data.with(ext)) {
+                        self.handles.store_static(handle, event_name, emitter);
+                    }
+                }
+                Either::Right(data) => {
+                    if let Ok(handle) = self.manager.play(data.with(ext)) {
                         self.handles.store_stream(handle, event_name, emitter);
                     }
                 }

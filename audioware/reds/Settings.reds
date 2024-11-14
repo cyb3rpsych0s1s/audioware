@@ -1,7 +1,18 @@
 module Audioware
 
+public class AudioRegion {
+    public let starts: Float = 0.;
+    public let ends: Float = 0.;
+}
+
 public class AudioSettingsExt {
-    public let startPosition: Float;
+    public let startPosition: Float = 0.;
+    public let region: ref<AudioRegion>;
+    public let loop: Bool = false;
+    public let volume: Float = 100.;
+    public let fadeIn: ref<Tween>;
+    public let panning: Float = 0.5;
+    public let playbackRate: Float = 1.;
 }
 
 public native struct EmitterDistances {

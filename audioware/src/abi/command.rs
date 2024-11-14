@@ -1,8 +1,6 @@
-use audioware_manifest::{PlayerGender, ScnDialogLineType};
+use audioware_manifest::{PlayerGender, ScnDialogLineType, Settings};
 use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId};
-
-use super::AudioSettingsExt;
 
 /// Sound inner command.
 #[derive(Clone)]
@@ -25,7 +23,7 @@ pub enum Command {
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
         line_type: Option<ScnDialogLineType>,
-        ext: Option<AudioSettingsExt>,
+        ext: Option<Settings>,
     },
     PlayOnEmitter {
         sound_name: CName,
@@ -56,9 +54,7 @@ pub enum Command {
         tween: Option<Tween>,
     },
     #[allow(dead_code)]
-    StopFor {
-        entity_id: EntityId,
-    },
+    StopFor { entity_id: EntityId },
     Switch {
         switch_name: CName,
         switch_value: CName,
@@ -66,16 +62,6 @@ pub enum Command {
         emitter_name: Option<CName>,
         switch_name_tween: Option<Tween>,
         // switch_value_settings: Option<AudioSettingsExt>,
-    },
-    SetVolume {
-        setting: CName,
-        value: f64,
-    },
-    SetPreset {
-        // value: Preset,
-    },
-    SetReverbMix {
-        value: f32,
     },
 }
 
@@ -142,9 +128,6 @@ impl std::fmt::Display for Command {
                 Command::Stop { .. } => "stop",
                 Command::StopFor { .. } => "stop for",
                 Command::Switch { .. } => "switch",
-                Command::SetVolume { .. } => "set volume",
-                Command::SetPreset { .. } => "set preset",
-                Command::SetReverbMix { .. } => "set reverb mix",
             }
         )
     }

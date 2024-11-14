@@ -164,13 +164,20 @@ where
             lifecycle!("> {c}");
             match c {
                 Command::PlayVanilla { .. } => {}
-                Command::Play { .. } => {}
+                Command::Play {
+                    sound_name,
+                    entity_id,
+                    emitter_name,
+                    tween,
+                    ..
+                } => engine.play(sound_name, entity_id, emitter_name, spoken, gender, tween),
                 Command::PlayExt {
                     sound_name,
                     entity_id,
                     emitter_name,
+                    ext,
                     ..
-                } => engine.play(sound_name, entity_id, emitter_name, spoken, gender),
+                } => engine.play_ext(sound_name, entity_id, emitter_name, spoken, gender, ext),
                 Command::PlayOnEmitter {
                     sound_name,
                     entity_id,
@@ -195,9 +202,6 @@ where
                 } => engine.stop(event_name, entity_id, emitter_name, tween),
                 Command::StopFor { .. } => {}
                 Command::Switch { .. } => {}
-                Command::SetVolume { .. } => {}
-                Command::SetPreset { .. } => {}
-                Command::SetReverbMix { .. } => {}
             }
         }
     }

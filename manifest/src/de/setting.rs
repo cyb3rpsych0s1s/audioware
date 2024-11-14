@@ -14,7 +14,7 @@ use serde::Deserialize;
 /// Deserialization type
 /// for [kira::sound::static_sound::StaticSoundSettings]
 /// and [kira::sound::streaming::StreamingSoundSettings].
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Default, Deserialize, Clone)]
 pub struct Settings {
     #[serde(with = "humantime_serde", default)]
     pub start_time: Option<Duration>,

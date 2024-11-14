@@ -1,6 +1,9 @@
-use audioware_manifest::ScnDialogLineType;
+use std::time::Duration;
+
+use audioware_manifest::{Interpolation, Region, ScnDialogLineType, Settings};
 use command::Command;
 use crossbeam::channel::bounded;
+use kira::tween::Easing;
 use lifecycle::{Board, Lifecycle, Session, System};
 use red4ext_rs::{
     class_kind::{Native, Scripted},
@@ -11,8 +14,8 @@ use red4ext_rs::{
 };
 
 use crate::{
-    engine::eq::Preset, queue, utils::lifecycle, Audioware, EmitterDistances, EmitterSettings,
-    ToTween, Tween,
+    engine::eq::Preset, queue, utils::lifecycle, Audioware, ElasticTween, EmitterDistances,
+    EmitterSettings, LinearTween, ToTween, Tween,
 };
 
 pub mod command;
@@ -47,7 +50,7 @@ pub fn exports() -> impl Exportable {
         ClassExport::<AudioSystemExt>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![
-                    final c"Play" => AudioSystemExt::play,
+                    final c"Play" => AudioSystemExt::play_ext,
                     final c"Stop" => AudioSystemExt::stop,
                     final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
                     final c"RegisterEmitter" => AudioSystemExt::register_emitter,
@@ -238,15 +241,151 @@ impl SceneLifecycle for AudioSystemExt {
     }
 }
 
+/// Represents a region in time.
+/// Useful to describe a portion of a sound.
 #[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct AudioRegion {
+    starts: f32,
+    ends: f32,
+}
+
+unsafe impl ScriptClass for AudioRegion {
+    type Kind = Scripted;
+    const NAME: &'static str = "Audioware.AudioRegion";
+}
+
+/// Extended audio settings.
+#[derive(Default, Clone)]
 #[repr(C)]
 pub struct AudioSettingsExt {
     start_position: f32,
+    region: Ref<AudioRegion>,
+    r#loop: bool,
+    volume: f32,
+    fade_in: Ref<Tween>,
+    panning: f32,
+    playback_rate: f32,
 }
 
 unsafe impl ScriptClass for AudioSettingsExt {
     type Kind = Scripted;
     const NAME: &'static str = "Audioware.AudioSettingsExt";
+}
+
+impl std::fmt::Debug for AudioSettingsExt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AudioSettingsExt")
+            .field("start_position", &self.start_position)
+            .field("loop", &self.r#loop)
+            .field("volume", &self.volume)
+            .field("panning", &self.panning)
+            .field("playback_rate", &self.playback_rate)
+            .finish_non_exhaustive()
+    }
+}
+
+pub trait ToSettings {
+    fn into_settings(self) -> Option<Settings>;
+}
+
+pub trait ToRegion {
+    fn into_region(self) -> Option<Region>;
+}
+
+pub trait ToInterpolation {
+    fn into_interpolation(self) -> Option<Interpolation>;
+}
+
+impl ToInterpolation for Ref<Tween> {
+    fn into_interpolation(self) -> Option<Interpolation> {
+        if self.is_null() {
+            return None;
+        }
+        match self.clone() {
+            x if x.is_a::<LinearTween>() => {
+                let x = x.cast::<LinearTween>().unwrap();
+                let x = unsafe { x.fields() }?;
+                Some(Interpolation {
+                    start_time: x
+                        .start_time()
+                        .ne(&0.)
+                        .then_some(Duration::from_secs_f32(x.start_time())),
+                    duration: Duration::from_secs_f32(x.duration()),
+                    easing: Easing::Linear,
+                })
+            }
+            x if x.is_a::<ElasticTween>() => {
+                let x = x.cast::<ElasticTween>().unwrap();
+                let x = unsafe { x.fields() }?;
+                Some(Interpolation {
+                    start_time: x
+                        .start_time()
+                        .ne(&0.)
+                        .then_some(Duration::from_secs_f32(x.start_time())),
+                    duration: Duration::from_secs_f32(x.duration()),
+                    easing: match x.easing {
+                        crate::Easing::InPowf => Easing::InPowf(x.value as f64),
+                        crate::Easing::OutPowf => Easing::OutPowf(x.value as f64),
+                        crate::Easing::InOutPowf => Easing::InOutPowf(x.value as f64),
+                    },
+                })
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl ToRegion for Ref<AudioRegion> {
+    fn into_region(self) -> Option<Region> {
+        if self.is_null() {
+            return None;
+        }
+        let AudioRegion { starts, ends } = unsafe { self.fields() }?.clone();
+        if starts == 0. && ends == 0. {
+            return None;
+        }
+        Some(Region {
+            starts: starts.ne(&0.).then_some(Duration::from_secs_f32(starts)),
+            ends: ends.ne(&0.).then_some(Duration::from_secs_f32(ends)),
+        })
+    }
+}
+
+impl ToSettings for Ref<AudioSettingsExt> {
+    fn into_settings(self) -> Option<Settings> {
+        if self.is_null() {
+            return None;
+        }
+        let AudioSettingsExt {
+            start_position,
+            region,
+            r#loop,
+            volume,
+            fade_in,
+            panning,
+            playback_rate,
+        } = unsafe { self.fields() }?.clone();
+        let mut settings = Settings::default();
+        if start_position != 0.0 {
+            settings.start_position = Some(Duration::from_secs_f32(start_position));
+        }
+        settings.region = region.into_region();
+        if r#loop {
+            settings.r#loop = Some(true);
+        }
+        if volume != 100. {
+            settings.volume = Some(volume as f64);
+        }
+        settings.fade_in_tween = fade_in.into_interpolation();
+        if panning != 0.5 {
+            settings.panning = Some(panning as f64);
+        }
+        if playback_rate != 1.0 {
+            settings.playback_rate = Some(kira::sound::PlaybackRate::Factor(playback_rate as f64));
+        }
+        Some(settings)
+    }
 }
 
 /// Interop type for [Ext.reds](https://github.com/cyb3rpsych0s1s/audioware/blob/main/audioware/reds/Ext.reds).
@@ -263,6 +402,14 @@ unsafe impl ScriptClass for AudioSystemExt {
 
 pub trait ExtCommand {
     fn play(
+        &self,
+        sound_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        line_type: Opt<ScnDialogLineType>,
+        tween: Ref<Tween>,
+    );
+    fn play_ext(
         &self,
         sound_name: CName,
         entity_id: Opt<EntityId>,
@@ -294,14 +441,30 @@ impl ExtCommand for AudioSystemExt {
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         line_type: Opt<ScnDialogLineType>,
-        _ext: Ref<AudioSettingsExt>, // TODO:
+        tween: Ref<Tween>,
+    ) {
+        queue::send(Command::Play {
+            sound_name,
+            entity_id: entity_id.into_option(),
+            emitter_name: emitter_name.into_option(),
+            line_type: line_type.into_option(),
+            tween: tween.into_tween(),
+        });
+    }
+    fn play_ext(
+        &self,
+        sound_name: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        line_type: Opt<ScnDialogLineType>,
+        ext: Ref<AudioSettingsExt>,
     ) {
         queue::send(Command::PlayExt {
             sound_name,
             entity_id: entity_id.into_option(),
             emitter_name: emitter_name.into_option(),
             line_type: line_type.into_option(),
-            ext: None,
+            ext: ext.into_settings(),
         });
     }
 
@@ -331,7 +494,7 @@ impl ExtCommand for AudioSystemExt {
             sound_name,
             entity_id,
             emitter_name,
-            tween: tween.clone().into_tween(),
+            tween: tween.into_tween(),
         });
     }
 }
