@@ -26,6 +26,9 @@ pub enum Lifecycle {
         entity_id: EntityId,
         sender: Sender<bool>,
     },
+    OnEmitterDies {
+        entity_id: EntityId,
+    },
     Terminate,
     SetVolume {
         setting: CName,
@@ -47,6 +50,9 @@ impl std::fmt::Display for Lifecycle {
             }
             Lifecycle::UnregisterEmitter { entity_id, .. } => {
                 write!(f, "unregister emitter [{:?}]", entity_id)
+            }
+            Lifecycle::OnEmitterDies { entity_id } => {
+                write!(f, "on emitter dies [{:?}]", entity_id)
             }
             Lifecycle::Terminate => write!(f, "terminate"),
             Lifecycle::Session(x) => write!(f, "{x}"),

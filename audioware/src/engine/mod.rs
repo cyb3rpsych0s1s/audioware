@@ -249,6 +249,14 @@ where
         }
     }
 
+    pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
+        if let Some(ref mut scene) = self.scene {
+            if let Err(e) = scene.remove_emitter(entity_id) {
+                lifecycle!("failed to remove emitter: {e}");
+            }
+        }
+    }
+
     pub fn sync_scene(&mut self) {
         match self.scene {
             Some(ref mut scene) => {

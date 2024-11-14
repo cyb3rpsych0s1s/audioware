@@ -56,6 +56,7 @@ pub fn exports() -> impl Exportable {
                     final c"RegisterEmitter" => AudioSystemExt::register_emitter,
                     final c"UnregisterEmitter" => AudioSystemExt::unregister_emitter,
                     final c"IsRegisteredEmitter" => AudioSystemExt::is_registered_emitter,
+                    final c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
                 ])
                 .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
@@ -200,6 +201,7 @@ pub trait SceneLifecycle {
     ) -> bool;
     fn unregister_emitter(&self, entity_id: EntityId) -> bool;
     fn is_registered_emitter(&self, entity_id: EntityId) -> bool;
+    fn on_emitter_dies(&self, entity_id: EntityId);
 }
 
 impl SceneLifecycle for AudioSystemExt {
@@ -238,6 +240,10 @@ impl SceneLifecycle for AudioSystemExt {
             return registered;
         }
         false
+    }
+
+    fn on_emitter_dies(&self, entity_id: EntityId) {
+        queue::notify(Lifecycle::OnEmitterDies { entity_id });
     }
 }
 
