@@ -1,4 +1,5 @@
 //! Logging utils.
+#![allow(dead_code)]
 
 use red4ext_rs::{
     log,
