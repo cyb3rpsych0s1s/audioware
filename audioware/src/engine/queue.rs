@@ -20,7 +20,7 @@ use kira::manager::{
 };
 use red4ext_rs::{
     log::{self},
-    PluginOps, SdkEnv,
+    SdkEnv,
 };
 use std::sync::{Mutex, RwLock};
 
@@ -95,7 +95,6 @@ where
             lifecycle!("> {l}");
             match l {
                 Lifecycle::Terminate => {
-                    engine.terminate();
                     break 'game;
                 }
                 Lifecycle::RegisterEmitter {

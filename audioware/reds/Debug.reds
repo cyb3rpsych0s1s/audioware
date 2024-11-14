@@ -75,8 +75,7 @@ public class AutoEmittersSystem extends ScriptableSystem {
         ];
         let eventName = sounds[RandRange(0, ArraySize(sounds) -1)];
         let tween = new LinearTween();
-        tween.startTime = RandRangeF(1.0, 3.0);
-        tween.duration = RandRangeF(3.0, 4.5);
+        tween.duration = 1.0;
         let emitterID: EntityID;
         let emitterCName: CName = n"DummyTest";
 
@@ -86,7 +85,7 @@ public class AutoEmittersSystem extends ScriptableSystem {
         emitterID = target.GetEntityID();
         if GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID, emitterCName) {
             FTLog(s"play on emitter: AutoEmittersSystem");
-            GameInstance.GetAudioSystemExt(game).PlayOnEmitter(eventName, emitterID, emitterCName);
+            GameInstance.GetAudioSystemExt(game).PlayOnEmitter(eventName, emitterID, emitterCName, tween);
         }
     }
 }
