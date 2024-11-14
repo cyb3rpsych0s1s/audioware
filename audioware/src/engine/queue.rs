@@ -99,7 +99,6 @@ where
                     engine.terminate();
                     break 'game;
                 }
-                Lifecycle::Shutdown => {}
                 Lifecycle::RegisterEmitter {
                     entity_id,
                     emitter_name,
@@ -114,8 +113,6 @@ where
                     let unregistered = engine.unregister_emitter(entity_id);
                     let _ = sender.try_send(unregistered);
                 }
-                Lifecycle::SyncScene => engine.sync_scene(),
-                Lifecycle::Reclaim => engine.reclaim(),
                 Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
                 Lifecycle::Session(Session::BeforeStart) => engine.reset(),
                 Lifecycle::Session(Session::Start) => {}

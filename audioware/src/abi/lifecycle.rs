@@ -26,9 +26,6 @@ pub enum Lifecycle {
         entity_id: EntityId,
         sender: Sender<bool>,
     },
-    SyncScene,
-    Reclaim,
-    Shutdown,
     Terminate,
     SetVolume {
         setting: CName,
@@ -51,9 +48,6 @@ impl std::fmt::Display for Lifecycle {
             Lifecycle::UnregisterEmitter { entity_id, .. } => {
                 write!(f, "unregister emitter [{:?}]", entity_id)
             }
-            Lifecycle::SyncScene => write!(f, "sync scene"),
-            Lifecycle::Reclaim => write!(f, "reclaim"),
-            Lifecycle::Shutdown => write!(f, "shutdown"),
             Lifecycle::Terminate => write!(f, "terminate"),
             Lifecycle::Session(x) => write!(f, "{x}"),
             Lifecycle::System(x) => write!(f, "{x}"),
