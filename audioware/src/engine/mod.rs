@@ -1,6 +1,6 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, ops::DerefMut};
 
-use audioware_bank::{BankData, Banks};
+use audioware_bank::{BankData, Banks, Initialization};
 use audioware_core::With;
 use audioware_manifest::{PlayerGender, SpokenLocale};
 use either::Either;
@@ -30,6 +30,11 @@ mod scene;
 mod tracks;
 mod tweens;
 
+#[cfg(not(debug_assertions))]
+static BANKS: std::sync::OnceLock<Banks> = std::sync::OnceLock::new();
+#[cfg(debug_assertions)]
+static BANKS: parking_lot::RwLock<Option<Banks>> = parking_lot::RwLock::new(None);
+
 pub struct Engine<B: Backend> {
     pub handles: Handles,
     pub tracks: Tracks,
@@ -37,6 +42,7 @@ pub struct Engine<B: Backend> {
     pub modulators: Modulators,
     pub manager: AudioManager<B>,
     pub banks: Banks,
+    pub report: Initialization,
 }
 
 impl<B> Engine<B>
@@ -45,7 +51,13 @@ where
     <B as Backend>::Error: Debug,
 {
     pub fn try_new(settings: AudioManagerSettings<B>) -> Result<Engine<B>, Error> {
-        let banks = Banks::new();
+        let (banks, report) = Banks::new();
+        #[cfg(not(debug_assertions))]
+        let _ = BANKS.set(banks.clone());
+        #[cfg(debug_assertions)]
+        {
+            *BANKS.write().deref_mut() = Some(banks.clone());
+        }
         let capacity = settings.capacities.sound_capacity as usize;
         let mut manager = AudioManager::new(settings).map_err(|_| Error::Engine {
             source: EngineError::Manager {
@@ -61,6 +73,7 @@ where
             scene: None,
             modulators,
             tracks,
+            report,
         })
     }
 

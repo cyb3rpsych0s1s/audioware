@@ -29,6 +29,7 @@ pub use storage::*;
 
 use crate::error::registry::Error as RegistryError;
 
+#[derive(Clone)]
 pub struct Banks {
     pub ids: HashSet<Id>,
     pub uniques: HashMap<UniqueKey, StaticSoundData>,
@@ -41,11 +42,10 @@ pub struct Banks {
     pub gender_settings: HashMap<GenderKey, Settings>,
     pub single_settings: HashMap<LocaleKey, Settings>,
     pub dual_settings: HashMap<BothKey, Settings>,
-    pub initialization: Initialization,
 }
 impl Default for Banks {
     fn default() -> Self {
-        Self::new()
+        Self::new().0
     }
 }
 
@@ -163,7 +163,7 @@ impl Banks {
         Err(RegistryError::NotFound { cname: *name }.into())
     }
     /// Initialize banks.
-    pub fn new() -> Self {
+    pub fn new() -> (Self, Initialization) {
         let since = Instant::now();
 
         let mut errors: Vec<Error> = vec![];
@@ -335,6 +335,12 @@ impl Banks {
             (odsta, odstr, imsta)
         });
 
+        #[cfg(debug_assertions)]
+        let errors = errors
+            .into_iter()
+            .map(std::sync::Arc::new)
+            .collect::<Vec<_>>();
+
         let report = Initialization {
             duration: Instant::now() - since,
             lengths: format!(
@@ -348,7 +354,7 @@ impl Banks {
             errors,
         };
 
-        Self {
+        (Self {
             ids,
             uniques,
             genders,
@@ -360,17 +366,20 @@ impl Banks {
             gender_settings,
             single_settings,
             dual_settings,
-            initialization: report,
-        }
+        }, report)
     }
 }
 
 /// Outcome of [Banks] initialization.
+#[cfg_attr(debug_assertions, derive(Clone))]
 pub struct Initialization {
     duration: Duration,
     lengths: String,
     len_ids: usize,
+    #[cfg(not(debug_assertions))]
     pub errors: Vec<Error>,
+    #[cfg(debug_assertions)]
+    pub errors: Vec<std::sync::Arc<Error>>,
 }
 
 impl std::fmt::Display for Initialization {
