@@ -207,23 +207,13 @@ where
     }
 
     pub fn set_volume(&mut self, setting: CName, value: f64) {
-        match setting {
-            x if x == CName::new("MasterVolume") => {
-                self.manager.main_track().set_volume(value, DEFAULT)
-            }
-            x if x == CName::new("MusicVolume") => {
-                self.modulators.music_volume.update(value, DEFAULT)
-            }
-            x if x == CName::new("DialogueVolume") => {
-                self.modulators.dialogue_volume.update(value, DEFAULT)
-            }
-            x if x == CName::new("CarRadioVolume") => {
-                self.modulators.car_radio_volume.update(value, DEFAULT)
-            }
-            x if x == CName::new("RadioportVolume") => {
-                self.modulators.radioport_volume.update(value, DEFAULT)
-            }
-            x if x == CName::new("SfxVolume") => self.modulators.sfx_volume.update(value, DEFAULT),
+        match setting.as_str() {
+            "MasterVolume" => self.manager.main_track().set_volume(value, DEFAULT),
+            "SfxVolume" => self.modulators.sfx_volume.update(value, DEFAULT),
+            "DialogueVolume" => self.modulators.dialogue_volume.update(value, DEFAULT),
+            "MusicVolume" => self.modulators.music_volume.update(value, DEFAULT),
+            "CarRadioVolume" => self.modulators.car_radio_volume.update(value, DEFAULT),
+            "RadioportVolume" => self.modulators.radioport_volume.update(value, DEFAULT),
             _ => lifecycle!("unknown volume setting: {}", setting.as_str()),
         }
     }
