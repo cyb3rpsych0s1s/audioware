@@ -137,7 +137,6 @@ where
                     let registered = engine.is_registered_emitter(entity_id);
                     let _ = sender.try_send(registered);
                 }
-                _ => {}
             }
         }
         if engine.scene.is_some() && !synced {
