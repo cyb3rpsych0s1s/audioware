@@ -162,7 +162,11 @@ where
         for c in rc.try_iter().take(8) {
             lifecycle!("> {c}");
             match c {
-                Command::PlayVanilla { .. } => {}
+                Command::PlayVanilla {
+                    event_name,
+                    entity_id,
+                    emitter_name,
+                } => engine.play(event_name, entity_id, emitter_name, spoken, gender, None),
                 Command::Play {
                     sound_name,
                     entity_id,
