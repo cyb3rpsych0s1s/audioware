@@ -1,8 +1,6 @@
-use audioware_manifest::Source;
 use kira::{
     manager::{backend::Backend, AudioManager},
     track::{TrackBuilder, TrackHandle, TrackRoutes},
-    OutputDestination,
 };
 
 use crate::{
@@ -50,16 +48,5 @@ impl V {
             mental,
             emissive,
         })
-    }
-}
-
-impl V {
-    pub fn output_destination(&self, source: &Source) -> Option<OutputDestination> {
-        match source {
-            Source::Sfx => return Some((&self.emissive).into()),
-            Source::Ono | Source::Voices => return Some((&self.vocal).into()),
-            _ => {}
-        };
-        None
     }
 }
