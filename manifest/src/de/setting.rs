@@ -49,11 +49,18 @@ macro_rules! impl_with {
         if let Some(x) = $settings.panning {
             $self = $self.panning(x);
         }
-        if let Some(x) = $settings.region {
-            if $settings.r#loop.unwrap_or(false) {
-                $self = $self.loop_region(x);
+        if $settings.region.is_some() || $settings.r#loop.unwrap_or(false) {
+            if let Some(x) = $settings.region {
+                if $settings.r#loop.unwrap_or(false) {
+                    $self = $self.loop_region(x);
+                } else {
+                    $self = $self.slice(x);
+                }
             } else {
-                $self = $self.slice(x);
+                $self = $self.loop_region(kira::sound::Region {
+                    start: PlaybackPosition::Seconds(0.),
+                    end: EndPosition::EndOfAudio,
+                });
             }
         }
         if let Some(x) = $settings.playback_rate {
