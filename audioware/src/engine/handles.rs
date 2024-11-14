@@ -9,8 +9,6 @@ use kira::{
 use red4ext_rs::types::{CName, EntityId};
 use snowflake::ProcessUniqueId;
 
-use crate::ToTween;
-
 pub struct Handles {
     statics: DashMap<ProcessUniqueId, Handle<StaticSoundHandle>>,
     streams: DashMap<ProcessUniqueId, Handle<StreamingSoundHandle<FromFileError>>>,
@@ -85,38 +83,35 @@ impl Handles {
         }
     }
 
-    pub fn stop_by(&mut self, event_name: CName, emitter: Option<Emitter>, tween: Option<Tween>) {
+    pub fn stop_by(&mut self, event_name: CName, emitter: Option<Emitter>, tween: Tween) {
         for ref mut ref_multi in self.statics.iter_mut() {
             if ref_multi.value().event_name == event_name && ref_multi.value().emitter == emitter {
-                ref_multi
-                    .value_mut()
-                    .handle
-                    .stop(tween.into_tween().unwrap_or_default());
+                ref_multi.value_mut().handle.stop(tween);
             }
         }
         for ref mut ref_multi in self.streams.iter_mut() {
             if ref_multi.value().event_name == event_name && ref_multi.value().emitter == emitter {
-                ref_multi
-                    .value_mut()
-                    .handle
-                    .stop(tween.into_tween().unwrap_or_default());
+                ref_multi.value_mut().handle.stop(tween);
             }
         }
     }
 
-    pub fn stop(&mut self, tween: Option<Tween>) {
+    pub fn stop_emitters(&mut self, tween: Tween) {
         for ref mut ref_multi in self.statics.iter_mut() {
-            ref_multi
-                .value_mut()
-                .handle
-                .stop(tween.into_tween().unwrap_or_default());
+            if ref_multi.value().emitter.is_some() {
+                ref_multi.value_mut().handle.stop(tween);
+            }
         }
         for ref mut ref_multi in self.streams.iter_mut() {
-            ref_multi
-                .value_mut()
-                .handle
-                .stop(tween.into_tween().unwrap_or_default());
+            if ref_multi.value().emitter.is_some() {
+                ref_multi.value_mut().handle.stop(tween);
+            }
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.statics.clear();
+        self.streams.clear();
     }
 
     pub fn is_empty(&self) -> bool {

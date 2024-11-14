@@ -15,7 +15,7 @@ use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId};
 use scene::{EmitterId, Scene};
 use tracks::Tracks;
-use tweens::DEFAULT;
+use tweens::{DEFAULT, IMMEDIATELY};
 
 use crate::{
     error::{EngineError, Error},
@@ -81,6 +81,11 @@ where
     pub fn try_new_scene(&mut self) -> Result<(), Error> {
         self.scene = Some(Scene::try_new(&mut self.manager, &self.tracks)?);
         Ok(())
+    }
+
+    pub fn clear_scene(&mut self) {
+        self.handles.stop_emitters(IMMEDIATELY);
+        self.scene = None;
     }
 
     pub fn play(
@@ -158,9 +163,16 @@ where
         tween: Option<Tween>,
     ) {
         if self.banks.exists(&event_name) {
-            self.handles
-                .stop_by(event_name, Emitter::new(entity_id, emitter_name), tween);
+            self.handles.stop_by(
+                event_name,
+                Emitter::new(entity_id, emitter_name),
+                tween.unwrap_or_default(),
+            );
         }
+    }
+
+    pub fn terminate(&mut self) {
+        self.handles.clear();
     }
 
     pub fn pause(&mut self) {

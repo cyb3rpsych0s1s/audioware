@@ -96,7 +96,7 @@ where
             lifecycle!("> {l}");
             match l {
                 Lifecycle::Terminate => {
-                    engine.handles.stop(None);
+                    engine.terminate();
                     break 'game;
                 }
                 Lifecycle::Shutdown => {}
@@ -117,9 +117,7 @@ where
                 Lifecycle::SyncScene => engine.sync_scene(),
                 Lifecycle::Reclaim => engine.reclaim(),
                 Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
-                Lifecycle::Session(Session::BeforeStart) => {
-                    engine.reset();
-                }
+                Lifecycle::Session(Session::BeforeStart) => engine.reset(),
                 Lifecycle::Session(Session::Start) => {}
                 Lifecycle::Session(Session::End) => {}
                 Lifecycle::Session(Session::Ready) => {}
@@ -133,9 +131,7 @@ where
                         lifecycle!("failed to create new scene: {e}");
                     }
                 }
-                Lifecycle::System(System::PlayerDetach) => {
-                    engine.scene = None;
-                }
+                Lifecycle::System(System::PlayerDetach) => engine.clear_scene(),
                 Lifecycle::Board(Board::UIMenu(true)) => engine.pause(),
                 Lifecycle::Board(Board::UIMenu(false)) => engine.resume(),
                 Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
