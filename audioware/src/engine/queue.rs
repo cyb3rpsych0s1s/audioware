@@ -8,7 +8,6 @@ use std::{
     time::Duration,
 };
 
-use audioware_bank::Banks;
 use audioware_manifest::{PlayerGender, SpokenLocale};
 use bitflags::bitflags;
 use crossbeam::channel::{bounded, tick, Receiver, Sender};
@@ -119,7 +118,7 @@ where
                 Lifecycle::Reclaim => engine.reclaim(),
                 Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
                 Lifecycle::Session(Session::BeforeStart) => {
-                    // engine.reset();
+                    engine.reset();
                 }
                 Lifecycle::Session(Session::Start) => {}
                 Lifecycle::Session(Session::End) => {}
@@ -139,6 +138,8 @@ where
                 }
                 Lifecycle::Board(Board::UIMenu(true)) => engine.pause(),
                 Lifecycle::Board(Board::UIMenu(false)) => engine.resume(),
+                Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
+                Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
                 Lifecycle::IsRegisteredEmitter { entity_id, sender } => {
                     let registered = engine.is_registered_emitter(entity_id);
                     let _ = sender.try_send(registered);

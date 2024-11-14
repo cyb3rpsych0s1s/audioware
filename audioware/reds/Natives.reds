@@ -16,3 +16,5 @@ private static native func OnGameSystemDetach();
 private static native func OnUIMenu(value: Bool);
 
 private static native func SetVolume(setting: CName, value: Double);
+private static native func SetReverbMix(value: Float) -> Void;
+private static native func SetPreset(value: Preset) -> Void;

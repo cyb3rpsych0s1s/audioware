@@ -4,6 +4,7 @@ use audioware_bank::{BankData, Banks, Initialization};
 use audioware_core::With;
 use audioware_manifest::{PlayerGender, SpokenLocale};
 use either::Either;
+use eq::{EqPass, Preset};
 use handles::{Emitter, Handles};
 use kira::{
     manager::{backend::Backend, AudioManager, AudioManagerSettings},
@@ -23,7 +24,7 @@ use crate::{
 
 pub mod queue;
 
-mod eq;
+pub mod eq;
 mod handles;
 mod modulators;
 mod scene;
@@ -174,6 +175,13 @@ where
         self.handles.reclaim();
     }
 
+    pub fn reset(&mut self) {
+        self.tracks
+            .ambience
+            .equalizer()
+            .set_preset(eq::Preset::None);
+    }
+
     pub fn register_emitter(
         &mut self,
         entity_id: EntityId,
@@ -229,6 +237,14 @@ where
             "RadioportVolume" => self.modulators.radioport_volume.update(value, DEFAULT),
             _ => lifecycle!("unknown volume setting: {}", setting.as_str()),
         }
+    }
+
+    pub fn set_reverb_mix(&mut self, value: f32) {
+        self.modulators.reverb_mix.update(value, DEFAULT);
+    }
+
+    pub fn set_preset(&mut self, preset: Preset) {
+        self.tracks.ambience.equalizer().set_preset(preset);
     }
 
     pub fn exists(sound: &CName, spoken: &SpokenLocale, gender: Option<&PlayerGender>) -> bool {

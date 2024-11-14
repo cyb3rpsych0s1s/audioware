@@ -3,6 +3,8 @@ import Audioware.Tween
 import Audioware.LinearTween
 import Audioware.EmitterDistances
 import Audioware.EmitterSettings
+import Audioware.Preset
+import Audioware.Audioware_SettingsDef
 
 /// Game.TestPlayExt("straight_outta_compton");
 public static exec func TestPlayExt(game: GameInstance, name: String) {
@@ -87,4 +89,25 @@ public class AutoEmittersSystem extends ScriptableSystem {
             GameInstance.GetAudioSystemExt(game).PlayOnEmitter(eventName, emitterID, emitterCName);
         }
     }
+}
+
+/// Game.TestPreset("None");
+/// Game.TestPreset("Underwater");
+/// Game.TestPreset("OnThePhone");
+public static exec func TestPreset(game: GameInstance, preset: String) {
+    let value: Int32;
+    switch preset {
+        case "OnThePhone":
+            value = EnumInt<Preset>(Preset.OnThePhone);
+            break;
+        case "Underwater":
+            value = EnumInt<Preset>(Preset.Underwater);
+            break;
+        default:
+            value = EnumInt<Preset>(Preset.None);
+            break;
+    }
+    GameInstance.GetBlackboardSystem(game)
+    .Get(GetAllBlackboardDefs().Audioware_Settings)
+    .SetInt(GetAllBlackboardDefs().Audioware_Settings.AudioPreset, value, true);
 }

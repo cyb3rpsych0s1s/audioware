@@ -11,7 +11,8 @@ use red4ext_rs::{
 };
 
 use crate::{
-    queue, utils::lifecycle, Audioware, EmitterDistances, EmitterSettings, ToTween, Tween,
+    engine::eq::Preset, queue, utils::lifecycle, Audioware, EmitterDistances, EmitterSettings,
+    ToTween, Tween,
 };
 
 pub mod command;
@@ -66,6 +67,8 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.OnGameSystemPlayerAttach",   Audioware::on_game_system_player_attach),
         g!(c"Audioware.OnGameSystemPlayerDetach",   Audioware::on_game_system_player_detach),
         g!(c"Audioware.OnUIMenu",                   Audioware::on_ui_menu),
+        g!(c"Audioware.SetReverbMix",               Audioware::on_reverb_mix),
+        g!(c"Audioware.SetPreset",                  Audioware::on_preset),
         g!(c"Audioware.SetVolume",                  Audioware::set_volume),
     ]
 }
@@ -109,6 +112,8 @@ pub trait GameSystemLifecycle {
 
 pub trait BlackboardLifecycle {
     fn on_ui_menu(value: bool);
+    fn on_reverb_mix(value: f32);
+    fn on_preset(value: Preset);
 }
 
 pub trait ListenerLifecycle {
@@ -166,6 +171,14 @@ impl GameSystemLifecycle for Audioware {
 impl BlackboardLifecycle for Audioware {
     fn on_ui_menu(value: bool) {
         queue::notify(Lifecycle::Board(Board::UIMenu(value)));
+    }
+
+    fn on_reverb_mix(value: f32) {
+        queue::notify(Lifecycle::Board(Board::ReverbMix(value)));
+    }
+
+    fn on_preset(value: Preset) {
+        queue::notify(Lifecycle::Board(Board::Preset(value)));
     }
 }
 

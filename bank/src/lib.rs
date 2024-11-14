@@ -354,19 +354,22 @@ impl Banks {
             errors,
         };
 
-        (Self {
-            ids,
-            uniques,
-            genders,
-            single_voices,
-            dual_voices,
-            single_subs,
-            dual_subs,
-            unique_settings,
-            gender_settings,
-            single_settings,
-            dual_settings,
-        }, report)
+        (
+            Self {
+                ids,
+                uniques,
+                genders,
+                single_voices,
+                dual_voices,
+                single_subs,
+                dual_subs,
+                unique_settings,
+                gender_settings,
+                single_settings,
+                dual_settings,
+            },
+            report,
+        )
     }
 }
 
