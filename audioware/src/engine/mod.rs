@@ -248,15 +248,15 @@ where
     }
 
     pub fn exists(sound: &CName, spoken: &SpokenLocale, gender: Option<&PlayerGender>) -> bool {
-        #[cfg(debug_assertions)]
-        return BANKS
-            .try_read()
-            .and_then(|x| x.as_ref().map(|x| x.try_get(sound, spoken, gender).is_ok()))
-            .unwrap_or(false);
         #[cfg(not(debug_assertions))]
-        BANKS
+        return BANKS
             .get()
             .and_then(|x| x.try_get(sound, spoken, gender).is_ok())
+            .unwrap_or(false);
+        #[cfg(debug_assertions)]
+        BANKS
+            .try_read()
+            .and_then(|x| x.as_ref().map(|x| x.try_get(sound, spoken, gender).is_ok()))
             .unwrap_or(false)
     }
 }
