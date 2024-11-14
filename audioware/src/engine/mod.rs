@@ -1,8 +1,8 @@
 use std::{fmt::Debug, ops::DerefMut};
 
-use audioware_bank::{BankData, Banks, Initialization};
+use audioware_bank::{BankData, Banks, Id, Initialization};
 use audioware_core::With;
-use audioware_manifest::{PlayerGender, Settings, SpokenLocale};
+use audioware_manifest::{PlayerGender, Settings, Source, SpokenLocale};
 use either::Either;
 use eq::{EqPass, Preset};
 use handles::{Emitter, Handles};
@@ -10,6 +10,7 @@ use kira::{
     manager::{backend::Backend, AudioManager, AudioManagerSettings},
     spatial::emitter::EmitterSettings,
     tween::Tween,
+    OutputDestination,
 };
 use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId};
@@ -114,13 +115,21 @@ where
             let emitter = Emitter::new(entity_id, emitter_name);
             match data {
                 Either::Left(data) => {
-                    if let Ok(handle) = self.manager.play(data.with(tween)) {
-                        self.handles.store_static(handle, event_name, emitter);
+                    if let Ok(handle) = self.manager.play(
+                        data.output_destination(key.into_output_destination(&self.tracks))
+                            .with(tween),
+                    ) {
+                        self.handles
+                            .store_static(handle, event_name, emitter, false);
                     }
                 }
                 Either::Right(data) => {
-                    if let Ok(handle) = self.manager.play(data.with(tween)) {
-                        self.handles.store_stream(handle, event_name, emitter);
+                    if let Ok(handle) = self.manager.play(
+                        data.output_destination(key.into_output_destination(&self.tracks))
+                            .with(tween),
+                    ) {
+                        self.handles
+                            .store_stream(handle, event_name, emitter, false);
                     }
                 }
             }
@@ -141,13 +150,21 @@ where
             let emitter = Emitter::new(entity_id, emitter_name);
             match data {
                 Either::Left(data) => {
-                    if let Ok(handle) = self.manager.play(data.with(ext)) {
-                        self.handles.store_static(handle, event_name, emitter);
+                    if let Ok(handle) = self.manager.play(
+                        data.output_destination(key.into_output_destination(&self.tracks))
+                            .with(ext),
+                    ) {
+                        self.handles
+                            .store_static(handle, event_name, emitter, false);
                     }
                 }
                 Either::Right(data) => {
-                    if let Ok(handle) = self.manager.play(data.with(ext)) {
-                        self.handles.store_stream(handle, event_name, emitter);
+                    if let Ok(handle) = self.manager.play(
+                        data.output_destination(key.into_output_destination(&self.tracks))
+                            .with(ext),
+                    ) {
+                        self.handles
+                            .store_stream(handle, event_name, emitter, false);
                     }
                 }
             }
@@ -178,7 +195,12 @@ where
                                 .manager
                                 .play(data.output_destination(handle).with(tween))
                             {
-                                self.handles.store_static(handle, sound_name, emitter);
+                                lifecycle!(
+                                    "playing static sound {} on {:?}",
+                                    sound_name.as_str(),
+                                    entity_id
+                                );
+                                self.handles.store_static(handle, sound_name, emitter, true);
                             }
                         }
                         Either::Right(data) => {
@@ -186,7 +208,12 @@ where
                                 .manager
                                 .play(data.output_destination(handle).with(tween))
                             {
-                                self.handles.store_stream(handle, sound_name, emitter);
+                                lifecycle!(
+                                    "playing stream sound {} on {:?}",
+                                    sound_name.as_str(),
+                                    entity_id
+                                );
+                                self.handles.store_stream(handle, sound_name, emitter, true);
                             }
                         }
                     }
@@ -211,6 +238,7 @@ where
         }
     }
 
+    #[allow(dead_code)]
     pub fn terminate(&mut self) {
         self.handles.clear();
         let _ = self.scene.take();
@@ -326,5 +354,23 @@ where
             .try_read()
             .and_then(|x| x.as_ref().map(|x| x.try_get(sound, spoken, gender).is_ok()))
             .unwrap_or(false)
+    }
+}
+
+pub trait ToOutputDestination {
+    fn into_output_destination(&self, tracks: &Tracks) -> OutputDestination;
+}
+
+impl ToOutputDestination for Id {
+    fn into_output_destination(&self, tracks: &Tracks) -> OutputDestination {
+        match self {
+            Id::OnDemand(_, source) | Id::InMemory(_, source) => match source {
+                Source::Sfx | Source::Ono => tracks.sfx.as_ref().into(),
+                Source::Voices => tracks.dialogue.as_ref().into(),
+                Source::Playlist => tracks.radioport.as_ref().into(),
+                Source::Music => tracks.music.as_ref().into(),
+                Source::Jingle => tracks.car_radio.as_ref().into(),
+            },
+        }
     }
 }

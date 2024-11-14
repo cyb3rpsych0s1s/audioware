@@ -14,7 +14,7 @@ use crate::{
     get_player, AIActionHelper, AsEntity, AsGameInstance, Entity, GameObject, Vector4,
 };
 
-use super::{tracks::Tracks, tweens::IMMEDIATELY};
+use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
 
 /// Audio spatial scene.
 pub struct Scene {
@@ -92,6 +92,7 @@ impl Scene {
         };
         self.emitters
             .insert(EmitterId::new(entity_id, emitter_name), handle);
+        lifecycle!("added emitter {entity_id:?}");
         Ok(())
     }
 
@@ -111,6 +112,7 @@ impl Scene {
             return Ok(false);
         }
         self.emitters.retain(|k, _| !removal.contains(k));
+        lifecycle!("removed emitter {entity_id:?}");
         Ok(true)
     }
 

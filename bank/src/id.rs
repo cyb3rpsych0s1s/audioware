@@ -14,6 +14,14 @@ pub enum Id {
     InMemory(Key, Source),
 }
 
+impl Id {
+    pub fn source(&self) -> &Source {
+        match self {
+            Id::OnDemand(_, source) | Id::InMemory(_, source) => source,
+        }
+    }
+}
+
 impl Hash for Id {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         let key: &Key = self.as_ref();

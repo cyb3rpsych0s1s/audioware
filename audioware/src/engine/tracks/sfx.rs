@@ -5,7 +5,7 @@ use kira::{
 };
 
 use crate::{
-    engine::modulators::{Parameter, SfxVolume},
+    engine::modulators::{Modulators, Parameter},
     error::Error,
 };
 
@@ -17,7 +17,7 @@ impl Sfx {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
         ambience: &Ambience,
-        tweener: &SfxVolume,
+        modulators: &Modulators,
     ) -> Result<Self, Error> {
         let track = manager.add_sub_track(
             TrackBuilder::new()
@@ -25,7 +25,7 @@ impl Sfx {
                     TrackRoutes::parent(ambience.environmental())
                         .with_route(ambience.reverb(), 0.5),
                 )
-                .with_effect(tweener.try_effect()?),
+                .with_effect(modulators.sfx_volume.try_effect()?),
         )?;
         Ok(Self(track))
     }

@@ -40,19 +40,14 @@ impl Tracks {
         manager: &mut AudioManager<B>,
         modulators: &Modulators,
     ) -> Result<Self, Error> {
-        let ambience = Ambience::try_new(manager)?;
-        let v = V::try_new(
-            manager,
-            &ambience,
-            &modulators.dialogue_volume,
-            &modulators.sfx_volume,
-        )?;
-        let holocall = Holocall::try_new(manager, &modulators.dialogue_volume)?;
-        let sfx = Sfx::try_new(manager, &ambience, &modulators.sfx_volume)?;
-        let radioport = Radioport::try_new(manager, &modulators.radioport_volume)?;
-        let music = Music::try_new(manager, &modulators.music_volume)?;
-        let dialogue = Dialogue::try_new(manager, &ambience, &modulators.dialogue_volume)?;
-        let car_radio = CarRadio::try_new(manager, &modulators.car_radio_volume)?;
+        let ambience = Ambience::try_new(manager, modulators)?;
+        let v = V::try_new(manager, &ambience, modulators)?;
+        let holocall = Holocall::try_new(manager, modulators)?;
+        let sfx = Sfx::try_new(manager, &ambience, modulators)?;
+        let radioport = Radioport::try_new(manager, modulators)?;
+        let music = Music::try_new(manager, modulators)?;
+        let dialogue = Dialogue::try_new(manager, &ambience, modulators)?;
+        let car_radio = CarRadio::try_new(manager, modulators)?;
         Ok(Self {
             ambience,
             v,

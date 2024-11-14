@@ -6,7 +6,7 @@ use kira::{
 };
 
 use crate::{
-    engine::modulators::{DialogueVolume, Parameter, SfxVolume},
+    engine::modulators::{Modulators, Parameter},
     error::Error,
 };
 
@@ -23,8 +23,7 @@ impl V {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
         ambience: &Ambience,
-        tweener_dialogue: &DialogueVolume,
-        tweener_sfx: &SfxVolume,
+        modulators: &Modulators,
     ) -> Result<Self, Error> {
         let vocal = manager.add_sub_track(
             TrackBuilder::new()
@@ -32,17 +31,18 @@ impl V {
                     TrackRoutes::parent(ambience.environmental())
                         .with_route(ambience.reverb(), 0.25),
                 )
-                .with_effect(tweener_dialogue.try_effect()?),
+                .with_effect(modulators.dialogue_volume.try_effect()?),
         )?;
-        let mental = manager
-            .add_sub_track(TrackBuilder::new().with_effect(tweener_dialogue.try_effect()?))?;
+        let mental = manager.add_sub_track(
+            TrackBuilder::new().with_effect(modulators.dialogue_volume.try_effect()?),
+        )?;
         let emissive = manager.add_sub_track(
             TrackBuilder::new()
                 .routes(
                     TrackRoutes::parent(ambience.environmental())
                         .with_route(ambience.reverb(), 0.25),
                 )
-                .with_effect(tweener_sfx.try_effect()?),
+                .with_effect(modulators.sfx_volume.try_effect()?),
         )?;
 
         Ok(V {

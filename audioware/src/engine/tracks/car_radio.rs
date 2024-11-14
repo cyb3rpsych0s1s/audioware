@@ -5,7 +5,7 @@ use kira::{
 };
 
 use crate::{
-    engine::modulators::{CarRadioVolume, Parameter},
+    engine::modulators::{Modulators, Parameter},
     error::Error,
 };
 
@@ -14,10 +14,11 @@ pub struct CarRadio(TrackHandle);
 impl CarRadio {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
-        tweener: &CarRadioVolume,
+        modulators: &Modulators,
     ) -> Result<Self, Error> {
-        let track =
-            manager.add_sub_track(TrackBuilder::new().with_effect(tweener.try_effect()?))?;
+        let track = manager.add_sub_track(
+            TrackBuilder::new().with_effect(modulators.car_radio_volume.try_effect()?),
+        )?;
         Ok(Self(track))
     }
 }

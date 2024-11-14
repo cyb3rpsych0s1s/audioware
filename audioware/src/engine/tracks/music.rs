@@ -5,7 +5,7 @@ use kira::{
 };
 
 use crate::{
-    engine::modulators::{MusicVolume, Parameter},
+    engine::modulators::{Modulators, Parameter},
     error::Error,
 };
 
@@ -14,10 +14,11 @@ pub struct Music(TrackHandle);
 impl Music {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
-        tweener: &MusicVolume,
+        modulators: &Modulators,
     ) -> Result<Self, Error> {
-        let track =
-            manager.add_sub_track(TrackBuilder::new().with_effect(tweener.try_effect()?))?;
+        let track = manager.add_sub_track(
+            TrackBuilder::new().with_effect(modulators.music_volume.try_effect()?),
+        )?;
         Ok(Self(track))
     }
 }

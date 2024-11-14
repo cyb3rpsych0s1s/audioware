@@ -5,7 +5,7 @@ use kira::{
 };
 
 use crate::{
-    engine::modulators::{DialogueVolume, Parameter},
+    engine::modulators::{Modulators, Parameter},
     error::Error,
 };
 
@@ -17,7 +17,7 @@ impl Dialogue {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
         ambience: &Ambience,
-        tweener: &DialogueVolume,
+        modulators: &Modulators,
     ) -> Result<Self, Error> {
         let track = manager.add_sub_track(
             TrackBuilder::new()
@@ -25,7 +25,7 @@ impl Dialogue {
                     TrackRoutes::parent(ambience.environmental())
                         .with_route(ambience.reverb(), 0.25),
                 )
-                .with_effect(tweener.try_effect()?),
+                .with_effect(modulators.dialogue_volume.try_effect()?),
         )?;
         Ok(Self(track))
     }

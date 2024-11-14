@@ -7,34 +7,35 @@ use kira::{
 use crate::{
     engine::{
         eq::{HighPass, LowPass, EQ},
-        modulators::{Parameter, ReverbMix},
+        modulators::{Modulators, Parameter},
     },
     error::Error,
 };
 
 /// Sub-track to provide reverb and environmental effects.
 pub struct Ambience {
-    reverb: TrackHandle,
-    mix: ReverbMix,
-    environmental: TrackHandle,
     eq: EQ,
+    reverb: TrackHandle,
+    environmental: TrackHandle,
 }
 
 impl Ambience {
-    pub fn try_new<B: Backend>(manager: &mut AudioManager<B>) -> Result<Self, Error> {
+    pub fn try_new<B: Backend>(
+        manager: &mut AudioManager<B>,
+        modulators: &Modulators,
+    ) -> Result<Self, Error> {
         let low: FilterHandle;
         let high: FilterHandle;
-        let mix = ReverbMix::try_new(manager)?;
-        let reverb = manager.add_sub_track(TrackBuilder::new().with_effect(mix.try_effect()?))?;
+        let reverb = manager
+            .add_sub_track(TrackBuilder::new().with_effect(modulators.reverb_mix.try_effect()?))?;
         let environmental = manager.add_sub_track({
-            let mut builder = TrackBuilder::new().with_effect(mix.try_effect()?);
+            let mut builder = TrackBuilder::new().with_effect(modulators.reverb_mix.try_effect()?);
             low = builder.add_effect(FilterBuilder::default().mix(0.));
             high = builder.add_effect(FilterBuilder::default().mode(FilterMode::HighPass).mix(0.));
             builder
         })?;
         Ok(Self {
             reverb,
-            mix,
             environmental,
             eq: EQ {
                 lowpass: LowPass(low),

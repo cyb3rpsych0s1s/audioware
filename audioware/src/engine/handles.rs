@@ -27,10 +27,11 @@ impl Handles {
         handle: StaticSoundHandle,
         event_name: CName,
         emitter: Option<Emitter>,
+        spatial: bool,
     ) {
         self.statics.insert(
             ProcessUniqueId::new(),
-            Handle::new(handle, event_name, emitter),
+            Handle::new(handle, event_name, emitter, spatial),
         );
     }
 
@@ -39,10 +40,11 @@ impl Handles {
         handle: StreamingSoundHandle<FromFileError>,
         event_name: CName,
         emitter: Option<Emitter>,
+        spatial: bool,
     ) {
         self.streams.insert(
             ProcessUniqueId::new(),
-            Handle::new(handle, event_name, emitter),
+            Handle::new(handle, event_name, emitter, spatial),
         );
     }
 
@@ -98,12 +100,12 @@ impl Handles {
 
     pub fn stop_emitters(&mut self, tween: Tween) {
         for ref mut ref_multi in self.statics.iter_mut() {
-            if ref_multi.value().emitter.is_some() {
+            if ref_multi.value().emitter.is_some() && ref_multi.value().spatial {
                 ref_multi.value_mut().handle.stop(tween);
             }
         }
         for ref mut ref_multi in self.streams.iter_mut() {
-            if ref_multi.value().emitter.is_some() {
+            if ref_multi.value().emitter.is_some() && ref_multi.value().spatial {
                 ref_multi.value_mut().handle.stop(tween);
             }
         }
@@ -138,14 +140,16 @@ pub struct Handle<T> {
     pub handle: T,
     pub event_name: CName,
     pub emitter: Option<Emitter>,
+    pub spatial: bool,
 }
 
 impl<T> Handle<T> {
-    pub fn new(handle: T, event_name: CName, emitter: Option<Emitter>) -> Self {
+    pub fn new(handle: T, event_name: CName, emitter: Option<Emitter>, spatial: bool) -> Self {
         Self {
             handle,
             event_name,
             emitter,
+            spatial,
         }
     }
 }

@@ -5,7 +5,7 @@ use kira::{
 };
 
 use crate::{
-    engine::modulators::{Parameter, RadioportVolume},
+    engine::modulators::{Modulators, Parameter},
     error::Error,
 };
 
@@ -14,10 +14,11 @@ pub struct Radioport(TrackHandle);
 impl Radioport {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
-        tweener: &RadioportVolume,
+        modulators: &Modulators,
     ) -> Result<Self, Error> {
-        let track =
-            manager.add_sub_track(TrackBuilder::new().with_effect(tweener.try_effect()?))?;
+        let track = manager.add_sub_track(
+            TrackBuilder::new().with_effect(modulators.radioport_volume.try_effect()?),
+        )?;
         Ok(Self(track))
     }
 }
