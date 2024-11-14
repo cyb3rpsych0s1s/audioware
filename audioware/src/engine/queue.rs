@@ -28,7 +28,10 @@ use crate::{
     abi::{
         command::Command,
         lifecycle::{Board, Lifecycle, Session, System},
-    }, config::BufferSize, engine::tweens::IMMEDIATELY, error::Error, utils::{fails, lifecycle}
+    },
+    config::BufferSize,
+    error::Error,
+    utils::{fails, lifecycle},
 };
 
 use super::Engine;
@@ -95,7 +98,7 @@ where
                 Lifecycle::Terminate => {
                     engine.handles.stop(None);
                     break 'game;
-                },
+                }
                 Lifecycle::Shutdown => {}
                 Lifecycle::RegisterEmitter {
                     entity_id,
