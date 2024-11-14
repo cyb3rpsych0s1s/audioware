@@ -196,7 +196,11 @@ where
                 ),
                 Command::PlayOverThePhone { .. } => {}
                 Command::StopOnEmitter { .. } => {}
-                Command::StopVanilla { .. } => {}
+                Command::StopVanilla {
+                    event_name,
+                    entity_id,
+                    emitter_name,
+                } => engine.stop(event_name, entity_id, emitter_name, None),
                 Command::Stop {
                     event_name,
                     entity_id,
