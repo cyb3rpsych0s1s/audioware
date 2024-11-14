@@ -22,17 +22,17 @@ mod sfx;
 mod v;
 
 pub struct Tracks {
-    // tracks affected by reverb mix + preset (e.g. underwater)
-    pub ambience: Ambience,
-    // audioware tracks
-    pub v: V,
-    pub holocall: Holocall,
     // vanilla tracks
     pub sfx: Sfx,
     pub radioport: Radioport,
     pub music: Music,
     pub dialogue: Dialogue,
     pub car_radio: CarRadio,
+    // audioware tracks
+    pub v: V,
+    pub holocall: Holocall,
+    // tracks affected by reverb mix + preset (e.g. underwater)
+    pub ambience: Ambience,
 }
 
 impl Tracks {
@@ -44,10 +44,10 @@ impl Tracks {
         let v = V::try_new(manager, &ambience, modulators)?;
         let holocall = Holocall::try_new(manager, modulators)?;
         let sfx = Sfx::try_new(manager, &ambience, modulators)?;
-        let radioport = Radioport::try_new(manager, modulators)?;
-        let music = Music::try_new(manager, modulators)?;
+        let radioport = Radioport::try_new(manager, &ambience, modulators)?;
+        let music = Music::try_new(manager, &ambience, modulators)?;
         let dialogue = Dialogue::try_new(manager, &ambience, modulators)?;
-        let car_radio = CarRadio::try_new(manager, modulators)?;
+        let car_radio = CarRadio::try_new(manager, &ambience, modulators)?;
         Ok(Self {
             ambience,
             v,

@@ -1,6 +1,6 @@
 use kira::{
     manager::{backend::Backend, AudioManager},
-    track::{TrackBuilder, TrackHandle},
+    track::{TrackBuilder, TrackHandle, TrackRoutes},
     OutputDestination,
 };
 
@@ -9,15 +9,20 @@ use crate::{
     error::Error,
 };
 
+use super::ambience::Ambience;
+
 pub struct Music(TrackHandle);
 
 impl Music {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
+        ambience: &Ambience,
         modulators: &Modulators,
     ) -> Result<Self, Error> {
         let track = manager.add_sub_track(
-            TrackBuilder::new().with_effect(modulators.music_volume.try_effect()?),
+            TrackBuilder::new()
+                .routes(TrackRoutes::new().with_route(ambience.reverb(), 0.))
+                .with_effect(modulators.music_volume.try_effect()?),
         )?;
         Ok(Self(track))
     }

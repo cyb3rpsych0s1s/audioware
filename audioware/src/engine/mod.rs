@@ -116,7 +116,7 @@ where
             match data {
                 Either::Left(data) => {
                     if let Ok(handle) = self.manager.play(
-                        data.output_destination(key.into_output_destination(&self.tracks))
+                        data.output_destination(key.to_output_destination(&self.tracks))
                             .with(tween),
                     ) {
                         self.handles
@@ -125,7 +125,7 @@ where
                 }
                 Either::Right(data) => {
                     if let Ok(handle) = self.manager.play(
-                        data.output_destination(key.into_output_destination(&self.tracks))
+                        data.output_destination(key.to_output_destination(&self.tracks))
                             .with(tween),
                     ) {
                         self.handles
@@ -151,7 +151,7 @@ where
             match data {
                 Either::Left(data) => {
                     if let Ok(handle) = self.manager.play(
-                        data.output_destination(key.into_output_destination(&self.tracks))
+                        data.output_destination(key.to_output_destination(&self.tracks))
                             .with(ext),
                     ) {
                         self.handles
@@ -160,7 +160,7 @@ where
                 }
                 Either::Right(data) => {
                     if let Ok(handle) = self.manager.play(
-                        data.output_destination(key.into_output_destination(&self.tracks))
+                        data.output_destination(key.to_output_destination(&self.tracks))
                             .with(ext),
                     ) {
                         self.handles
@@ -358,11 +358,11 @@ where
 }
 
 pub trait ToOutputDestination {
-    fn into_output_destination(&self, tracks: &Tracks) -> OutputDestination;
+    fn to_output_destination(&self, tracks: &Tracks) -> OutputDestination;
 }
 
 impl ToOutputDestination for Id {
-    fn into_output_destination(&self, tracks: &Tracks) -> OutputDestination {
+    fn to_output_destination(&self, tracks: &Tracks) -> OutputDestination {
         match self {
             Id::OnDemand(_, source) | Id::InMemory(_, source) => match source {
                 Source::Sfx | Source::Ono => tracks.sfx.as_ref().into(),

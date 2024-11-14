@@ -29,7 +29,7 @@ impl Ambience {
         let reverb = manager
             .add_sub_track(TrackBuilder::new().with_effect(modulators.reverb_mix.try_effect()?))?;
         let environmental = manager.add_sub_track({
-            let mut builder = TrackBuilder::new().with_effect(modulators.reverb_mix.try_effect()?);
+            let mut builder = TrackBuilder::new();
             low = builder.add_effect(FilterBuilder::default().mix(0.));
             high = builder.add_effect(FilterBuilder::default().mode(FilterMode::HighPass).mix(0.));
             builder
