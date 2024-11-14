@@ -162,6 +162,14 @@ impl Scene {
         }
         false
     }
+
+    pub fn any_emitter(&self) -> bool {
+        !self.emitters.is_empty()
+    }
+
+    pub fn clear(&mut self) {
+        self.emitters.clear();
+    }
 }
 
 /// Represents a currently registered spatial audio scene emitter.

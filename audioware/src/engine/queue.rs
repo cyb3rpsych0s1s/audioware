@@ -90,8 +90,7 @@ where
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
     let synchronization = tick(ms(15));
     'game: loop {
-        let mut synced = false;
-        let mut reclaimed = false;
+        let mut should_sync = false;
         for l in rl.try_iter() {
             lifecycle!("> {l}");
             match l {
@@ -119,19 +118,32 @@ where
                 Lifecycle::Session(Session::Start) => {}
                 Lifecycle::Session(Session::End) => {}
                 Lifecycle::Session(Session::Ready) => {}
-                Lifecycle::Session(Session::Pause) => {}
-                Lifecycle::Session(Session::Resume) => {}
-                Lifecycle::Session(Session::BeforeEnd) => {}
+                Lifecycle::Session(Session::Pause) => {
+                    should_sync = false;
+                }
+                Lifecycle::Session(Session::Resume) => {
+                    should_sync = true;
+                }
+                Lifecycle::Session(Session::BeforeEnd) => {
+                    should_sync = false;
+                }
                 Lifecycle::System(System::Attach) => {}
                 Lifecycle::System(System::Detach) => {}
-                Lifecycle::System(System::PlayerAttach) => {
-                    if let Err(e) = engine.try_new_scene() {
-                        lifecycle!("failed to create new scene: {e}");
+                Lifecycle::System(System::PlayerAttach) => match engine.try_new_scene() {
+                    Ok(_) => {
+                        should_sync = true;
                     }
-                }
+                    Err(e) => lifecycle!("failed to create new scene: {e}"),
+                },
                 Lifecycle::System(System::PlayerDetach) => engine.clear_scene(),
-                Lifecycle::Board(Board::UIMenu(true)) => engine.pause(),
-                Lifecycle::Board(Board::UIMenu(false)) => engine.resume(),
+                Lifecycle::Board(Board::UIMenu(true)) => {
+                    should_sync = false;
+                    engine.pause()
+                }
+                Lifecycle::Board(Board::UIMenu(false)) => {
+                    should_sync = engine.scene.is_some();
+                    engine.resume()
+                }
                 Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
                 Lifecycle::IsRegisteredEmitter { entity_id, sender } => {
@@ -140,25 +152,11 @@ where
                 }
             }
         }
-        if engine.scene.is_some() && !synced {
-            let mut synchronize = false;
-            for _ in synchronization.try_iter() {
-                synchronize = true;
-            }
-            if synchronize {
-                engine.sync_scene();
-                synced = true;
-            }
+        if should_sync && engine.any_emitter() && synchronization.try_recv().is_ok() {
+            engine.sync_scene();
         }
-        if !engine.handles.is_empty() && !reclaimed {
-            let mut reclaim = false;
-            for _ in reclamation.try_iter() {
-                reclaim = true;
-            }
-            if reclaim {
-                engine.reclaim();
-                reclaimed = true;
-            }
+        if engine.any_handle() && reclamation.try_recv().is_ok() {
+            engine.reclaim();
         }
         for c in rc.try_iter().take(8) {
             lifecycle!("> {c}");

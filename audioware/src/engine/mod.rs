@@ -78,6 +78,10 @@ where
         })
     }
 
+    pub fn any_handle(&self) -> bool {
+        !self.handles.is_empty()
+    }
+
     pub fn try_new_scene(&mut self) -> Result<(), Error> {
         self.scene = Some(Scene::try_new(&mut self.manager, &self.tracks)?);
         Ok(())
@@ -201,6 +205,7 @@ where
 
     pub fn terminate(&mut self) {
         self.handles.clear();
+        let _ = self.scene.take();
     }
 
     pub fn pause(&mut self) {
@@ -254,6 +259,13 @@ where
             if let Err(e) = scene.remove_emitter(entity_id) {
                 lifecycle!("failed to remove emitter: {e}");
             }
+        }
+    }
+
+    pub fn any_emitter(&self) -> bool {
+        match self.scene {
+            Some(ref scene) => scene.any_emitter(),
+            None => false,
         }
     }
 
