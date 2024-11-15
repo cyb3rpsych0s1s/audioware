@@ -8,7 +8,7 @@ use std::{
     time::Duration,
 };
 
-use audioware_manifest::{PlayerGender, SpokenLocale};
+use audioware_manifest::SpokenLocale;
 use bitflags::bitflags;
 use crossbeam::channel::{bounded, tick, Receiver, Sender};
 use kira::manager::{
@@ -65,15 +65,19 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
     };
     let capacity = manager_settings.capacities.command_capacity;
     let engine = Engine::try_new(manager_settings)?;
-    let _ = THREAD.set(Mutex::new(Some(std::thread::spawn(move || {
-        lifecycle!("initialize channels...");
-        let (sl, rl) = bounded::<Lifecycle>(32);
-        let (sc, rc) = bounded::<Command>(capacity);
-        let _ = LIFECYCLE.set(RwLock::new(Some(sl)));
-        let _ = COMMAND.set(RwLock::new(Some(sc)));
-        lifecycle!("initialized channels");
-        self::run(rl, rc, engine);
-    }))));
+    let _ = THREAD.set(Mutex::new(Some(
+        std::thread::Builder::new()
+            .name("audioware".into())
+            .spawn(move || {
+                lifecycle!("initialize channels...");
+                let (sl, rl) = bounded::<Lifecycle>(32);
+                let (sc, rc) = bounded::<Command>(capacity);
+                let _ = LIFECYCLE.set(RwLock::new(Some(sl)));
+                let _ = COMMAND.set(RwLock::new(Some(sc)));
+                lifecycle!("initialized channels");
+                self::run(rl, rc, engine);
+            })?,
+    )));
     lifecycle!("spawned plugin thread");
     Ok(())
 }

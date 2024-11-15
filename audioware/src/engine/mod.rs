@@ -38,12 +38,12 @@ static BANKS: std::sync::OnceLock<Banks> = std::sync::OnceLock::new();
 static BANKS: parking_lot::RwLock<Option<Banks>> = parking_lot::RwLock::new(None);
 
 pub struct Engine<B: Backend> {
-    pub report: Initialization,
     pub handles: Handles,
     pub scene: Option<Scene>,
     pub tracks: Tracks,
     pub modulators: Modulators,
     pub manager: AudioManager<B>,
+    pub report: Initialization,
     pub banks: Banks,
 }
 
@@ -53,7 +53,9 @@ impl<B: Backend> Drop for Engine<B> {
         lifecycle!("drop engine");
         use std::ops::DerefMut;
         let _ = BANKS.write().deref_mut().take();
-        queue::join();
+        self.handles.clear();
+        // bug in kira DecodeScheduler NextStep::Wait
+        std::thread::sleep(std::time::Duration::from_millis(2));
     }
 }
 
@@ -238,12 +240,6 @@ where
                 tween.unwrap_or_default(),
             );
         }
-    }
-
-    #[allow(dead_code)]
-    pub fn terminate(&mut self) {
-        self.handles.clear();
-        let _ = self.scene.take();
     }
 
     pub fn pause(&mut self) {

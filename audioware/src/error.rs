@@ -29,6 +29,8 @@ pub enum InternalError {
 
 #[derive(Debug, Snafu)]
 pub enum EngineError {
+    #[snafu(display("Thread: {source}"))]
+    Thread { source: std::io::Error },
     #[snafu(display("Audio manager error: {origin}"))]
     Manager { origin: &'static str },
     #[snafu(display("Resource limit error: {source}"))]
@@ -91,5 +93,13 @@ impl From<PlaySoundError<FromFileError>> for Error {
 impl From<audioware_bank::Error> for Error {
     fn from(source: audioware_bank::Error) -> Self {
         Self::Bank { source }
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(source: std::io::Error) -> Self {
+        Self::Engine {
+            source: EngineError::Thread { source },
+        }
     }
 }
