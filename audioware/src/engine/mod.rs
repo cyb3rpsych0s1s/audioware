@@ -47,14 +47,6 @@ pub struct Engine<B: Backend> {
     pub banks: Banks,
 }
 
-#[cfg(debug_assertions)]
-impl<B: Backend> Drop for Engine<B> {
-    fn drop(&mut self) {
-        lifecycle!("drop engine");
-        let _ = BANKS.write().deref_mut().take();
-    }
-}
-
 impl<B> Engine<B>
 where
     B: Backend,

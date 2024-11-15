@@ -30,6 +30,7 @@ use crate::{
         lifecycle::{Board, Lifecycle, Session, System},
     },
     config::BufferSize,
+    engine::BANKS,
     error::Error,
     utils::{fails, lifecycle},
 };
@@ -89,8 +90,8 @@ where
     let ms = |x| Duration::from_millis(x);
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
     let synchronization = tick(ms(15));
+    let mut should_sync = false;
     'game: loop {
-        let mut should_sync = false;
         for l in rl.try_iter() {
             lifecycle!("> {l}");
             match l {
@@ -216,6 +217,11 @@ where
     let _ = COMMAND
         .get()
         .and_then(|x| x.write().ok().map(|mut x| x.take()));
+    #[cfg(debug_assertions)]
+    {
+        use std::ops::DerefMut;
+        let _ = BANKS.write().deref_mut().take();
+    }
     lifecycle!("closed engine");
 }
 
