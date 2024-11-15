@@ -40,11 +40,20 @@ static BANKS: parking_lot::RwLock<Option<Banks>> = parking_lot::RwLock::new(None
 pub struct Engine<B: Backend> {
     pub report: Initialization,
     pub handles: Handles,
-    pub modulators: Modulators,
     pub scene: Option<Scene>,
     pub tracks: Tracks,
+    pub modulators: Modulators,
     pub manager: AudioManager<B>,
     pub banks: Banks,
+}
+
+#[cfg(debug_assertions)]
+impl<B: Backend> Drop for Engine<B> {
+    fn drop(&mut self) {
+        lifecycle!("drop engine");
+        use std::ops::DerefMut;
+        let _ = BANKS.write().deref_mut().take();
+    }
 }
 
 impl<B> Engine<B>

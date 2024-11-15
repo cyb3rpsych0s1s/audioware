@@ -30,7 +30,6 @@ use crate::{
         lifecycle::{Board, Lifecycle, Session, System},
     },
     config::BufferSize,
-    engine::BANKS,
     error::Error,
     utils::{fails, lifecycle},
 };
@@ -96,6 +95,7 @@ where
             lifecycle!("> {l}");
             match l {
                 Lifecycle::Terminate => {
+                    engine.terminate();
                     break 'game;
                 }
                 Lifecycle::RegisterEmitter {
@@ -217,12 +217,19 @@ where
     let _ = COMMAND
         .get()
         .and_then(|x| x.write().ok().map(|mut x| x.take()));
-    #[cfg(debug_assertions)]
-    {
-        use std::ops::DerefMut;
-        let _ = BANKS.write().deref_mut().take();
-    }
     lifecycle!("closed engine");
+}
+
+pub fn join() {
+    if let Some(x) = THREAD
+        .get()
+        .and_then(|x| x.lock().ok())
+        .and_then(|mut x| x.take())
+    {
+        if let Err(e) = x.join() {
+            fails!("failed to join engine thread: {e:?}");
+        }
+    }
 }
 
 pub fn notify(lifecycle: Lifecycle) {
