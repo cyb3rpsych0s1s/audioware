@@ -288,9 +288,8 @@ where
 
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
         if let Some(ref mut scene) = self.scene {
-            if let Err(e) = scene.remove_emitter(entity_id) {
-                lifecycle!("failed to remove emitter: {e}");
-            }
+            self.handles.on_emitter_dies(entity_id);
+            scene.on_emitter_dies(entity_id);
         }
     }
 
@@ -304,7 +303,7 @@ where
     pub fn sync_scene(&mut self) {
         match self.scene {
             Some(ref mut scene) => {
-                if let Err(e) = scene.sync() {
+                if let Err(e) = scene.sync(&self.handles) {
                     lifecycle!("failed to sync scene: {e}")
                 }
             }

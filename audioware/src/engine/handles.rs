@@ -9,6 +9,8 @@ use kira::{
 use red4ext_rs::types::{CName, EntityId};
 use snowflake::ProcessUniqueId;
 
+use super::tweens::LAST_BREATH;
+
 pub struct Handles {
     statics: DashMap<ProcessUniqueId, Handle<StaticSoundHandle>>,
     streams: DashMap<ProcessUniqueId, Handle<StreamingSoundHandle<FromFileError>>>,
@@ -120,6 +122,31 @@ impl Handles {
         }
     }
 
+    pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
+        for ref mut ref_multi in self.statics.iter_mut() {
+            if ref_multi
+                .value()
+                .emitter
+                .as_ref()
+                .map(|x| x.id == entity_id)
+                .unwrap_or(false)
+            {
+                ref_multi.value_mut().handle.stop(LAST_BREATH);
+            }
+        }
+        for ref mut ref_multi in self.streams.iter_mut() {
+            if ref_multi
+                .value()
+                .emitter
+                .as_ref()
+                .map(|x| x.id == entity_id)
+                .unwrap_or(false)
+            {
+                ref_multi.value_mut().handle.stop(LAST_BREATH);
+            }
+        }
+    }
+
     pub fn clear(&mut self) {
         self.statics.clear();
         self.streams.clear();
@@ -127,6 +154,34 @@ impl Handles {
 
     pub fn is_empty(&self) -> bool {
         self.statics.is_empty() && self.streams.is_empty()
+    }
+
+    pub fn emitter_has_no_ongoing_sound(&self, entity_id: EntityId) -> bool {
+        for ref_multi in self.statics.iter() {
+            if ref_multi
+                .value()
+                .emitter
+                .as_ref()
+                .map(|x| x.id == entity_id)
+                .unwrap_or(false)
+                && ref_multi.value().handle.state() != PlaybackState::Stopped
+            {
+                return false;
+            }
+        }
+        for ref_multi in self.streams.iter() {
+            if ref_multi
+                .value()
+                .emitter
+                .as_ref()
+                .map(|x| x.id == entity_id)
+                .unwrap_or(false)
+                && ref_multi.value().handle.state() != PlaybackState::Stopped
+            {
+                return false;
+            }
+        }
+        true
     }
 }
 

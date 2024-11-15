@@ -14,7 +14,7 @@ use crate::{
     get_player, AIActionHelper, AsEntity, AsGameInstance, Entity, GameObject, Vector4,
 };
 
-use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
+use super::{handles::Handles, lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
 
 /// Audio spatial scene.
 pub struct Scene {
@@ -89,6 +89,7 @@ impl Scene {
             handle: emitter,
             last_known_position: position,
             busy,
+            dead: false,
         };
         self.emitters
             .insert(EmitterId::new(entity_id, emitter_name), handle);
@@ -130,11 +131,14 @@ impl Scene {
         Ok(())
     }
 
-    fn sync_emitters(&mut self) -> Result<(), Error> {
+    fn sync_emitters(&mut self, handles: &Handles) -> Result<(), Error> {
         if self.emitters.is_empty() {
             return Ok(());
         }
         self.emitters.retain(|k, v| {
+            if v.dead && handles.emitter_has_no_ongoing_sound(k.id) {
+                return false;
+            }
             let Ok((position, busy)) = self.emitter_infos(k.id) else {
                 return false;
             };
@@ -148,9 +152,9 @@ impl Scene {
         Ok(())
     }
 
-    pub fn sync(&mut self) -> Result<(), Error> {
+    pub fn sync(&mut self, handles: &Handles) -> Result<(), Error> {
         self.sync_listener()?;
-        self.sync_emitters()?;
+        self.sync_emitters(handles)?;
         Ok(())
     }
 
@@ -161,6 +165,14 @@ impl Scene {
             }
         }
         false
+    }
+
+    pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
+        for ref mut emitter in self.emitters.iter_mut() {
+            if emitter.key().id == entity_id {
+                emitter.value_mut().dead = true;
+            }
+        }
     }
 
     pub fn any_emitter(&self) -> bool {
@@ -190,6 +202,7 @@ pub struct Handle {
     handle: EmitterHandle,
     last_known_position: Vector4,
     busy: bool,
+    dead: bool,
 }
 
 impl Handle {
