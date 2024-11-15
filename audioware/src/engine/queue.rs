@@ -222,15 +222,16 @@ where
     lifecycle!("closed engine");
 }
 
+#[allow(dead_code)]
 pub fn join() {
-    if let Some(x) = THREAD
+    lifecycle!("join engine thread");
+    if let Some(Err(e)) = THREAD
         .get()
-        .and_then(|x| x.lock().ok())
+        .and_then(|x| x.try_lock().ok())
         .and_then(|mut x| x.take())
+        .map(|x| x.join())
     {
-        if let Err(e) = x.join() {
-            fails!("failed to join engine thread: {e:?}");
-        }
+        fails!("failed to join engine thread: {e:?}");
     }
 }
 
