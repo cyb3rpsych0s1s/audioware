@@ -27,7 +27,7 @@ use std::sync::{Mutex, RwLock};
 use crate::{
     abi::{
         command::Command,
-        lifecycle::{Board, Lifecycle, Session, System},
+        lifecycle::{Board, Codeware, Lifecycle, Session, System},
     },
     config::BufferSize,
     error::Error,
@@ -82,9 +82,8 @@ pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engin
 where
     <B as Backend>::Error: Debug,
 {
-    use crate::states::State;
-    let spoken = SpokenLocale::get();
-    let gender = PlayerGender::get();
+    let spoken = SpokenLocale::default();
+    let mut gender = None;
     let s = |x| Duration::from_secs_f32(x);
     let ms = |x| Duration::from_millis(x);
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
@@ -95,9 +94,12 @@ where
             lifecycle!("> {l}");
             match l {
                 Lifecycle::Terminate => {
-                    engine.terminate();
                     break 'game;
                 }
+                Lifecycle::Codeware(Codeware::SetPlayerGender { gender: value }) => {
+                    gender = Some(value)
+                }
+                Lifecycle::Codeware(Codeware::UnsetPlayerGender) => gender = None,
                 Lifecycle::RegisterEmitter {
                     entity_id,
                     emitter_name,

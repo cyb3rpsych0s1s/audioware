@@ -3,9 +3,11 @@ use kira::spatial::emitter::EmitterSettings;
 use red4ext_rs::types::{CName, EntityId};
 
 mod board;
+mod codeware;
 mod session;
 mod system;
 pub use board::Board;
+pub use codeware::Codeware;
 pub use session::Session;
 pub use system::System;
 
@@ -37,6 +39,7 @@ pub enum Lifecycle {
     Session(Session),
     System(System),
     Board(Board),
+    Codeware(Codeware),
 }
 
 impl std::fmt::Display for Lifecycle {
@@ -61,6 +64,7 @@ impl std::fmt::Display for Lifecycle {
             Lifecycle::SetVolume { setting, value } => {
                 write!(f, "set volume {} {value}", setting.as_str())
             }
+            Lifecycle::Codeware(x) => write!(f, "{x}"),
         }
     }
 }

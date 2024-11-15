@@ -1,10 +1,10 @@
 use std::time::Duration;
 
-use audioware_manifest::{Interpolation, Region, ScnDialogLineType, Settings};
+use audioware_manifest::{Interpolation, PlayerGender, Region, ScnDialogLineType, Settings};
 use command::Command;
 use crossbeam::channel::bounded;
 use kira::tween::Easing;
-use lifecycle::{Board, Lifecycle, Session, System};
+use lifecycle::{Board, Codeware, Lifecycle, Session, System};
 use red4ext_rs::{
     class_kind::{Native, Scripted},
     exports, methods,
@@ -74,6 +74,8 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.SetReverbMix",               Audioware::on_reverb_mix),
         g!(c"Audioware.SetPreset",                  Audioware::on_preset),
         g!(c"Audioware.SetVolume",                  Audioware::set_volume),
+        g!(c"Audioware.SetPlayerGender",            Audioware::set_player_gender),
+        g!(c"Audioware.UnsetPlayerGender",          Audioware::unset_player_gender),
     ]
 }
 
@@ -118,6 +120,11 @@ pub trait BlackboardLifecycle {
     fn on_ui_menu(value: bool);
     fn on_reverb_mix(value: f32);
     fn on_preset(value: Preset);
+}
+
+pub trait CodewareLifecycle {
+    fn set_player_gender(gender: PlayerGender);
+    fn unset_player_gender();
 }
 
 pub trait ListenerLifecycle {
@@ -189,6 +196,16 @@ impl BlackboardLifecycle for Audioware {
 impl ListenerLifecycle for Audioware {
     fn set_volume(setting: CName, value: f64) {
         queue::notify(Lifecycle::SetVolume { setting, value });
+    }
+}
+
+impl CodewareLifecycle for Audioware {
+    fn set_player_gender(gender: PlayerGender) {
+        queue::notify(Lifecycle::Codeware(Codeware::SetPlayerGender { gender }));
+    }
+
+    fn unset_player_gender() {
+        queue::notify(Lifecycle::Codeware(Codeware::UnsetPlayerGender));
     }
 }
 
