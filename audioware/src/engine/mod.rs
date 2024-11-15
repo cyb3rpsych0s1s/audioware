@@ -53,6 +53,7 @@ impl<B: Backend> Drop for Engine<B> {
         lifecycle!("drop engine");
         use std::ops::DerefMut;
         let _ = BANKS.write().deref_mut().take();
+        queue::join();
     }
 }
 
