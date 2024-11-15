@@ -38,13 +38,13 @@ static BANKS: std::sync::OnceLock<Banks> = std::sync::OnceLock::new();
 static BANKS: parking_lot::RwLock<Option<Banks>> = parking_lot::RwLock::new(None);
 
 pub struct Engine<B: Backend> {
-    pub manager: AudioManager<B>,
+    pub report: Initialization,
+    pub handles: Handles,
     pub modulators: Modulators,
     pub scene: Option<Scene>,
-    pub handles: Handles,
     pub tracks: Tracks,
+    pub manager: AudioManager<B>,
     pub banks: Banks,
-    pub report: Initialization,
 }
 
 #[cfg(debug_assertions)]
