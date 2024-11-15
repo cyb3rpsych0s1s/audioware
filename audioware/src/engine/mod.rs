@@ -51,11 +51,9 @@ pub struct Engine<B: Backend> {
 impl<B: Backend> Drop for Engine<B> {
     fn drop(&mut self) {
         lifecycle!("drop engine");
-        use std::ops::DerefMut;
-        let _ = BANKS.write().deref_mut().take();
-        self.handles.clear();
         // bug in kira DecodeScheduler NextStep::Wait
-        std::thread::sleep(std::time::Duration::from_millis(2));
+        self.handles.stop_all(IMMEDIATELY);
+        self.handles.clear();
     }
 }
 

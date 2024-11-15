@@ -85,6 +85,15 @@ impl Handles {
         }
     }
 
+    pub fn stop_all(&mut self, tween: Tween) {
+        for ref mut ref_multi in self.statics.iter_mut() {
+            ref_multi.value_mut().handle.stop(tween);
+        }
+        for ref mut ref_multi in self.streams.iter_mut() {
+            ref_multi.value_mut().handle.stop(tween);
+        }
+    }
+
     pub fn stop_by(&mut self, event_name: CName, emitter: Option<Emitter>, tween: Tween) {
         for ref mut ref_multi in self.statics.iter_mut() {
             if ref_multi.value().event_name == event_name && ref_multi.value().emitter == emitter {
