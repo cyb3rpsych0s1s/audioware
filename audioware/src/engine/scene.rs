@@ -121,9 +121,10 @@ impl Scene {
         if player.is_null() {
             return Ok(());
         }
-        let entity = player.cast::<Entity>().unwrap();
-        let position = entity.get_world_position();
-        let orientation = entity.get_world_orientation();
+        let (position, orientation) = {
+            let entity = player.cast::<Entity>().unwrap();
+            (entity.get_world_position(), entity.get_world_orientation())
+        };
         self.v.set_position(position, IMMEDIATELY);
         self.v.set_orientation(orientation, IMMEDIATELY);
         Ok(())
@@ -134,17 +135,14 @@ impl Scene {
             return Ok(());
         }
         self.emitters.retain(|k, v| {
-            let game = GameInstance::new();
-            let entity = GameInstance::find_entity_by_id(game, k.id);
-            if entity.is_null() {
+            let Ok((position, busy)) = self.emitter_infos(k.id) else {
                 return false;
-            }
-            v.busy = entity.is_in_workspot();
-            let position = entity.get_world_position();
-            if position != v.last_known_position {
-                v.last_known_position = position;
-                v.handle.set_position(position, IMMEDIATELY);
-            }
+            };
+            v.busy = busy;
+            v.last_known_position = position;
+            // weirdly enough if emitter is not updated, sound(s) won't update as expected.
+            // e.g. when listener moves but emitter stands still.
+            v.handle.set_position(position, IMMEDIATELY);
             true
         });
         Ok(())
