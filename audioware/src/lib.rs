@@ -12,6 +12,7 @@ mod abi;
 mod config;
 mod engine;
 mod error;
+mod hooks;
 mod types;
 mod utils;
 
@@ -31,6 +32,7 @@ impl Plugin for Audioware {
         if let Err(e) = queue::spawn(env) {
             error!(env, "Error: {e}");
         }
+        hooks::attach(env);
     }
 
     /// Register types in [RTTI][RttiSystem].

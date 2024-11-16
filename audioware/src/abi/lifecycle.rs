@@ -31,6 +31,12 @@ pub enum Lifecycle {
     OnEmitterDies {
         entity_id: EntityId,
     },
+    OnEmitterIncapacitated {
+        entity_id: EntityId,
+    },
+    OnEmitterDefeated {
+        entity_id: EntityId,
+    },
     Terminate,
     SetVolume {
         setting: CName,
@@ -56,6 +62,12 @@ impl std::fmt::Display for Lifecycle {
             }
             Lifecycle::OnEmitterDies { entity_id } => {
                 write!(f, "on emitter dies [{:?}]", entity_id)
+            }
+            Lifecycle::OnEmitterIncapacitated { entity_id } => {
+                write!(f, "on emitter incapacitated [{:?}]", entity_id)
+            }
+            Lifecycle::OnEmitterDefeated { entity_id } => {
+                write!(f, "on emitter defeated [{:?}]", entity_id)
             }
             Lifecycle::Terminate => write!(f, "terminate"),
             Lifecycle::Session(x) => write!(f, "{x}"),

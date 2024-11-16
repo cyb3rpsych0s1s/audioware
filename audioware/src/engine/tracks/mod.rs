@@ -21,6 +21,8 @@ mod radioport;
 mod sfx;
 mod v;
 
+mod custom_track;
+
 pub struct Tracks {
     // vanilla tracks
     pub sfx: Sfx,

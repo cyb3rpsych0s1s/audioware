@@ -57,6 +57,8 @@ pub fn exports() -> impl Exportable {
                     final c"UnregisterEmitter" => AudioSystemExt::unregister_emitter,
                     final c"IsRegisteredEmitter" => AudioSystemExt::is_registered_emitter,
                     final c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
+                    final c"OnEmitterIncapacitated" => AudioSystemExt::on_emitter_incapacitated,
+                    final c"OnEmitterDefeated" => AudioSystemExt::on_emitter_defeated,
                 ])
                 .build(),
         ClassExport::<DummyLol>::builder().base(IScriptable::NAME)
@@ -224,6 +226,8 @@ pub trait SceneLifecycle {
     fn unregister_emitter(&self, entity_id: EntityId) -> bool;
     fn is_registered_emitter(&self, entity_id: EntityId) -> bool;
     fn on_emitter_dies(&self, entity_id: EntityId);
+    fn on_emitter_incapacitated(&self, entity_id: EntityId);
+    fn on_emitter_defeated(&self, entity_id: EntityId);
 }
 
 impl SceneLifecycle for AudioSystemExt {
@@ -266,6 +270,14 @@ impl SceneLifecycle for AudioSystemExt {
 
     fn on_emitter_dies(&self, entity_id: EntityId) {
         queue::notify(Lifecycle::OnEmitterDies { entity_id });
+    }
+
+    fn on_emitter_incapacitated(&self, entity_id: EntityId) {
+        queue::notify(Lifecycle::OnEmitterIncapacitated { entity_id });
+    }
+
+    fn on_emitter_defeated(&self, entity_id: EntityId) {
+        queue::notify(Lifecycle::OnEmitterDefeated { entity_id });
     }
 }
 

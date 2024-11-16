@@ -17,4 +17,6 @@ public native class AudioSystemExt {
     public final native func UnregisterEmitter(entityID: EntityID) -> Bool;
     public final native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
     public final native func OnEmitterDies(entityID: EntityID) -> Void;
+    public final native func OnEmitterIncapacitated(entityID: EntityID) -> Void;
+    public final native func OnEmitterDefeated(entityID: EntityID) -> Void;
 }

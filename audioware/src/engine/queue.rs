@@ -119,6 +119,8 @@ where
                     let _ = sender.try_send(unregistered);
                 }
                 Lifecycle::OnEmitterDies { entity_id } => engine.on_emitter_dies(entity_id),
+                Lifecycle::OnEmitterIncapacitated { .. } => {}
+                Lifecycle::OnEmitterDefeated { .. } => {}
                 Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
                 Lifecycle::Session(Session::BeforeStart) => engine.reset(),
                 Lifecycle::Session(Session::Start) => {}

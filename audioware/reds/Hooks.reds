@@ -26,3 +26,17 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     GameInstance.GetAudioSystemExt(this.GetGame()).OnEmitterDies(this.GetEntityID());
     return wrappedMethod(evt);
 }
+
+@wrapMethod(ReactionManagerComponent)
+protected cb func OnIncapacitatedEvent(evt: ref<IncapacitatedEvent>) -> Bool {
+    let out = wrappedMethod(evt);
+    GameInstance.GetAudioSystemExt(this.GetOwner().GetGame()).OnEmitterIncapacitated(this.GetOwner().GetEntityID());
+    return out;
+}
+
+@wrapMethod(ScriptedPuppet)
+protected cb func OnDefeated(evt: ref<DefeatedEvent>) -> Bool {
+    let out = wrappedMethod(evt);
+    GameInstance.GetAudioSystemExt(this.GetOwner().GetGame()).OnEmitterIncapacitated(this.GetOwner().GetEntityID());
+    return out;
+}
