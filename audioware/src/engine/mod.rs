@@ -278,7 +278,10 @@ where
 
     pub fn unregister_emitter(&mut self, entity_id: EntityId) -> bool {
         match self.scene {
-            Some(ref mut scene) => scene.remove_emitter(entity_id).is_ok(),
+            Some(ref mut scene) => {
+                self.handles.on_emitter_dies(entity_id);
+                scene.remove_emitter(entity_id).is_ok()
+            },
             None => {
                 lifecycle!("scene is not initialized");
                 false
