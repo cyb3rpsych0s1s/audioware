@@ -13,8 +13,8 @@ pub const IMMEDIATELY: Tween = Tween {
 
 pub const LAST_BREATH: Tween = Tween {
     start_time: StartTime::Immediate,
-    duration: Duration::from_millis(800),
-    easing: Easing::InPowf(0.8),
+    duration: Duration::from_millis(2300),
+    easing: Easing::InPowf(0.6),
 };
 
 pub const DEFAULT: Tween = Tween {

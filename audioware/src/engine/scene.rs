@@ -14,7 +14,7 @@ use crate::{
     get_player, AIActionHelper, AsEntity, AsGameInstance, Entity, GameObject, Vector4,
 };
 
-use super::{handles::Handles, lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
+use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
 
 /// Audio spatial scene.
 pub struct Scene {
@@ -131,12 +131,12 @@ impl Scene {
         Ok(())
     }
 
-    fn sync_emitters(&mut self, handles: &Handles) -> Result<(), Error> {
+    fn sync_emitters(&mut self) -> Result<(), Error> {
         if self.emitters.is_empty() {
             return Ok(());
         }
         self.emitters.retain(|k, v| {
-            if v.dead && handles.emitter_has_no_ongoing_sound(k.id) {
+            if v.dead {
                 return false;
             }
             let Ok((position, busy)) = self.emitter_infos(k.id) else {
@@ -152,9 +152,9 @@ impl Scene {
         Ok(())
     }
 
-    pub fn sync(&mut self, handles: &Handles) -> Result<(), Error> {
+    pub fn sync(&mut self) -> Result<(), Error> {
         self.sync_listener()?;
-        self.sync_emitters(handles)?;
+        self.sync_emitters()?;
         Ok(())
     }
 

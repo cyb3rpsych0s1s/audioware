@@ -16,7 +16,7 @@ use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId};
 use scene::{EmitterId, Scene};
 use tracks::Tracks;
-use tweens::{DEFAULT, IMMEDIATELY};
+use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
 use crate::{
     error::{EngineError, Error},
@@ -286,6 +286,10 @@ where
         }
     }
 
+    pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId) {
+        self.handles.stop_for(entity_id, LAST_BREATH);
+    }
+
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
         if let Some(ref mut scene) = self.scene {
             self.handles.on_emitter_dies(entity_id);
@@ -303,7 +307,7 @@ where
     pub fn sync_scene(&mut self) {
         match self.scene {
             Some(ref mut scene) => {
-                if let Err(e) = scene.sync(&self.handles) {
+                if let Err(e) = scene.sync() {
                     lifecycle!("failed to sync scene: {e}")
                 }
             }

@@ -9,7 +9,7 @@ use kira::{
 use red4ext_rs::types::{CName, EntityId};
 use snowflake::ProcessUniqueId;
 
-use super::tweens::LAST_BREATH;
+use super::tweens::IMMEDIATELY;
 
 pub struct Handles {
     statics: DashMap<ProcessUniqueId, Handle<StaticSoundHandle>>,
@@ -123,6 +123,31 @@ impl Handles {
     }
 
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
+        self.statics.retain(|_, v| {
+            if v.emitter
+                .as_ref()
+                .map(|x| x.id != entity_id)
+                .unwrap_or(true)
+            {
+                v.handle.stop(IMMEDIATELY);
+                return true;
+            }
+            false
+        });
+        self.streams.retain(|_, v| {
+            if v.emitter
+                .as_ref()
+                .map(|x| x.id != entity_id)
+                .unwrap_or(true)
+            {
+                v.handle.stop(IMMEDIATELY);
+                return true;
+            }
+            false
+        });
+    }
+
+    pub fn stop_for(&mut self, entity_id: EntityId, tween: Tween) {
         for ref mut ref_multi in self.statics.iter_mut() {
             if ref_multi
                 .value()
@@ -131,7 +156,7 @@ impl Handles {
                 .map(|x| x.id == entity_id)
                 .unwrap_or(false)
             {
-                ref_multi.value_mut().handle.stop(LAST_BREATH);
+                ref_multi.value_mut().handle.stop(tween);
             }
         }
         for ref mut ref_multi in self.streams.iter_mut() {
@@ -142,7 +167,7 @@ impl Handles {
                 .map(|x| x.id == entity_id)
                 .unwrap_or(false)
             {
-                ref_multi.value_mut().handle.stop(LAST_BREATH);
+                ref_multi.value_mut().handle.stop(tween);
             }
         }
     }
@@ -154,34 +179,6 @@ impl Handles {
 
     pub fn is_empty(&self) -> bool {
         self.statics.is_empty() && self.streams.is_empty()
-    }
-
-    pub fn emitter_has_no_ongoing_sound(&self, entity_id: EntityId) -> bool {
-        for ref_multi in self.statics.iter() {
-            if ref_multi
-                .value()
-                .emitter
-                .as_ref()
-                .map(|x| x.id == entity_id)
-                .unwrap_or(false)
-                && ref_multi.value().handle.state() != PlaybackState::Stopped
-            {
-                return false;
-            }
-        }
-        for ref_multi in self.streams.iter() {
-            if ref_multi
-                .value()
-                .emitter
-                .as_ref()
-                .map(|x| x.id == entity_id)
-                .unwrap_or(false)
-                && ref_multi.value().handle.state() != PlaybackState::Stopped
-            {
-                return false;
-            }
-        }
-        true
     }
 }
 
