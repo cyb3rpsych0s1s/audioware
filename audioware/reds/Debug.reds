@@ -5,6 +5,7 @@ import Audioware.EmitterDistances
 import Audioware.EmitterSettings
 import Audioware.Preset
 import Audioware.Audioware_SettingsDef
+import Audioware.DummyLol
 
 /// Game.TestPlayExt("straight_outta_compton");
 public static exec func TestPlayExt(game: GameInstance, name: String) {
@@ -59,6 +60,8 @@ public class AutoEmittersSystem extends ScriptableSystem {
     }
     private cb func OnKeyInput(evt: ref<KeyInputEvent>) {
         if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }
+        let dummy = new DummyLol();
+        dummy.Hi();
         let sounds = [ 
             n"coco_caline",
             n"god_love_us", 
