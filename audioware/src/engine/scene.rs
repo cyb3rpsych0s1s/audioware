@@ -1,11 +1,16 @@
 use dashmap::DashMap;
 use kira::{
     manager::{backend::Backend, AudioManager},
+    sound::{
+        static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError,
+        PlaybackState,
+    },
     spatial::{
         emitter::{EmitterHandle, EmitterSettings},
         listener::{ListenerHandle, ListenerSettings},
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
+    tween::Tween,
 };
 use red4ext_rs::types::{CName, EntityId, GameInstance};
 
@@ -16,9 +21,24 @@ use crate::{
 
 use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
 
+#[derive(Debug)]
+pub struct Handle {
+    pub handle: EmitterHandle,
+    pub handles: Handles,
+    last_known_position: Vector4,
+    busy: bool,
+    dead: bool,
+}
+
+#[derive(Debug, Default)]
+pub struct Handles {
+    pub statics: Vec<StaticSoundHandle>,
+    pub streams: Vec<StreamingSoundHandle<FromFileError>>,
+}
+
 /// Audio spatial scene.
 pub struct Scene {
-    pub emitters: DashMap<EmitterId, Handle>,
+    pub emitters: DashMap<(EntityId, Option<CName>), Handle>,
     pub v: ListenerHandle,
     pub listener_id: EntityId,
     pub scene: SpatialSceneHandle,
@@ -87,12 +107,12 @@ impl Scene {
             .add_emitter(position, settings.unwrap_or_default())?;
         let handle = Handle {
             handle: emitter,
+            handles: Default::default(),
             last_known_position: position,
             busy,
             dead: false,
         };
-        self.emitters
-            .insert(EmitterId::new(entity_id, emitter_name), handle);
+        self.emitters.insert((entity_id, emitter_name), handle);
         lifecycle!("added emitter {entity_id:?}");
         Ok(())
     }
@@ -102,8 +122,8 @@ impl Scene {
             .emitters
             .iter()
             .filter_map(|x| {
-                if x.key().id == entity_id {
-                    Some(x.key().clone())
+                if x.key().0 == entity_id {
+                    Some(*x.key())
                 } else {
                     None
                 }
@@ -115,6 +135,17 @@ impl Scene {
         self.emitters.retain(|k, _| !removal.contains(k));
         lifecycle!("removed emitter {entity_id:?}");
         Ok(true)
+    }
+
+    pub fn stop_emitters(&mut self, tween: Tween) {
+        self.emitters.iter_mut().for_each(|mut x| {
+            x.value_mut().handles.statics.iter_mut().for_each(|x| {
+                x.stop(tween);
+            });
+            x.value_mut().handles.streams.iter_mut().for_each(|x| {
+                x.stop(tween);
+            });
+        });
     }
 
     fn sync_listener(&mut self) -> Result<(), Error> {
@@ -139,7 +170,7 @@ impl Scene {
             if v.dead {
                 return false;
             }
-            let Ok((position, busy)) = self.emitter_infos(k.id) else {
+            let Ok((position, busy)) = self.emitter_infos(k.0) else {
                 return false;
             };
             v.busy = busy;
@@ -160,7 +191,7 @@ impl Scene {
 
     pub fn is_registered_emitter(&self, entity_id: EntityId) -> bool {
         for pair in self.emitters.iter() {
-            if pair.key().id == entity_id {
+            if pair.key().0 == entity_id {
                 return true;
             }
         }
@@ -169,8 +200,10 @@ impl Scene {
 
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
         for ref mut emitter in self.emitters.iter_mut() {
-            if emitter.key().id == entity_id {
+            if emitter.key().0 == entity_id {
                 emitter.value_mut().dead = true;
+                emitter.value_mut().handles.statics.clear();
+                emitter.value_mut().handles.streams.clear();
             }
         }
     }
@@ -182,31 +215,64 @@ impl Scene {
     pub fn clear(&mut self) {
         self.emitters.clear();
     }
-}
 
-/// Represents a currently registered spatial audio scene emitter.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct EmitterId {
-    id: EntityId,
-    name: Option<CName>,
-}
-
-impl EmitterId {
-    pub fn new(id: EntityId, name: Option<CName>) -> Self {
-        Self { id, name }
+    pub fn pause(&mut self, tween: Tween) {
+        self.emitters.iter_mut().for_each(|mut x| {
+            x.value_mut()
+                .handles
+                .statics
+                .iter_mut()
+                .for_each(|x| x.pause(tween));
+            x.value_mut()
+                .handles
+                .streams
+                .iter_mut()
+                .for_each(|x| x.pause(tween));
+        });
     }
-}
 
-#[derive(Debug)]
-pub struct Handle {
-    handle: EmitterHandle,
-    last_known_position: Vector4,
-    busy: bool,
-    dead: bool,
-}
+    pub fn resume(&mut self, tween: Tween) {
+        self.emitters.iter_mut().for_each(|mut x| {
+            x.value_mut()
+                .handles
+                .statics
+                .iter_mut()
+                .for_each(|x| x.resume(tween));
+            x.value_mut()
+                .handles
+                .streams
+                .iter_mut()
+                .for_each(|x| x.resume(tween));
+        });
+    }
 
-impl Handle {
-    pub fn handle(&self) -> &EmitterHandle {
-        &self.handle
+    pub fn reclaim(&mut self) {
+        self.emitters.iter_mut().for_each(|mut x| {
+            x.value_mut()
+                .handles
+                .statics
+                .retain(|x| x.state() != PlaybackState::Stopped);
+            x.value_mut()
+                .handles
+                .streams
+                .retain(|x| x.state() != PlaybackState::Stopped);
+        });
+    }
+
+    pub fn stop_for(&mut self, entity_id: EntityId, tween: Tween) {
+        self.emitters.iter_mut().for_each(|mut x| {
+            if x.key().0 == entity_id {
+                x.value_mut()
+                    .handles
+                    .statics
+                    .iter_mut()
+                    .for_each(|x| x.stop(tween));
+                x.value_mut()
+                    .handles
+                    .streams
+                    .iter_mut()
+                    .for_each(|x| x.stop(tween));
+            }
+        });
     }
 }

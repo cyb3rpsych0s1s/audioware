@@ -5,7 +5,6 @@ use audioware_core::With;
 use audioware_manifest::{PlayerGender, Settings, Source, SpokenLocale};
 use either::Either;
 use eq::{EqPass, Preset};
-use handles::{Emitter, Handles};
 use kira::{
     manager::{backend::Backend, AudioManager, AudioManagerSettings},
     spatial::emitter::EmitterSettings,
@@ -14,7 +13,7 @@ use kira::{
 };
 use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId};
-use scene::{EmitterId, Scene};
+use scene::Scene;
 use tracks::Tracks;
 use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
@@ -26,7 +25,6 @@ use crate::{
 pub mod queue;
 
 pub mod eq;
-mod handles;
 mod modulators;
 mod scene;
 mod tracks;
@@ -38,7 +36,6 @@ static BANKS: std::sync::OnceLock<Banks> = std::sync::OnceLock::new();
 static BANKS: parking_lot::RwLock<Option<Banks>> = parking_lot::RwLock::new(None);
 
 pub struct Engine<B: Backend> {
-    pub handles: Handles,
     pub scene: Option<Scene>,
     pub tracks: Tracks,
     pub modulators: Modulators,
@@ -52,8 +49,8 @@ impl<B: Backend> Drop for Engine<B> {
     fn drop(&mut self) {
         lifecycle!("drop engine");
         // bug in kira DecodeScheduler NextStep::Wait
-        self.handles.stop_all(IMMEDIATELY);
-        self.handles.clear();
+        // self.handles.stop_all(IMMEDIATELY);
+        // self.handles.clear();
     }
 }
 
@@ -81,7 +78,6 @@ where
         Ok(Engine {
             banks,
             manager,
-            handles: Handles::with_capacity(capacity),
             scene: None,
             modulators,
             tracks,
@@ -90,7 +86,7 @@ where
     }
 
     pub fn any_handle(&self) -> bool {
-        !self.handles.is_empty()
+        !self.tracks.handles.is_empty()
     }
 
     pub fn try_new_scene(&mut self) -> Result<(), Error> {
@@ -99,8 +95,9 @@ where
     }
 
     pub fn clear_scene(&mut self) {
-        self.handles.stop_emitters(IMMEDIATELY);
-        self.scene = None;
+        if let Some(mut scene) = self.scene.take() {
+            scene.stop_emitters(IMMEDIATELY);
+        }
     }
 
     pub fn play(
@@ -114,15 +111,19 @@ where
     ) {
         if let Ok(key) = self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
             let data = self.banks.data(key);
-            let emitter = Emitter::new(entity_id, emitter_name);
+            // let emitter = Emitter::new(entity_id, emitter_name);
             match data {
                 Either::Left(data) => {
                     if let Ok(handle) = self.manager.play(
                         data.output_destination(key.to_output_destination(&self.tracks))
                             .with(tween),
                     ) {
-                        self.handles
-                            .store_static(handle, event_name, emitter, false);
+                        self.tracks.handles.store_static(
+                            handle,
+                            event_name,
+                            entity_id,
+                            emitter_name,
+                        );
                     }
                 }
                 Either::Right(data) => {
@@ -130,8 +131,12 @@ where
                         data.output_destination(key.to_output_destination(&self.tracks))
                             .with(tween),
                     ) {
-                        self.handles
-                            .store_stream(handle, event_name, emitter, false);
+                        self.tracks.handles.store_stream(
+                            handle,
+                            event_name,
+                            entity_id,
+                            emitter_name,
+                        );
                     }
                 }
             }
@@ -149,15 +154,18 @@ where
     ) {
         if let Ok(key) = self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
             let data = self.banks.data(key);
-            let emitter = Emitter::new(entity_id, emitter_name);
             match data {
                 Either::Left(data) => {
                     if let Ok(handle) = self.manager.play(
                         data.output_destination(key.to_output_destination(&self.tracks))
                             .with(ext),
                     ) {
-                        self.handles
-                            .store_static(handle, event_name, emitter, false);
+                        self.tracks.handles.store_static(
+                            handle,
+                            event_name,
+                            entity_id,
+                            emitter_name,
+                        );
                     }
                 }
                 Either::Right(data) => {
@@ -165,8 +173,12 @@ where
                         data.output_destination(key.to_output_destination(&self.tracks))
                             .with(ext),
                     ) {
-                        self.handles
-                            .store_stream(handle, event_name, emitter, false);
+                        self.tracks.handles.store_stream(
+                            handle,
+                            event_name,
+                            entity_id,
+                            emitter_name,
+                        );
                     }
                 }
             }
@@ -184,38 +196,35 @@ where
     ) {
         if let Some(ref scene) = self.scene {
             if let Ok(key) = self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
-                if let Some(ref pair) = scene
-                    .emitters
-                    .get(&EmitterId::new(entity_id, Some(emitter_name)))
+                if let Some(ref mut emitter) =
+                    scene.emitters.get_mut(&(entity_id, Some(emitter_name)))
                 {
                     let data = self.banks.data(key);
-                    let handle = pair.value().handle();
-                    let emitter = Emitter::new(Some(entity_id), Some(emitter_name));
                     match data {
                         Either::Left(data) => {
                             if let Ok(handle) = self
                                 .manager
-                                .play(data.output_destination(handle).with(tween))
+                                .play(data.output_destination(&emitter.handle).with(tween))
                             {
                                 lifecycle!(
                                     "playing static sound {} on {:?}",
                                     sound_name.as_str(),
                                     entity_id
                                 );
-                                self.handles.store_static(handle, sound_name, emitter, true);
+                                emitter.handles.statics.push(handle);
                             }
                         }
                         Either::Right(data) => {
                             if let Ok(handle) = self
                                 .manager
-                                .play(data.output_destination(handle).with(tween))
+                                .play(data.output_destination(&emitter.handle).with(tween))
                             {
                                 lifecycle!(
                                     "playing stream sound {} on {:?}",
                                     sound_name.as_str(),
                                     entity_id
                                 );
-                                self.handles.store_stream(handle, sound_name, emitter, true);
+                                emitter.handles.streams.push(handle);
                             }
                         }
                     }
@@ -232,24 +241,34 @@ where
         tween: Option<Tween>,
     ) {
         if self.banks.exists(&event_name) {
-            self.handles.stop_by(
+            self.tracks.handles.stop_by(
                 event_name,
-                Emitter::new(entity_id, emitter_name),
+                entity_id,
+                emitter_name,
                 tween.unwrap_or_default(),
             );
         }
     }
 
     pub fn pause(&mut self) {
-        self.handles.pause();
+        self.tracks.pause(Default::default());
+        if let Some(x) = self.scene.as_mut() {
+            x.pause(Default::default())
+        }
     }
 
     pub fn resume(&mut self) {
-        self.handles.resume();
+        self.tracks.resume(Default::default());
+        if let Some(x) = self.scene.as_mut() {
+            x.resume(Default::default())
+        }
     }
 
     pub fn reclaim(&mut self) {
-        self.handles.reclaim();
+        self.tracks.reclaim();
+        if let Some(x) = self.scene.as_mut() {
+            x.reclaim()
+        }
     }
 
     pub fn reset(&mut self) {
@@ -279,9 +298,9 @@ where
     pub fn unregister_emitter(&mut self, entity_id: EntityId) -> bool {
         match self.scene {
             Some(ref mut scene) => {
-                self.handles.on_emitter_dies(entity_id);
+                scene.on_emitter_dies(entity_id);
                 scene.remove_emitter(entity_id).is_ok()
-            },
+            }
             None => {
                 lifecycle!("scene is not initialized");
                 false
@@ -290,13 +309,14 @@ where
     }
 
     pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId) {
-        self.handles.stop_for(entity_id, LAST_BREATH);
+        if let Some(x) = self.scene.as_mut() {
+            x.stop_for(entity_id, LAST_BREATH)
+        }
     }
 
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
-        if let Some(ref mut scene) = self.scene {
-            self.handles.on_emitter_dies(entity_id);
-            scene.on_emitter_dies(entity_id);
+        if let Some(x) = self.scene.as_mut() {
+            x.on_emitter_dies(entity_id)
         }
     }
 
