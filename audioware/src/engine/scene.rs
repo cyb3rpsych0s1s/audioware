@@ -215,7 +215,7 @@ impl Scene {
 
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
         self.emitters.retain(|k, v| {
-            if k.0 != entity_id {
+            if k.0 == entity_id {
                 v.handles
                     .statics
                     .iter_mut()
@@ -224,9 +224,9 @@ impl Scene {
                     .streams
                     .iter_mut()
                     .for_each(|x| x.stop(IMMEDIATELY));
-                true
-            } else {
                 false
+            } else {
+                true
             }
         });
     }
