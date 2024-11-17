@@ -86,7 +86,7 @@ where
     }
 
     pub fn any_handle(&self) -> bool {
-        !self.tracks.handles.is_empty()
+        self.tracks.any_handle()
     }
 
     pub fn try_new_scene(&mut self) -> Result<(), Error> {
@@ -118,12 +118,8 @@ where
                         data.output_destination(key.to_output_destination(&self.tracks))
                             .with(tween),
                     ) {
-                        self.tracks.handles.store_static(
-                            handle,
-                            event_name,
-                            entity_id,
-                            emitter_name,
-                        );
+                        self.tracks
+                            .store_static(handle, event_name, entity_id, emitter_name);
                     }
                 }
                 Either::Right(data) => {
@@ -131,12 +127,8 @@ where
                         data.output_destination(key.to_output_destination(&self.tracks))
                             .with(tween),
                     ) {
-                        self.tracks.handles.store_stream(
-                            handle,
-                            event_name,
-                            entity_id,
-                            emitter_name,
-                        );
+                        self.tracks
+                            .store_stream(handle, event_name, entity_id, emitter_name);
                     }
                 }
             }
@@ -160,12 +152,8 @@ where
                         data.output_destination(key.to_output_destination(&self.tracks))
                             .with(ext),
                     ) {
-                        self.tracks.handles.store_static(
-                            handle,
-                            event_name,
-                            entity_id,
-                            emitter_name,
-                        );
+                        self.tracks
+                            .store_static(handle, event_name, entity_id, emitter_name);
                     }
                 }
                 Either::Right(data) => {
@@ -173,12 +161,8 @@ where
                         data.output_destination(key.to_output_destination(&self.tracks))
                             .with(ext),
                     ) {
-                        self.tracks.handles.store_stream(
-                            handle,
-                            event_name,
-                            entity_id,
-                            emitter_name,
-                        );
+                        self.tracks
+                            .store_stream(handle, event_name, entity_id, emitter_name);
                     }
                 }
             }
@@ -204,27 +188,27 @@ where
                         Either::Left(data) => {
                             if let Ok(handle) = self
                                 .manager
-                                .play(data.output_destination(&emitter.handle).with(tween))
+                                .play(data.output_destination(emitter.as_ref()).with(tween))
                             {
                                 lifecycle!(
                                     "playing static sound {} on {:?}",
                                     sound_name.as_str(),
                                     entity_id
                                 );
-                                emitter.handles.statics.push(handle);
+                                emitter.store_static(handle);
                             }
                         }
                         Either::Right(data) => {
                             if let Ok(handle) = self
                                 .manager
-                                .play(data.output_destination(&emitter.handle).with(tween))
+                                .play(data.output_destination(emitter.as_ref()).with(tween))
                             {
                                 lifecycle!(
                                     "playing stream sound {} on {:?}",
                                     sound_name.as_str(),
                                     entity_id
                                 );
-                                emitter.handles.streams.push(handle);
+                                emitter.store_stream(handle);
                             }
                         }
                     }
@@ -241,7 +225,7 @@ where
         tween: Option<Tween>,
     ) {
         if self.banks.exists(&event_name) {
-            self.tracks.handles.stop_by(
+            self.tracks.stop_by(
                 event_name,
                 entity_id,
                 emitter_name,

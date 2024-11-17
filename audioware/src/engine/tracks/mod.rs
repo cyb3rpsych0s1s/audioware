@@ -41,67 +41,6 @@ pub struct Handles {
     statics: Vec<Handle<StaticSoundHandle>>,
     streams: Vec<Handle<StreamingSoundHandle<FromFileError>>>,
 }
-impl Handles {
-    pub fn is_empty(&self) -> bool {
-        self.statics.is_empty() && self.streams.is_empty()
-    }
-    pub fn store_static(
-        &mut self,
-        handle: StaticSoundHandle,
-        event_name: CName,
-        entity_id: Option<EntityId>,
-        emitter_name: Option<CName>,
-    ) {
-        self.statics.push(Handle {
-            event_name,
-            entity_id,
-            emitter_name,
-            handle,
-        });
-    }
-    pub fn store_stream(
-        &mut self,
-        handle: StreamingSoundHandle<FromFileError>,
-        event_name: CName,
-        entity_id: Option<EntityId>,
-        emitter_name: Option<CName>,
-    ) {
-        self.streams.push(Handle {
-            event_name,
-            entity_id,
-            emitter_name,
-            handle,
-        });
-    }
-    pub fn stop_by(
-        &mut self,
-        event_name: CName,
-        entity_id: Option<EntityId>,
-        emitter_name: Option<CName>,
-        tween: Tween,
-    ) {
-        self.statics
-            .iter_mut()
-            .filter(|x| {
-                x.event_name == event_name
-                    && x.entity_id == entity_id
-                    && x.emitter_name == emitter_name
-            })
-            .for_each(|x| {
-                x.handle.stop(tween);
-            });
-        self.statics
-            .iter_mut()
-            .filter(|x| {
-                x.event_name == event_name
-                    && x.entity_id == entity_id
-                    && x.emitter_name == emitter_name
-            })
-            .for_each(|x| {
-                x.handle.stop(tween);
-            });
-    }
-}
 
 pub struct Tracks {
     // vanilla tracks
@@ -115,7 +54,7 @@ pub struct Tracks {
     pub holocall: Holocall,
     // tracks affected by reverb mix + preset (e.g. underwater)
     pub ambience: Ambience,
-    pub handles: Handles,
+    handles: Handles,
 }
 
 impl Tracks {
@@ -166,5 +105,66 @@ impl Tracks {
         self.handles
             .streams
             .retain(|x| x.handle.state() != PlaybackState::Stopped);
+    }
+    pub fn store_static(
+        &mut self,
+        handle: StaticSoundHandle,
+        event_name: CName,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+    ) {
+        self.handles.statics.push(Handle {
+            event_name,
+            entity_id,
+            emitter_name,
+            handle,
+        });
+    }
+    pub fn store_stream(
+        &mut self,
+        handle: StreamingSoundHandle<FromFileError>,
+        event_name: CName,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+    ) {
+        self.handles.streams.push(Handle {
+            event_name,
+            entity_id,
+            emitter_name,
+            handle,
+        });
+    }
+    pub fn any_handle(&self) -> bool {
+        !self.handles.statics.is_empty() || !self.handles.streams.is_empty()
+    }
+    pub fn stop_by(
+        &mut self,
+        event_name: CName,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        tween: Tween,
+    ) {
+        self.handles
+            .statics
+            .iter_mut()
+            .filter(|x| {
+                x.event_name == event_name
+                    && x.entity_id == entity_id
+                    && x.emitter_name == emitter_name
+            })
+            .for_each(|x| {
+                x.handle.stop(tween);
+            });
+        self.handles
+            .statics
+            .iter_mut()
+            .filter(|x| {
+                x.event_name == event_name
+                    && x.entity_id == entity_id
+                    && x.emitter_name == emitter_name
+            })
+            .for_each(|x| {
+                x.handle.stop(tween);
+            });
     }
 }

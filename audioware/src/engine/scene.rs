@@ -23,11 +23,24 @@ use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
 
 #[derive(Debug)]
 pub struct Handle {
-    pub handle: EmitterHandle,
-    pub handles: Handles,
+    handle: EmitterHandle,
+    handles: Handles,
     last_known_position: Vector4,
     busy: bool,
     dead: bool,
+}
+impl Handle {
+    pub fn store_static(&mut self, handle: StaticSoundHandle) {
+        self.handles.statics.push(handle);
+    }
+    pub fn store_stream(&mut self, handle: StreamingSoundHandle<FromFileError>) {
+        self.handles.streams.push(handle);
+    }
+}
+impl AsRef<EmitterHandle> for Handle {
+    fn as_ref(&self) -> &EmitterHandle {
+        &self.handle
+    }
 }
 
 #[derive(Debug, Default)]
@@ -274,5 +287,13 @@ impl Scene {
                     .for_each(|x| x.stop(tween));
             }
         });
+    }
+    pub fn store_static(
+        &mut self,
+        handle: StaticSoundHandle,
+        event_name: CName,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+    ) {
     }
 }
