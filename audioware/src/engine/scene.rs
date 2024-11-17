@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use dashmap::DashMap;
 use kira::{
     manager::{backend::Backend, AudioManager},
@@ -212,13 +214,21 @@ impl Scene {
     }
 
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
-        for ref mut emitter in self.emitters.iter_mut() {
-            if emitter.key().0 == entity_id {
-                emitter.value_mut().dead = true;
-                emitter.value_mut().handles.statics.clear();
-                emitter.value_mut().handles.streams.clear();
+        self.emitters.retain(|k, v| {
+            if k.0 != entity_id {
+                v.handles
+                    .statics
+                    .iter_mut()
+                    .for_each(|x| x.stop(IMMEDIATELY));
+                v.handles
+                    .streams
+                    .iter_mut()
+                    .for_each(|x| x.stop(IMMEDIATELY));
+                true
+            } else {
+                false
             }
-        }
+        });
     }
 
     pub fn any_emitter(&self) -> bool {
