@@ -52,23 +52,14 @@ pub type NativeFuncHook = *mut red4ext_rs::Hook<
 pub trait NativeFunc<const OFFSET: u32> {
     #[cfg(debug_assertions)]
     fn name() -> &'static str;
-    fn storage() -> NativeFuncHook {
+    #[allow(clippy::missing_transmute_annotations)]
+    fn attach(env: &SdkEnv) {
         hooks! {
            static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
         }
-        unsafe { HOOK }
-    }
-    #[allow(clippy::missing_transmute_annotations)]
-    fn attach(env: &SdkEnv) {
         let addr = addr_hashes::resolve(OFFSET);
         let addr = unsafe { std::mem::transmute(addr) };
-        unsafe {
-            env.attach_hook(
-                <Self as NativeFunc<OFFSET>>::storage(),
-                addr,
-                <Self as NativeFunc<OFFSET>>::hook,
-            )
-        };
+        unsafe { env.attach_hook(HOOK, addr, <Self as NativeFunc<OFFSET>>::hook) };
         #[cfg(debug_assertions)]
         crate::utils::lifecycle!("attached hook for {}", Self::name());
     }
