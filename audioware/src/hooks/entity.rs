@@ -1,5 +1,5 @@
 use red4ext_rs::{
-    types::{IScriptable, StackArgsState},
+    types::{IScriptable, StackArgsState, StackFrame},
     ScriptClass,
 };
 
@@ -11,7 +11,11 @@ use super::NativeFunc;
 pub struct Dispose;
 
 impl NativeFunc<{ super::offsets::ENTITY_DISPOSE }> for Dispose {
-    fn detour(this: *mut IScriptable, state: StackArgsState) -> Option<StackArgsState> {
+    fn detour(
+        this: *mut IScriptable,
+        _: &mut StackFrame,
+        state: StackArgsState,
+    ) -> Option<StackArgsState> {
         if !this.is_null() {
             let x = unsafe { &*this };
             if x.class().name().as_str() == Entity::NAME {

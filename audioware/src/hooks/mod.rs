@@ -6,16 +6,21 @@ use red4ext_rs::{
     SdkEnv, VoidPtr,
 };
 
-pub mod entity;
+mod entity;
+mod time_dilatable;
 
 pub fn attach(env: &SdkEnv) {
     entity::Dispose::attach(env);
+    time_dilatable::SetIndividualTimeDilation::attach(env);
+    time_dilatable::UnsetIndividualTimeDilation::attach(env);
 }
 
 #[rustfmt::skip]
 #[doc(hidden)]
 mod offsets {
-    pub const ENTITY_DISPOSE: u32 = 0x3221A80; // 0x14232C744 (2.13)
+    pub const ENTITY_DISPOSE: u32                               = 0x3221A80;    // 0x14232C744 (2.13)
+    pub const TIMEDILATABLE_SETINDIVIDUALTIMEDILATION: u32      = 0x80102488;   // 0x1423AF554 (2.13)
+    pub const TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION: u32    = 0xDA20256B;   // 0x14147B424 (2.13)
 }
 
 pub type NativeFuncHook = *mut red4ext_rs::Hook<
@@ -62,10 +67,14 @@ pub trait NativeFunc<const OFFSET: u32> {
     ) {
         let frame = &mut *f;
         let state = frame.args_state();
-        if let Some(state) = <Self as NativeFunc<OFFSET>>::detour(i, state) {
+        if let Some(state) = <Self as NativeFunc<OFFSET>>::detour(i, frame, state) {
             frame.restore_args(state);
             cb(i, f, a3, a4);
         }
     }
-    fn detour(this: *mut IScriptable, state: StackArgsState) -> Option<StackArgsState>;
+    fn detour(
+        this: *mut IScriptable,
+        frame: &mut StackFrame,
+        state: StackArgsState,
+    ) -> Option<StackArgsState>;
 }

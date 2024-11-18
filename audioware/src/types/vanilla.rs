@@ -27,6 +27,8 @@ mod quaternion;
 pub use quaternion::*;
 mod maths;
 pub use maths::*;
+mod time_dilatable;
+pub use time_dilatable::*;
 mod world_position;
 pub use world_position::*;
 mod world_transform;
