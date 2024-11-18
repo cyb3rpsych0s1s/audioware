@@ -14,10 +14,6 @@ pub use system::System;
 /// Engine inner lifecycle.
 #[derive(Debug)]
 pub enum Lifecycle {
-    IsRegisteredEmitter {
-        entity_id: EntityId,
-        sender: Sender<bool>,
-    },
     RegisterEmitter {
         entity_id: EntityId,
         emitter_name: Option<CName>,
@@ -51,9 +47,6 @@ pub enum Lifecycle {
 impl std::fmt::Display for Lifecycle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Lifecycle::IsRegisteredEmitter { entity_id, .. } => {
-                write!(f, "is emitter registered? [{:?}]", entity_id)
-            }
             Lifecycle::RegisterEmitter { entity_id, .. } => {
                 write!(f, "register emitter [{:?}]", entity_id)
             }

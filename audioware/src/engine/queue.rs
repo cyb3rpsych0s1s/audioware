@@ -156,10 +156,6 @@ where
                 }
                 Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
-                Lifecycle::IsRegisteredEmitter { entity_id, sender } => {
-                    let registered = engine.is_registered_emitter(entity_id);
-                    let _ = sender.try_send(registered);
-                }
             }
         }
         if should_sync && engine.any_emitter() && synchronization.try_recv().is_ok() {

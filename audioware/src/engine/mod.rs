@@ -262,6 +262,10 @@ where
             .set_preset(eq::Preset::None);
     }
 
+    pub fn is_registered_emitter(entity_id: EntityId) -> bool {
+        Scene::is_registered_emitter(entity_id)
+    }
+
     pub fn register_emitter(
         &mut self,
         entity_id: EntityId,
@@ -319,13 +323,6 @@ where
                 }
             }
             None => lifecycle!("scene is not initialized"),
-        }
-    }
-
-    pub fn is_registered_emitter(&self, entity_id: EntityId) -> bool {
-        match self.scene {
-            Some(ref scene) => scene.is_registered_emitter(entity_id),
-            None => false,
         }
     }
 

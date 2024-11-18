@@ -3,7 +3,7 @@ use std::time::Duration;
 use audioware_manifest::{Interpolation, PlayerGender, Region, ScnDialogLineType, Settings};
 use command::Command;
 use crossbeam::channel::bounded;
-use kira::tween::Easing;
+use kira::{manager::backend::cpal::CpalBackend, tween::Easing};
 use lifecycle::{Board, Codeware, Lifecycle, Session, System};
 use red4ext_rs::{
     class_kind::{Native, Scripted},
@@ -14,8 +14,10 @@ use red4ext_rs::{
 };
 
 use crate::{
-    engine::eq::Preset, queue, utils::lifecycle, Audioware, ElasticTween, EmitterDistances,
-    EmitterSettings, LinearTween, ToTween, Tween,
+    engine::{eq::Preset, Engine},
+    queue,
+    utils::lifecycle,
+    Audioware, ElasticTween, EmitterDistances, EmitterSettings, LinearTween, ToTween, Tween,
 };
 
 pub mod command;
@@ -260,12 +262,7 @@ impl SceneLifecycle for AudioSystemExt {
     }
 
     fn is_registered_emitter(&self, entity_id: EntityId) -> bool {
-        let (sender, receiver) = bounded(0);
-        queue::notify(Lifecycle::IsRegisteredEmitter { entity_id, sender });
-        if let Ok(registered) = receiver.recv() {
-            return registered;
-        }
-        false
+        Engine::<CpalBackend>::is_registered_emitter(entity_id)
     }
 
     fn on_emitter_dies(&self, entity_id: EntityId) {

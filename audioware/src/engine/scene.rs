@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashSet, ops::DerefMut, sync::LazyLock};
 
 use dashmap::DashMap;
 use kira::{
@@ -14,7 +14,9 @@ use kira::{
     },
     tween::Tween,
 };
+use parking_lot::RwLock;
 use red4ext_rs::types::{CName, EntityId, GameInstance};
+use smallvec::SmallVec;
 
 use crate::{
     error::{Error, SceneError},
@@ -51,12 +53,16 @@ pub struct Handles {
     pub streams: Vec<StreamingSoundHandle<FromFileError>>,
 }
 
+static EMITTERS: LazyLock<RwLock<HashSet<(EntityId, Option<CName>)>>> =
+    LazyLock::new(|| RwLock::new(HashSet::new()));
+
 /// Audio spatial scene.
 pub struct Scene {
     pub emitters: DashMap<(EntityId, Option<CName>), Handle>,
     pub v: ListenerHandle,
     pub listener_id: EntityId,
     pub scene: SpatialSceneHandle,
+    synced: SmallVec<[EntityId; 32]>,
 }
 
 impl Scene {
@@ -80,11 +86,13 @@ impl Scene {
             orientation,
             ListenerSettings::default().track(tracks.sfx.as_ref()),
         )?;
+        *EMITTERS.write().deref_mut() = HashSet::with_capacity(capacity);
         Ok(Self {
             v,
             listener_id,
             scene,
             emitters: DashMap::with_capacity(capacity),
+            synced: SmallVec::new(),
         })
     }
 
@@ -128,6 +136,7 @@ impl Scene {
             dead: false,
         };
         self.emitters.insert((entity_id, emitter_name), handle);
+        EMITTERS.write().insert((entity_id, emitter_name));
         lifecycle!("added emitter {entity_id:?}");
         Ok(())
     }
@@ -148,6 +157,7 @@ impl Scene {
             return Ok(false);
         }
         self.emitters.retain(|k, _| !removal.contains(k));
+        EMITTERS.write().retain(|(id, _)| *id != entity_id);
         lifecycle!("removed emitter {entity_id:?}");
         Ok(true)
     }
@@ -181,20 +191,30 @@ impl Scene {
         if self.emitters.is_empty() {
             return Ok(());
         }
+        let mut synced: SmallVec<[EntityId; 32]> = SmallVec::with_capacity(self.emitters.len());
+        let remove = |entity_id: EntityId| {
+            EMITTERS.write().retain(|(id, _)| *id != entity_id);
+            false
+        };
         self.emitters.retain(|k, v| {
+            if synced.contains(&k.0) {
+                return true;
+            }
             if v.dead {
-                return false;
+                return remove(k.0);
             }
             let Ok((position, busy)) = self.emitter_infos(k.0) else {
-                return false;
+                return remove(k.0);
             };
             v.busy = busy;
             v.last_known_position = position;
             // weirdly enough if emitter is not updated, sound(s) won't update as expected.
             // e.g. when listener moves but emitter stands still.
             v.handle.set_position(position, IMMEDIATELY);
+            synced.push(k.0);
             true
         });
+        self.synced.clear();
         Ok(())
     }
 
@@ -204,13 +224,8 @@ impl Scene {
         Ok(())
     }
 
-    pub fn is_registered_emitter(&self, entity_id: EntityId) -> bool {
-        for pair in self.emitters.iter() {
-            if pair.key().0 == entity_id {
-                return true;
-            }
-        }
-        false
+    pub fn is_registered_emitter(entity_id: EntityId) -> bool {
+        EMITTERS.read().iter().any(|(id, _)| *id == entity_id)
     }
 
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
@@ -224,6 +239,7 @@ impl Scene {
                     .streams
                     .iter_mut()
                     .for_each(|x| x.stop(IMMEDIATELY));
+                EMITTERS.write().retain(|(id, _)| *id != k.0);
                 false
             } else {
                 true
@@ -237,6 +253,7 @@ impl Scene {
 
     pub fn clear(&mut self) {
         self.emitters.clear();
+        EMITTERS.write().clear();
     }
 
     pub fn pause(&mut self, tween: Tween) {
@@ -297,13 +314,5 @@ impl Scene {
                     .for_each(|x| x.stop(tween));
             }
         });
-    }
-    pub fn store_static(
-        &mut self,
-        handle: StaticSoundHandle,
-        event_name: CName,
-        entity_id: Option<EntityId>,
-        emitter_name: Option<CName>,
-    ) {
     }
 }
