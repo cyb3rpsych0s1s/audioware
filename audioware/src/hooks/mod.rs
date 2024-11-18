@@ -11,17 +11,19 @@ use crate::Event;
 mod entity;
 mod events;
 mod time_dilatable;
+mod time_system;
 
 pub fn attach(env: &SdkEnv) {
     entity::Dispose::attach(env);
+    time_system::SetTimeDilation::attach(env);
     time_dilatable::SetIndividualTimeDilation::attach(env);
     time_dilatable::UnsetIndividualTimeDilation::attach(env);
 
-    #[cfg(debug_assertions)]
-    {
-        events::dialog_line::Handler::attach(env);
-        events::dialog_line_end::Handler::attach(env);
-    }
+    // #[cfg(debug_assertions)]
+    // {
+    //     events::dialog_line::Handler::attach(env);
+    //     events::dialog_line_end::Handler::attach(env);
+    // }
 }
 
 #[rustfmt::skip]
@@ -30,6 +32,8 @@ mod offsets {
     pub const ENTITY_DISPOSE: u32                               = 0x3221A80;    // 0x14232C744 (2.13)
     pub const TIMEDILATABLE_SETINDIVIDUALTIMEDILATION: u32      = 0x80102488;   // 0x1423AF554 (2.13)
     pub const TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION: u32    = 0xDA20256B;   // 0x14147B424 (2.13)
+    pub const TIMESYSTEM_SETTIMEDILATION: u32                   = 0xA1DC1F92;   // 0x140A46EE4 (2.13)
+
     pub const EVENT_DIALOGLINE: u32                             = 0x10E71E89;   // 0x1409C12A8 (2.12a)
     pub const EVENT_DIALOGLINEEND: u32                          = 0x6F24331;    // 0x141188BF4 (2.12a)
 }
@@ -46,6 +50,8 @@ pub type NativeFuncHook = *mut red4ext_rs::Hook<
 >;
 
 pub trait NativeFunc<const OFFSET: u32> {
+    #[cfg(debug_assertions)]
+    fn name() -> &'static str;
     fn storage() -> NativeFuncHook {
         hooks! {
            static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
@@ -63,6 +69,8 @@ pub trait NativeFunc<const OFFSET: u32> {
                 <Self as NativeFunc<OFFSET>>::hook,
             )
         };
+        #[cfg(debug_assertions)]
+        crate::utils::lifecycle!("attached hook for {}", Self::name());
     }
     unsafe extern "C" fn hook(
         i: *mut IScriptable,
@@ -110,7 +118,7 @@ pub trait NativeHandler<const OFFSET: u32> {
     #[allow(clippy::missing_transmute_annotations)]
     fn attach(env: &SdkEnv) {
         let addr = addr_hashes::resolve(OFFSET);
-        let addr = unsafe { std::mem::transmute(addr) };
+        let addr = unsafe { mem::transmute(addr) };
         unsafe {
             env.attach_hook(
                 <Self as NativeHandler<OFFSET>>::storage(),

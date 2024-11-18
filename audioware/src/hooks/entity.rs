@@ -16,13 +16,16 @@ impl NativeFunc<{ super::offsets::ENTITY_DISPOSE }> for Dispose {
         _: &mut StackFrame,
         state: StackArgsState,
     ) -> Option<StackArgsState> {
-        if !this.is_null() {
-            let x = unsafe { &*this };
-            if x.class().name().as_str() == Entity::NAME {
-                let x = unsafe { std::mem::transmute::<&IScriptable, &Entity>(x) };
-                lifecycle!("dispose {:?}", x.entity_id);
-            }
+        let x = unsafe { &*this };
+        if x.class().name().as_str() == Entity::NAME {
+            let x = unsafe { std::mem::transmute::<&IScriptable, &Entity>(x) };
+            lifecycle!("dispose {:?}", x.entity_id);
         }
         Some(state)
+    }
+
+    #[cfg(debug_assertions)]
+    fn name() -> &'static str {
+        "Entity::Dispose"
     }
 }
