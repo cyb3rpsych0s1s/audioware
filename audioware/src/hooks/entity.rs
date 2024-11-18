@@ -7,7 +7,6 @@ use crate::{utils::lifecycle, Entity};
 
 use super::NativeFunc;
 
-#[allow(non_camel_case_types)]
 pub struct Dispose;
 
 impl NativeFunc<{ super::offsets::ENTITY_DISPOSE }> for Dispose {

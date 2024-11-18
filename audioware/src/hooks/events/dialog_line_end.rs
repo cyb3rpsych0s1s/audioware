@@ -7,7 +7,6 @@ use red4ext_rs::{
 
 use crate::{hooks::NativeHandler, Entity, Event};
 
-#[allow(non_camel_case_types)]
 pub struct Handler;
 
 impl NativeHandler<{ super::super::offsets::EVENT_DIALOGLINEEND }> for Handler {

@@ -6,7 +6,6 @@ use crate::{utils::lifecycle, Entity};
 
 use super::NativeFunc;
 
-#[allow(non_camel_case_types)]
 pub struct SetIndividualTimeDilation;
 
 impl NativeFunc<{ super::offsets::TIMEDILATABLE_SETINDIVIDUALTIMEDILATION }>
@@ -46,13 +45,8 @@ impl NativeFunc<{ super::offsets::TIMEDILATABLE_SETINDIVIDUALTIMEDILATION }>
     fn name() -> &'static str {
         "TimeDilatable::SetIndividualTimeDilation"
     }
-
-    fn storage() -> super::NativeFuncHook {
-        todo!()
-    }
 }
 
-#[allow(non_camel_case_types)]
 pub struct UnsetIndividualTimeDilation;
 
 impl NativeFunc<{ super::offsets::TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION }>

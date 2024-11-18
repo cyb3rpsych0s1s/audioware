@@ -4,8 +4,6 @@ use crate::utils::lifecycle;
 
 use super::NativeFunc;
 
-// 140A46EE4
-#[allow(non_camel_case_types)]
 pub struct SetTimeDilation;
 
 impl NativeFunc<{ super::offsets::TIMESYSTEM_SETTIMEDILATION }> for SetTimeDilation {
