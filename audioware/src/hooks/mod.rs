@@ -16,8 +16,8 @@ mod time_system;
 
 pub fn attach(env: &SdkEnv) {
     save_handling_controller::LoadSaveInGame::attach(env);
+    time_system::attach_hook(env);
     // entity::Dispose::attach(env);
-    // time_system::attach_hook(env);
     // time_dilatable::attach_hook_set(env);
     // time_dilatable::attach_hook_unset(env);
 
