@@ -1,4 +1,4 @@
-use red4ext_rs::types::{CName, IScriptable, Ref, StackArgsState, StackFrame};
+use red4ext_rs::types::{CName, IScriptable, Ref, StackFrame};
 
 use crate::utils::lifecycle;
 
@@ -7,11 +7,7 @@ use super::NativeFunc;
 pub struct SetTimeDilation;
 
 impl NativeFunc<{ super::offsets::TIMESYSTEM_SETTIMEDILATION }> for SetTimeDilation {
-    fn detour(
-        _: *mut IScriptable,
-        frame: &mut StackFrame,
-        state: StackArgsState,
-    ) -> Option<StackArgsState> {
+    fn detour(_: *mut IScriptable, frame: &mut StackFrame) -> Option<&mut StackFrame> {
         let reason: CName = unsafe { StackFrame::get_arg(frame) };
         let dilation: f32 = unsafe { StackFrame::get_arg(frame) };
         let duration: f32 = unsafe { StackFrame::get_arg(frame) };
@@ -27,7 +23,7 @@ impl NativeFunc<{ super::offsets::TIMESYSTEM_SETTIMEDILATION }> for SetTimeDilat
 - ease_in_curve: {ease_in_curve}
 - ease_out_curve: {ease_out_curve}",
         );
-        Some(state)
+        Some(frame)
     }
 
     #[cfg(debug_assertions)]

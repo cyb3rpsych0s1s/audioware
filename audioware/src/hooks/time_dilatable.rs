@@ -1,6 +1,6 @@
 use std::mem;
 
-use red4ext_rs::types::{CName, IScriptable, StackArgsState, StackFrame};
+use red4ext_rs::types::{CName, IScriptable, StackFrame};
 
 use crate::{utils::lifecycle, Entity};
 
@@ -11,11 +11,8 @@ pub struct SetIndividualTimeDilation;
 impl NativeFunc<{ super::offsets::TIMEDILATABLE_SETINDIVIDUALTIMEDILATION }>
     for SetIndividualTimeDilation
 {
-    fn detour(
-        this: *mut IScriptable,
-        frame: &mut StackFrame,
-        state: StackArgsState,
-    ) -> Option<StackArgsState> {
+    #[inline(always)]
+    fn detour(this: *mut IScriptable, frame: &mut StackFrame) -> Option<&mut StackFrame> {
         let x = unsafe { &*this };
         let x = unsafe { std::mem::transmute::<&IScriptable, &Entity>(x) };
 
@@ -38,7 +35,7 @@ impl NativeFunc<{ super::offsets::TIMEDILATABLE_SETINDIVIDUALTIMEDILATION }>
 - use_real_time: {use_real_time}",
             x.entity_id
         );
-        Some(state)
+        Some(frame)
     }
 
     #[cfg(debug_assertions)]
@@ -52,11 +49,8 @@ pub struct UnsetIndividualTimeDilation;
 impl NativeFunc<{ super::offsets::TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION }>
     for UnsetIndividualTimeDilation
 {
-    fn detour(
-        this: *mut IScriptable,
-        frame: &mut StackFrame,
-        state: StackArgsState,
-    ) -> Option<StackArgsState> {
+    #[inline(always)]
+    fn detour(this: *mut IScriptable, frame: &mut StackFrame) -> Option<&mut StackFrame> {
         let x = unsafe { &*this };
         let x = unsafe { mem::transmute::<&IScriptable, &Entity>(x) };
 
@@ -67,7 +61,7 @@ impl NativeFunc<{ super::offsets::TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION }>
 - ease_out_curve: {ease_out_curve}",
             x.entity_id
         );
-        Some(state)
+        Some(frame)
     }
 
     #[cfg(debug_assertions)]

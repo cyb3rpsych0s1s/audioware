@@ -2,7 +2,7 @@ use std::{ffi::c_void, mem, ops::Not};
 
 use red4ext_rs::{
     addr_hashes, hooks,
-    types::{IScriptable, StackArgsState, StackFrame},
+    types::{IScriptable, StackFrame},
     SdkEnv, VoidPtr,
 };
 
@@ -10,10 +10,12 @@ use crate::Event;
 
 mod entity;
 mod events;
+mod save_handling_controller;
 mod time_dilatable;
 mod time_system;
 
 pub fn attach(env: &SdkEnv) {
+    save_handling_controller::LoadSaveInGame::attach(env);
     entity::Dispose::attach(env);
     time_system::SetTimeDilation::attach(env);
     time_dilatable::SetIndividualTimeDilation::attach(env);
@@ -33,6 +35,9 @@ mod offsets {
     pub const TIMEDILATABLE_SETINDIVIDUALTIMEDILATION: u32      = 0x80102488;   // 0x1423AF554 (2.13)
     pub const TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION: u32    = 0xDA20256B;   // 0x14147B424 (2.13)
     pub const TIMESYSTEM_SETTIMEDILATION: u32                   = 0xA1DC1F92;   // 0x140A46EE4 (2.13)
+    // gameuiSaveHandlingController
+    // note: LoadSaveInGame and LoadModdedSave share same underlying address
+    pub const SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME: u32     = 0x9AB824D9;   // 0x14083FB6C (2.13)
 
     pub const EVENT_DIALOGLINE: u32                             = 0x10E71E89;   // 0x1409C12A8 (2.12a)
     pub const EVENT_DIALOGLINEEND: u32                          = 0x6F24331;    // 0x141188BF4 (2.12a)
@@ -78,16 +83,14 @@ pub trait NativeFunc<const OFFSET: u32> {
     ) {
         let frame = &mut *f;
         let state = frame.args_state();
-        if let Some(state) = <Self as NativeFunc<OFFSET>>::detour(i, frame, state) {
+        if let Some(frame) = <Self as NativeFunc<OFFSET>>::detour(i, frame) {
             frame.restore_args(state);
             cb(i, f, a3, a4);
         }
     }
-    fn detour(
-        this: *mut IScriptable,
-        frame: &mut StackFrame,
-        state: StackArgsState,
-    ) -> Option<StackArgsState>;
+    /// # SAFETY
+    /// this function must always be inlined.
+    fn detour(this: *mut IScriptable, frame: &mut StackFrame) -> Option<&mut StackFrame>;
 }
 
 pub type NativeHandlerHook = *mut red4ext_rs::Hook<
