@@ -3,7 +3,7 @@ use red4ext_rs::{
     SdkEnv, VoidPtr,
 };
 
-use crate::{attach_hook, utils::intercept};
+use crate::{abi::lifecycle::Lifecycle, attach_hook, engine::queue::notify, utils::intercept};
 
 pub fn attach_hooks(env: &SdkEnv) {
     attach_hook_set(env);
@@ -42,8 +42,6 @@ unsafe extern "C" fn detour_set(
     let ease_in_curve: CName = unsafe { StackFrame::get_arg(frame) };
     let ease_out_curve: CName = unsafe { StackFrame::get_arg(frame) };
     let _listener: Ref<IScriptable> = unsafe { StackFrame::get_arg(frame) };
-    frame.restore_args(state);
-
     intercept!(
         "TimeSystem::SetTimeDilation:
     - reason: {reason}
@@ -52,6 +50,9 @@ unsafe extern "C" fn detour_set(
     - ease_in_curve: {ease_in_curve}
     - ease_out_curve: {ease_out_curve}",
     );
+    notify(Lifecycle::SetListenerDilation { dilation });
+
+    frame.restore_args(state);
     cb(i, frame as *mut _, a3, a4);
 }
 
@@ -67,12 +68,13 @@ unsafe extern "C" fn detour_unset(
 
     let reason: CName = unsafe { StackFrame::get_arg(frame) };
     let ease_out_curve: CName = unsafe { StackFrame::get_arg(frame) };
-    frame.restore_args(state);
-
     intercept!(
         "TimeSystem::UnsetTimeDilation:
-    - reason: {reason}
-    - ease_out_curve: {ease_out_curve}",
+        - reason: {reason}
+        - ease_out_curve: {ease_out_curve}",
     );
+    notify(Lifecycle::UnsetListenerDilation);
+
+    frame.restore_args(state);
     cb(i, frame as *mut _, a3, a4);
 }

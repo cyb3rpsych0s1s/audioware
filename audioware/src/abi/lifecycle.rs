@@ -38,6 +38,17 @@ pub enum Lifecycle {
         setting: CName,
         value: f64,
     },
+    SetListenerDilation {
+        dilation: f32,
+    },
+    UnsetListenerDilation,
+    SetEmitterDilation {
+        entity_id: EntityId,
+        dilation: f32,
+    },
+    UnsetEmitterDilation {
+        entity_id: EntityId,
+    },
     Session(Session),
     System(System),
     Board(Board),
@@ -70,6 +81,17 @@ impl std::fmt::Display for Lifecycle {
                 write!(f, "set volume {} {value}", setting.as_str())
             }
             Lifecycle::Codeware(x) => write!(f, "{x}"),
+            Lifecycle::SetListenerDilation { dilation } => {
+                write!(f, "set listener dilation {dilation}")
+            }
+            Lifecycle::UnsetListenerDilation => write!(f, "unset listener dilation"),
+            Lifecycle::SetEmitterDilation {
+                entity_id,
+                dilation,
+            } => write!(f, "set emitter dilation {dilation} [{entity_id:?}]"),
+            Lifecycle::UnsetEmitterDilation { entity_id } => {
+                write!(f, "unset emitter dilation [{entity_id:?}]")
+            }
         }
     }
 }

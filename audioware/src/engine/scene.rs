@@ -315,4 +315,18 @@ impl Scene {
             }
         });
     }
+
+    pub fn sync_dilation(&mut self, listener: f32, emitters: &[(EntityId, f32)]) {
+        self.emitters
+            .iter_mut()
+            .filter(|x| emitters.iter().any(|(id, _)| *id == x.key().0))
+            .for_each(|mut x| {
+                x.value_mut().handles.statics.iter_mut().for_each(|x| {
+                    x.set_playback_rate(listener as f64, IMMEDIATELY);
+                });
+                x.value_mut().handles.streams.iter_mut().for_each(|x| {
+                    x.set_playback_rate(listener as f64, IMMEDIATELY);
+                });
+            });
+    }
 }

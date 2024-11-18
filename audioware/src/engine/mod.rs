@@ -326,6 +326,16 @@ where
         }
     }
 
+    pub fn sync_dilation(&mut self, listener: f32, emitters: &[(EntityId, f32)]) {
+        self.tracks.sync_dilation(listener, emitters);
+        match self.scene {
+            Some(ref mut scene) => {
+                scene.sync_dilation(listener, emitters);
+            }
+            None => lifecycle!("scene is not initialized"),
+        }
+    }
+
     pub fn set_volume(&mut self, setting: CName, value: f64) {
         match setting.as_str() {
             "MasterVolume" => self.manager.main_track().set_volume(value, DEFAULT),
