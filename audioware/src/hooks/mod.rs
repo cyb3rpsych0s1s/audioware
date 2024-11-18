@@ -16,10 +16,10 @@ mod time_system;
 
 pub fn attach(env: &SdkEnv) {
     save_handling_controller::LoadSaveInGame::attach(env);
-    entity::Dispose::attach(env);
-    time_system::SetTimeDilation::attach(env);
-    time_dilatable::SetIndividualTimeDilation::attach(env);
-    time_dilatable::UnsetIndividualTimeDilation::attach(env);
+    // entity::Dispose::attach(env);
+    // time_system::attach_hook(env);
+    // time_dilatable::attach_hook_set(env);
+    // time_dilatable::attach_hook_unset(env);
 
     // #[cfg(debug_assertions)]
     // {
@@ -85,7 +85,7 @@ pub trait NativeFunc<const OFFSET: u32> {
         let state = frame.args_state();
         if let Some(frame) = <Self as NativeFunc<OFFSET>>::detour(i, frame) {
             frame.restore_args(state);
-            cb(i, f, a3, a4);
+            cb(i, frame as *mut _, a3, a4);
         }
     }
     /// # SAFETY
