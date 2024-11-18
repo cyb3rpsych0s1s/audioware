@@ -10,7 +10,7 @@ pub fn attach(env: &SdkEnv) {
     save_handling_controller::attach_hook(env);
     entity::attach_hook(env);
     time_dilatable::attach_hooks(env);
-    time_system::attach_hook(env);
+    time_system::attach_hooks(env);
 
     // #[cfg(debug_assertions)]
     // {
@@ -26,6 +26,7 @@ mod offsets {
     pub const TIMEDILATABLE_SETINDIVIDUALTIMEDILATION: u32      = 0x80102488;   // 0x1423AF554 (2.13)
     pub const TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION: u32    = 0xDA20256B;   // 0x14147B424 (2.13)
     pub const TIMESYSTEM_SETTIMEDILATION: u32                   = 0xA1DC1F92;   // 0x140A46EE4 (2.13)
+    pub const TIMESYSTEM_UNSETTIMEDILATION: u32                 = 0xF0652075;   // 0x1409BAD34 (2.13)
     // gameuiSaveHandlingController
     // note: LoadSaveInGame and LoadModdedSave share same underlying address
     pub const SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME: u32     = 0x9AB824D9;   // 0x14083FB6C (2.13)
