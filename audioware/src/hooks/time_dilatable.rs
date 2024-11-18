@@ -1,6 +1,4 @@
-// SetIndividualTimeDilation
-// 0x80102488
-// 0x1423AF554
+use std::mem;
 
 use red4ext_rs::{
     types::{CName, IScriptable, StackArgsState, StackFrame},
@@ -66,7 +64,7 @@ impl NativeFunc<{ super::offsets::TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION }>
         if !this.is_null() {
             let x = unsafe { &*this };
             if x.class().name().as_str() == TimeDilatable::NAME {
-                let x = unsafe { std::mem::transmute::<&IScriptable, &Entity>(x) };
+                let x = unsafe { mem::transmute::<&IScriptable, &Entity>(x) };
 
                 let ease_out_curve: CName = unsafe { StackFrame::get_arg(frame) };
 
