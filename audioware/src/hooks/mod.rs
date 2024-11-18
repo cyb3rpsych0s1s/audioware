@@ -1,12 +1,4 @@
-use std::{ffi::c_void, mem, ops::Not};
-
-use red4ext_rs::{
-    addr_hashes, hooks,
-    types::{IScriptable, StackFrame},
-    SdkEnv, VoidPtr,
-};
-
-use crate::Event;
+use red4ext_rs::SdkEnv;
 
 mod entity;
 mod events;
@@ -15,11 +7,10 @@ mod time_dilatable;
 mod time_system;
 
 pub fn attach(env: &SdkEnv) {
-    save_handling_controller::LoadSaveInGame::attach(env);
+    save_handling_controller::attach_hook(env);
+    entity::attach_hook(env);
+    time_dilatable::attach_hooks(env);
     time_system::attach_hook(env);
-    // entity::Dispose::attach(env);
-    // time_dilatable::attach_hook_set(env);
-    // time_dilatable::attach_hook_unset(env);
 
     // #[cfg(debug_assertions)]
     // {
@@ -43,108 +34,26 @@ mod offsets {
     pub const EVENT_DIALOGLINEEND: u32                          = 0x6F24331;    // 0x141188BF4 (2.12a)
 }
 
-#[allow(dead_code)]
-pub type NativeFuncHook = *mut red4ext_rs::Hook<
-    unsafe extern "C" fn(*mut IScriptable, *mut StackFrame, *mut c_void, *mut c_void),
-    unsafe extern "C" fn(
-        *mut IScriptable,
-        *mut StackFrame,
-        *mut c_void,
-        *mut c_void,
-        unsafe extern "C" fn(*mut IScriptable, *mut StackFrame, *mut c_void, *mut c_void),
-    ),
->;
+#[macro_export]
+macro_rules! attach_hook {
+    ($name:literal, $offset:path, $hook: ident, $me:ident, $to:ident $(, $v:vis)?) => {
+        ::red4ext_rs::hooks! {
+            static $hook: fn(
+                i: *mut ::red4ext_rs::types::IScriptable,
+                f: *mut ::red4ext_rs::types::StackFrame,
+                a3: ::red4ext_rs::VoidPtr,
+                a4: ::red4ext_rs::VoidPtr) -> ();
+        }
 
-pub trait NativeFunc<const OFFSET: u32> {
-    #[cfg(debug_assertions)]
-    fn name() -> &'static str;
-    #[allow(clippy::missing_transmute_annotations)]
-    fn attach(env: &SdkEnv) {
-        hooks! {
-           static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
+        #[allow(clippy::missing_transmute_annotations)]
+        $($v)? fn $me(env: &::red4ext_rs::SdkEnv) {
+            let addr = ::red4ext_rs::addr_hashes::resolve($offset);
+            let addr = unsafe { ::std::mem::transmute(addr) };
+            unsafe { env.attach_hook($hook, addr, $to) };
+            $crate::utils::intercept!("attached hook for {}", $name);
         }
-        let addr = addr_hashes::resolve(OFFSET);
-        let addr = unsafe { std::mem::transmute(addr) };
-        unsafe { env.attach_hook(HOOK, addr, <Self as NativeFunc<OFFSET>>::hook) };
-        #[cfg(debug_assertions)]
-        crate::utils::lifecycle!("attached hook for {}", Self::name());
-    }
-    unsafe extern "C" fn hook(
-        i: *mut IScriptable,
-        f: *mut StackFrame,
-        a3: VoidPtr,
-        a4: VoidPtr,
-        cb: unsafe extern "C" fn(
-            i: *mut IScriptable,
-            f: *mut StackFrame,
-            a3: VoidPtr,
-            a4: VoidPtr,
-        ) -> (),
-    ) {
-        let frame = &mut *f;
-        let state = frame.args_state();
-        if let Some(frame) = <Self as NativeFunc<OFFSET>>::detour(i, frame) {
-            frame.restore_args(state);
-            cb(i, frame as *mut _, a3, a4);
-        }
-    }
-    /// # SAFETY
-    /// this function must always be inlined.
-    fn detour(this: *mut IScriptable, frame: &mut StackFrame) -> Option<&mut StackFrame>;
-}
-
-pub type NativeHandlerHook = *mut red4ext_rs::Hook<
-    unsafe extern "C" fn(*mut IScriptable, *mut Event),
-    unsafe extern "C" fn(
-        *mut IScriptable,
-        *mut Event,
-        unsafe extern "C" fn(*mut IScriptable, *mut Event),
-    ),
->;
-
-pub trait NativeHandler<const OFFSET: u32> {
-    type EventClass;
-    fn storage() -> NativeHandlerHook {
-        hooks! {
-           static HOOK: fn(a1: *mut IScriptable, a2: *mut Event) -> ();
-        }
-        unsafe { HOOK }
-    }
-    #[allow(clippy::missing_transmute_annotations)]
-    fn attach(env: &SdkEnv) {
-        let addr = addr_hashes::resolve(OFFSET);
-        let addr = unsafe { mem::transmute(addr) };
-        unsafe {
-            env.attach_hook(
-                <Self as NativeHandler<OFFSET>>::storage(),
-                addr,
-                <Self as NativeHandler<OFFSET>>::hook,
-            )
-        };
-    }
-    unsafe extern "C" fn hook(
-        a1: *mut IScriptable,
-        a2: *mut Event,
-        cb: unsafe extern "C" fn(i: *mut IScriptable, f: *mut Event) -> (),
-    ) {
-        let this = a1.is_null().not().then_some(unsafe { &*a1 });
-        let event = a2
-            .is_null()
-            .not()
-            .then_some(unsafe { mem::transmute::<&mut Event, &mut Self::EventClass>(&mut *a2) });
-        if let Some((this, event)) = this.zip(event) {
-            if let Some(a2) = Self::detour(this, event) {
-                cb(
-                    a1,
-                    mem::transmute::<&mut Self::EventClass, &mut Event>(a2) as *mut _,
-                );
-            }
-        } else {
-            cb(a1, a2);
-        }
-    }
-    fn detour<'a>(
-        this: &IScriptable,
-        event: &'a mut Self::EventClass,
-    ) -> Option<&'a mut Self::EventClass>;
+    };
+    ($name:literal, $offset:path) => {
+        attach_hook!($name, $offset, HOOK, attach_hook, detour, pub);
+    };
 }

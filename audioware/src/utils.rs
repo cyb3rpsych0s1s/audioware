@@ -32,6 +32,18 @@ macro_rules! lifecycle {
 pub(crate) use lifecycle;
 
 #[allow(unused_macros)]
+macro_rules! intercept {
+    ($($arg:tt)*) => {{
+        {
+            let msg = format!($($arg)*);
+            $crate::utils::silly!("*~ {msg}")
+        }
+    }};
+}
+#[allow(unused_imports)]
+pub(crate) use intercept;
+
+#[allow(unused_macros)]
 macro_rules! fails {
     ($($arg:tt)*) => {{
         #[cfg(debug_assertions)]

@@ -1,28 +1,32 @@
 use std::{mem, ops::Not};
 
-use red4ext_rs::{
-    hooks,
-    types::{CName, IScriptable, StackFrame},
-};
+use red4ext_rs::types::{CName, IScriptable, StackFrame};
 
-use crate::{utils::lifecycle, Entity};
+use crate::{attach_hook, utils::intercept, Entity};
 
-use red4ext_rs::{addr_hashes, SdkEnv, VoidPtr};
+use red4ext_rs::{SdkEnv, VoidPtr};
 
-hooks! {
-   static HOOK_SET: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
+pub fn attach_hooks(env: &SdkEnv) {
+    attach_hook_set(env);
+    attach_hook_unset(env);
 }
 
-#[allow(clippy::missing_transmute_annotations)]
-pub fn attach_hook_set(env: &SdkEnv) {
-    let addr = addr_hashes::resolve(super::offsets::TIMEDILATABLE_SETINDIVIDUALTIMEDILATION);
-    let addr = unsafe { std::mem::transmute(addr) };
-    unsafe { env.attach_hook(HOOK_SET, addr, detour_set) };
-    #[cfg(debug_assertions)]
-    crate::utils::lifecycle!("attached hook for TimeDilatable::SetIndividualTimeDilation");
-}
+attach_hook!(
+    "TimeDilatable::SetIndividualTimeDilation",
+    super::offsets::TIMEDILATABLE_SETINDIVIDUALTIMEDILATION,
+    HOOK_SET,
+    attach_hook_set,
+    detour_set
+);
 
-#[allow(unused_variables)]
+attach_hook!(
+    "TimeDilatable::UnsetIndividualTimeDilation",
+    super::offsets::TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION,
+    HOOK_UNSET,
+    attach_hook_unset,
+    detour_unset
+);
+
 unsafe extern "C" fn detour_set(
     i: *mut IScriptable,
     f: *mut StackFrame,
@@ -49,27 +53,19 @@ unsafe extern "C" fn detour_set(
     let use_real_time: bool = unsafe { StackFrame::get_arg(frame) };
     frame.restore_args(state);
 
-    lifecycle!(
-        "set individual time dilation {x:?}:
-- ease_out_curve: {ease_out_curve}",
+    intercept!(
+        "TimeDilatable::SetIndividualTimeDilation {x:?}:
+- reason: {reason}
+- dilation: {dilation}
+- duration: {duration}
+- ease_in_curve: {ease_in_curve}
+- ease_out_curve: {ease_out_curve}
+- ignore_global_dilation: {ignore_global_dilation}
+- use_real_time: {use_real_time}",
     );
     cb(i, f, a3, a4);
 }
 
-hooks! {
-   static HOOK_UNSET: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
-}
-
-#[allow(clippy::missing_transmute_annotations)]
-pub fn attach_hook_unset(env: &SdkEnv) {
-    let addr = addr_hashes::resolve(super::offsets::TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION);
-    let addr = unsafe { std::mem::transmute(addr) };
-    unsafe { env.attach_hook(HOOK_UNSET, addr, detour_unset) };
-    #[cfg(debug_assertions)]
-    crate::utils::lifecycle!("attached hook for TimeDilatable::UnsetIndividualTimeDilation");
-}
-
-#[allow(unused_variables)]
 unsafe extern "C" fn detour_unset(
     i: *mut IScriptable,
     f: *mut StackFrame,
@@ -90,8 +86,8 @@ unsafe extern "C" fn detour_unset(
     let ease_out_curve: CName = unsafe { StackFrame::get_arg(frame) };
     frame.restore_args(state);
 
-    lifecycle!(
-        "unset individual time dilation {x:?}:
+    intercept!(
+        "TimeDilatable::UnsetIndividualTimeDilation {x:?}:
 - ease_out_curve: {ease_out_curve}",
     );
     cb(i, f, a3, a4);

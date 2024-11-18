@@ -1,23 +1,15 @@
 use red4ext_rs::{
-    addr_hashes, hooks,
     types::{CName, IScriptable, StackFrame},
-    SdkEnv, VoidPtr,
+    VoidPtr,
 };
 
-hooks! {
-   static HOOK: fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr) -> ();
-}
+use crate::{attach_hook, utils::intercept};
 
-#[allow(clippy::missing_transmute_annotations)]
-pub fn attach_hook(env: &SdkEnv) {
-    let addr = addr_hashes::resolve(super::offsets::TIMESYSTEM_SETTIMEDILATION);
-    let addr = unsafe { std::mem::transmute(addr) };
-    unsafe { env.attach_hook(HOOK, addr, detour) };
-    #[cfg(debug_assertions)]
-    crate::utils::lifecycle!("attached hook for TimeSystem::SetTimeDilation");
-}
+attach_hook!(
+    "TimeSystem::SetTimeDilation",
+    super::offsets::TIMESYSTEM_SETTIMEDILATION
+);
 
-#[allow(unused_variables)]
 unsafe extern "C" fn detour(
     i: *mut IScriptable,
     f: *mut StackFrame,
@@ -36,8 +28,8 @@ unsafe extern "C" fn detour(
     // let _listener: Ref<IScriptable> = unsafe { StackFrame::get_arg(frame) };
     frame.restore_args(state);
 
-    crate::utils::lifecycle!(
-        "set dilation time on time system:
+    intercept!(
+        "TimeSystem::SetTimeDilation:
     - reason: {reason}
     - dilation: {dilation}
     - duration: {duration}

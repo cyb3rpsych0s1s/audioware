@@ -1,27 +1,27 @@
+use std::{mem, ops::Not};
+
 use red4ext_rs::{
     types::{IScriptable, StackFrame},
-    ScriptClass,
+    VoidPtr,
 };
 
-use crate::{utils::lifecycle, Entity};
+use crate::{attach_hook, utils::intercept, Entity};
 
-use super::NativeFunc;
+attach_hook!("Entity::Dispose", super::offsets::ENTITY_DISPOSE);
 
-pub struct Dispose;
-
-impl NativeFunc<{ super::offsets::ENTITY_DISPOSE }> for Dispose {
-    #[inline(always)]
-    fn detour(this: *mut IScriptable, frame: &mut StackFrame) -> Option<&mut StackFrame> {
-        let x = unsafe { &*this };
-        if x.class().name().as_str() == Entity::NAME {
-            let x = unsafe { std::mem::transmute::<&IScriptable, &Entity>(x) };
-            lifecycle!("dispose {:?}", x.entity_id);
-        }
-        Some(frame)
-    }
-
-    #[cfg(debug_assertions)]
-    fn name() -> &'static str {
-        "Entity::Dispose"
-    }
+unsafe extern "C" fn detour(
+    i: *mut IScriptable,
+    f: *mut StackFrame,
+    a3: VoidPtr,
+    a4: VoidPtr,
+    cb: unsafe extern "C" fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr),
+) {
+    let x = i
+        .is_null()
+        .not()
+        .then_some(&*i)
+        .map(|x| mem::transmute::<&IScriptable, &Entity>(x))
+        .map(|x| x.entity_id);
+    intercept!("called Entity::Dispose ({x:?})");
+    cb(i, f, a3, a4);
 }
