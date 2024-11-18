@@ -38,6 +38,7 @@ mod offsets {
     pub const EVENT_DIALOGLINEEND: u32                          = 0x6F24331;    // 0x141188BF4 (2.12a)
 }
 
+#[allow(dead_code)]
 pub type NativeFuncHook = *mut red4ext_rs::Hook<
     unsafe extern "C" fn(*mut IScriptable, *mut StackFrame, *mut c_void, *mut c_void),
     unsafe extern "C" fn(
