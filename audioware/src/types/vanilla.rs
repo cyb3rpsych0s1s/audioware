@@ -11,6 +11,7 @@ mod audio_system;
 pub use audio_system::*;
 mod entity;
 mod events;
+pub use events::*;
 mod helper;
 pub use entity::*;
 pub use helper::*;
