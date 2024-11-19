@@ -280,10 +280,6 @@ impl Scene {
         Ok(())
     }
 
-    fn sync_dilation(&mut self) {
-        self.dilation_changed = false;
-    }
-
     pub fn sync(&mut self) -> Result<(), Error> {
         self.sync_listener()?;
         self.sync_emitters()?;
@@ -385,17 +381,30 @@ impl Scene {
         });
     }
 
-    // pub fn sync_dilation(&mut self, listener: f32, emitters: &[(EntityId, f32)]) {
-    //     self.emitters
-    //         .iter_mut()
-    //         .filter(|x| emitters.iter().any(|(id, _)| id == x.key()))
-    //         .for_each(|mut x| {
-    //             x.value_mut().handles.statics.iter_mut().for_each(|x| {
-    //                 x.handle.set_playback_rate(listener as f64, IMMEDIATELY);
-    //             });
-    //             x.value_mut().handles.streams.iter_mut().for_each(|x| {
-    //                 x.handle.set_playback_rate(listener as f64, IMMEDIATELY);
-    //             });
-    //         });
-    // }
+    pub fn set_listener_dilation(&mut self, dilation: Option<f32>) {
+        self.v.dilation = dilation;
+        self.dilation_changed = true;
+    }
+
+    pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: Option<f32>) {
+        if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
+            emitter.dilation = dilation;
+            self.dilation_changed = true;
+        }
+    }
+
+    fn sync_dilation(&mut self) {
+        let listener = self.v.dilation.map(|x| x as f64).unwrap_or(0.);
+        let mut rate: f64 = 1.;
+        self.emitters.iter_mut().for_each(|mut x| {
+            rate = 1. - listener + x.dilation.map(|x| x as f64 / 10.).unwrap_or(0.);
+            x.value_mut().handles.statics.iter_mut().for_each(|x| {
+                x.handle.set_playback_rate(rate, IMMEDIATELY);
+            });
+            x.value_mut().handles.streams.iter_mut().for_each(|x| {
+                x.handle.set_playback_rate(rate, IMMEDIATELY);
+            });
+        });
+        self.dilation_changed = false;
+    }
 }

@@ -18,7 +18,7 @@ use v::V;
 
 use crate::error::Error;
 
-use super::{modulators::Modulators, tweens::IMMEDIATELY};
+use super::modulators::Modulators;
 
 mod ambience;
 mod car_radio;
@@ -166,17 +166,5 @@ impl Tracks {
             .for_each(|x| {
                 x.handle.stop(tween);
             });
-    }
-    pub fn sync_dilation(&mut self, listener: f32, emitters: &[(EntityId, f32)]) {
-        self.handles
-            .statics
-            .iter_mut()
-            .filter(|x| emitters.iter().any(|(id, _)| Some(*id) == x.entity_id))
-            .for_each(|x| x.handle.set_playback_rate(listener as f64, IMMEDIATELY));
-        self.handles
-            .streams
-            .iter_mut()
-            .filter(|x| emitters.iter().any(|(id, _)| Some(*id) == x.entity_id))
-            .for_each(|x| x.handle.set_playback_rate(listener as f64, IMMEDIATELY));
     }
 }

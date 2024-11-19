@@ -315,6 +315,20 @@ where
         }
     }
 
+    pub fn set_listener_dilation(&mut self, dilation: Option<f32>) {
+        match self.scene {
+            Some(ref mut scene) => scene.set_listener_dilation(dilation),
+            None => lifecycle!("scene is not initialized"),
+        }
+    }
+
+    pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: Option<f32>) {
+        match self.scene {
+            Some(ref mut scene) => scene.set_emitter_dilation(entity_id, dilation),
+            None => lifecycle!("scene is not initialized"),
+        }
+    }
+
     pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId) {
         if let Some(x) = self.scene.as_mut() {
             x.stop_for(entity_id, LAST_BREATH)

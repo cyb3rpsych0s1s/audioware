@@ -20,10 +20,8 @@ use kira::manager::{
 };
 use red4ext_rs::{
     log::{self},
-    types::EntityId,
     SdkEnv,
 };
-use smallvec::SmallVec;
 use std::sync::{Mutex, RwLock};
 
 use crate::{
@@ -90,8 +88,6 @@ where
 {
     let spoken = SpokenLocale::default();
     let mut gender = None;
-    let mut v_dilation = 1.;
-    let mut emitters_dilation: SmallVec<[(EntityId, f32); 32]> = SmallVec::new();
     let s = |x| Duration::from_secs_f32(x);
     let ms = |x| Duration::from_millis(x);
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
@@ -104,13 +100,17 @@ where
                 Lifecycle::Terminate => {
                     break 'game;
                 }
-                Lifecycle::SetListenerDilation { dilation: value } => {}
-                Lifecycle::UnsetListenerDilation => {}
+                Lifecycle::SetListenerDilation { dilation } => {
+                    engine.set_listener_dilation(Some(dilation))
+                }
+                Lifecycle::UnsetListenerDilation => engine.set_listener_dilation(None),
                 Lifecycle::SetEmitterDilation {
                     entity_id,
                     dilation,
-                } => {}
-                Lifecycle::UnsetEmitterDilation { entity_id } => {}
+                } => engine.set_emitter_dilation(entity_id, Some(dilation)),
+                Lifecycle::UnsetEmitterDilation { entity_id } => {
+                    engine.set_emitter_dilation(entity_id, None)
+                }
                 Lifecycle::Codeware(Codeware::SetPlayerGender { gender: value }) => {
                     gender = Some(value)
                 }
