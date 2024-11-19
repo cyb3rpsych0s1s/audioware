@@ -97,6 +97,7 @@ unsafe extern "C" fn register() {
 /// Once RTTI registered.
 unsafe extern "C" fn post_register() {
     lifecycle!("on RTTI post register");
+    Audioware::once_rtti_registered();
 }
 
 /// Once plugin initialized.

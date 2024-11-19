@@ -32,13 +32,19 @@ impl Plugin for Audioware {
         if let Err(e) = queue::spawn(env) {
             error!(env, "Error: {e}");
         }
-        hooks::attach(env);
     }
 
     /// Register types in [RTTI][RttiSystem].
     #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
     fn exports() -> impl Exportable {
         abi::exports()
+    }
+}
+
+impl Audioware {
+    fn once_rtti_registered() {
+        use red4ext_rs::PluginOps;
+        hooks::attach(Audioware::env());
     }
 }
 
