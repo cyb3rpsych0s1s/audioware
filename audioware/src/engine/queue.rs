@@ -147,6 +147,7 @@ where
                 }
                 Lifecycle::Session(Session::BeforeEnd) => {
                     should_sync = false;
+                    engine.scene = None;
                 }
                 Lifecycle::System(System::Attach) => {}
                 Lifecycle::System(System::Detach) => {}
