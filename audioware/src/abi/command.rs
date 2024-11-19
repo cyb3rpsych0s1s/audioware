@@ -26,7 +26,7 @@ pub enum Command {
         ext: Option<Settings>,
     },
     PlayOnEmitter {
-        sound_name: CName,
+        event_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
         tween: Option<Tween>,
@@ -83,11 +83,11 @@ impl std::fmt::Debug for Command {
                 ..
             } => write!(f, "Command::PlayExt {{ sound_name: {:?}, entity_id: {:?}, emitter_name: {:?}, line_type: {:?}, .. }}", sound_name, entity_id, emitter_name, line_type),
             Command::PlayOnEmitter {
-                sound_name,
+                event_name,
                 entity_id,
                 emitter_name,
                 ..
-            } => write!(f, "Command::PlayOnEmitter {{ sound_name: {:?}, entity_id: {:?}, emitter_name: {:?}, .. }}", sound_name, entity_id, emitter_name),
+            } => write!(f, "Command::PlayOnEmitter {{ event_name: {:?}, entity_id: {:?}, emitter_name: {:?}, .. }}", event_name, entity_id, emitter_name),
             Command::StopOnEmitter {
                 event_name,
                 entity_id,

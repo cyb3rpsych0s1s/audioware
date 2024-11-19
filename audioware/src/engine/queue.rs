@@ -235,12 +235,12 @@ where
                     ..
                 } => engine.play_ext(sound_name, entity_id, emitter_name, spoken, gender, ext),
                 Command::PlayOnEmitter {
-                    sound_name,
+                    event_name,
                     entity_id,
                     emitter_name,
                     tween,
                 } => engine.play_on_emitter(
-                    sound_name,
+                    event_name,
                     entity_id,
                     emitter_name,
                     tween,
@@ -248,7 +248,12 @@ where
                     gender,
                 ),
                 Command::PlayOverThePhone { .. } => {}
-                Command::StopOnEmitter { .. } => {}
+                Command::StopOnEmitter {
+                    event_name,
+                    entity_id,
+                    emitter_name,
+                    tween,
+                } => engine.stop_on_emitter(event_name, entity_id, emitter_name, tween),
                 Command::StopVanilla {
                     event_name,
                     entity_id,

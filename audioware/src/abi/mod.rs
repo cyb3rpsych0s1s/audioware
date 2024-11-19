@@ -55,6 +55,7 @@ pub fn exports() -> impl Exportable {
                     final c"Play" => AudioSystemExt::play_ext,
                     final c"Stop" => AudioSystemExt::stop,
                     final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
+                    final c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
                     final c"RegisterEmitter" => AudioSystemExt::register_emitter,
                     final c"UnregisterEmitter" => AudioSystemExt::unregister_emitter,
                     final c"IsRegisteredEmitter" => AudioSystemExt::is_registered_emitter,
@@ -469,6 +470,13 @@ pub trait ExtCommand {
         emitter_name: CName,
         tween: Ref<Tween>,
     );
+    fn stop_on_emitter(
+        &self,
+        sound_name: CName,
+        entity_id: EntityId,
+        emitter_name: CName,
+        tween: Ref<Tween>,
+    );
 }
 
 impl ExtCommand for AudioSystemExt {
@@ -522,13 +530,28 @@ impl ExtCommand for AudioSystemExt {
 
     fn play_on_emitter(
         &self,
-        sound_name: CName,
+        event_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
         tween: Ref<Tween>,
     ) {
         queue::send(Command::PlayOnEmitter {
-            sound_name,
+            event_name,
+            entity_id,
+            emitter_name,
+            tween: tween.into_tween(),
+        });
+    }
+
+    fn stop_on_emitter(
+        &self,
+        event_name: CName,
+        entity_id: EntityId,
+        emitter_name: CName,
+        tween: Ref<Tween>,
+    ) {
+        queue::send(Command::StopOnEmitter {
+            event_name,
             entity_id,
             emitter_name,
             tween: tween.into_tween(),
