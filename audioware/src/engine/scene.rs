@@ -394,10 +394,18 @@ impl Scene {
     }
 
     fn sync_dilation(&mut self) {
-        let listener = self.v.dilation.map(|x| x as f64).unwrap_or(0.);
+        let listener = self.v.dilation.map(|x| x as f64).unwrap_or(1.); // e.g. 0.7
         let mut rate: f64 = 1.;
         self.emitters.iter_mut().for_each(|mut x| {
-            rate = 1. - listener + x.dilation.map(|x| x as f64 / 10.).unwrap_or(0.);
+            rate = 1. - (1. - listener)
+                + (
+                    // e.g. 5 or 7
+                    1. - x
+                        .dilation
+                        .filter(|x| *x != 1.)
+                        .map(|x| x as f64 / 10.)
+                        .unwrap_or(1.)
+                );
             x.value_mut().handles.statics.iter_mut().for_each(|x| {
                 x.handle.set_playback_rate(rate, IMMEDIATELY);
             });
