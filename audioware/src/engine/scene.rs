@@ -34,11 +34,11 @@ pub struct Emitter {
     pub names: DashSet<Option<CName>>,
 }
 impl Emitter {
-    pub fn store_static(&mut self, handle: StaticSoundHandle) {
-        self.handles.statics.push(handle);
+    pub fn store_static(&mut self, event_name: CName, handle: StaticSoundHandle) {
+        self.handles.statics.push(Handle { event_name, handle });
     }
-    pub fn store_stream(&mut self, handle: StreamingSoundHandle<FromFileError>) {
-        self.handles.streams.push(handle);
+    pub fn store_stream(&mut self, event_name: CName, handle: StreamingSoundHandle<FromFileError>) {
+        self.handles.streams.push(Handle { event_name, handle });
     }
 }
 impl AsRef<EmitterHandle> for Emitter {
@@ -47,10 +47,16 @@ impl AsRef<EmitterHandle> for Emitter {
     }
 }
 
+#[derive(Debug)]
+pub struct Handle<T> {
+    event_name: CName,
+    handle: T,
+}
+
 #[derive(Debug, Default)]
 pub struct Handles {
-    pub statics: Vec<StaticSoundHandle>,
-    pub streams: Vec<StreamingSoundHandle<FromFileError>>,
+    pub statics: Vec<Handle<StaticSoundHandle>>,
+    pub streams: Vec<Handle<StreamingSoundHandle<FromFileError>>>,
 }
 
 static EMITTERS: LazyLock<RwLock<HashSet<(EntityId, Option<CName>)>>> =
@@ -168,13 +174,43 @@ impl Scene {
         Ok(true)
     }
 
+    pub fn stop_on_emitter(
+        &mut self,
+        event_name: CName,
+        entity_id: EntityId,
+        emitter_name: Option<CName>,
+        tween: Tween,
+    ) {
+        self.emitters
+            .iter_mut()
+            .filter(|x| *x.key() == entity_id && x.value().names.contains(&emitter_name))
+            .for_each(|mut x| {
+                x.value_mut()
+                    .handles
+                    .statics
+                    .iter_mut()
+                    .filter(|x| x.event_name == event_name)
+                    .for_each(|x| {
+                        x.handle.stop(tween);
+                    });
+                x.value_mut()
+                    .handles
+                    .streams
+                    .iter_mut()
+                    .filter(|x| x.event_name == event_name)
+                    .for_each(|x| {
+                        x.handle.stop(tween);
+                    });
+            });
+    }
+
     pub fn stop_emitters(&mut self, tween: Tween) {
         self.emitters.iter_mut().for_each(|mut x| {
             x.value_mut().handles.statics.iter_mut().for_each(|x| {
-                x.stop(tween);
+                x.handle.stop(tween);
             });
             x.value_mut().handles.streams.iter_mut().for_each(|x| {
-                x.stop(tween);
+                x.handle.stop(tween);
             });
         });
     }
@@ -237,11 +273,11 @@ impl Scene {
                 v.handles
                     .statics
                     .iter_mut()
-                    .for_each(|x| x.stop(IMMEDIATELY));
+                    .for_each(|x| x.handle.stop(IMMEDIATELY));
                 v.handles
                     .streams
                     .iter_mut()
-                    .for_each(|x| x.stop(IMMEDIATELY));
+                    .for_each(|x| x.handle.stop(IMMEDIATELY));
                 EMITTERS.write().retain(|(id, _)| id != k);
                 false
             } else {
@@ -265,12 +301,12 @@ impl Scene {
                 .handles
                 .statics
                 .iter_mut()
-                .for_each(|x| x.pause(tween));
+                .for_each(|x| x.handle.pause(tween));
             x.value_mut()
                 .handles
                 .streams
                 .iter_mut()
-                .for_each(|x| x.pause(tween));
+                .for_each(|x| x.handle.pause(tween));
         });
     }
 
@@ -280,12 +316,12 @@ impl Scene {
                 .handles
                 .statics
                 .iter_mut()
-                .for_each(|x| x.resume(tween));
+                .for_each(|x| x.handle.resume(tween));
             x.value_mut()
                 .handles
                 .streams
                 .iter_mut()
-                .for_each(|x| x.resume(tween));
+                .for_each(|x| x.handle.resume(tween));
         });
     }
 
@@ -294,11 +330,11 @@ impl Scene {
             x.value_mut()
                 .handles
                 .statics
-                .retain(|x| x.state() != PlaybackState::Stopped);
+                .retain(|x| x.handle.state() != PlaybackState::Stopped);
             x.value_mut()
                 .handles
                 .streams
-                .retain(|x| x.state() != PlaybackState::Stopped);
+                .retain(|x| x.handle.state() != PlaybackState::Stopped);
         });
     }
 
@@ -309,12 +345,12 @@ impl Scene {
                     .handles
                     .statics
                     .iter_mut()
-                    .for_each(|x| x.stop(tween));
+                    .for_each(|x| x.handle.stop(tween));
                 x.value_mut()
                     .handles
                     .streams
                     .iter_mut()
-                    .for_each(|x| x.stop(tween));
+                    .for_each(|x| x.handle.stop(tween));
             }
         });
     }
@@ -325,10 +361,10 @@ impl Scene {
             .filter(|x| emitters.iter().any(|(id, _)| id == x.key()))
             .for_each(|mut x| {
                 x.value_mut().handles.statics.iter_mut().for_each(|x| {
-                    x.set_playback_rate(listener as f64, IMMEDIATELY);
+                    x.handle.set_playback_rate(listener as f64, IMMEDIATELY);
                 });
                 x.value_mut().handles.streams.iter_mut().for_each(|x| {
-                    x.set_playback_rate(listener as f64, IMMEDIATELY);
+                    x.handle.set_playback_rate(listener as f64, IMMEDIATELY);
                 });
             });
     }

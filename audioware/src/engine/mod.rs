@@ -195,7 +195,7 @@ where
                                     sound_name.as_str(),
                                     entity_id
                                 );
-                                emitter.store_static(handle);
+                                emitter.store_static(sound_name, handle);
                             }
                         }
                         Either::Right(data) => {
@@ -208,7 +208,7 @@ where
                                     sound_name.as_str(),
                                     entity_id
                                 );
-                                emitter.store_stream(handle);
+                                emitter.store_stream(sound_name, handle);
                             }
                         }
                     }
@@ -231,6 +231,23 @@ where
                 event_name,
                 entity_id,
                 emitter_name,
+                tween.unwrap_or_default(),
+            );
+        }
+    }
+
+    pub fn stop_on_emitter(
+        &mut self,
+        event_name: CName,
+        entity_id: EntityId,
+        emitter_name: CName,
+        tween: Option<Tween>,
+    ) {
+        if let Some(x) = self.scene.as_mut() {
+            x.stop_on_emitter(
+                event_name,
+                entity_id,
+                Some(emitter_name),
                 tween.unwrap_or_default(),
             );
         }
