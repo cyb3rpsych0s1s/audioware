@@ -31,7 +31,6 @@ pub struct Handle {
     handles: Handles,
     last_known_position: Vector4,
     busy: bool,
-    dead: bool,
 }
 impl Handle {
     pub fn store_static(&mut self, handle: StaticSoundHandle) {
@@ -133,7 +132,6 @@ impl Scene {
             handles: Default::default(),
             last_known_position: position,
             busy,
-            dead: false,
         };
         self.emitters.insert((entity_id, emitter_name), handle);
         EMITTERS.write().insert((entity_id, emitter_name));
@@ -199,9 +197,6 @@ impl Scene {
         self.emitters.retain(|k, v| {
             if synced.contains(&k.0) {
                 return true;
-            }
-            if v.dead {
-                return remove(k.0);
             }
             let Ok((position, busy)) = self.emitter_infos(k.0) else {
                 return remove(k.0);

@@ -141,7 +141,7 @@ where
                         .find_map(|(idx, (id, _))| if *id == entity_id { Some(idx) } else { None })
                     {
                         emitters_dilation.remove(idx);
-                        dilation_changed = true; 
+                        dilation_changed = true;
                     }
                 }
                 Lifecycle::Codeware(Codeware::SetPlayerGender { gender: value }) => {
