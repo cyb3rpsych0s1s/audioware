@@ -1,6 +1,6 @@
 use std::{collections::HashSet, ops::DerefMut, sync::LazyLock};
 
-use dashmap::DashMap;
+use dashmap::{DashMap, DashSet};
 use kira::{
     manager::{backend::Backend, AudioManager},
     sound::{
@@ -26,13 +26,14 @@ use crate::{
 use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
 
 #[derive(Debug)]
-pub struct Handle {
+pub struct Emitter {
     handle: EmitterHandle,
     handles: Handles,
     last_known_position: Vector4,
     busy: bool,
+    pub names: DashSet<Option<CName>>,
 }
-impl Handle {
+impl Emitter {
     pub fn store_static(&mut self, handle: StaticSoundHandle) {
         self.handles.statics.push(handle);
     }
@@ -40,7 +41,7 @@ impl Handle {
         self.handles.streams.push(handle);
     }
 }
-impl AsRef<EmitterHandle> for Handle {
+impl AsRef<EmitterHandle> for Emitter {
     fn as_ref(&self) -> &EmitterHandle {
         &self.handle
     }
@@ -57,7 +58,7 @@ static EMITTERS: LazyLock<RwLock<HashSet<(EntityId, Option<CName>)>>> =
 
 /// Audio spatial scene.
 pub struct Scene {
-    pub emitters: DashMap<(EntityId, Option<CName>), Handle>,
+    pub emitters: DashMap<EntityId, Emitter>,
     pub v: ListenerHandle,
     pub listener_id: EntityId,
     pub scene: SpatialSceneHandle,
@@ -123,17 +124,24 @@ impl Scene {
                 source: SceneError::InvalidEmitter,
             });
         }
+        if let Some(emitter) = self.emitters.get_mut(&entity_id) {
+            emitter.names.insert(emitter_name);
+            return Ok(());
+        }
         let (position, busy) = self.emitter_infos(entity_id)?;
         let emitter = self
             .scene
             .add_emitter(position, settings.unwrap_or_default())?;
-        let handle = Handle {
+        let names = DashSet::with_capacity(3);
+        names.insert(emitter_name);
+        let handle = Emitter {
             handle: emitter,
             handles: Default::default(),
             last_known_position: position,
             busy,
+            names,
         };
-        self.emitters.insert((entity_id, emitter_name), handle);
+        self.emitters.insert(entity_id, handle);
         EMITTERS.write().insert((entity_id, emitter_name));
         lifecycle!("added emitter {entity_id:?}");
         Ok(())
@@ -144,7 +152,7 @@ impl Scene {
             .emitters
             .iter()
             .filter_map(|x| {
-                if x.key().0 == entity_id {
+                if *x.key() == entity_id {
                     Some(*x.key())
                 } else {
                     None
@@ -195,18 +203,18 @@ impl Scene {
             false
         };
         self.emitters.retain(|k, v| {
-            if synced.contains(&k.0) {
+            if synced.contains(k) {
                 return true;
             }
-            let Ok((position, busy)) = self.emitter_infos(k.0) else {
-                return remove(k.0);
+            let Ok((position, busy)) = self.emitter_infos(*k) else {
+                return remove(*k);
             };
             v.busy = busy;
             v.last_known_position = position;
             // weirdly enough if emitter is not updated, sound(s) won't update as expected.
             // e.g. when listener moves but emitter stands still.
             v.handle.set_position(position, IMMEDIATELY);
-            synced.push(k.0);
+            synced.push(*k);
             true
         });
         self.synced.clear();
@@ -225,7 +233,7 @@ impl Scene {
 
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
         self.emitters.retain(|k, v| {
-            if k.0 == entity_id {
+            if *k == entity_id {
                 v.handles
                     .statics
                     .iter_mut()
@@ -234,7 +242,7 @@ impl Scene {
                     .streams
                     .iter_mut()
                     .for_each(|x| x.stop(IMMEDIATELY));
-                EMITTERS.write().retain(|(id, _)| *id != k.0);
+                EMITTERS.write().retain(|(id, _)| id != k);
                 false
             } else {
                 true
@@ -296,7 +304,7 @@ impl Scene {
 
     pub fn stop_for(&mut self, entity_id: EntityId, tween: Tween) {
         self.emitters.iter_mut().for_each(|mut x| {
-            if x.key().0 == entity_id {
+            if *x.key() == entity_id {
                 x.value_mut()
                     .handles
                     .statics
@@ -314,7 +322,7 @@ impl Scene {
     pub fn sync_dilation(&mut self, listener: f32, emitters: &[(EntityId, f32)]) {
         self.emitters
             .iter_mut()
-            .filter(|x| emitters.iter().any(|(id, _)| *id == x.key().0))
+            .filter(|x| emitters.iter().any(|(id, _)| id == x.key()))
             .for_each(|mut x| {
                 x.value_mut().handles.statics.iter_mut().for_each(|x| {
                     x.set_playback_rate(listener as f64, IMMEDIATELY);
