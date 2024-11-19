@@ -16,8 +16,8 @@ public class AudioSettingsExt {
 }
 
 public native struct EmitterDistances {
-    let min: Float = 1.0;
-    let max: Float = 20.0;
+    let min: Float = 0.0;
+    let max: Float = 0.0;
 }
 
 public native struct EmitterSettings {

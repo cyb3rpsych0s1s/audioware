@@ -8,7 +8,7 @@ use kira::{
         PlaybackState,
     },
     spatial::{
-        emitter::{EmitterHandle, EmitterSettings},
+        emitter::{EmitterDistances, EmitterHandle, EmitterSettings},
         listener::{ListenerHandle, ListenerSettings},
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
@@ -19,8 +19,8 @@ use red4ext_rs::types::{CName, EntityId, GameInstance};
 
 use crate::{
     error::{Error, SceneError},
-    get_player, AIActionHelper, AsEntity, AsGameInstance, AsTimeDilatable, Entity, GameObject,
-    TimeDilatable, ToTween, Vector4,
+    get_player, AIActionHelper, AsEntity, AsGameInstance, AsScriptedPuppet, AsTimeDilatable,
+    Entity, GameObject, ScriptedPuppet, TimeDilatable, ToTween, Vector4,
 };
 
 use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY, Dilation};
@@ -134,7 +134,10 @@ impl Scene {
         })
     }
 
-    fn emitter_infos(&self, entity_id: EntityId) -> Result<(Vector4, bool, Option<f32>), Error> {
+    fn emitter_infos(
+        &self,
+        entity_id: EntityId,
+    ) -> Result<(Vector4, bool, Option<f32>, Option<EmitterDistances>), Error> {
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, entity_id);
         if entity.is_null() {
@@ -142,6 +145,34 @@ impl Scene {
                 source: SceneError::InvalidEmitter,
             });
         }
+        let distances = entity
+            .clone()
+            .cast::<ScriptedPuppet>()
+            .as_ref()
+            .map(AsScriptedPuppet::get_npc_type)
+            .map(|x| match x {
+                crate::GamedataNpcType::Device
+                | crate::GamedataNpcType::Drone
+                | crate::GamedataNpcType::Spiderbot => EmitterDistances {
+                    min_distance: 1.,
+                    max_distance: 5.,
+                },
+                crate::GamedataNpcType::Android | crate::GamedataNpcType::Human => {
+                    EmitterDistances {
+                        min_distance: 2.,
+                        max_distance: 8.,
+                    }
+                }
+                crate::GamedataNpcType::Cerberus
+                | crate::GamedataNpcType::Chimera
+                | crate::GamedataNpcType::Mech => EmitterDistances {
+                    min_distance: 5.,
+                    max_distance: 20.,
+                },
+                crate::GamedataNpcType::Invalid
+                | crate::GamedataNpcType::Count
+                | crate::GamedataNpcType::Any => EmitterDistances::default(),
+            });
         let busy = entity
             .clone()
             .cast::<GameObject>()
@@ -149,14 +180,14 @@ impl Scene {
             .unwrap_or(false);
         let position = entity.get_world_position();
         if !entity.is_a::<TimeDilatable>() {
-            return Ok((position, busy, None));
+            return Ok((position, busy, None, distances));
         }
         let dilation = entity
             .clone()
             .cast::<TimeDilatable>()
             .as_ref()
             .map(AsTimeDilatable::get_time_dilation_value);
-        Ok((position, busy, dilation))
+        Ok((position, busy, dilation, distances))
     }
 
     pub fn add_emitter(
@@ -174,10 +205,18 @@ impl Scene {
             emitter.names.insert(emitter_name);
             return Ok(());
         }
-        let (position, busy, dilation) = self.emitter_infos(entity_id)?;
-        let emitter = self
-            .scene
-            .add_emitter(position, settings.unwrap_or_default())?;
+        let (position, busy, dilation, distances) = self.emitter_infos(entity_id)?;
+        let settings = match settings {
+            Some(settings)
+                if settings.distances.min_distance == 0.
+                    && settings.distances.max_distance == 0. =>
+            {
+                settings.distances(distances.unwrap_or_default())
+            }
+            Some(settings) => settings,
+            None => EmitterSettings::default().distances(distances.unwrap_or_default()),
+        };
+        let emitter = self.scene.add_emitter(position, settings)?;
         let names = DashSet::with_capacity(3);
         names.insert(emitter_name);
         let handle = Emitter {
@@ -279,7 +318,7 @@ impl Scene {
         }
         let mut dilation_changed = false;
         self.emitters.retain(|k, v| {
-            let Ok((position, busy, dilation)) = self.emitter_infos(*k) else {
+            let Ok((position, busy, dilation, _)) = self.emitter_infos(*k) else {
                 EMITTERS.write().retain(|(id, _)| id != k);
                 return false;
             };
