@@ -30,6 +30,7 @@ use crate::{
         lifecycle::{Board, Codeware, Lifecycle, Session, System},
     },
     config::BufferSize,
+    engine::Dilation,
     error::Error,
     utils::{fails, lifecycle},
 };
@@ -100,17 +101,42 @@ where
                 Lifecycle::Terminate => {
                     break 'game;
                 }
-                Lifecycle::SetListenerDilation { dilation } => {
-                    engine.set_listener_dilation(Some(dilation))
-                }
-                Lifecycle::UnsetListenerDilation => engine.set_listener_dilation(None),
+                Lifecycle::SetListenerDilation {
+                    dilation,
+                    ease_in_curve,
+                    ..
+                } => engine.set_listener_dilation(Some(Dilation {
+                    value: dilation,
+                    curve: ease_in_curve,
+                })),
+                Lifecycle::UnsetListenerDilation { ease_out_curve, .. } => engine
+                    .set_listener_dilation(Some(Dilation {
+                        value: 1.,
+                        curve: ease_out_curve,
+                    })),
                 Lifecycle::SetEmitterDilation {
                     entity_id,
                     dilation,
-                } => engine.set_emitter_dilation(entity_id, Some(dilation)),
-                Lifecycle::UnsetEmitterDilation { entity_id } => {
-                    engine.set_emitter_dilation(entity_id, None)
-                }
+                    ease_in_curve,
+                    ..
+                } => engine.set_emitter_dilation(
+                    entity_id,
+                    Some(Dilation {
+                        value: dilation,
+                        curve: ease_in_curve,
+                    }),
+                ),
+                Lifecycle::UnsetEmitterDilation {
+                    entity_id,
+                    ease_out_curve,
+                    ..
+                } => engine.set_emitter_dilation(
+                    entity_id,
+                    Some(Dilation {
+                        value: 1.,
+                        curve: ease_out_curve,
+                    }),
+                ),
                 Lifecycle::Codeware(Codeware::SetPlayerGender { gender: value }) => {
                     gender = Some(value)
                 }

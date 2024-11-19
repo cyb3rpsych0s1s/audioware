@@ -10,6 +10,7 @@ pub fn attach_hooks(env: &SdkEnv) {
     attach_hook_unset(env);
 }
 
+// Set time dilation on player.
 attach_hook!(
     "TimeSystem::SetTimeDilation",
     super::offsets::TIMESYSTEM_SETTIMEDILATION,
@@ -18,6 +19,7 @@ attach_hook!(
     detour_set
 );
 
+// Unset time dilation on player.
 attach_hook!(
     "TimeSystem::UnsetTimeDilation",
     super::offsets::TIMESYSTEM_UNSETTIMEDILATION,
@@ -50,7 +52,11 @@ unsafe extern "C" fn detour_set(
     - ease_in_curve: {ease_in_curve}
     - ease_out_curve: {ease_out_curve}",
     );
-    notify(Lifecycle::SetListenerDilation { dilation });
+    notify(Lifecycle::SetListenerDilation {
+        reason,
+        dilation,
+        ease_in_curve,
+    });
 
     frame.restore_args(state);
     cb(i, frame as *mut _, a3, a4);
@@ -73,7 +79,10 @@ unsafe extern "C" fn detour_unset(
         - reason: {reason}
         - ease_out_curve: {ease_out_curve}",
     );
-    notify(Lifecycle::UnsetListenerDilation);
+    notify(Lifecycle::UnsetListenerDilation {
+        reason,
+        ease_out_curve,
+    });
 
     frame.restore_args(state);
     cb(i, frame as *mut _, a3, a4);

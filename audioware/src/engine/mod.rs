@@ -315,14 +315,14 @@ where
         }
     }
 
-    pub fn set_listener_dilation(&mut self, dilation: Option<f32>) {
+    pub fn set_listener_dilation(&mut self, dilation: Option<Dilation>) {
         match self.scene {
             Some(ref mut scene) => scene.set_listener_dilation(dilation),
             None => lifecycle!("scene is not initialized"),
         }
     }
 
-    pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: Option<f32>) {
+    pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: Option<Dilation>) {
         match self.scene {
             Some(ref mut scene) => scene.set_emitter_dilation(entity_id, dilation),
             None => lifecycle!("scene is not initialized"),
@@ -409,4 +409,10 @@ impl ToOutputDestination for Id {
             },
         }
     }
+}
+
+#[derive(Debug)]
+pub struct Dilation {
+    pub value: f32,
+    pub curve: CName,
 }

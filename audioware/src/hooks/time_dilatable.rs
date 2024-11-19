@@ -11,6 +11,7 @@ pub fn attach_hooks(env: &SdkEnv) {
     attach_hook_unset(env);
 }
 
+// Set time dilation on NPCs.
 attach_hook!(
     "TimeDilatable::SetIndividualTimeDilation",
     super::offsets::TIMEDILATABLE_SETINDIVIDUALTIMEDILATION,
@@ -19,6 +20,7 @@ attach_hook!(
     detour_set
 );
 
+// Unset time dilation on NPCs.
 attach_hook!(
     "TimeDilatable::UnsetIndividualTimeDilation",
     super::offsets::TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION,

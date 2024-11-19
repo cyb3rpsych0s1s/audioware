@@ -20,16 +20,16 @@ use red4ext_rs::types::{CName, EntityId, GameInstance};
 use crate::{
     error::{Error, SceneError},
     get_player, AIActionHelper, AsEntity, AsGameInstance, AsTimeDilatable, Entity, GameObject,
-    TimeDilatable, Vector4,
+    TimeDilatable, ToTween, Vector4,
 };
 
-use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
+use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY, Dilation};
 
 #[derive(Debug)]
 pub struct Listener {
     id: EntityId,
     handle: ListenerHandle,
-    dilation: Option<f32>,
+    dilation: Option<Dilation>,
 }
 
 #[derive(Debug)]
@@ -39,7 +39,7 @@ pub struct Emitter {
     last_known_position: Vector4,
     busy: bool,
     pub names: DashSet<Option<CName>>,
-    dilation: Option<f32>,
+    dilation: Option<Dilation>,
 }
 
 impl Emitter {
@@ -119,7 +119,14 @@ impl Scene {
             v: Listener {
                 id: listener_id,
                 handle,
-                dilation: if dilation == 1. { None } else { Some(dilation) },
+                dilation: if dilation == 1. {
+                    None
+                } else {
+                    Some(Dilation {
+                        value: dilation,
+                        curve: CName::default(),
+                    })
+                },
             },
             scene,
             emitters: DashMap::with_capacity(capacity),
@@ -179,7 +186,10 @@ impl Scene {
             last_known_position: position,
             busy,
             names,
-            dilation,
+            dilation: dilation.map(|x| Dilation {
+                value: x,
+                curve: CName::default(),
+            }),
         };
         self.emitters.insert(entity_id, handle);
         EMITTERS.write().insert((entity_id, emitter_name));
@@ -278,8 +288,11 @@ impl Scene {
             // weirdly enough if emitter is not updated, sound(s) won't update as expected.
             // e.g. when listener moves but emitter stands still.
             v.handle.set_position(position, IMMEDIATELY);
-            if dilation != v.dilation {
-                v.dilation = dilation;
+            if dilation != v.dilation.as_ref().map(|x| x.value) {
+                v.dilation = dilation.map(|x| Dilation {
+                    value: x,
+                    curve: CName::default(),
+                });
                 dilation_changed = true;
             }
             true
@@ -391,20 +404,33 @@ impl Scene {
         });
     }
 
-    pub fn set_listener_dilation(&mut self, dilation: Option<f32>) {
-        self.v.dilation = dilation;
-        self.dilation_changed = true;
-    }
-
-    pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: Option<f32>) {
-        if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
-            emitter.dilation = dilation;
+    pub fn set_listener_dilation(&mut self, dilation: Option<Dilation>) {
+        if self.v.dilation.as_ref().map(|x| x.value).unwrap_or(1.)
+            != dilation.as_ref().map(|x| x.value).unwrap_or(1.)
+        {
+            self.v.dilation = dilation;
             self.dilation_changed = true;
         }
     }
 
+    pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: Option<Dilation>) {
+        if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
+            if dilation.as_ref().map(|x| x.value).unwrap_or(1.)
+                != emitter.dilation.as_ref().map(|x| x.value).unwrap_or(1.)
+            {
+                emitter.dilation = dilation;
+                self.dilation_changed = true;
+            }
+        }
+    }
+
     fn sync_dilation(&mut self) {
-        let listener = self.v.dilation.map(|x| x as f64).unwrap_or(1.); // e.g. 0.7
+        let listener = self
+            .v
+            .dilation
+            .as_ref()
+            .map(|x| x.value as f64)
+            .unwrap_or(1.); // e.g. 0.7
         let mut rate: f64 = 1.;
         self.emitters.iter_mut().for_each(|mut x| {
             rate = 1. - (1. - listener)
@@ -412,15 +438,21 @@ impl Scene {
                     // e.g. 5 or 7
                     1. - x
                         .dilation
-                        .filter(|x| *x != 1.)
-                        .map(|x| x as f64 / 10.)
+                        .as_ref()
+                        .filter(|x| x.value != 1.)
+                        .map(|x| x.value as f64 / 10.)
                         .unwrap_or(1.)
                 );
+            let tween = x
+                .dilation
+                .as_ref()
+                .and_then(|x| x.curve.into_tween())
+                .unwrap_or(IMMEDIATELY);
             x.value_mut().handles.statics.iter_mut().for_each(|x| {
-                x.handle.set_playback_rate(rate, IMMEDIATELY);
+                x.handle.set_playback_rate(rate, tween);
             });
             x.value_mut().handles.streams.iter_mut().for_each(|x| {
-                x.handle.set_playback_rate(rate, IMMEDIATELY);
+                x.handle.set_playback_rate(rate, tween);
             });
         });
         self.dilation_changed = false;
