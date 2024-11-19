@@ -92,7 +92,6 @@ where
     let mut gender = None;
     let mut v_dilation = 1.;
     let mut emitters_dilation: SmallVec<[(EntityId, f32); 32]> = SmallVec::new();
-    let mut dilation_changed: bool = false;
     let s = |x| Duration::from_secs_f32(x);
     let ms = |x| Duration::from_millis(x);
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
@@ -105,45 +104,13 @@ where
                 Lifecycle::Terminate => {
                     break 'game;
                 }
-                Lifecycle::SetListenerDilation { dilation: value } => {
-                    if value != v_dilation {
-                        v_dilation = value;
-                        dilation_changed = true;
-                    }
-                }
-                Lifecycle::UnsetListenerDilation => {
-                    if v_dilation != 1. {
-                        v_dilation = 1.;
-                        dilation_changed = true;
-                    }
-                }
+                Lifecycle::SetListenerDilation { dilation: value } => {}
+                Lifecycle::UnsetListenerDilation => {}
                 Lifecycle::SetEmitterDilation {
                     entity_id,
                     dilation,
-                } => {
-                    let mut found = false;
-                    for (id, v) in emitters_dilation.iter_mut() {
-                        if *id == entity_id {
-                            *v = dilation;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if !found {
-                        emitters_dilation.push((entity_id, dilation));
-                    }
-                    dilation_changed = true;
-                }
-                Lifecycle::UnsetEmitterDilation { entity_id } => {
-                    if let Some(idx) = emitters_dilation
-                        .iter()
-                        .enumerate()
-                        .find_map(|(idx, (id, _))| if *id == entity_id { Some(idx) } else { None })
-                    {
-                        emitters_dilation.remove(idx);
-                        dilation_changed = true;
-                    }
-                }
+                } => {}
+                Lifecycle::UnsetEmitterDilation { entity_id } => {}
                 Lifecycle::Codeware(Codeware::SetPlayerGender { gender: value }) => {
                     gender = Some(value)
                 }
@@ -203,10 +170,6 @@ where
             }
         }
         if should_sync && engine.any_emitter() && synchronization.try_recv().is_ok() {
-            if dilation_changed {
-                engine.sync_dilation(v_dilation, &emitters_dilation);
-                dilation_changed = false;
-            }
             engine.sync_scene();
         }
         if engine.any_handle() && reclamation.try_recv().is_ok() {

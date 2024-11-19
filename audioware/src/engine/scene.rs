@@ -16,14 +16,21 @@ use kira::{
 };
 use parking_lot::RwLock;
 use red4ext_rs::types::{CName, EntityId, GameInstance};
-use smallvec::SmallVec;
 
 use crate::{
     error::{Error, SceneError},
-    get_player, AIActionHelper, AsEntity, AsGameInstance, Entity, GameObject, Vector4,
+    get_player, AIActionHelper, AsEntity, AsGameInstance, AsTimeDilatable, Entity, GameObject,
+    TimeDilatable, Vector4,
 };
 
 use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
+
+#[derive(Debug)]
+pub struct Listener {
+    id: EntityId,
+    handle: ListenerHandle,
+    dilation: Option<f32>,
+}
 
 #[derive(Debug)]
 pub struct Emitter {
@@ -32,7 +39,9 @@ pub struct Emitter {
     last_known_position: Vector4,
     busy: bool,
     pub names: DashSet<Option<CName>>,
+    dilation: Option<f32>,
 }
+
 impl Emitter {
     pub fn store_static(&mut self, event_name: CName, handle: StaticSoundHandle) {
         self.handles.statics.push(Handle { event_name, handle });
@@ -41,6 +50,7 @@ impl Emitter {
         self.handles.streams.push(Handle { event_name, handle });
     }
 }
+
 impl AsRef<EmitterHandle> for Emitter {
     fn as_ref(&self) -> &EmitterHandle {
         &self.handle
@@ -65,10 +75,9 @@ static EMITTERS: LazyLock<RwLock<HashSet<(EntityId, Option<CName>)>>> =
 /// Audio spatial scene.
 pub struct Scene {
     pub emitters: DashMap<EntityId, Emitter>,
-    pub v: ListenerHandle,
-    pub listener_id: EntityId,
+    pub v: Listener,
     pub scene: SpatialSceneHandle,
-    synced: SmallVec<[EntityId; 32]>,
+    dilation_changed: bool,
 }
 
 impl Scene {
@@ -79,30 +88,37 @@ impl Scene {
         let settings = SpatialSceneSettings::default();
         let capacity = settings.emitter_capacity as usize;
         let mut scene = manager.add_spatial_scene(settings)?;
-        let (listener_id, position, orientation) = {
+        let (listener_id, position, orientation, dilation) = {
             let v = get_player(GameInstance::new()).cast::<Entity>().unwrap();
+            let d = get_player(GameInstance::new())
+                .cast::<TimeDilatable>()
+                .unwrap();
             (
                 v.get_entity_id(),
                 v.get_world_position(),
                 v.get_world_orientation(),
+                d.get_time_dilation_value(),
             )
         };
-        let v = scene.add_listener(
+        let handle = scene.add_listener(
             position,
             orientation,
             ListenerSettings::default().track(tracks.sfx.as_ref()),
         )?;
         *EMITTERS.write().deref_mut() = HashSet::with_capacity(capacity);
         Ok(Self {
-            v,
-            listener_id,
+            v: Listener {
+                id: listener_id,
+                handle,
+                dilation: if dilation == 1. { None } else { Some(dilation) },
+            },
             scene,
             emitters: DashMap::with_capacity(capacity),
-            synced: SmallVec::new(),
+            dilation_changed: true,
         })
     }
 
-    fn emitter_infos(&self, entity_id: EntityId) -> Result<(Vector4, bool), Error> {
+    fn emitter_infos(&self, entity_id: EntityId) -> Result<(Vector4, bool, Option<f32>), Error> {
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, entity_id);
         if entity.is_null() {
@@ -115,8 +131,12 @@ impl Scene {
         } else {
             false
         };
+        let dilation = entity
+            .clone()
+            .cast::<TimeDilatable>()
+            .map(|x| x.get_time_dilation_value());
         let position = entity.get_world_position();
-        Ok((position, busy))
+        Ok((position, busy, dilation))
     }
 
     pub fn add_emitter(
@@ -125,7 +145,7 @@ impl Scene {
         emitter_name: Option<CName>,
         settings: Option<EmitterSettings>,
     ) -> Result<(), Error> {
-        if entity_id == self.listener_id {
+        if entity_id == self.v.id {
             return Err(Error::Scene {
                 source: SceneError::InvalidEmitter,
             });
@@ -134,7 +154,7 @@ impl Scene {
             emitter.names.insert(emitter_name);
             return Ok(());
         }
-        let (position, busy) = self.emitter_infos(entity_id)?;
+        let (position, busy, dilation) = self.emitter_infos(entity_id)?;
         let emitter = self
             .scene
             .add_emitter(position, settings.unwrap_or_default())?;
@@ -146,6 +166,7 @@ impl Scene {
             last_known_position: position,
             busy,
             names,
+            dilation,
         };
         self.emitters.insert(entity_id, handle);
         EMITTERS.write().insert((entity_id, emitter_name));
@@ -224,8 +245,8 @@ impl Scene {
             let entity = player.cast::<Entity>().unwrap();
             (entity.get_world_position(), entity.get_world_orientation())
         };
-        self.v.set_position(position, IMMEDIATELY);
-        self.v.set_orientation(orientation, IMMEDIATELY);
+        self.v.handle.set_position(position, IMMEDIATELY);
+        self.v.handle.set_orientation(orientation, IMMEDIATELY);
         Ok(())
     }
 
@@ -233,16 +254,13 @@ impl Scene {
         if self.emitters.is_empty() {
             return Ok(());
         }
-        let mut synced: SmallVec<[EntityId; 32]> = SmallVec::with_capacity(self.emitters.len());
         let remove = |entity_id: EntityId| {
             EMITTERS.write().retain(|(id, _)| *id != entity_id);
             false
         };
+        let mut dilation_changed = false;
         self.emitters.retain(|k, v| {
-            if synced.contains(k) {
-                return true;
-            }
-            let Ok((position, busy)) = self.emitter_infos(*k) else {
+            let Ok((position, busy, dilation)) = self.emitter_infos(*k) else {
                 return remove(*k);
             };
             v.busy = busy;
@@ -250,16 +268,28 @@ impl Scene {
             // weirdly enough if emitter is not updated, sound(s) won't update as expected.
             // e.g. when listener moves but emitter stands still.
             v.handle.set_position(position, IMMEDIATELY);
-            synced.push(*k);
+            if dilation != v.dilation {
+                v.dilation = dilation;
+                dilation_changed = true;
+            }
             true
         });
-        self.synced.clear();
+        if dilation_changed {
+            self.dilation_changed = true;
+        }
         Ok(())
+    }
+
+    fn sync_dilation(&mut self) {
+        self.dilation_changed = false;
     }
 
     pub fn sync(&mut self) -> Result<(), Error> {
         self.sync_listener()?;
         self.sync_emitters()?;
+        if self.dilation_changed {
+            self.sync_dilation();
+        }
         Ok(())
     }
 
@@ -355,17 +385,17 @@ impl Scene {
         });
     }
 
-    pub fn sync_dilation(&mut self, listener: f32, emitters: &[(EntityId, f32)]) {
-        self.emitters
-            .iter_mut()
-            .filter(|x| emitters.iter().any(|(id, _)| id == x.key()))
-            .for_each(|mut x| {
-                x.value_mut().handles.statics.iter_mut().for_each(|x| {
-                    x.handle.set_playback_rate(listener as f64, IMMEDIATELY);
-                });
-                x.value_mut().handles.streams.iter_mut().for_each(|x| {
-                    x.handle.set_playback_rate(listener as f64, IMMEDIATELY);
-                });
-            });
-    }
+    // pub fn sync_dilation(&mut self, listener: f32, emitters: &[(EntityId, f32)]) {
+    //     self.emitters
+    //         .iter_mut()
+    //         .filter(|x| emitters.iter().any(|(id, _)| id == x.key()))
+    //         .for_each(|mut x| {
+    //             x.value_mut().handles.statics.iter_mut().for_each(|x| {
+    //                 x.handle.set_playback_rate(listener as f64, IMMEDIATELY);
+    //             });
+    //             x.value_mut().handles.streams.iter_mut().for_each(|x| {
+    //                 x.handle.set_playback_rate(listener as f64, IMMEDIATELY);
+    //             });
+    //         });
+    // }
 }
