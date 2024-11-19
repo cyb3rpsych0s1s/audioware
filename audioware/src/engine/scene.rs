@@ -69,6 +69,15 @@ pub struct Handles {
     pub streams: Vec<Handle<StreamingSoundHandle<FromFileError>>>,
 }
 
+impl Drop for Handles {
+    fn drop(&mut self) {
+        // bug in kira DecodeScheduler NextStep::Wait
+        self.streams.iter_mut().for_each(|x| {
+            x.handle.stop(IMMEDIATELY);
+        });
+    }
+}
+
 static EMITTERS: LazyLock<RwLock<HashSet<(EntityId, Option<CName>)>>> =
     LazyLock::new(|| RwLock::new(HashSet::new()));
 

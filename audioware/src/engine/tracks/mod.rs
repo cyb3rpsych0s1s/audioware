@@ -18,7 +18,7 @@ use v::V;
 
 use crate::error::Error;
 
-use super::modulators::Modulators;
+use super::{modulators::Modulators, tweens::IMMEDIATELY};
 
 mod ambience;
 mod car_radio;
@@ -40,6 +40,15 @@ pub struct Handle<T> {
 pub struct Handles {
     statics: Vec<Handle<StaticSoundHandle>>,
     streams: Vec<Handle<StreamingSoundHandle<FromFileError>>>,
+}
+
+impl Drop for Handles {
+    fn drop(&mut self) {
+        // bug in kira DecodeScheduler NextStep::Wait
+        self.streams.iter_mut().for_each(|x| {
+            x.handle.stop(IMMEDIATELY);
+        });
+    }
 }
 
 pub struct Tracks {
