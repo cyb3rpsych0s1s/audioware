@@ -126,16 +126,20 @@ impl Scene {
                 source: SceneError::InvalidEmitter,
             });
         }
-        let busy = if entity.is_a::<GameObject>() {
-            AIActionHelper::is_in_workspot(entity.clone().cast::<GameObject>().unwrap())
-        } else {
-            false
-        };
+        let busy = entity
+            .clone()
+            .cast::<GameObject>()
+            .map(AIActionHelper::is_in_workspot)
+            .unwrap_or(false);
+        let position = entity.get_world_position();
+        if !entity.is_a::<TimeDilatable>() {
+            return Ok((position, busy, None));
+        }
         let dilation = entity
             .clone()
             .cast::<TimeDilatable>()
-            .map(|x| x.get_time_dilation_value());
-        let position = entity.get_world_position();
+            .as_ref()
+            .map(AsTimeDilatable::get_time_dilation_value);
         Ok((position, busy, dilation))
     }
 
@@ -254,14 +258,11 @@ impl Scene {
         if self.emitters.is_empty() {
             return Ok(());
         }
-        let remove = |entity_id: EntityId| {
-            EMITTERS.write().retain(|(id, _)| *id != entity_id);
-            false
-        };
         let mut dilation_changed = false;
         self.emitters.retain(|k, v| {
             let Ok((position, busy, dilation)) = self.emitter_infos(*k) else {
-                return remove(*k);
+                EMITTERS.write().retain(|(id, _)| id != k);
+                return false;
             };
             v.busy = busy;
             v.last_known_position = position;
