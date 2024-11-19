@@ -431,6 +431,7 @@ impl Scene {
             .as_ref()
             .map(|x| x.value as f64)
             .unwrap_or(1.); // e.g. 0.7
+        let mut tween = self.v.dilation.as_ref().and_then(|x| x.curve.into_tween());
         let mut rate: f64 = 1.;
         self.emitters.iter_mut().for_each(|mut x| {
             rate = 1. - (1. - listener)
@@ -443,16 +444,16 @@ impl Scene {
                         .map(|x| x.value as f64 / 10.)
                         .unwrap_or(1.)
                 );
-            let tween = x
-                .dilation
-                .as_ref()
-                .and_then(|x| x.curve.into_tween())
-                .unwrap_or(IMMEDIATELY);
+            if tween.is_none() {
+                tween = x.dilation.as_ref().and_then(|x| x.curve.into_tween());
+            }
             x.value_mut().handles.statics.iter_mut().for_each(|x| {
-                x.handle.set_playback_rate(rate, tween);
+                x.handle
+                    .set_playback_rate(rate, tween.unwrap_or(IMMEDIATELY));
             });
             x.value_mut().handles.streams.iter_mut().for_each(|x| {
-                x.handle.set_playback_rate(rate, tween);
+                x.handle
+                    .set_playback_rate(rate, tween.unwrap_or(IMMEDIATELY));
             });
         });
         self.dilation_changed = false;

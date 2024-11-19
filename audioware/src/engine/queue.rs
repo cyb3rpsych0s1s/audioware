@@ -20,6 +20,7 @@ use kira::manager::{
 };
 use red4ext_rs::{
     log::{self},
+    types::CName,
     SdkEnv,
 };
 use std::sync::{Mutex, RwLock};
@@ -107,7 +108,13 @@ where
                     ..
                 } => engine.set_listener_dilation(Some(Dilation {
                     value: dilation,
-                    curve: ease_in_curve,
+                    // sometimes the ease in curve is not defined
+                    curve: if ease_in_curve.as_str() == "None" || ease_in_curve.as_str().is_empty()
+                    {
+                        CName::new("slowMoEaseIn")
+                    } else {
+                        ease_in_curve
+                    },
                 })),
                 Lifecycle::UnsetListenerDilation { ease_out_curve, .. } => engine
                     .set_listener_dilation(Some(Dilation {

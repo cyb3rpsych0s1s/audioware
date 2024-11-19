@@ -28,20 +28,20 @@ pub const DEFAULT: Tween = Tween {
 
 pub const DILATION_LINEAR: Tween = Tween {
     start_time: StartTime::Immediate,
-    duration: Duration::from_millis(400),
+    duration: Duration::from_millis(800),
     easing: Easing::Linear,
 };
 
 pub const DILATION_EASE_IN: Tween = Tween {
     start_time: StartTime::Immediate,
-    duration: Duration::from_millis(400),
-    easing: Easing::OutPowf(0.6),
+    duration: Duration::from_millis(800),
+    easing: Easing::OutPowi(3),
 };
 
 pub const DILATION_EASE_OUT: Tween = Tween {
     start_time: StartTime::Immediate,
-    duration: Duration::from_secs(2),
-    easing: Easing::InPowf(3.),
+    duration: Duration::from_millis(1200),
+    easing: Easing::InPowi(3),
 };
 
 impl ToTween for CName {
