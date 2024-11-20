@@ -1,6 +1,6 @@
-use std::{collections::HashSet, ops::DerefMut, sync::LazyLock};
+use std::{collections::HashSet, sync::LazyLock};
 
-use dashmap::{DashMap, DashSet};
+use dashmap::{iter::IterMut, mapref::one::RefMut, DashMap, DashSet};
 use kira::{
     manager::{backend::Backend, AudioManager},
     sound::{
@@ -83,10 +83,72 @@ static EMITTERS: LazyLock<RwLock<HashSet<(EntityId, Option<CName>)>>> =
 
 /// Audio spatial scene.
 pub struct Scene {
-    pub emitters: DashMap<EntityId, Emitter>,
+    pub emitters: Emitters,
     pub v: Listener,
     pub scene: SpatialSceneHandle,
     dilation_changed: bool,
+}
+
+pub struct Emitters(DashMap<EntityId, Emitter>);
+
+impl Emitters {
+    fn with_capacity(capacity: usize) -> Self {
+        *EMITTERS.write() = HashSet::with_capacity(capacity);
+        Self(DashMap::with_capacity(capacity))
+    }
+    fn get_mut(&mut self, entity_id: &EntityId) -> Option<RefMut<'_, EntityId, Emitter>> {
+        self.0.get_mut(entity_id)
+    }
+    fn insert(
+        &mut self,
+        entity_id: EntityId,
+        emitter_name: Option<CName>,
+        value: Emitter,
+    ) -> Option<Emitter> {
+        let inserted = self.0.insert(entity_id, value);
+        if inserted.is_none() {
+            EMITTERS.write().insert((entity_id, emitter_name));
+        }
+        inserted
+    }
+    fn remove(&mut self, entity_id: EntityId) -> bool {
+        let mut removed = false;
+        self.0.retain(|k, _| {
+            if *k == entity_id {
+                removed = true;
+                false
+            } else {
+                true
+            }
+        });
+        if !removed {
+            return false;
+        }
+        EMITTERS.write().retain(|(id, _)| *id != entity_id);
+        true
+    }
+    pub fn iter_mut(&mut self) -> IterMut<EntityId, Emitter> {
+        self.0.iter_mut()
+    }
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+    fn retain<F>(&mut self, f: F)
+    where
+        F: FnMut(&EntityId, &mut Emitter) -> bool,
+    {
+        self.0.retain(f)
+    }
+    fn clear(&mut self) {
+        self.0.clear();
+        EMITTERS.write().clear();
+    }
+}
+
+impl Drop for Emitters {
+    fn drop(&mut self) {
+        EMITTERS.write().clear();
+    }
 }
 
 impl Scene {
@@ -114,7 +176,6 @@ impl Scene {
             orientation,
             ListenerSettings::default().track(tracks.sfx.as_ref()),
         )?;
-        *EMITTERS.write().deref_mut() = HashSet::with_capacity(capacity);
         Ok(Self {
             v: Listener {
                 id: listener_id,
@@ -129,50 +190,9 @@ impl Scene {
                 },
             },
             scene,
-            emitters: DashMap::with_capacity(capacity),
+            emitters: Emitters::with_capacity(capacity),
             dilation_changed: true,
         })
-    }
-
-    fn emitter_infos(&self, entity_id: EntityId) -> Result<(Vector4, bool), Error> {
-        let game = GameInstance::new();
-        let entity = GameInstance::find_entity_by_id(game, entity_id);
-        if entity.is_null() {
-            return Err(Error::Scene {
-                source: SceneError::MissingEmitter { entity_id },
-            });
-        }
-        let busy = entity
-            .clone()
-            .cast::<GameObject>()
-            .map(AIActionHelper::is_in_workspot)
-            .unwrap_or(false);
-        let position = entity.get_world_position();
-        Ok((position, busy))
-    }
-
-    fn emitter_full_infos(
-        &self,
-        entity_id: EntityId,
-    ) -> Result<(Vector4, bool, Option<f32>, Option<EmitterDistances>), Error> {
-        let (position, busy) = self.emitter_infos(entity_id)?;
-        let game = GameInstance::new();
-        let entity = GameInstance::find_entity_by_id(game, entity_id);
-        if entity.is_null() {
-            return Err(Error::Scene {
-                source: SceneError::MissingEmitter { entity_id },
-            });
-        }
-        let distances = entity.get_emitter_distances();
-        if !entity.is_a::<TimeDilatable>() {
-            return Ok((position, busy, None, distances));
-        }
-        let dilation = entity
-            .clone()
-            .cast::<TimeDilatable>()
-            .as_ref()
-            .map(AsTimeDilatable::get_time_dilation_value);
-        Ok((position, busy, dilation, distances))
     }
 
     pub fn add_emitter(
@@ -190,7 +210,7 @@ impl Scene {
             emitter.names.insert(emitter_name);
             return Ok(());
         }
-        let (position, busy, dilation, distances) = self.emitter_full_infos(entity_id)?;
+        let (position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
         let settings = match settings {
             Some(settings)
                 if settings.distances.min_distance == 0.
@@ -215,30 +235,15 @@ impl Scene {
                 curve: CName::default(),
             }),
         };
-        self.emitters.insert(entity_id, handle);
-        EMITTERS.write().insert((entity_id, emitter_name));
+        self.emitters.insert(entity_id, emitter_name, handle);
         lifecycle!("added emitter {entity_id:?}");
         Ok(())
     }
 
     pub fn remove_emitter(&mut self, entity_id: EntityId) -> Result<bool, Error> {
-        let removal: Vec<_> = self
-            .emitters
-            .iter()
-            .filter_map(|x| {
-                if *x.key() == entity_id {
-                    Some(*x.key())
-                } else {
-                    None
-                }
-            })
-            .collect();
-        if removal.is_empty() {
-            return Ok(false);
+        if self.emitters.remove(entity_id) {
+            lifecycle!("removed emitter {entity_id:?}");
         }
-        self.emitters.retain(|k, _| !removal.contains(k));
-        EMITTERS.write().retain(|(id, _)| *id != entity_id);
-        lifecycle!("removed emitter {entity_id:?}");
         Ok(true)
     }
 
@@ -301,9 +306,8 @@ impl Scene {
         if self.emitters.is_empty() {
             return Ok(());
         }
-        let mut dilation_changed = false;
         self.emitters.retain(|k, v| {
-            let Ok((position, busy)) = self.emitter_infos(*k) else {
+            let Ok((position, busy)) = Emitter::infos(*k) else {
                 EMITTERS.write().retain(|(id, _)| id != k);
                 return false;
             };
@@ -322,9 +326,9 @@ impl Scene {
             // }
             true
         });
-        if dilation_changed {
-            self.dilation_changed = true;
-        }
+        // if dilation_changed {
+        //     self.dilation_changed = true;
+        // }
         Ok(())
     }
 
@@ -366,7 +370,6 @@ impl Scene {
 
     pub fn clear(&mut self) {
         self.emitters.clear();
-        EMITTERS.write().clear();
     }
 
     pub fn pause(&mut self, tween: Tween) {
@@ -446,7 +449,11 @@ impl Scene {
     pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: Option<Dilation>) {
         if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
             if dilation.as_ref().map(|x| x.value).unwrap_or(1.)
-                != emitter.last_dilation.as_ref().map(|x| x.value).unwrap_or(1.)
+                != emitter
+                    .last_dilation
+                    .as_ref()
+                    .map(|x| x.value)
+                    .unwrap_or(1.)
             {
                 emitter.last_dilation = dilation;
                 self.dilation_changed = true;
@@ -465,7 +472,11 @@ impl Scene {
             .as_ref()
             .map(|x| x.value as f64)
             .unwrap_or(1.); // e.g. 0.7
-        let mut tween = self.v.last_dilation.as_ref().and_then(|x| x.curve.into_tween());
+        let mut tween = self
+            .v
+            .last_dilation
+            .as_ref()
+            .and_then(|x| x.curve.into_tween());
         let mut rate: f64 = 1.;
         self.emitters.iter_mut().for_each(|mut x| {
             rate = 1. - (1. - listener)
@@ -491,6 +502,48 @@ impl Scene {
             });
         });
         self.dilation_changed = false;
+    }
+}
+
+impl Emitter {
+    fn infos(entity_id: EntityId) -> Result<(Vector4, bool), Error> {
+        let game = GameInstance::new();
+        let entity = GameInstance::find_entity_by_id(game, entity_id);
+        if entity.is_null() {
+            return Err(Error::Scene {
+                source: SceneError::MissingEmitter { entity_id },
+            });
+        }
+        let busy = entity
+            .clone()
+            .cast::<GameObject>()
+            .map(AIActionHelper::is_in_workspot)
+            .unwrap_or(false);
+        let position = entity.get_world_position();
+        Ok((position, busy))
+    }
+
+    fn full_infos(
+        entity_id: EntityId,
+    ) -> Result<(Vector4, bool, Option<f32>, Option<EmitterDistances>), Error> {
+        let (position, busy) = Self::infos(entity_id)?;
+        let game = GameInstance::new();
+        let entity = GameInstance::find_entity_by_id(game, entity_id);
+        if entity.is_null() {
+            return Err(Error::Scene {
+                source: SceneError::MissingEmitter { entity_id },
+            });
+        }
+        let distances = entity.get_emitter_distances();
+        if !entity.is_a::<TimeDilatable>() {
+            return Ok((position, busy, None, distances));
+        }
+        let dilation = entity
+            .clone()
+            .cast::<TimeDilatable>()
+            .as_ref()
+            .map(AsTimeDilatable::get_time_dilation_value);
+        Ok((position, busy, dilation, distances))
     }
 }
 

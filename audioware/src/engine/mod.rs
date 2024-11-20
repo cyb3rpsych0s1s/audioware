@@ -178,7 +178,7 @@ where
         spoken: SpokenLocale,
         gender: Option<PlayerGender>,
     ) {
-        if let Some(ref scene) = self.scene {
+        if let Some(ref mut scene) = self.scene {
             if let Ok(key) = self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
                 if let Some(ref mut emitter) = scene.emitters.iter_mut().find(|x| {
                     *x.key() == entity_id && x.value().names.contains(&Some(emitter_name))
