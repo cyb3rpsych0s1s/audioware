@@ -584,8 +584,8 @@ impl AsEntityExt for Ref<Entity> {
                     }
                 }
                 GamedataNpcType::Android | GamedataNpcType::Human => EmitterDistances {
-                    min_distance: 2.,
-                    max_distance: 16.,
+                    min_distance: 3.,
+                    max_distance: 20.,
                 },
                 GamedataNpcType::Cerberus | GamedataNpcType::Chimera | GamedataNpcType::Mech => {
                     EmitterDistances {
