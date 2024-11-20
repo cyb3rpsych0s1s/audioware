@@ -426,6 +426,7 @@ impl Scene {
     pub fn set_listener_dilation(&mut self, dilation: DilationUpdate) -> bool {
         if self.v.dilation.last.as_ref() != Some(&dilation) {
             self.v.dilation.last = Some(dilation);
+            self.sync_dilation();
             return true;
         }
         false
@@ -434,19 +435,24 @@ impl Scene {
     pub fn unset_listener_dilation(&mut self, dilation: DilationUpdate) -> bool {
         if self.v.dilation.last.as_ref() != Some(&dilation) {
             self.v.dilation.last = Some(dilation);
+            self.sync_dilation();
             return true;
         }
         false
     }
 
     pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: DilationUpdate) -> bool {
+        let mut updated = false;
         if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
             if emitter.dilation.last.as_ref() != Some(&dilation) {
                 emitter.dilation.last = Some(dilation);
-                return true;
+                updated = true;
             }
         }
-        false
+        if updated {
+            self.sync_dilation();
+        }
+        updated
     }
 
     pub fn unset_emitter_dilation(
@@ -454,13 +460,17 @@ impl Scene {
         entity_id: EntityId,
         dilation: DilationUpdate,
     ) -> bool {
+        let mut updated = false;
         if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
             if emitter.dilation.last.as_ref() != Some(&dilation) {
                 emitter.dilation.last = Some(dilation);
-                return true;
+                updated = true;
             }
         }
-        false
+        if updated {
+            self.sync_dilation();
+        }
+        updated
     }
 
     fn sync_dilation(&mut self) {

@@ -319,31 +319,47 @@ where
     }
 
     pub fn set_listener_dilation(&mut self, value: DilationUpdate) {
-        // match self.scene {
-        //     Some(ref mut scene) => scene.set_listener_dilation(value),
-        //     None => lifecycle!("scene is not initialized"),
-        // }
+        match self.scene {
+            Some(ref mut scene) => {
+                if scene.set_listener_dilation(value) {
+                    // TODO: update tracks
+                }
+            }
+            None => lifecycle!("scene is not initialized"),
+        }
     }
 
     pub fn unset_listener_dilation(&mut self, value: DilationUpdate) {
-        // match self.scene {
-        //     Some(ref mut scene) => scene.unset_listener_dilation(value),
-        //     None => lifecycle!("scene is not initialized"),
-        // }
+        match self.scene {
+            Some(ref mut scene) => {
+                if scene.unset_listener_dilation(value) {
+                    // TODO: update tracks
+                }
+            }
+            None => lifecycle!("scene is not initialized"),
+        }
     }
 
     pub fn set_emitter_dilation(&mut self, entity_id: EntityId, value: DilationUpdate) {
-        // match self.scene {
-        //     Some(ref mut scene) => scene.set_emitter_dilation(entity_id, value),
-        //     None => lifecycle!("scene is not initialized"),
-        // }
+        match self.scene {
+            Some(ref mut scene) => {
+                if scene.set_emitter_dilation(entity_id, value) {
+                    // TODO: update tracks
+                }
+            }
+            None => lifecycle!("scene is not initialized"),
+        }
     }
 
     pub fn unset_emitter_dilation(&mut self, entity_id: EntityId, value: DilationUpdate) {
-        // match self.scene {
-        //     Some(ref mut scene) => scene.unset_emitter_dilation(entity_id),
-        //     None => lifecycle!("scene is not initialized"),
-        // }
+        match self.scene {
+            Some(ref mut scene) => {
+                if scene.unset_emitter_dilation(entity_id, value) {
+                    // TODO: update tracks
+                }
+            }
+            None => lifecycle!("scene is not initialized"),
+        }
     }
 
     pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId) {
