@@ -444,66 +444,6 @@ impl ToOutputDestination for Id {
     }
 }
 
-// pub struct Dilations {
-//     listener: ListenerDilation,
-//     emitters: dashmap::DashMap<EntityId, Dilation>,
-// }
-
-// impl Dilations {
-//     fn with_capacity(capacity: usize) -> Self {
-//         Self {
-//             listener: ListenerDilation::new(),
-//             emitters: dashmap::DashMap::with_capacity(capacity),
-//         }
-//     }
-
-//     fn remove_emitter(&mut self, entity_id: EntityId) {
-//         self.emitters.remove(&entity_id);
-//     }
-
-//     fn set_listener(&mut self, dilation: SetListener) {
-//         if self.listener != dilation {
-//             self.listener = dilation.into();
-//         }
-//     }
-
-//     fn unset_listener(&mut self, dilation: UnsetListener) {
-//         if self.listener != dilation {
-//             self.listener = dilation.into();
-//         }
-//     }
-
-//     fn set_emitter(&mut self, dilation: SetEmitter) {
-//         if let Some(ref mut x) = self
-//             .emitters
-//             .iter_mut()
-//             .find(|x| *x.key() == dilation.entity_id)
-//         {
-//             let v = x.value_mut();
-//             if *v != dilation {
-//                 *v = dilation.into();
-//             }
-//         } else {
-//             self.emitters.insert(dilation.entity_id, dilation.into());
-//         }
-//     }
-
-//     fn unset_emitter(&mut self, dilation: UnsetEmitter) {
-//         if let Some(ref mut x) = self
-//             .emitters
-//             .iter_mut()
-//             .find(|x| *x.key() == dilation.entity_id)
-//         {
-//             let v = x.value_mut();
-//             if *v != dilation {
-//                 *v = dilation.into();
-//             }
-//         } else {
-//             self.emitters.insert(dilation.entity_id, dilation.into());
-//         }
-//     }
-// }
-
 #[derive(Debug, Clone)]
 pub enum DilationUpdate {
     Set {

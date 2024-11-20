@@ -469,24 +469,24 @@ impl Scene {
     }
 
     fn sync_dilation(&mut self) {
-        let listener = self.v.dilation.value as f64; // e.g. 0.7
-        let mut tween = self.v.dilation.last.as_ref().map(|x| x.tween_curve());
+        let listener = self.v.dilation.dilation(); // e.g. 0.7
+        let mut tween = self.v.dilation.tween();
         let mut rate: f64 = 1.;
         self.emitters.iter_mut().for_each(|mut x| {
             rate = 1. - (1. - listener)
                 + (
                     // e.g. 5 or 7
-                    1. - x
-                        .dilation
+                    x.dilation
                         .last
                         .as_ref()
                         .filter(|x| x.dilation() != 1.)
                         .map(|x| x.dilation() / 10.)
-                        .unwrap_or(1.)
+                        .unwrap_or(0.)
                 );
             if tween.is_none() {
-                tween = x.dilation.last.as_ref().map(|x| x.tween_curve());
+                tween = x.dilation.tween();
             }
+            lifecycle!("sync emitter handle dilation: {rate} {tween:?}");
             x.value_mut().handles.statics.iter_mut().for_each(|x| {
                 x.handle
                     .set_playback_rate(rate, tween.unwrap_or(IMMEDIATELY));
@@ -512,6 +512,15 @@ pub struct Dilation {
 impl Dilation {
     fn new(value: f32) -> Self {
         Self { value, last: None }
+    }
+    pub fn dilation(&self) -> f64 {
+        match self.last {
+            Some(ref update) => update.dilation(),
+            None => self.value as f64,
+        }
+    }
+    pub fn tween(&self) -> Option<Tween> {
+        self.last.as_ref().map(|x| x.tween_curve())
     }
 }
 
