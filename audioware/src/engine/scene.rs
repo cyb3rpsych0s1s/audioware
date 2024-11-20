@@ -86,7 +86,6 @@ pub struct Scene {
     pub emitters: Emitters,
     pub v: Listener,
     pub scene: SpatialSceneHandle,
-    dilation_changed: bool,
 }
 
 pub struct Emitters(DashMap<EntityId, Emitter>);
@@ -171,7 +170,7 @@ impl Scene {
         let settings = SpatialSceneSettings::default();
         let capacity = settings.emitter_capacity as usize;
         let mut scene = manager.add_spatial_scene(settings)?;
-        let (listener_id, position, orientation, dilation) = {
+        let (id, position, orientation, dilation) = {
             let v = get_player(GameInstance::new()).cast::<Entity>().unwrap();
             let d = get_player(GameInstance::new())
                 .cast::<TimeDilatable>()
@@ -190,13 +189,12 @@ impl Scene {
         )?;
         Ok(Self {
             v: Listener {
-                id: listener_id,
+                id,
                 handle,
                 dilation: Dilation::new(dilation),
             },
             scene,
             emitters: Emitters::with_capacity(capacity),
-            dilation_changed: true,
         })
     }
 
@@ -326,9 +324,6 @@ impl Scene {
     pub fn sync(&mut self) -> Result<(), Error> {
         self.sync_listener()?;
         self.sync_emitters()?;
-        if self.dilation_changed {
-            self.sync_dilation();
-        }
         Ok(())
     }
 
@@ -423,29 +418,29 @@ impl Scene {
         });
     }
 
-    pub fn set_listener_dilation(&mut self, dilation: DilationUpdate) -> bool {
-        if self.v.dilation.last.as_ref() != Some(&dilation) {
-            self.v.dilation.last = Some(dilation);
+    pub fn set_listener_dilation(&mut self, dilation: &DilationUpdate) -> bool {
+        if self.v.dilation.last.as_ref() != Some(dilation) {
+            self.v.dilation.last = Some(dilation.clone());
             self.sync_dilation();
             return true;
         }
         false
     }
 
-    pub fn unset_listener_dilation(&mut self, dilation: DilationUpdate) -> bool {
-        if self.v.dilation.last.as_ref() != Some(&dilation) {
-            self.v.dilation.last = Some(dilation);
+    pub fn unset_listener_dilation(&mut self, dilation: &DilationUpdate) -> bool {
+        if self.v.dilation.last.as_ref() != Some(dilation) {
+            self.v.dilation.last = Some(dilation.clone());
             self.sync_dilation();
             return true;
         }
         false
     }
 
-    pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: DilationUpdate) -> bool {
+    pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: &DilationUpdate) -> bool {
         let mut updated = false;
         if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
-            if emitter.dilation.last.as_ref() != Some(&dilation) {
-                emitter.dilation.last = Some(dilation);
+            if emitter.dilation.last.as_ref() != Some(dilation) {
+                emitter.dilation.last = Some(dilation.clone());
                 updated = true;
             }
         }
@@ -458,12 +453,12 @@ impl Scene {
     pub fn unset_emitter_dilation(
         &mut self,
         entity_id: EntityId,
-        dilation: DilationUpdate,
+        dilation: &DilationUpdate,
     ) -> bool {
         let mut updated = false;
         if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
-            if emitter.dilation.last.as_ref() != Some(&dilation) {
-                emitter.dilation.last = Some(dilation);
+            if emitter.dilation.last.as_ref() != Some(dilation) {
+                emitter.dilation.last = Some(dilation.clone());
                 updated = true;
             }
         }
@@ -486,7 +481,7 @@ impl Scene {
                         .last
                         .as_ref()
                         .filter(|x| x.dilation() != 1.)
-                        .map(|x| x.dilation() as f64 / 10.)
+                        .map(|x| x.dilation() / 10.)
                         .unwrap_or(1.)
                 );
             if tween.is_none() {
@@ -501,7 +496,10 @@ impl Scene {
                     .set_playback_rate(rate, tween.unwrap_or(IMMEDIATELY));
             });
         });
-        // self.dilation_changed = false;
+    }
+
+    pub fn listener_id(&self) -> EntityId {
+        self.v.id
     }
 }
 

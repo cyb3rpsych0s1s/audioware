@@ -321,8 +321,8 @@ where
     pub fn set_listener_dilation(&mut self, value: DilationUpdate) {
         match self.scene {
             Some(ref mut scene) => {
-                if scene.set_listener_dilation(value) {
-                    // TODO: update tracks
+                if scene.set_listener_dilation(&value) {
+                    self.tracks.sync_dilation(scene.listener_id(), value);
                 }
             }
             None => lifecycle!("scene is not initialized"),
@@ -332,8 +332,8 @@ where
     pub fn unset_listener_dilation(&mut self, value: DilationUpdate) {
         match self.scene {
             Some(ref mut scene) => {
-                if scene.unset_listener_dilation(value) {
-                    // TODO: update tracks
+                if scene.unset_listener_dilation(&value) {
+                    self.tracks.sync_dilation(scene.listener_id(), value);
                 }
             }
             None => lifecycle!("scene is not initialized"),
@@ -343,8 +343,8 @@ where
     pub fn set_emitter_dilation(&mut self, entity_id: EntityId, value: DilationUpdate) {
         match self.scene {
             Some(ref mut scene) => {
-                if scene.set_emitter_dilation(entity_id, value) {
-                    // TODO: update tracks
+                if scene.set_emitter_dilation(entity_id, &value) {
+                    self.tracks.sync_dilation(entity_id, value);
                 }
             }
             None => lifecycle!("scene is not initialized"),
@@ -354,8 +354,8 @@ where
     pub fn unset_emitter_dilation(&mut self, entity_id: EntityId, value: DilationUpdate) {
         match self.scene {
             Some(ref mut scene) => {
-                if scene.unset_emitter_dilation(entity_id, value) {
-                    // TODO: update tracks
+                if scene.unset_emitter_dilation(entity_id, &value) {
+                    self.tracks.sync_dilation(entity_id, value);
                 }
             }
             None => lifecycle!("scene is not initialized"),
@@ -504,7 +504,7 @@ impl ToOutputDestination for Id {
 //     }
 // }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum DilationUpdate {
     Set {
         value: f32,
@@ -563,146 +563,3 @@ impl PartialEq for DilationUpdate {
         }
     }
 }
-
-// impl From<SetListener> for Dilation {
-//     fn from(
-//         SetListener {
-//             value,
-//             reason,
-//             ease_in_curve,
-//         }: SetListener,
-//     ) -> Self {
-//         Self::Set {
-//             value,
-//             reason,
-//             ease_in_curve,
-//         }
-//     }
-// }
-
-// impl From<UnsetListener> for Dilation {
-//     fn from(
-//         UnsetListener {
-//             reason,
-//             ease_out_curve,
-//         }: UnsetListener,
-//     ) -> Self {
-//         Self::Unset {
-//             reason,
-//             ease_out_curve,
-//         }
-//     }
-// }
-
-// impl From<SetEmitter> for Dilation {
-//     fn from(
-//         SetEmitter {
-//             value,
-//             reason,
-//             ease_in_curve,
-//             ..
-//         }: SetEmitter,
-//     ) -> Self {
-//         Self::Set {
-//             value,
-//             reason,
-//             ease_in_curve,
-//         }
-//     }
-// }
-
-// impl From<UnsetEmitter> for Dilation {
-//     fn from(UnsetEmitter { ease_out_curve, .. }: UnsetEmitter) -> Self {
-//         Self::Unset {
-//             reason: CName::undefined(),
-//             ease_out_curve,
-//         }
-//     }
-// }
-
-// impl PartialEq<SetEmitter> for Dilation {
-//     fn eq(&self, other: &SetEmitter) -> bool {
-//         match self {
-//             Self::Set { value, reason, .. } => *value == other.value && *reason == other.reason,
-//             Self::Unset { .. } => false,
-//         }
-//     }
-// }
-
-// impl PartialEq<UnsetEmitter> for Dilation {
-//     fn eq(&self, _: &UnsetEmitter) -> bool {
-//         match self {
-//             Self::Set { .. } => false,
-//             Self::Unset { .. } => true,
-//         }
-//     }
-// }
-
-// pub struct EmitterDilation {
-//     entity_id: EntityId,
-//     dilation: Dilation,
-// }
-
-// pub struct ListenerDilation(Option<Dilation>);
-
-// impl ListenerDilation {
-//     fn new() -> Self {
-//         Self(None)
-//     }
-// }
-
-// impl PartialEq<SetListener> for ListenerDilation {
-//     fn eq(&self, other: &SetListener) -> bool {
-//         match self.0 {
-//             Some(Dilation::Set { value, reason, .. }) => {
-//                 value == other.value && reason == other.reason
-//             }
-//             None | Some(Dilation::Unset { .. }) => false,
-//         }
-//     }
-// }
-
-// impl PartialEq<UnsetListener> for ListenerDilation {
-//     fn eq(&self, other: &UnsetListener) -> bool {
-//         match self.0 {
-//             Some(Dilation::Unset { reason, .. }) => reason == other.reason,
-//             None | Some(Dilation::Set { .. }) => false,
-//         }
-//     }
-// }
-
-// impl<T> From<T> for ListenerDilation
-// where
-//     T: Into<Dilation>,
-// {
-//     fn from(value: T) -> Self {
-//         Self(Some(value.into()))
-//     }
-// }
-
-// #[derive(Debug)]
-// pub struct SetListener {
-//     value: f32,
-//     reason: CName,
-//     ease_in_curve: CName,
-// }
-
-// #[derive(Debug)]
-// pub struct UnsetListener {
-//     reason: CName,
-//     ease_out_curve: CName,
-// }
-
-// #[derive(Debug)]
-// pub struct SetEmitter {
-//     value: f32,
-//     entity_id: EntityId,
-//     reason: CName,
-//     ease_in_curve: CName,
-// }
-
-// #[derive(Debug)]
-// pub struct UnsetEmitter {
-//     entity_id: EntityId,
-//     ease_out_curve: CName,
-// }

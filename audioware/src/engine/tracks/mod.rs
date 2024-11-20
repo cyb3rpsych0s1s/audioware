@@ -18,7 +18,7 @@ use v::V;
 
 use crate::error::Error;
 
-use super::{modulators::Modulators, tweens::IMMEDIATELY};
+use super::{modulators::Modulators, tweens::IMMEDIATELY, DilationUpdate};
 
 mod ambience;
 mod car_radio;
@@ -174,6 +174,24 @@ impl Tracks {
             })
             .for_each(|x| {
                 x.handle.stop(tween);
+            });
+    }
+    pub fn sync_dilation(&mut self, entity_id: EntityId, update: DilationUpdate) {
+        self.handles
+            .statics
+            .iter_mut()
+            .filter(|x| x.entity_id == Some(entity_id))
+            .for_each(|x| {
+                x.handle
+                    .set_playback_rate(update.dilation(), update.tween_curve());
+            });
+        self.handles
+            .streams
+            .iter_mut()
+            .filter(|x| x.entity_id == Some(entity_id))
+            .for_each(|x| {
+                x.handle
+                    .set_playback_rate(update.dilation(), update.tween_curve());
             });
     }
 }
