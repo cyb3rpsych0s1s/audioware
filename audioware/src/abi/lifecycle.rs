@@ -39,7 +39,7 @@ pub enum Lifecycle {
         value: f64,
     },
     SetListenerDilation {
-        dilation: f32,
+        value: f32,
         reason: CName,
         ease_in_curve: CName,
     },
@@ -50,11 +50,10 @@ pub enum Lifecycle {
     SetEmitterDilation {
         reason: CName,
         entity_id: EntityId,
-        dilation: f32,
+        value: f32,
         ease_in_curve: CName,
     },
     UnsetEmitterDilation {
-        reason: CName,
         entity_id: EntityId,
         ease_out_curve: CName,
     },
@@ -90,18 +89,18 @@ impl std::fmt::Display for Lifecycle {
                 write!(f, "set volume {} {value}", setting.as_str())
             }
             Lifecycle::Codeware(x) => write!(f, "{x}"),
-            Lifecycle::SetListenerDilation { dilation, reason, ease_in_curve } => {
+            Lifecycle::SetListenerDilation { value: dilation, reason, ease_in_curve } => {
                 write!(f, "set listener dilation {dilation}, reason: {reason}, curve: {ease_in_curve}")
             }
             Lifecycle::UnsetListenerDilation { reason, ease_out_curve } => write!(f, "unset listener dilation, reason: {reason}, curve: {ease_out_curve}"),
             Lifecycle::SetEmitterDilation {
                 reason,
                 entity_id,
-                dilation,
+                value: dilation,
                 ease_in_curve,
             } => write!(f, "set emitter dilation {dilation}, reason: {reason}, curve: {ease_in_curve} [{entity_id:?}]"),
-            Lifecycle::UnsetEmitterDilation { reason,entity_id,  ease_out_curve } => {
-                write!(f, "unset emitter dilation, reason: {reason}, curve: {ease_out_curve} [{entity_id:?}]")
+            Lifecycle::UnsetEmitterDilation { entity_id,  ease_out_curve } => {
+                write!(f, "unset emitter dilation, curve: {ease_out_curve} [{entity_id:?}]")
             }
         }
     }

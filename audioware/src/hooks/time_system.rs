@@ -54,7 +54,7 @@ unsafe extern "C" fn detour_set(
     );
     notify(Lifecycle::SetListenerDilation {
         reason,
-        dilation,
+        value: dilation,
         ease_in_curve,
     });
 

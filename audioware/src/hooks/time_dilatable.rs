@@ -2,7 +2,7 @@ use std::{mem, ops::Not};
 
 use red4ext_rs::types::{CName, IScriptable, StackFrame};
 
-use crate::{attach_hook, utils::intercept, Entity};
+use crate::{attach_hook, engine::queue::notify, utils::intercept, Entity};
 
 use red4ext_rs::{SdkEnv, VoidPtr};
 
@@ -65,6 +65,14 @@ unsafe extern "C" fn detour_set(
 - ignore_global_dilation: {ignore_global_dilation}
 - use_real_time: {use_real_time}",
     );
+    if let Some(entity_id) = x {
+        notify(crate::abi::lifecycle::Lifecycle::SetEmitterDilation {
+            reason,
+            entity_id,
+            value: dilation,
+            ease_in_curve,
+        });
+    }
     cb(i, f, a3, a4);
 }
 
@@ -92,5 +100,11 @@ unsafe extern "C" fn detour_unset(
         "TimeDilatable::UnsetIndividualTimeDilation {x:?}:
 - ease_out_curve: {ease_out_curve}",
     );
+    if let Some(entity_id) = x {
+        notify(crate::abi::lifecycle::Lifecycle::UnsetEmitterDilation {
+            entity_id,
+            ease_out_curve,
+        });
+    }
     cb(i, f, a3, a4);
 }

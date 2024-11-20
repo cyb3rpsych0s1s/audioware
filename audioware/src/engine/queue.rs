@@ -31,7 +31,7 @@ use crate::{
         lifecycle::{Board, Codeware, Lifecycle, Session, System},
     },
     config::BufferSize,
-    engine::Dilation,
+    engine::DilationUpdate,
     error::Error,
     utils::{fails, lifecycle},
 };
@@ -103,46 +103,43 @@ where
                     break 'game;
                 }
                 Lifecycle::SetListenerDilation {
-                    dilation,
+                    value,
+                    reason,
                     ease_in_curve,
-                    ..
-                } => engine.set_listener_dilation(Some(Dilation {
-                    value: dilation,
-                    // sometimes the ease in curve is not defined
-                    curve: if ease_in_curve.as_str() == "None" || ease_in_curve.as_str().is_empty()
-                    {
-                        CName::new("slowMoEaseIn")
-                    } else {
-                        ease_in_curve
-                    },
-                })),
-                Lifecycle::UnsetListenerDilation { ease_out_curve, .. } => engine
-                    .set_listener_dilation(Some(Dilation {
-                        value: 1.,
-                        curve: ease_out_curve,
-                    })),
+                } => engine.set_listener_dilation(DilationUpdate::Set {
+                    value,
+                    reason,
+                    ease_in_curve,
+                }),
+                Lifecycle::UnsetListenerDilation {
+                    reason,
+                    ease_out_curve,
+                } => engine.unset_listener_dilation(DilationUpdate::Unset {
+                    reason,
+                    ease_out_curve,
+                }),
                 Lifecycle::SetEmitterDilation {
                     entity_id,
-                    dilation,
+                    value,
                     ease_in_curve,
-                    ..
+                    reason,
                 } => engine.set_emitter_dilation(
                     entity_id,
-                    Some(Dilation {
-                        value: dilation,
-                        curve: ease_in_curve,
-                    }),
+                    DilationUpdate::Set {
+                        reason,
+                        value,
+                        ease_in_curve,
+                    },
                 ),
                 Lifecycle::UnsetEmitterDilation {
                     entity_id,
                     ease_out_curve,
-                    ..
-                } => engine.set_emitter_dilation(
+                } => engine.unset_emitter_dilation(
                     entity_id,
-                    Some(Dilation {
-                        value: 1.,
-                        curve: ease_out_curve,
-                    }),
+                    DilationUpdate::Unset {
+                        reason: CName::undefined(),
+                        ease_out_curve,
+                    },
                 ),
                 Lifecycle::Codeware(Codeware::SetPlayerGender { gender: value }) => {
                     gender = Some(value)

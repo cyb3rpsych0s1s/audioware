@@ -20,16 +20,16 @@ use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 use crate::{
     error::{Error, SceneError},
     get_player, AIActionHelper, AsEntity, AsGameInstance, AsScriptedPuppet, AsTimeDilatable,
-    Entity, GameObject, ScriptedPuppet, TimeDilatable, ToTween, Vector4,
+    Entity, GameObject, GamedataNpcType, ScriptedPuppet, TimeDilatable, Vector4,
 };
 
-use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY, Dilation};
+use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY, DilationUpdate};
 
 #[derive(Debug)]
 pub struct Listener {
     id: EntityId,
     handle: ListenerHandle,
-    last_dilation: Option<Dilation>,
+    dilation: Dilation,
 }
 
 #[derive(Debug)]
@@ -39,7 +39,7 @@ pub struct Emitter {
     last_known_position: Vector4,
     busy: bool,
     pub names: DashSet<Option<CName>>,
-    last_dilation: Option<Dilation>,
+    dilation: Dilation,
 }
 
 impl Emitter {
@@ -192,14 +192,7 @@ impl Scene {
             v: Listener {
                 id: listener_id,
                 handle,
-                last_dilation: if dilation == 1. {
-                    None
-                } else {
-                    Some(Dilation {
-                        value: dilation,
-                        curve: CName::default(),
-                    })
-                },
+                dilation: Dilation::new(dilation),
             },
             scene,
             emitters: Emitters::with_capacity(capacity),
@@ -242,10 +235,7 @@ impl Scene {
             last_known_position: position,
             busy,
             names,
-            last_dilation: dilation.map(|x| Dilation {
-                value: x,
-                curve: CName::default(),
-            }),
+            dilation: Dilation::new(dilation.unwrap_or(1.)),
         };
         self.emitters.insert(entity_id, emitter_name, handle);
         lifecycle!("added emitter {entity_id:?}");
@@ -328,19 +318,8 @@ impl Scene {
             // weirdly enough if emitter is not updated, sound(s) won't update as expected.
             // e.g. when listener moves but emitter stands still.
             v.handle.set_position(position, IMMEDIATELY);
-            // TODO:
-            // if dilation != v.last_dilation.as_ref().map(|x| x.value) {
-            //     v.last_dilation = dilation.map(|x| Dilation {
-            //         value: x,
-            //         curve: CName::default(),
-            //     });
-            //     dilation_changed = true;
-            // }
             true
         });
-        // if dilation_changed {
-        //     self.dilation_changed = true;
-        // }
         Ok(())
     }
 
@@ -444,65 +423,64 @@ impl Scene {
         });
     }
 
-    pub fn set_listener_dilation(&mut self, dilation: Option<Dilation>) {
-        if self.v.last_dilation.as_ref().map(|x| x.value).unwrap_or(1.)
-            != dilation.as_ref().map(|x| x.value).unwrap_or(1.)
-        {
-            self.v.last_dilation = dilation;
-            self.dilation_changed = true;
+    pub fn set_listener_dilation(&mut self, dilation: DilationUpdate) -> bool {
+        if self.v.dilation.last.as_ref() != Some(&dilation) {
+            self.v.dilation.last = Some(dilation);
+            return true;
         }
+        false
     }
 
-    pub fn unset_listener_dilation(&mut self, dilation: Option<Dilation>) {
-        self.v.last_dilation = dilation;
-        self.dilation_changed = true;
+    pub fn unset_listener_dilation(&mut self, dilation: DilationUpdate) -> bool {
+        if self.v.dilation.last.as_ref() != Some(&dilation) {
+            self.v.dilation.last = Some(dilation);
+            return true;
+        }
+        false
     }
 
-    pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: Option<Dilation>) {
+    pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: DilationUpdate) -> bool {
         if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
-            if dilation.as_ref().map(|x| x.value).unwrap_or(1.)
-                != emitter
-                    .last_dilation
-                    .as_ref()
-                    .map(|x| x.value)
-                    .unwrap_or(1.)
-            {
-                emitter.last_dilation = dilation;
-                self.dilation_changed = true;
+            if emitter.dilation.last.as_ref() != Some(&dilation) {
+                emitter.dilation.last = Some(dilation);
+                return true;
             }
         }
+        false
     }
 
-    pub fn unset_emitter_dilation(&mut self, entity_id: EntityId) {
-        todo!()
+    pub fn unset_emitter_dilation(
+        &mut self,
+        entity_id: EntityId,
+        dilation: DilationUpdate,
+    ) -> bool {
+        if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
+            if emitter.dilation.last.as_ref() != Some(&dilation) {
+                emitter.dilation.last = Some(dilation);
+                return true;
+            }
+        }
+        false
     }
 
     fn sync_dilation(&mut self) {
-        let listener = self
-            .v
-            .last_dilation
-            .as_ref()
-            .map(|x| x.value as f64)
-            .unwrap_or(1.); // e.g. 0.7
-        let mut tween = self
-            .v
-            .last_dilation
-            .as_ref()
-            .and_then(|x| x.curve.into_tween());
+        let listener = self.v.dilation.value as f64; // e.g. 0.7
+        let mut tween = self.v.dilation.last.as_ref().map(|x| x.tween_curve());
         let mut rate: f64 = 1.;
         self.emitters.iter_mut().for_each(|mut x| {
             rate = 1. - (1. - listener)
                 + (
                     // e.g. 5 or 7
                     1. - x
-                        .last_dilation
+                        .dilation
+                        .last
                         .as_ref()
-                        .filter(|x| x.value != 1.)
-                        .map(|x| x.value as f64 / 10.)
+                        .filter(|x| x.dilation() != 1.)
+                        .map(|x| x.dilation() as f64 / 10.)
                         .unwrap_or(1.)
                 );
             if tween.is_none() {
-                tween = x.last_dilation.as_ref().and_then(|x| x.curve.into_tween());
+                tween = x.dilation.last.as_ref().map(|x| x.tween_curve());
             }
             x.value_mut().handles.statics.iter_mut().for_each(|x| {
                 x.handle
@@ -513,7 +491,19 @@ impl Scene {
                     .set_playback_rate(rate, tween.unwrap_or(IMMEDIATELY));
             });
         });
-        self.dilation_changed = false;
+        // self.dilation_changed = false;
+    }
+}
+
+#[derive(Debug)]
+pub struct Dilation {
+    value: f32,
+    last: Option<DilationUpdate>,
+}
+
+impl Dilation {
+    fn new(value: f32) -> Self {
+        Self { value, last: None }
     }
 }
 
@@ -570,27 +560,25 @@ impl AsEntityExt for Ref<Entity> {
             .as_ref()
             .map(AsScriptedPuppet::get_npc_type)
             .map(|x| match x {
-                crate::GamedataNpcType::Device
-                | crate::GamedataNpcType::Drone
-                | crate::GamedataNpcType::Spiderbot => EmitterDistances {
-                    min_distance: 1.,
-                    max_distance: 10.,
-                },
-                crate::GamedataNpcType::Android | crate::GamedataNpcType::Human => {
+                GamedataNpcType::Device | GamedataNpcType::Drone | GamedataNpcType::Spiderbot => {
                     EmitterDistances {
-                        min_distance: 2.,
-                        max_distance: 16.,
+                        min_distance: 1.,
+                        max_distance: 10.,
                     }
                 }
-                crate::GamedataNpcType::Cerberus
-                | crate::GamedataNpcType::Chimera
-                | crate::GamedataNpcType::Mech => EmitterDistances {
-                    min_distance: 5.,
-                    max_distance: 40.,
+                GamedataNpcType::Android | GamedataNpcType::Human => EmitterDistances {
+                    min_distance: 2.,
+                    max_distance: 16.,
                 },
-                crate::GamedataNpcType::Invalid
-                | crate::GamedataNpcType::Count
-                | crate::GamedataNpcType::Any => EmitterDistances::default(),
+                GamedataNpcType::Cerberus | GamedataNpcType::Chimera | GamedataNpcType::Mech => {
+                    EmitterDistances {
+                        min_distance: 5.,
+                        max_distance: 40.,
+                    }
+                }
+                GamedataNpcType::Invalid | GamedataNpcType::Count | GamedataNpcType::Any => {
+                    EmitterDistances::default()
+                }
             })
     }
 }
