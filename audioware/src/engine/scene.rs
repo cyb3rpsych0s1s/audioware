@@ -99,6 +99,18 @@ impl Emitters {
     fn get_mut(&mut self, entity_id: &EntityId) -> Option<RefMut<'_, EntityId, Emitter>> {
         self.0.get_mut(entity_id)
     }
+    pub fn get_mut_with_name(
+        &mut self,
+        entity_id: &EntityId,
+        emitter_name: &Option<CName>,
+    ) -> Option<RefMut<'_, EntityId, Emitter>> {
+        if let Some(emitter) = self.0.get_mut(entity_id) {
+            if emitter.names.contains(emitter_name) {
+                return Some(emitter);
+            }
+        }
+        None
+    }
     fn insert(
         &mut self,
         entity_id: EntityId,
@@ -127,7 +139,7 @@ impl Emitters {
         EMITTERS.write().retain(|(id, _)| *id != entity_id);
         true
     }
-    pub fn iter_mut(&mut self) -> IterMut<EntityId, Emitter> {
+    fn iter_mut(&mut self) -> IterMut<EntityId, Emitter> {
         self.0.iter_mut()
     }
     fn is_empty(&self) -> bool {

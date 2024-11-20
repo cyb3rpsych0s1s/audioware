@@ -180,9 +180,10 @@ where
     ) {
         if let Some(ref mut scene) = self.scene {
             if let Ok(key) = self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
-                if let Some(ref mut emitter) = scene.emitters.iter_mut().find(|x| {
-                    *x.key() == entity_id && x.value().names.contains(&Some(emitter_name))
-                }) {
+                if let Some(ref mut emitter) = scene
+                    .emitters
+                    .get_mut_with_name(&entity_id, &Some(emitter_name))
+                {
                     let data = self.banks.data(key);
                     match data {
                         Either::Left(data) => {
