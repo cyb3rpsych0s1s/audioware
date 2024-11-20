@@ -15,7 +15,7 @@ use kira::{
     tween::Tween,
 };
 use parking_lot::RwLock;
-use red4ext_rs::types::{CName, EntityId, GameInstance};
+use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 
 use crate::{
     error::{Error, SceneError},
@@ -29,7 +29,7 @@ use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY, Dilation};
 pub struct Listener {
     id: EntityId,
     handle: ListenerHandle,
-    dilation: Option<Dilation>,
+    last_dilation: Option<Dilation>,
 }
 
 #[derive(Debug)]
@@ -39,7 +39,7 @@ pub struct Emitter {
     last_known_position: Vector4,
     busy: bool,
     pub names: DashSet<Option<CName>>,
-    dilation: Option<Dilation>,
+    last_dilation: Option<Dilation>,
 }
 
 impl Emitter {
@@ -119,7 +119,7 @@ impl Scene {
             v: Listener {
                 id: listener_id,
                 handle,
-                dilation: if dilation == 1. {
+                last_dilation: if dilation == 1. {
                     None
                 } else {
                     Some(Dilation {
@@ -134,51 +134,36 @@ impl Scene {
         })
     }
 
-    fn emitter_infos(
-        &self,
-        entity_id: EntityId,
-    ) -> Result<(Vector4, bool, Option<f32>, Option<EmitterDistances>), Error> {
+    fn emitter_infos(&self, entity_id: EntityId) -> Result<(Vector4, bool), Error> {
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, entity_id);
         if entity.is_null() {
             return Err(Error::Scene {
-                source: SceneError::InvalidEmitter,
+                source: SceneError::MissingEmitter { entity_id },
             });
         }
-        let distances = entity
-            .clone()
-            .cast::<ScriptedPuppet>()
-            .as_ref()
-            .map(AsScriptedPuppet::get_npc_type)
-            .map(|x| match x {
-                crate::GamedataNpcType::Device
-                | crate::GamedataNpcType::Drone
-                | crate::GamedataNpcType::Spiderbot => EmitterDistances {
-                    min_distance: 1.,
-                    max_distance: 5.,
-                },
-                crate::GamedataNpcType::Android | crate::GamedataNpcType::Human => {
-                    EmitterDistances {
-                        min_distance: 2.,
-                        max_distance: 8.,
-                    }
-                }
-                crate::GamedataNpcType::Cerberus
-                | crate::GamedataNpcType::Chimera
-                | crate::GamedataNpcType::Mech => EmitterDistances {
-                    min_distance: 5.,
-                    max_distance: 20.,
-                },
-                crate::GamedataNpcType::Invalid
-                | crate::GamedataNpcType::Count
-                | crate::GamedataNpcType::Any => EmitterDistances::default(),
-            });
         let busy = entity
             .clone()
             .cast::<GameObject>()
             .map(AIActionHelper::is_in_workspot)
             .unwrap_or(false);
         let position = entity.get_world_position();
+        Ok((position, busy))
+    }
+
+    fn emitter_full_infos(
+        &self,
+        entity_id: EntityId,
+    ) -> Result<(Vector4, bool, Option<f32>, Option<EmitterDistances>), Error> {
+        let (position, busy) = self.emitter_infos(entity_id)?;
+        let game = GameInstance::new();
+        let entity = GameInstance::find_entity_by_id(game, entity_id);
+        if entity.is_null() {
+            return Err(Error::Scene {
+                source: SceneError::MissingEmitter { entity_id },
+            });
+        }
+        let distances = entity.get_emitter_distances();
         if !entity.is_a::<TimeDilatable>() {
             return Ok((position, busy, None, distances));
         }
@@ -205,7 +190,7 @@ impl Scene {
             emitter.names.insert(emitter_name);
             return Ok(());
         }
-        let (position, busy, dilation, distances) = self.emitter_infos(entity_id)?;
+        let (position, busy, dilation, distances) = self.emitter_full_infos(entity_id)?;
         let settings = match settings {
             Some(settings)
                 if settings.distances.min_distance == 0.
@@ -225,7 +210,7 @@ impl Scene {
             last_known_position: position,
             busy,
             names,
-            dilation: dilation.map(|x| Dilation {
+            last_dilation: dilation.map(|x| Dilation {
                 value: x,
                 curve: CName::default(),
             }),
@@ -318,7 +303,7 @@ impl Scene {
         }
         let mut dilation_changed = false;
         self.emitters.retain(|k, v| {
-            let Ok((position, busy, dilation, _)) = self.emitter_infos(*k) else {
+            let Ok((position, busy)) = self.emitter_infos(*k) else {
                 EMITTERS.write().retain(|(id, _)| id != k);
                 return false;
             };
@@ -327,13 +312,14 @@ impl Scene {
             // weirdly enough if emitter is not updated, sound(s) won't update as expected.
             // e.g. when listener moves but emitter stands still.
             v.handle.set_position(position, IMMEDIATELY);
-            if dilation != v.dilation.as_ref().map(|x| x.value) {
-                v.dilation = dilation.map(|x| Dilation {
-                    value: x,
-                    curve: CName::default(),
-                });
-                dilation_changed = true;
-            }
+            // TODO:
+            // if dilation != v.last_dilation.as_ref().map(|x| x.value) {
+            //     v.last_dilation = dilation.map(|x| Dilation {
+            //         value: x,
+            //         curve: CName::default(),
+            //     });
+            //     dilation_changed = true;
+            // }
             true
         });
         if dilation_changed {
@@ -444,47 +430,56 @@ impl Scene {
     }
 
     pub fn set_listener_dilation(&mut self, dilation: Option<Dilation>) {
-        if self.v.dilation.as_ref().map(|x| x.value).unwrap_or(1.)
+        if self.v.last_dilation.as_ref().map(|x| x.value).unwrap_or(1.)
             != dilation.as_ref().map(|x| x.value).unwrap_or(1.)
         {
-            self.v.dilation = dilation;
+            self.v.last_dilation = dilation;
             self.dilation_changed = true;
         }
+    }
+
+    pub fn unset_listener_dilation(&mut self, dilation: Option<Dilation>) {
+        self.v.last_dilation = dilation;
+        self.dilation_changed = true;
     }
 
     pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: Option<Dilation>) {
         if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
             if dilation.as_ref().map(|x| x.value).unwrap_or(1.)
-                != emitter.dilation.as_ref().map(|x| x.value).unwrap_or(1.)
+                != emitter.last_dilation.as_ref().map(|x| x.value).unwrap_or(1.)
             {
-                emitter.dilation = dilation;
+                emitter.last_dilation = dilation;
                 self.dilation_changed = true;
             }
         }
     }
 
+    pub fn unset_emitter_dilation(&mut self, entity_id: EntityId) {
+        todo!()
+    }
+
     fn sync_dilation(&mut self) {
         let listener = self
             .v
-            .dilation
+            .last_dilation
             .as_ref()
             .map(|x| x.value as f64)
             .unwrap_or(1.); // e.g. 0.7
-        let mut tween = self.v.dilation.as_ref().and_then(|x| x.curve.into_tween());
+        let mut tween = self.v.last_dilation.as_ref().and_then(|x| x.curve.into_tween());
         let mut rate: f64 = 1.;
         self.emitters.iter_mut().for_each(|mut x| {
             rate = 1. - (1. - listener)
                 + (
                     // e.g. 5 or 7
                     1. - x
-                        .dilation
+                        .last_dilation
                         .as_ref()
                         .filter(|x| x.value != 1.)
                         .map(|x| x.value as f64 / 10.)
                         .unwrap_or(1.)
                 );
             if tween.is_none() {
-                tween = x.dilation.as_ref().and_then(|x| x.curve.into_tween());
+                tween = x.last_dilation.as_ref().and_then(|x| x.curve.into_tween());
             }
             x.value_mut().handles.statics.iter_mut().for_each(|x| {
                 x.handle
@@ -496,5 +491,41 @@ impl Scene {
             });
         });
         self.dilation_changed = false;
+    }
+}
+
+pub trait AsEntityExt {
+    fn get_emitter_distances(&self) -> Option<EmitterDistances>;
+}
+
+impl AsEntityExt for Ref<Entity> {
+    fn get_emitter_distances(&self) -> Option<EmitterDistances> {
+        self.clone()
+            .cast::<ScriptedPuppet>()
+            .as_ref()
+            .map(AsScriptedPuppet::get_npc_type)
+            .map(|x| match x {
+                crate::GamedataNpcType::Device
+                | crate::GamedataNpcType::Drone
+                | crate::GamedataNpcType::Spiderbot => EmitterDistances {
+                    min_distance: 1.,
+                    max_distance: 10.,
+                },
+                crate::GamedataNpcType::Android | crate::GamedataNpcType::Human => {
+                    EmitterDistances {
+                        min_distance: 2.,
+                        max_distance: 16.,
+                    }
+                }
+                crate::GamedataNpcType::Cerberus
+                | crate::GamedataNpcType::Chimera
+                | crate::GamedataNpcType::Mech => EmitterDistances {
+                    min_distance: 5.,
+                    max_distance: 40.,
+                },
+                crate::GamedataNpcType::Invalid
+                | crate::GamedataNpcType::Count
+                | crate::GamedataNpcType::Any => EmitterDistances::default(),
+            })
     }
 }
