@@ -1,6 +1,6 @@
 use std::{fmt::Debug, ops::DerefMut};
 
-use audioware_bank::{BankData, Banks, Id, Initialization};
+use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
 use audioware_core::With;
 use audioware_manifest::{PlayerGender, Settings, Source, SpokenLocale};
 use either::Either;
@@ -50,9 +50,6 @@ pub struct Engine<B: Backend> {
 impl<B: Backend> Drop for Engine<B> {
     fn drop(&mut self) {
         lifecycle!("drop engine");
-        // bug in kira DecodeScheduler NextStep::Wait
-        // self.handles.stop_all(IMMEDIATELY);
-        // self.handles.clear();
     }
 }
 
@@ -90,13 +87,45 @@ where
     }
 
     #[cfg(debug_assertions)]
-    pub fn try_hot_reload(&mut self) -> Result<(), Error> {
+    pub fn hot_reload(&mut self) {
         self.clear();
         let (banks, report) = Banks::new(true);
         *BANKS.write() = Some(banks.clone());
         self.banks = banks;
         self.report = report;
-        Ok(())
+        self.report_initialization(true);
+    }
+
+    pub fn report_initialization(&self, #[cfg(debug_assertions)] hot_reload: bool) {
+        let conjugation = if cfg!(debug_assertions) && hot_reload {
+            "hot-reloaded"
+        } else {
+            "initialized"
+        };
+        let infinitive = if cfg!(debug_assertions) && hot_reload {
+            "hot-reload"
+        } else {
+            "initialize"
+        };
+
+        match self.report.outcome() {
+            InitializationOutcome::Success => {
+                crate::utils::lifecycle!("{}", self.report);
+                crate::utils::info(format!("Audioware {conjugation} successfully!"))
+            }
+            InitializationOutcome::PartialSuccess => {
+                crate::utils::lifecycle!("{}", self.report);
+                crate::utils::warn(format!(
+                    "Audioware {conjugation} partially. See RED4ext log for more details."
+                ))
+            }
+            InitializationOutcome::CompleteFailure => {
+                crate::utils::fails!("{}", self.report);
+                crate::utils::error(format!(
+                    "Audioware failed to {infinitive}. See RED4ext log for more details."
+                ))
+            }
+        };
     }
 
     pub fn any_handle(&self) -> bool {

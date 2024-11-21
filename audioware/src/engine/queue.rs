@@ -99,12 +99,10 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::Terminate => {
                     break 'game;
                 }
+                Lifecycle::ReportInitialization => engine.report_initialization(false),
                 #[cfg(debug_assertions)]
                 Lifecycle::HotReload => {
-                    match engine.try_hot_reload() {
-                        Ok(_) => lifecycle!("hot-reloaded Audioware"),
-                        Err(e) => fails!("hot-reload failed: {e}"),
-                    }
+                    engine.hot_reload();
                     continue 'game;
                 }
                 Lifecycle::SetListenerDilation {

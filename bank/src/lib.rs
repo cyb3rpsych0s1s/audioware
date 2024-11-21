@@ -390,6 +390,24 @@ pub struct Initialization {
     pub errors: Vec<std::sync::Arc<Error>>,
 }
 
+pub enum InitializationOutcome {
+    CompleteFailure = 0,
+    PartialSuccess = 1,
+    Success = 2,
+}
+
+impl Initialization {
+    pub fn outcome(&self) -> InitializationOutcome {
+        if self.errors.is_empty() {
+            InitializationOutcome::Success
+        } else if self.len_ids == 0 {
+            InitializationOutcome::CompleteFailure
+        } else {
+            InitializationOutcome::PartialSuccess
+        }
+    }
+}
+
 impl std::fmt::Display for Initialization {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Initialization {

@@ -61,6 +61,7 @@ pub enum Lifecycle {
     System(System),
     Board(Board),
     Codeware(Codeware),
+    ReportInitialization,
     #[cfg(debug_assertions)]
     HotReload,
 }
@@ -104,6 +105,7 @@ impl std::fmt::Display for Lifecycle {
             Lifecycle::UnsetEmitterDilation { entity_id,  ease_out_curve } => {
                 write!(f, "unset emitter dilation, curve: {ease_out_curve} [{entity_id:?}]")
             }
+            Lifecycle::ReportInitialization => write!(f, "report initialization"),
             #[cfg(debug_assertions)]
             Lifecycle::HotReload => write!(f, "hot-reload"),
         }
