@@ -14,6 +14,13 @@ private native static func HotReload() -> Void;
 public static exec func TestPlayExt(game: GameInstance, name: String) {
     GameInstance.GetAudioSystemExt(game).Play(StringToName(name));
 }
+/// Game.TestPlayExtWithTween("straight_outta_compton");
+public static exec func TestPlayExtWithTween(game: GameInstance, name: String) {
+    let ext = new AudioSettingsExt();
+    ext.fadeIn = LinearTween.Immediate(5.);
+    let noId: EntityID;
+    GameInstance.GetAudioSystemExt(game).Play(StringToName(name), noId, n"None", scnDialogLineType.Regular, ext);
+}
 /// Game.TestStop("straight_outta_compton");
 public static exec func TestStop(game: GameInstance, name: String) {
     GameInstance.GetAudioSystemExt(game).Stop(StringToName(name));
