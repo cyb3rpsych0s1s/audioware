@@ -41,7 +41,8 @@ pub struct Emitter {
     busy: bool,
     pub names: DashSet<Option<CName>>,
     dilation: Dilation,
-    pub persist_until_sounds_finish: bool,
+    pub persist_until_sound_finishes: bool,
+    pub marked_for_death: bool,
 }
 
 impl Emitter {
@@ -50,13 +51,11 @@ impl Emitter {
         event_name: CName,
         handle: StaticSoundHandle,
         affected_by_time_dilation: bool,
-        persist_until_sounds_finish: bool,
     ) {
         self.handles.statics.push(Handle {
             event_name,
             handle,
             affected_by_time_dilation,
-            persist_until_sounds_finish,
         });
     }
     pub fn store_stream(
@@ -64,14 +63,23 @@ impl Emitter {
         event_name: CName,
         handle: StreamingSoundHandle<FromFileError>,
         affected_by_time_dilation: bool,
-        persist_until_sounds_finish: bool,
     ) {
         self.handles.streams.push(Handle {
             event_name,
             handle,
             affected_by_time_dilation,
-            persist_until_sounds_finish,
         });
+    }
+    pub fn any_playing_handle(&self) -> bool {
+        self.handles
+            .statics
+            .iter()
+            .any(|x| x.handle.state() == PlaybackState::Playing)
+            || self
+                .handles
+                .streams
+                .iter()
+                .any(|x| x.handle.state() == PlaybackState::Playing)
     }
 }
 
@@ -86,7 +94,6 @@ pub struct Handle<T> {
     event_name: CName,
     handle: T,
     affected_by_time_dilation: bool,
-    persist_until_sounds_finish: bool,
 }
 
 #[derive(Debug, Default)]
@@ -262,7 +269,8 @@ impl Scene {
             busy,
             names,
             dilation: Dilation::new(dilation.unwrap_or(1.)),
-            persist_until_sounds_finish: settings.persist_until_sounds_finish,
+            persist_until_sound_finishes: settings.persist_until_sounds_finish,
+            marked_for_death: false,
         };
         self.emitters.insert(entity_id, emitter_name, handle);
         lifecycle!("added emitter {entity_id:?}");
@@ -337,6 +345,10 @@ impl Scene {
             return Ok(());
         }
         self.emitters.retain(|k, v| {
+            if v.marked_for_death && !v.any_playing_handle() {
+                EMITTERS.write().retain(|(id, _)| id != k);
+                return false;
+            }
             let Ok((position, busy)) = Emitter::infos(*k) else {
                 EMITTERS.write().retain(|(id, _)| id != k);
                 return false;
@@ -364,22 +376,43 @@ impl Scene {
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
         self.emitters.retain(|k, v| {
             if *k == entity_id {
-                v.handles
-                    .statics
-                    .iter_mut()
-                    .filter(|x| !x.persist_until_sounds_finish)
-                    .for_each(|x| x.handle.stop(IMMEDIATELY));
-                v.handles
-                    .streams
-                    .iter_mut()
-                    .filter(|x| !x.persist_until_sounds_finish)
-                    .for_each(|x| x.handle.stop(IMMEDIATELY));
-                EMITTERS.write().retain(|(id, _)| id != k);
-                false
+                if !v.persist_until_sound_finishes {
+                    v.handles
+                        .statics
+                        .iter_mut()
+                        .for_each(|x| x.handle.stop(IMMEDIATELY));
+                    v.handles
+                        .streams
+                        .iter_mut()
+                        .for_each(|x| x.handle.stop(IMMEDIATELY));
+                    EMITTERS.write().retain(|(id, _)| id != k);
+                    false
+                } else {
+                    v.marked_for_death = true;
+                    true
+                }
             } else {
                 true
             }
         });
+    }
+
+    pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId, tween: Tween) {
+        self.emitters
+            .iter_mut()
+            .filter(|x| *x.key() == entity_id && !x.value().persist_until_sound_finishes)
+            .for_each(|mut x| {
+                x.value_mut()
+                    .handles
+                    .statics
+                    .iter_mut()
+                    .for_each(|x| x.handle.stop(tween));
+                x.value_mut()
+                    .handles
+                    .streams
+                    .iter_mut()
+                    .for_each(|x| x.handle.stop(tween));
+            });
     }
 
     pub fn any_emitter(&self) -> bool {
@@ -432,26 +465,6 @@ impl Scene {
                 .streams
                 .retain(|x| x.handle.state() != PlaybackState::Stopped);
         });
-    }
-
-    pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId, tween: Tween) {
-        self.emitters
-            .iter_mut()
-            .filter(|x| !x.value().persist_until_sounds_finish)
-            .for_each(|mut x| {
-                if *x.key() == entity_id {
-                    x.value_mut()
-                        .handles
-                        .statics
-                        .iter_mut()
-                        .for_each(|x| x.handle.stop(tween));
-                    x.value_mut()
-                        .handles
-                        .streams
-                        .iter_mut()
-                        .for_each(|x| x.handle.stop(tween));
-                }
-            });
     }
 
     pub fn set_listener_dilation(&mut self, dilation: &DilationUpdate) -> bool {

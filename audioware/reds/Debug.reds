@@ -71,6 +71,8 @@ public class AutoEmittersSystem extends ScriptableSystem {
         .AddTarget(InputTarget.Key(EInputKey.IK_F2));
         GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnPressF3")
         .AddTarget(InputTarget.Key(EInputKey.IK_F3));
+        GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnPressF4")
+        .AddTarget(InputTarget.Key(EInputKey.IK_F4));
     }
     private func RandomSong() -> CName {
         let sounds = [ 
@@ -127,11 +129,21 @@ public class AutoEmittersSystem extends ScriptableSystem {
         ext.fadeIn = tween;
 
         let settings = new EmitterSettings();
-        settings.persistUntilSoundsFinish = true;
+        settings.persistUntilSoundFinish = true;
 
         this.PlayOnEmitter(eventName, emitterID, emitterCName, ext, settings);
     }
     private cb func OnPressF3(evt: ref<KeyInputEvent>) {
+        if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }
+        let emitterID: EntityID;
+        let game = this.GetGameInstance();
+        let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
+        if !IsDefined(target) { return; }
+        emitterID = target.GetEntityID();
+
+        GameInstance.GetAudioSystemExt(this.GetGameInstance()).UnregisterEmitter(emitterID);
+    }
+    private cb func OnPressF4(evt: ref<KeyInputEvent>) {
         if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }
         let game = this.GetGameInstance();
         let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));

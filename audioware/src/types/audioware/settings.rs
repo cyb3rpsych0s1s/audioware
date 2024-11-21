@@ -13,16 +13,16 @@ pub struct EmitterSettings {
     pub distances: Ref<EmitterDistances>,
     pub attenuation_function: Ref<Tween>,
     pub enable_spatialization: bool,
-    pub persist_until_sounds_finish: bool,
+    pub persist_until_sound_finish: bool,
 }
 
 impl Default for EmitterSettings {
     fn default() -> Self {
         Self {
             enable_spatialization: true,
-            persist_until_sounds_finish: false,
             attenuation_function: Default::default(),
             distances: Default::default(),
+            persist_until_sound_finish: false,
         }
     }
 }
@@ -62,7 +62,6 @@ impl PartialEq for EmitterSettings {
             _ => {}
         };
         self.enable_spatialization == other.enable_spatialization
-            && self.persist_until_sounds_finish == other.persist_until_sounds_finish
     }
 }
 
@@ -72,7 +71,7 @@ impl Clone for EmitterSettings {
             distances: self.distances.clone(),
             attenuation_function: self.attenuation_function.clone(),
             enable_spatialization: self.enable_spatialization,
-            persist_until_sounds_finish: self.persist_until_sounds_finish,
+            persist_until_sound_finish: self.persist_until_sound_finish,
         }
     }
 }
@@ -82,10 +81,6 @@ impl fmt::Debug for EmitterSettings {
         f.debug_struct("AudiowareEmitterSettings")
             .field("attenuation_function", &self.attenuation_function.is_null())
             .field("enable_spatialization", &self.enable_spatialization)
-            .field(
-                "persist_until_sounds_finish",
-                &self.persist_until_sounds_finish,
-            )
             .finish()
     }
 }

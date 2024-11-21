@@ -464,13 +464,13 @@ impl ToSettings for Ref<EmitterSettings> {
             distances,
             attenuation_function,
             enable_spatialization,
-            persist_until_sounds_finish,
+            persist_until_sound_finish,
         } = unsafe { self.fields() }?.clone();
         let mut settings = kira::spatial::emitter::EmitterSettings::default();
         settings.distances = distances.into_settings().unwrap_or_default();
         settings.attenuation_function = attenuation_function.into_easing();
         settings.enable_spatialization = enable_spatialization;
-        settings.persist_until_sounds_finish = persist_until_sounds_finish;
+        settings.persist_until_sounds_finish = persist_until_sound_finish;
         Some(settings)
     }
 }
