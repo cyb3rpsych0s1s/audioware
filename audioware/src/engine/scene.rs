@@ -35,14 +35,14 @@ pub struct Listener {
 
 #[derive(Debug)]
 pub struct Emitter {
-    handle: EmitterHandle,
     handles: Handles,
+    handle: EmitterHandle,
+    names: DashSet<Option<CName>>,
+    dilation: Dilation,
     last_known_position: Vector4,
     busy: bool,
-    pub names: DashSet<Option<CName>>,
-    dilation: Dilation,
-    pub persist_until_sound_finishes: bool,
-    pub marked_for_death: bool,
+    persist_until_sound_finishes: bool,
+    marked_for_death: bool,
 }
 
 impl Emitter {
