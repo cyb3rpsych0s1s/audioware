@@ -8,6 +8,10 @@ use red4ext_rs::{
 };
 pub use types::*;
 
+#[cfg(debug_assertions)]
+#[allow(dead_code)]
+pub mod debug;
+
 mod abi;
 mod config;
 mod engine;
