@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{ops::Not, time::Duration};
 
 use audioware_manifest::{Interpolation, PlayerGender, Region, ScnDialogLineType, Settings};
 use command::Command;
@@ -10,14 +10,14 @@ use red4ext_rs::{
     exports, methods,
     types::{CName, EntityId, IScriptable, Opt, Ref},
     ClassExport, Exportable, GameApp, RttiRegistrator, ScriptClass, SdkEnv, StateListener,
-    StateType, StructExport,
+    StateType,
 };
 
 use crate::{
     engine::{eq::Preset, Engine},
     queue,
     utils::lifecycle,
-    Audioware, ElasticTween, EmitterDistances, EmitterSettings, LinearTween, ToTween, Tween,
+    Audioware, ElasticTween, EmitterSettings, LinearTween, ToEasing, ToTween, Tween,
 };
 
 #[cfg(debug_assertions)]
@@ -50,8 +50,6 @@ macro_rules! g {
 #[rustfmt::skip]
 pub fn exports() -> impl Exportable {
     exports![
-        StructExport::<EmitterDistances>::builder().build(),
-        StructExport::<EmitterSettings>::builder().build(),
         ClassExport::<AudioSystemExt>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![
@@ -231,7 +229,7 @@ pub trait SceneLifecycle {
         &self,
         entity_id: EntityId,
         emitter_name: Opt<CName>,
-        emitter_settings: Opt<EmitterSettings>,
+        emitter_settings: Ref<EmitterSettings>,
     ) -> bool;
     fn unregister_emitter(&self, entity_id: EntityId) -> bool;
     fn is_registered_emitter(&self, entity_id: EntityId) -> bool;
@@ -245,13 +243,13 @@ impl SceneLifecycle for AudioSystemExt {
         &self,
         entity_id: EntityId,
         emitter_name: Opt<CName>,
-        emitter_settings: Opt<EmitterSettings>,
+        emitter_settings: Ref<EmitterSettings>,
     ) -> bool {
         let (sender, receiver) = bounded(0);
         queue::notify(Lifecycle::RegisterEmitter {
             entity_id,
             emitter_name: emitter_name.into_option(),
-            emitter_settings: emitter_settings.into_option().map(Into::into),
+            emitter_settings: emitter_settings.into_settings(),
             sender,
         });
         if let Ok(registered) = receiver.recv() {
@@ -347,7 +345,8 @@ impl std::fmt::Debug for AudioSettingsExt {
 }
 
 pub trait ToSettings {
-    fn into_settings(self) -> Option<Settings>;
+    type Settings;
+    fn into_settings(self) -> Option<Self::Settings>;
 }
 
 pub trait ToRegion {
@@ -414,7 +413,8 @@ impl ToRegion for Ref<AudioRegion> {
 }
 
 impl ToSettings for Ref<AudioSettingsExt> {
-    fn into_settings(self) -> Option<Settings> {
+    type Settings = Settings;
+    fn into_settings(self) -> Option<Self::Settings> {
         if self.is_null() {
             return None;
         }
@@ -449,6 +449,41 @@ impl ToSettings for Ref<AudioSettingsExt> {
         if !affected_by_time_dilation {
             settings.affected_by_time_dilation = Some(false);
         }
+        Some(settings)
+    }
+}
+
+impl ToSettings for Ref<EmitterSettings> {
+    type Settings = kira::spatial::emitter::EmitterSettings;
+    fn into_settings(self) -> Option<Self::Settings> {
+        if self.is_null() {
+            return None;
+        }
+        let EmitterSettings {
+            distances,
+            attenuation_function,
+            enable_spatialization,
+            persist_until_sounds_finish,
+        } = unsafe { self.fields() }?.clone();
+        let mut settings = kira::spatial::emitter::EmitterSettings::default();
+        if let Some(distances) = distances
+            .is_null()
+            .not()
+            .then_some(unsafe { distances.fields() })
+            .flatten()
+        {
+            if distances.min_distance != 0. || distances.max_distance != 0. {
+                settings.distances = kira::spatial::emitter::EmitterDistances {
+                    min_distance: distances.min_distance,
+                    max_distance: distances.max_distance,
+                };
+            }
+        }
+        if !attenuation_function.is_null() {
+            settings.attenuation_function = attenuation_function.into_easing();
+        }
+        settings.enable_spatialization = enable_spatialization;
+        settings.persist_until_sounds_finish = persist_until_sounds_finish;
         Some(settings)
     }
 }

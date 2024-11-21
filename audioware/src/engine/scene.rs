@@ -240,6 +240,7 @@ impl Scene {
             return Ok(());
         }
         let (position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
+        lifecycle!("emitter settings {:?} [{entity_id:?}]", settings);
         let settings = match settings {
             Some(settings)
                 if settings.distances.min_distance == 0.
@@ -253,6 +254,10 @@ impl Scene {
         let emitter = self.scene.add_emitter(position, settings)?;
         let names = DashSet::with_capacity(3);
         names.insert(emitter_name);
+        lifecycle!(
+            "add emitter: persists until sound finish {} [{entity_id:?}]",
+            settings.persist_until_sounds_finish
+        );
         let handle = Emitter {
             handle: emitter,
             handles: Default::default(),

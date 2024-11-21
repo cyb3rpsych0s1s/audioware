@@ -16,14 +16,14 @@ public class AudioSettingsExt {
     public let affectedByTimeDilation: Bool = true;
 }
 
-public native struct EmitterDistances {
+public class EmitterDistances {
     let min: Float = 0.0;
     let max: Float = 0.0;
 }
 
-public native struct EmitterSettings {
-    let distances: EmitterDistances;
-    let attenuationFunction: ref<Tween>;
-    let enableSpatialization: Bool = true;
-    let persistUntilSoundsFinish: Bool = false;
+public class EmitterSettings {
+    public let distances: ref<EmitterDistances>;
+    public let attenuationFunction: ref<Tween>;
+    public let enableSpatialization: Bool = true;
+    public let persistUntilSoundsFinish: Bool = false;
 }
