@@ -13,6 +13,7 @@ public class AudioSettingsExt {
     public let fadeIn: ref<Tween>;
     public let panning: Float = 0.5;
     public let playbackRate: Float = 1.;
+    public let affectedByTimeDilation: Bool = true;
 }
 
 public native struct EmitterDistances {

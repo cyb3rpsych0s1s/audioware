@@ -34,6 +34,7 @@ pub struct Handle<T> {
     entity_id: Option<EntityId>,
     emitter_name: Option<CName>,
     handle: T,
+    affected_by_time_dilation: bool,
 }
 
 #[derive(Default)]
@@ -121,12 +122,14 @@ impl Tracks {
         event_name: CName,
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
+        affected_by_time_dilation: bool,
     ) {
         self.handles.statics.push(Handle {
             event_name,
             entity_id,
             emitter_name,
             handle,
+            affected_by_time_dilation,
         });
     }
     pub fn store_stream(
@@ -135,12 +138,14 @@ impl Tracks {
         event_name: CName,
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
+        affected_by_time_dilation: bool,
     ) {
         self.handles.streams.push(Handle {
             event_name,
             entity_id,
             emitter_name,
             handle,
+            affected_by_time_dilation,
         });
     }
     pub fn any_handle(&self) -> bool {
@@ -188,7 +193,7 @@ impl Tracks {
         self.handles
             .statics
             .iter_mut()
-            .filter(|x| x.entity_id == Some(entity_id))
+            .filter(|x| x.entity_id == Some(entity_id) && x.affected_by_time_dilation)
             .for_each(|x| {
                 x.handle
                     .set_playback_rate(update.dilation(), update.tween_curve());
@@ -196,7 +201,7 @@ impl Tracks {
         self.handles
             .streams
             .iter_mut()
-            .filter(|x| x.entity_id == Some(entity_id))
+            .filter(|x| x.entity_id == Some(entity_id) && x.affected_by_time_dilation)
             .for_each(|x| {
                 x.handle
                     .set_playback_rate(update.dilation(), update.tween_curve());

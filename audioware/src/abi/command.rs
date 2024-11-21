@@ -29,7 +29,7 @@ pub enum Command {
         event_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        tween: Option<Tween>,
+        ext: Option<Settings>,
     },
     PlayOverThePhone {
         event_name: CName,

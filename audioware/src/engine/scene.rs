@@ -44,11 +44,29 @@ pub struct Emitter {
 }
 
 impl Emitter {
-    pub fn store_static(&mut self, event_name: CName, handle: StaticSoundHandle) {
-        self.handles.statics.push(Handle { event_name, handle });
+    pub fn store_static(
+        &mut self,
+        event_name: CName,
+        handle: StaticSoundHandle,
+        affected_by_time_dilation: bool,
+    ) {
+        self.handles.statics.push(Handle {
+            event_name,
+            handle,
+            affected_by_time_dilation,
+        });
     }
-    pub fn store_stream(&mut self, event_name: CName, handle: StreamingSoundHandle<FromFileError>) {
-        self.handles.streams.push(Handle { event_name, handle });
+    pub fn store_stream(
+        &mut self,
+        event_name: CName,
+        handle: StreamingSoundHandle<FromFileError>,
+        affected_by_time_dilation: bool,
+    ) {
+        self.handles.streams.push(Handle {
+            event_name,
+            handle,
+            affected_by_time_dilation,
+        });
     }
 }
 
@@ -62,6 +80,7 @@ impl AsRef<EmitterHandle> for Emitter {
 pub struct Handle<T> {
     event_name: CName,
     handle: T,
+    affected_by_time_dilation: bool,
 }
 
 #[derive(Debug, Default)]
@@ -489,14 +508,24 @@ impl Scene {
                 tween = x.dilation.tween();
             }
             lifecycle!("sync emitter handle dilation: {rate} {tween:?}");
-            x.value_mut().handles.statics.iter_mut().for_each(|x| {
-                x.handle
-                    .set_playback_rate(rate, tween.unwrap_or(IMMEDIATELY));
-            });
-            x.value_mut().handles.streams.iter_mut().for_each(|x| {
-                x.handle
-                    .set_playback_rate(rate, tween.unwrap_or(IMMEDIATELY));
-            });
+            x.value_mut()
+                .handles
+                .statics
+                .iter_mut()
+                .filter(|x| x.affected_by_time_dilation)
+                .for_each(|x| {
+                    x.handle
+                        .set_playback_rate(rate, tween.unwrap_or(IMMEDIATELY));
+                });
+            x.value_mut()
+                .handles
+                .streams
+                .iter_mut()
+                .filter(|x| x.affected_by_time_dilation)
+                .for_each(|x| {
+                    x.handle
+                        .set_playback_rate(rate, tween.unwrap_or(IMMEDIATELY));
+                });
         });
     }
 

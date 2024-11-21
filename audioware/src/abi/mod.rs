@@ -301,7 +301,7 @@ unsafe impl ScriptClass for AudioRegion {
 }
 
 /// Extended audio settings.
-#[derive(Default, Clone)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct AudioSettingsExt {
     start_position: f32,
@@ -311,6 +311,22 @@ pub struct AudioSettingsExt {
     fade_in: Ref<Tween>,
     panning: f32,
     playback_rate: f32,
+    affected_by_time_dilation: bool,
+}
+
+impl Default for AudioSettingsExt {
+    fn default() -> Self {
+        Self {
+            start_position: 0.,
+            region: Ref::default(),
+            r#loop: false,
+            volume: 100.,
+            fade_in: Ref::default(),
+            panning: 0.5,
+            playback_rate: 1.,
+            affected_by_time_dilation: true,
+        }
+    }
 }
 
 unsafe impl ScriptClass for AudioSettingsExt {
@@ -410,6 +426,7 @@ impl ToSettings for Ref<AudioSettingsExt> {
             fade_in,
             panning,
             playback_rate,
+            affected_by_time_dilation,
         } = unsafe { self.fields() }?.clone();
         let mut settings = Settings::default();
         if start_position != 0.0 {
@@ -428,6 +445,9 @@ impl ToSettings for Ref<AudioSettingsExt> {
         }
         if playback_rate != 1.0 {
             settings.playback_rate = Some(kira::sound::PlaybackRate::Factor(playback_rate as f64));
+        }
+        if !affected_by_time_dilation {
+            settings.affected_by_time_dilation = Some(false);
         }
         Some(settings)
     }
@@ -475,7 +495,7 @@ pub trait ExtCommand {
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        tween: Ref<Tween>,
+        ext: Ref<AudioSettingsExt>,
     );
     fn stop_on_emitter(
         &self,
@@ -540,13 +560,13 @@ impl ExtCommand for AudioSystemExt {
         event_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        tween: Ref<Tween>,
+        ext: Ref<AudioSettingsExt>,
     ) {
         queue::send(Command::PlayOnEmitter {
             event_name,
             entity_id,
             emitter_name,
-            tween: tween.into_tween(),
+            ext: ext.into_settings(),
         });
     }
 

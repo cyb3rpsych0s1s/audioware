@@ -28,6 +28,7 @@ pub struct Settings {
     #[serde(deserialize_with = "factor_or_semitones", default)]
     pub playback_rate: Option<PlaybackRate>,
     pub fade_in_tween: Option<Interpolation>,
+    pub affected_by_time_dilation: Option<bool>,
 }
 
 macro_rules! impl_with {

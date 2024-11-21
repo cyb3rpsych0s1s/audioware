@@ -154,7 +154,6 @@ where
     ) {
         if let Ok(key) = self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
             let data = self.banks.data(key);
-            // let emitter = Emitter::new(entity_id, emitter_name);
             match data {
                 Either::Left(data) => {
                     if let Ok(handle) = self.manager.play(
@@ -162,7 +161,7 @@ where
                             .with(tween),
                     ) {
                         self.tracks
-                            .store_static(handle, event_name, entity_id, emitter_name);
+                            .store_static(handle, event_name, entity_id, emitter_name, true);
                     }
                 }
                 Either::Right(data) => {
@@ -171,7 +170,7 @@ where
                             .with(tween),
                     ) {
                         self.tracks
-                            .store_stream(handle, event_name, entity_id, emitter_name);
+                            .store_stream(handle, event_name, entity_id, emitter_name, true);
                     }
                 }
             }
@@ -189,14 +188,23 @@ where
     ) {
         if let Ok(key) = self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
             let data = self.banks.data(key);
+            let dilatable = ext
+                .as_ref()
+                .and_then(|x| x.affected_by_time_dilation)
+                .unwrap_or(true);
             match data {
                 Either::Left(data) => {
                     if let Ok(handle) = self.manager.play(
                         data.output_destination(key.to_output_destination(&self.tracks))
                             .with(ext),
                     ) {
-                        self.tracks
-                            .store_static(handle, event_name, entity_id, emitter_name);
+                        self.tracks.store_static(
+                            handle,
+                            event_name,
+                            entity_id,
+                            emitter_name,
+                            dilatable,
+                        );
                     }
                 }
                 Either::Right(data) => {
@@ -204,8 +212,13 @@ where
                         data.output_destination(key.to_output_destination(&self.tracks))
                             .with(ext),
                     ) {
-                        self.tracks
-                            .store_stream(handle, event_name, entity_id, emitter_name);
+                        self.tracks.store_stream(
+                            handle,
+                            event_name,
+                            entity_id,
+                            emitter_name,
+                            dilatable,
+                        );
                     }
                 }
             }
@@ -217,7 +230,7 @@ where
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        tween: Option<Tween>,
+        ext: Option<Settings>,
         spoken: SpokenLocale,
         gender: Option<PlayerGender>,
     ) {
@@ -228,31 +241,35 @@ where
                     .get_mut_with_name(&entity_id, &Some(emitter_name))
                 {
                     let data = self.banks.data(key);
+                    let dilatable = ext
+                        .as_ref()
+                        .and_then(|x| x.affected_by_time_dilation)
+                        .unwrap_or(true);
                     match data {
                         Either::Left(data) => {
                             if let Ok(handle) = self
                                 .manager
-                                .play(data.output_destination(emitter.as_ref()).with(tween))
+                                .play(data.output_destination(emitter.as_ref()).with(ext))
                             {
                                 lifecycle!(
                                     "playing static sound {} on {:?}",
                                     sound_name.as_str(),
                                     entity_id
                                 );
-                                emitter.store_static(sound_name, handle);
+                                emitter.store_static(sound_name, handle, dilatable);
                             }
                         }
                         Either::Right(data) => {
                             if let Ok(handle) = self
                                 .manager
-                                .play(data.output_destination(emitter.as_ref()).with(tween))
+                                .play(data.output_destination(emitter.as_ref()).with(ext))
                             {
                                 lifecycle!(
                                     "playing stream sound {} on {:?}",
                                     sound_name.as_str(),
                                     entity_id
                                 );
-                                emitter.store_stream(sound_name, handle);
+                                emitter.store_stream(sound_name, handle, dilatable);
                             }
                         }
                     }
