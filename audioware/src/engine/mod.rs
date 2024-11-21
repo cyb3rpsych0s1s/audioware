@@ -62,10 +62,10 @@ where
     <B as Backend>::Error: Debug,
 {
     pub fn try_new(settings: AudioManagerSettings<B>) -> Result<Engine<B>, Error> {
-        #[cfg(not(debug_assertions))]
-        let (banks, report) = Banks::new();
-        #[cfg(debug_assertions)]
-        let (banks, report) = Banks::new(false);
+        let (banks, report) = Banks::new(
+            #[cfg(debug_assertions)]
+            false,
+        );
         #[cfg(not(debug_assertions))]
         let _ = BANKS.set(banks.clone());
         #[cfg(debug_assertions)]
