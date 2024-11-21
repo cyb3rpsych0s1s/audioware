@@ -20,7 +20,8 @@ use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 use crate::{
     error::{Error, SceneError},
     get_player, AIActionHelper, AsEntity, AsGameInstance, AsScriptedPuppet, AsTimeDilatable,
-    Entity, GameObject, GamedataNpcType, ScriptedPuppet, TimeDilatable, Vector4,
+    AvObject, BikeObject, CarObject, Device, Entity, GameObject, GamedataNpcType, ScriptedPuppet,
+    TankObject, TimeDilatable, Vector4, VehicleObject,
 };
 
 use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY, DilationUpdate};
@@ -572,11 +573,8 @@ pub trait AsEntityExt {
 
 impl AsEntityExt for Ref<Entity> {
     fn get_emitter_distances(&self) -> Option<EmitterDistances> {
-        self.clone()
-            .cast::<ScriptedPuppet>()
-            .as_ref()
-            .map(AsScriptedPuppet::get_npc_type)
-            .map(|x| match x {
+        if let Some(puppet) = self.clone().cast::<ScriptedPuppet>().as_ref() {
+            let s = match puppet.get_npc_type() {
                 GamedataNpcType::Device | GamedataNpcType::Drone | GamedataNpcType::Spiderbot => {
                     EmitterDistances {
                         min_distance: 3.,
@@ -596,6 +594,35 @@ impl AsEntityExt for Ref<Entity> {
                 GamedataNpcType::Invalid | GamedataNpcType::Count | GamedataNpcType::Any => {
                     EmitterDistances::default()
                 }
-            })
+            };
+            return Some(s);
+        }
+        if let Some(vehicle) = self.clone().cast::<VehicleObject>().as_ref() {
+            if vehicle.is_a::<CarObject>() {
+                return Some(EmitterDistances {
+                    min_distance: 8.,
+                    max_distance: 100.,
+                });
+            }
+            if vehicle.is_a::<BikeObject>() {
+                return Some(EmitterDistances {
+                    min_distance: 8.,
+                    max_distance: 120.,
+                });
+            }
+            if vehicle.is_a::<TankObject>() || vehicle.is_a::<AvObject>() {
+                return Some(EmitterDistances {
+                    min_distance: 20.,
+                    max_distance: 200.,
+                });
+            }
+        }
+        if let Some(_) = self.clone().cast::<Device>().as_ref() {
+            return Some(EmitterDistances {
+                min_distance: 3.,
+                max_distance: 30.,
+            });
+        }
+        None
     }
 }

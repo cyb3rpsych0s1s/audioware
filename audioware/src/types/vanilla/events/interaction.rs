@@ -240,3 +240,37 @@ unsafe impl ScriptClass for ChoiceCaptionPart {
     type Kind = Native;
     const NAME: &'static str = "gameinteractionsChoiceCaptionPart";
 }
+
+#[repr(C, align(8))]
+pub struct GameinteractionsChoiceLookAtDescriptor {
+    pub type_: GameinteractionsChoiceLookAtType, // 0x0
+    pub slot_name: CName,                        // 0x8
+    pub offset: Vector3,                         // 0x10
+    pub orb_id: GameinteractionsOrbId,           // 0x1C
+}
+
+unsafe impl NativeRepr for GameinteractionsChoiceLookAtDescriptor {
+    const NAME: &'static str = "gameinteractionsChoiceLookAtDescriptor";
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum GameinteractionsChoiceLookAtType {
+    Root = 0,
+    Slot = 1,
+    Orb = 2,
+}
+
+unsafe impl NativeRepr for GameinteractionsChoiceLookAtType {
+    const NAME: &'static str = "gameinteractionsChoiceLookAtType";
+}
+
+#[derive(Clone, Copy)]
+#[repr(C, align(4))]
+pub struct GameinteractionsOrbId {
+    pub id: u32, // 0x0
+}
+
+unsafe impl NativeRepr for GameinteractionsOrbId {
+    const NAME: &'static str = "gameinteractionsOrbID";
+}
