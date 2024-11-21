@@ -108,6 +108,7 @@ unsafe extern "C" fn post_register() {
 /// Once plugin initialized.
 unsafe extern "C" fn on_exit_initialization(_: &GameApp) {
     lifecycle!("on plugin exit initialization");
+    Audioware::once_exit_initialization();
 }
 
 /// Unload [Plugin].

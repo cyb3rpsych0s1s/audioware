@@ -45,6 +45,8 @@ impl Audioware {
     fn once_rtti_registered() {
         use red4ext_rs::PluginOps;
         hooks::attach(Audioware::env());
+    }
+    fn once_exit_initialization() {
         queue::notify(abi::lifecycle::Lifecycle::ReportInitialization);
     }
 }
