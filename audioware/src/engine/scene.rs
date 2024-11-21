@@ -579,18 +579,18 @@ impl AsEntityExt for Ref<Entity> {
             .map(|x| match x {
                 GamedataNpcType::Device | GamedataNpcType::Drone | GamedataNpcType::Spiderbot => {
                     EmitterDistances {
-                        min_distance: 1.,
-                        max_distance: 10.,
+                        min_distance: 3.,
+                        max_distance: 30.,
                     }
                 }
                 GamedataNpcType::Android | GamedataNpcType::Human => EmitterDistances {
-                    min_distance: 3.,
-                    max_distance: 20.,
+                    min_distance: 5.,
+                    max_distance: 65.,
                 },
                 GamedataNpcType::Cerberus | GamedataNpcType::Chimera | GamedataNpcType::Mech => {
                     EmitterDistances {
-                        min_distance: 5.,
-                        max_distance: 40.,
+                        min_distance: 10.,
+                        max_distance: 130.,
                     }
                 }
                 GamedataNpcType::Invalid | GamedataNpcType::Count | GamedataNpcType::Any => {
