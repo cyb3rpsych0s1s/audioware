@@ -173,7 +173,7 @@ impl Tracks {
                 x.handle.stop(tween);
             });
         self.handles
-            .statics
+            .streams
             .iter_mut()
             .filter(|x| {
                 x.event_name == event_name
