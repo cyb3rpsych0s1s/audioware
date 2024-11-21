@@ -48,7 +48,14 @@ pub fn ensure_no_duplicate_accross_depots(
 
 /// Ensure [CName] does not already exist in [game pool](CNamePool).
 #[inline]
-pub fn ensure_key_unique(cname: &str) -> Result<(), Error> {
+pub fn ensure_key_unique(
+    cname: &str,
+    #[cfg(debug_assertions)] hot_reload: bool,
+) -> Result<(), Error> {
+    #[cfg(debug_assertions)]
+    if hot_reload {
+        return Ok(());
+    }
     ensure!(
         CName::new(cname).to_string().as_str() != cname,
         NonUniqueKeySnafu {
@@ -408,8 +415,13 @@ pub fn ensure_sfx<'a>(
     set: &'a mut HashSet<Id>,
     map: &'a mut HashMap<UniqueKey, StaticSoundData>,
     smap: &'a mut HashMap<UniqueKey, Settings>,
+    #[cfg(debug_assertions)] hot_reload: bool,
 ) -> Result<(), Error> {
-    ensure_key_unique(k)?;
+    ensure_key_unique(
+        k,
+        #[cfg(debug_assertions)]
+        hot_reload,
+    )?;
     let UsableAudio {
         audio: Audio { file, settings },
         usage,
@@ -429,7 +441,14 @@ pub fn ensure_sfx<'a>(
         smap,
         Source::Sfx,
     )?;
-    CNamePool::add_cstr(&c_string);
+
+    add_name_to_pool(
+        &c_string,
+        #[cfg(debug_assertions)]
+        k,
+        #[cfg(debug_assertions)]
+        hot_reload,
+    );
     Ok(())
 }
 
@@ -441,8 +460,13 @@ pub fn ensure_ono<'a>(
     set: &'a mut HashSet<Id>,
     map: &'a mut HashMap<GenderKey, StaticSoundData>,
     smap: &'a mut HashMap<GenderKey, Settings>,
+    #[cfg(debug_assertions)] hot_reload: bool,
 ) -> Result<(), Error> {
-    ensure_key_unique(k)?;
+    ensure_key_unique(
+        k,
+        #[cfg(debug_assertions)]
+        hot_reload,
+    )?;
     let (usage, genders) = v.into();
     let c_string = std::ffi::CString::new(k)?;
     let cname = CName::new(k);
@@ -462,7 +486,14 @@ pub fn ensure_ono<'a>(
             Source::Ono,
         )?;
     }
-    CNamePool::add_cstr(&c_string);
+
+    add_name_to_pool(
+        &c_string,
+        #[cfg(debug_assertions)]
+        k,
+        #[cfg(debug_assertions)]
+        hot_reload,
+    );
     Ok(())
 }
 
@@ -479,8 +510,13 @@ pub fn ensure_voice<'a>(
     complex_subs: &'a mut HashMap<BothKey, DialogLine>,
     simple_settings: &'a mut HashMap<LocaleKey, Settings>,
     complex_settings: &'a mut HashMap<BothKey, Settings>,
+    #[cfg(debug_assertions)] hot_reload: bool,
 ) -> Result<(), Error> {
-    ensure_key_unique(k)?;
+    ensure_key_unique(
+        k,
+        #[cfg(debug_assertions)]
+        hot_reload,
+    )?;
     let v: AnyVoice = v.into();
     let c_string = std::ffi::CString::new(k)?;
     let cname = CName::new(k);
@@ -542,7 +578,14 @@ pub fn ensure_voice<'a>(
             }
         }
     }
-    CNamePool::add_cstr(&c_string);
+
+    add_name_to_pool(
+        &c_string,
+        #[cfg(debug_assertions)]
+        k,
+        #[cfg(debug_assertions)]
+        hot_reload,
+    );
     Ok(())
 }
 
@@ -554,8 +597,13 @@ pub fn ensure_music<'a>(
     set: &'a mut HashSet<Id>,
     map: &'a mut HashMap<UniqueKey, StaticSoundData>,
     smap: &'a mut HashMap<UniqueKey, Settings>,
+    #[cfg(debug_assertions)] hot_reload: bool,
 ) -> Result<(), Error> {
-    ensure_key_unique(k)?;
+    ensure_key_unique(
+        k,
+        #[cfg(debug_assertions)]
+        hot_reload,
+    )?;
     let UsableAudio {
         audio: Audio { file, settings },
         usage,
@@ -575,7 +623,14 @@ pub fn ensure_music<'a>(
         smap,
         Source::Sfx,
     )?;
-    CNamePool::add_cstr(&c_string);
+
+    add_name_to_pool(
+        &c_string,
+        #[cfg(debug_assertions)]
+        k,
+        #[cfg(debug_assertions)]
+        hot_reload,
+    );
     Ok(())
 }
 
@@ -586,8 +641,13 @@ pub fn ensure_jingles<'a>(
     m: &Mod,
     set: &'a mut HashSet<Id>,
     smap: &'a mut HashMap<UniqueKey, Settings>,
+    #[cfg(debug_assertions)] hot_reload: bool,
 ) -> Result<(), Error> {
-    ensure_key_unique(k)?;
+    ensure_key_unique(
+        k,
+        #[cfg(debug_assertions)]
+        hot_reload,
+    )?;
     let Audio { file, settings } = (&v).into();
     ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref(), v.captions())?;
     let c_string = std::ffi::CString::new(k)?;
@@ -602,6 +662,23 @@ pub fn ensure_jingles<'a>(
         ensure_store_settings::<UniqueKey>(&key, settings, smap)?;
     }
     ensure_store_id(id, set)?;
-    CNamePool::add_cstr(&c_string);
+
+    add_name_to_pool(
+        &c_string,
+        #[cfg(debug_assertions)]
+        k,
+        #[cfg(debug_assertions)]
+        hot_reload,
+    );
     Ok(())
+}
+
+fn add_name_to_pool(
+    c_string: &std::ffi::CString,
+    #[cfg(debug_assertions)] str: &str,
+    #[cfg(debug_assertions)] hot_reload: bool,
+) {
+    if !hot_reload || CName::new(str).as_str() != str {
+        CNamePool::add_cstr(c_string);
+    }
 }

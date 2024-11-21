@@ -152,8 +152,8 @@ impl Emitters {
         self.0.retain(f)
     }
     fn clear(&mut self) {
-        self.0.clear();
         EMITTERS.write().clear();
+        self.0.clear();
     }
 }
 
@@ -356,6 +356,7 @@ impl Scene {
     }
 
     pub fn clear(&mut self) {
+        self.stop_emitters(IMMEDIATELY);
         self.emitters.clear();
     }
 
@@ -617,7 +618,7 @@ impl AsEntityExt for Ref<Entity> {
                 });
             }
         }
-        if let Some(_) = self.clone().cast::<Device>().as_ref() {
+        if self.clone().cast::<Device>().as_ref().is_some() {
             return Some(EmitterDistances {
                 min_distance: 3.,
                 max_distance: 30.,

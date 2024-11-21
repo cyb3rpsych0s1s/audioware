@@ -43,11 +43,6 @@ pub struct Banks {
     pub single_settings: HashMap<LocaleKey, Settings>,
     pub dual_settings: HashMap<BothKey, Settings>,
 }
-impl Default for Banks {
-    fn default() -> Self {
-        Self::new().0
-    }
-}
 
 impl Banks {
     /// # Safety
@@ -163,7 +158,7 @@ impl Banks {
         Err(RegistryError::NotFound { cname: *name }.into())
     }
     /// Initialize banks.
-    pub fn new() -> (Self, Initialization) {
+    pub fn new(#[cfg(debug_assertions)] hot_reload: bool) -> (Self, Initialization) {
         let since = Instant::now();
 
         let mut errors: Vec<Error> = vec![];
@@ -238,6 +233,8 @@ impl Banks {
                             &mut ids,
                             &mut uniques,
                             &mut unique_settings,
+                            #[cfg(debug_assertions)]
+                            hot_reload,
                         ) {
                             Ok(x) => x,
                             Err(e) => {
@@ -256,6 +253,8 @@ impl Banks {
                             &mut ids,
                             &mut genders,
                             &mut gender_settings,
+                            #[cfg(debug_assertions)]
+                            hot_reload,
                         ) {
                             Ok(x) => x,
                             Err(e) => {
@@ -278,6 +277,8 @@ impl Banks {
                             &mut dual_subs,
                             &mut single_settings,
                             &mut dual_settings,
+                            #[cfg(debug_assertions)]
+                            hot_reload,
                         ) {
                             Ok(x) => x,
                             Err(e) => {
@@ -296,6 +297,8 @@ impl Banks {
                             &mut ids,
                             &mut uniques,
                             &mut unique_settings,
+                            #[cfg(debug_assertions)]
+                            hot_reload,
                         ) {
                             Ok(x) => x,
                             Err(e) => {
@@ -313,6 +316,8 @@ impl Banks {
                             &m,
                             &mut ids,
                             &mut unique_settings,
+                            #[cfg(debug_assertions)]
+                            hot_reload,
                         ) {
                             Ok(x) => x,
                             Err(e) => {

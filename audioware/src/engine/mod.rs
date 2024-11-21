@@ -62,14 +62,16 @@ where
     <B as Backend>::Error: Debug,
 {
     pub fn try_new(settings: AudioManagerSettings<B>) -> Result<Engine<B>, Error> {
+        #[cfg(not(debug_assertions))]
         let (banks, report) = Banks::new();
+        #[cfg(debug_assertions)]
+        let (banks, report) = Banks::new(false);
         #[cfg(not(debug_assertions))]
         let _ = BANKS.set(banks.clone());
         #[cfg(debug_assertions)]
         {
             *BANKS.write().deref_mut() = Some(banks.clone());
         }
-        let capacity = settings.capacities.sound_capacity as usize;
         let mut manager = AudioManager::new(settings).map_err(|_| Error::Engine {
             source: EngineError::Manager {
                 origin: "audio manager",
@@ -87,6 +89,16 @@ where
         })
     }
 
+    #[cfg(debug_assertions)]
+    pub fn try_hot_reload(&mut self) -> Result<(), Error> {
+        self.clear();
+        let (banks, report) = Banks::new(true);
+        *BANKS.write() = Some(banks.clone());
+        self.banks = banks;
+        self.report = report;
+        Ok(())
+    }
+
     pub fn any_handle(&self) -> bool {
         self.tracks.any_handle()
     }
@@ -96,7 +108,7 @@ where
         Ok(())
     }
 
-    pub fn clear_scene(&mut self) {
+    pub fn stop_scene_emitters(&mut self) {
         if let Some(mut scene) = self.scene.take() {
             scene.stop_emitters(IMMEDIATELY);
         }
@@ -229,14 +241,12 @@ where
         emitter_name: Option<CName>,
         tween: Option<Tween>,
     ) {
-        if self.banks.exists(&event_name) {
-            self.tracks.stop_by(
-                event_name,
-                entity_id,
-                emitter_name,
-                tween.unwrap_or_default(),
-            );
-        }
+        self.tracks.stop_by(
+            event_name,
+            entity_id,
+            emitter_name,
+            tween.unwrap_or_default(),
+        );
     }
 
     pub fn stop_on_emitter(
@@ -423,6 +433,13 @@ where
             .try_read()
             .and_then(|x| x.as_ref().map(|x| x.try_get(sound, spoken, gender).is_ok()))
             .unwrap_or(false)
+    }
+
+    pub fn clear(&mut self) {
+        self.tracks.clear();
+        if let Some(scene) = self.scene.as_mut() {
+            scene.clear();
+        }
     }
 }
 

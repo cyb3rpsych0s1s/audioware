@@ -146,6 +146,14 @@ impl Tracks {
     pub fn any_handle(&self) -> bool {
         !self.handles.statics.is_empty() || !self.handles.streams.is_empty()
     }
+    pub fn stop(&mut self, tween: Tween) {
+        self.handles.statics.iter_mut().for_each(|x| {
+            x.handle.stop(tween);
+        });
+        self.handles.streams.iter_mut().for_each(|x| {
+            x.handle.stop(tween);
+        });
+    }
     pub fn stop_by(
         &mut self,
         event_name: CName,
@@ -193,5 +201,10 @@ impl Tracks {
                 x.handle
                     .set_playback_rate(update.dilation(), update.tween_curve());
             });
+    }
+    pub fn clear(&mut self) {
+        self.stop(IMMEDIATELY);
+        self.handles.statics.clear();
+        self.handles.streams.clear();
     }
 }

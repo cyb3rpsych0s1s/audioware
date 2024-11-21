@@ -1,5 +1,4 @@
 use std::{
-    fmt::Debug,
     sync::{
         atomic::{AtomicU32, Ordering},
         LazyLock, OnceLock,
@@ -12,10 +11,7 @@ use audioware_manifest::SpokenLocale;
 use bitflags::bitflags;
 use crossbeam::channel::{bounded, tick, Receiver, Sender};
 use kira::manager::{
-    backend::{
-        cpal::{CpalBackend, CpalBackendSettings},
-        Backend,
-    },
+    backend::cpal::{CpalBackend, CpalBackendSettings},
     AudioManagerSettings,
 };
 use red4ext_rs::{
@@ -52,9 +48,7 @@ static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
 static STATE: LazyLock<AtomicU32> = LazyLock::new(|| AtomicU32::new(Flags::empty().bits()));
 
-pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
-    lifecycle!("spawn plugin thread");
-    STATE.store(Flags::LOADING.bits(), Ordering::Release);
+fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
     let mut backend_settings = CpalBackendSettings::default();
     if buffer_size != BufferSize::Auto {
@@ -66,7 +60,13 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
         ..Default::default()
     };
     let capacity = manager_settings.capacities.command_capacity;
-    let engine = Engine::try_new(manager_settings)?;
+    Ok((Engine::try_new(manager_settings)?, capacity))
+}
+
+pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
+    lifecycle!("spawn plugin thread");
+    STATE.store(Flags::LOADING.bits(), Ordering::Release);
+    let (engine, capacity) = load(env)?;
     let _ = THREAD.set(Mutex::new(Some(
         std::thread::Builder::new()
             .name("audioware".into())
@@ -84,10 +84,7 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn run<B: Backend>(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<B>)
-where
-    <B as Backend>::Error: Debug,
-{
+pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<CpalBackend>) {
     let spoken = SpokenLocale::default();
     let mut gender = None;
     let s = |x| Duration::from_secs_f32(x);
@@ -101,6 +98,14 @@ where
             match l {
                 Lifecycle::Terminate => {
                     break 'game;
+                }
+                #[cfg(debug_assertions)]
+                Lifecycle::HotReload => {
+                    match engine.try_hot_reload() {
+                        Ok(_) => lifecycle!("hot-reloaded Audioware"),
+                        Err(e) => fails!("hot-reload failed: {e}"),
+                    }
+                    continue 'game;
                 }
                 Lifecycle::SetListenerDilation {
                     value,
@@ -187,7 +192,7 @@ where
                     }
                     Err(e) => lifecycle!("failed to create new scene: {e}"),
                 },
-                Lifecycle::System(System::PlayerDetach) => engine.clear_scene(),
+                Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters(),
                 Lifecycle::Board(Board::UIMenu(true)) => {
                     should_sync = false;
                     engine.pause()

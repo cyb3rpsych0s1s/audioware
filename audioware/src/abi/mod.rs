@@ -20,6 +20,9 @@ use crate::{
     Audioware, ElasticTween, EmitterDistances, EmitterSettings, LinearTween, ToTween, Tween,
 };
 
+#[cfg(debug_assertions)]
+use crate::abi::debug::HotReload;
+
 pub mod command;
 pub mod lifecycle;
 
@@ -86,6 +89,8 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.SetVolume",                  Audioware::set_volume),
         g!(c"Audioware.SetPlayerGender",            Audioware::set_player_gender),
         g!(c"Audioware.UnsetPlayerGender",          Audioware::unset_player_gender),
+        #[cfg(debug_assertions)]
+        g!(c"HotReload",                            Audioware::hot_reload),
     ]
 }
 
@@ -577,5 +582,18 @@ impl Drop for DummyLol {
 impl DummyLol {
     pub fn hi(&self) {
         lifecycle!("Hi from DummyLol");
+    }
+}
+
+#[cfg(debug_assertions)]
+mod debug {
+    pub trait HotReload {
+        fn hot_reload();
+    }
+
+    impl HotReload for crate::Audioware {
+        fn hot_reload() {
+            crate::queue::notify(crate::abi::Lifecycle::HotReload);
+        }
     }
 }
