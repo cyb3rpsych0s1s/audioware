@@ -241,6 +241,7 @@ where
                     .get_mut_with_name(&entity_id, &Some(emitter_name))
                 {
                     let data = self.banks.data(key);
+                    let persistable = emitter.persist_until_sounds_finish;
                     let dilatable = ext
                         .as_ref()
                         .and_then(|x| x.affected_by_time_dilation)
@@ -256,7 +257,7 @@ where
                                     sound_name.as_str(),
                                     entity_id
                                 );
-                                emitter.store_static(sound_name, handle, dilatable);
+                                emitter.store_static(sound_name, handle, dilatable, persistable);
                             }
                         }
                         Either::Right(data) => {
@@ -269,7 +270,7 @@ where
                                     sound_name.as_str(),
                                     entity_id
                                 );
-                                emitter.store_stream(sound_name, handle, dilatable);
+                                emitter.store_stream(sound_name, handle, dilatable, persistable);
                             }
                         }
                     }
@@ -365,7 +366,7 @@ where
         match self.scene {
             Some(ref mut scene) => {
                 scene.on_emitter_dies(entity_id);
-                scene.remove_emitter(entity_id).is_ok()
+                scene.remove_emitter(entity_id)
             }
             None => {
                 lifecycle!("scene is not initialized");
