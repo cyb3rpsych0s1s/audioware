@@ -1,4 +1,4 @@
-use std::{ops::Not, time::Duration};
+use std::time::Duration;
 
 use audioware_manifest::{Interpolation, PlayerGender, Region, ScnDialogLineType, Settings};
 use command::Command;
@@ -17,7 +17,8 @@ use crate::{
     engine::{eq::Preset, Engine},
     queue,
     utils::lifecycle,
-    Audioware, ElasticTween, EmitterSettings, LinearTween, ToEasing, ToTween, Tween,
+    Audioware, ElasticTween, EmitterDistances, EmitterSettings, LinearTween, ToEasing, ToTween,
+    Tween,
 };
 
 #[cfg(debug_assertions)]
@@ -466,25 +467,28 @@ impl ToSettings for Ref<EmitterSettings> {
             persist_until_sounds_finish,
         } = unsafe { self.fields() }?.clone();
         let mut settings = kira::spatial::emitter::EmitterSettings::default();
-        if let Some(distances) = distances
-            .is_null()
-            .not()
-            .then_some(unsafe { distances.fields() })
-            .flatten()
-        {
-            if distances.min_distance != 0. || distances.max_distance != 0. {
-                settings.distances = kira::spatial::emitter::EmitterDistances {
-                    min_distance: distances.min_distance,
-                    max_distance: distances.max_distance,
-                };
-            }
-        }
-        if !attenuation_function.is_null() {
-            settings.attenuation_function = attenuation_function.into_easing();
-        }
+        settings.distances = distances.into_settings().unwrap_or_default();
+        settings.attenuation_function = attenuation_function.into_easing();
         settings.enable_spatialization = enable_spatialization;
         settings.persist_until_sounds_finish = persist_until_sounds_finish;
         Some(settings)
+    }
+}
+
+impl ToSettings for Ref<EmitterDistances> {
+    type Settings = kira::spatial::emitter::EmitterDistances;
+    fn into_settings(self) -> Option<Self::Settings> {
+        if self.is_null() {
+            return None;
+        }
+        let EmitterDistances {
+            min_distance,
+            max_distance,
+        } = unsafe { self.fields() }?.clone();
+        Some(kira::spatial::emitter::EmitterDistances {
+            min_distance,
+            max_distance,
+        })
     }
 }
 

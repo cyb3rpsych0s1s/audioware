@@ -240,7 +240,7 @@ impl Scene {
             return Ok(());
         }
         let (position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
-        lifecycle!("emitter settings {:?} [{entity_id:?}]", settings);
+        lifecycle!("emitter settings before {:?} [{entity_id:?}]", settings);
         let settings = match settings {
             Some(settings)
                 if settings.distances.min_distance == 0.
@@ -254,10 +254,7 @@ impl Scene {
         let emitter = self.scene.add_emitter(position, settings)?;
         let names = DashSet::with_capacity(3);
         names.insert(emitter_name);
-        lifecycle!(
-            "add emitter: persists until sound finish {} [{entity_id:?}]",
-            settings.persist_until_sounds_finish
-        );
+        lifecycle!("emitter settings after {:?} [{entity_id:?}]", settings);
         let handle = Emitter {
             handle: emitter,
             handles: Default::default(),
@@ -437,21 +434,24 @@ impl Scene {
         });
     }
 
-    pub fn stop_for(&mut self, entity_id: EntityId, tween: Tween) {
-        self.emitters.iter_mut().for_each(|mut x| {
-            if *x.key() == entity_id {
-                x.value_mut()
-                    .handles
-                    .statics
-                    .iter_mut()
-                    .for_each(|x| x.handle.stop(tween));
-                x.value_mut()
-                    .handles
-                    .streams
-                    .iter_mut()
-                    .for_each(|x| x.handle.stop(tween));
-            }
-        });
+    pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId, tween: Tween) {
+        self.emitters
+            .iter_mut()
+            .filter(|x| !x.value().persist_until_sounds_finish)
+            .for_each(|mut x| {
+                if *x.key() == entity_id {
+                    x.value_mut()
+                        .handles
+                        .statics
+                        .iter_mut()
+                        .for_each(|x| x.handle.stop(tween));
+                    x.value_mut()
+                        .handles
+                        .streams
+                        .iter_mut()
+                        .for_each(|x| x.handle.stop(tween));
+                }
+            });
     }
 
     pub fn set_listener_dilation(&mut self, dilation: &DilationUpdate) -> bool {

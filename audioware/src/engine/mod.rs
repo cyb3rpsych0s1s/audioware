@@ -421,7 +421,7 @@ where
 
     pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId) {
         if let Some(x) = self.scene.as_mut() {
-            x.stop_for(entity_id, LAST_BREATH)
+            x.on_emitter_incapacitated(entity_id, LAST_BREATH)
         }
     }
 
