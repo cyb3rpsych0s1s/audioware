@@ -55,10 +55,12 @@ public static exec func TestPlayOnEmitter(game: GameInstance, soundName: String,
 
 public class AutoEmittersSystem extends ScriptableSystem {
     private func OnAttach() {
-        GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnKeyInput")
+        GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnPressF1")
         .AddTarget(InputTarget.Key(EInputKey.IK_F1));
+        GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnPressF2")
+        .AddTarget(InputTarget.Key(EInputKey.IK_F2));
     }
-    private cb func OnKeyInput(evt: ref<KeyInputEvent>) {
+    private cb func OnPressF1(evt: ref<KeyInputEvent>) {
         if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }
         let dummy = new DummyLol();
         dummy.Hi();
@@ -90,6 +92,18 @@ public class AutoEmittersSystem extends ScriptableSystem {
             FTLog(s"play on emitter: AutoEmittersSystem");
             GameInstance.GetAudioSystemExt(game).PlayOnEmitter(eventName, emitterID, emitterCName, tween);
         }
+    }
+    private cb func OnPressF2(evt: ref<KeyInputEvent>) {
+        if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }
+        let game = this.GetGameInstance();
+        let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
+        let there = target.GetWorldPosition();
+        FTLog(s"target position: [x: \(there.X), y: \(there.Y)], z: \(there.Z)");
+        let v = GetPlayer(game);
+        let here = v.GetWorldPosition();
+        FTLog(s"V position:      [x: \(here.X), y: \(here.Y)], z: \(here.Z)");
+        let diff = new Vector3(AbsF(there.X - here.X), AbsF(there.Y - here.Y), AbsF(there.Z - here.Z));
+        FTLog(s"difference:      [x: \(diff.X), y: \(diff.Y)], z: \(diff.Z)");
     }
 }
 
