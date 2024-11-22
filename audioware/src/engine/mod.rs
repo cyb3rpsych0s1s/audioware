@@ -178,16 +178,16 @@ where
         }
     }
 
-    pub fn play<S>(
+    pub fn play<T>(
         &mut self,
         event_name: CName,
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
-        ext: Option<S>,
+        ext: Option<T>,
     ) where
-        StaticSoundData: With<Option<S>>,
-        StreamingSoundData<FromFileError>: With<Option<S>>,
-        S: AffectedByTimeDilation,
+        StaticSoundData: With<Option<T>>,
+        StreamingSoundData<FromFileError>: With<Option<T>>,
+        T: AffectedByTimeDilation,
     {
         let spoken = SpokenLocale::get();
         let gender = entity_id.as_ref().and_then(ToGender::to_gender);
