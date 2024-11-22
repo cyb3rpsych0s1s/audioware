@@ -384,10 +384,8 @@ where
     }
 
     pub fn reset(&mut self) {
-        self.tracks
-            .ambience
-            .equalizer()
-            .set_preset(eq::Preset::None);
+        self.set_reverb_mix(0.);
+        self.set_preset(eq::Preset::None);
     }
 
     pub fn is_registered_emitter(entity_id: EntityId) -> bool {
