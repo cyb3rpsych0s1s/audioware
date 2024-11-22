@@ -69,6 +69,35 @@ public static exec func TestPlayOverThePhone(game: GameInstance, name: String) {
     GameInstance.GetAudioSystemExt(game).PlayOverThePhone(cname, n"Vik", n"Male");
 }
 
+/// Game.TestReverb(1.0);
+/// Game.TestReverb(0.0);
+public static exec func TestReverb(game: GameInstance, reverb: Float) {
+    GameInstance.GetBlackboardSystem(game)
+    .Get(GetAllBlackboardDefs().Audioware_Settings)
+    .SetFloat(GetAllBlackboardDefs().Audioware_Settings.ReverbMix, reverb, true);
+}
+
+/// Game.TestPreset("None");
+/// Game.TestPreset("Underwater");
+/// Game.TestPreset("OnThePhone");
+public static exec func TestPreset(game: GameInstance, preset: String) {
+    let value: Int32;
+    switch preset {
+        case "OnThePhone":
+            value = EnumInt<Preset>(Preset.OnThePhone);
+            break;
+        case "Underwater":
+            value = EnumInt<Preset>(Preset.Underwater);
+            break;
+        default:
+            value = EnumInt<Preset>(Preset.None);
+            break;
+    }
+    GameInstance.GetBlackboardSystem(game)
+    .Get(GetAllBlackboardDefs().Audioware_Settings)
+    .SetInt(GetAllBlackboardDefs().Audioware_Settings.AudioPreset, value, true);
+}
+
 public class AutoEmittersSystem extends ScriptableSystem {
     private func OnAttach() {
         GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnPressF1")
