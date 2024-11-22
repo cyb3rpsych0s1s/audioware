@@ -149,16 +149,54 @@ where
         }
     }
 
-    pub fn play<T>(
+    pub fn play_over_the_phone(
+        &mut self,
+        event_name: CName,
+        emitter_name: CName,
+        gender: audioware_manifest::PlayerGender,
+    ) {
+        let spoken = SpokenLocale::get();
+        if let Ok(key) = self.banks.try_get(&event_name, &spoken, Some(&gender)) {
+            let data = self.banks.data(key);
+            let destination = &self.tracks.holocall;
+            let dilatable = true;
+            match data {
+                Either::Left(data) => {
+                    if let Ok(handle) = self.manager.play(data.output_destination(destination)) {
+                        self.tracks.store_static(
+                            handle,
+                            event_name,
+                            None,
+                            Some(emitter_name),
+                            dilatable,
+                        );
+                    }
+                }
+                Either::Right(data) => {
+                    if let Ok(handle) = self.manager.play(data.output_destination(destination)) {
+                        self.tracks.store_stream(
+                            handle,
+                            event_name,
+                            None,
+                            Some(emitter_name),
+                            dilatable,
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn play<S>(
         &mut self,
         event_name: CName,
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
-        ext: Option<T>,
+        ext: Option<S>,
     ) where
-        StaticSoundData: With<Option<T>>,
-        StreamingSoundData<FromFileError>: With<Option<T>>,
-        T: AffectedByTimeDilation,
+        StaticSoundData: With<Option<S>>,
+        StreamingSoundData<FromFileError>: With<Option<S>>,
+        S: AffectedByTimeDilation,
     {
         let spoken = SpokenLocale::get();
         let gender = entity_id.as_ref().and_then(ToGender::into_gender);
@@ -166,14 +204,15 @@ where
             let data = self.banks.data(key);
             let dilatable = ext
                 .as_ref()
-                .map(|x| x.affected_by_time_dilation())
+                .map(AffectedByTimeDilation::affected_by_time_dilation)
                 .unwrap_or(true);
+            let destination = key.to_output_destination(&self.tracks);
             match data {
                 Either::Left(data) => {
-                    if let Ok(handle) = self.manager.play(
-                        data.output_destination(key.to_output_destination(&self.tracks))
-                            .with(ext),
-                    ) {
+                    if let Ok(handle) = self
+                        .manager
+                        .play(data.output_destination(destination).with(ext))
+                    {
                         self.tracks.store_static(
                             handle,
                             event_name,
@@ -184,10 +223,10 @@ where
                     }
                 }
                 Either::Right(data) => {
-                    if let Ok(handle) = self.manager.play(
-                        data.output_destination(key.to_output_destination(&self.tracks))
-                            .with(ext),
-                    ) {
+                    if let Ok(handle) = self
+                        .manager
+                        .play(data.output_destination(destination).with(ext))
+                    {
                         self.tracks.store_stream(
                             handle,
                             event_name,
@@ -223,7 +262,7 @@ where
                     let data = self.banks.data(key);
                     let dilatable = ext
                         .as_ref()
-                        .map(|x| x.affected_by_time_dilation())
+                        .map(AffectedByTimeDilation::affected_by_time_dilation)
                         .unwrap_or(true);
                     match data {
                         Either::Left(data) => {
@@ -612,12 +651,14 @@ pub trait AffectedByTimeDilation {
 }
 
 impl AffectedByTimeDilation for Settings {
+    #[inline(always)]
     fn affected_by_time_dilation(&self) -> bool {
         self.affected_by_time_dilation.unwrap_or(true)
     }
 }
 
 impl AffectedByTimeDilation for Tween {
+    #[inline(always)]
     fn affected_by_time_dilation(&self) -> bool {
         true
     }

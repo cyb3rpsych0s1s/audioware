@@ -230,7 +230,11 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     emitter_name,
                     ext,
                 } => engine.play_on_emitter(event_name, entity_id, emitter_name, ext),
-                Command::PlayOverThePhone { .. } => {}
+                Command::PlayOverThePhone {
+                    event_name,
+                    emitter_name,
+                    gender,
+                } => engine.play_over_the_phone(event_name, emitter_name, gender),
                 Command::StopOnEmitter {
                     event_name,
                     entity_id,
