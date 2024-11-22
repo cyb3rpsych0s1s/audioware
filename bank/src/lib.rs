@@ -158,7 +158,7 @@ impl Banks {
         Err(RegistryError::NotFound { cname: *name }.into())
     }
     /// Initialize banks.
-    pub fn new(#[cfg(debug_assertions)] hot_reload: bool) -> (Self, Initialization) {
+    pub fn new(hot_reload: bool) -> (Self, Initialization) {
         let since = Instant::now();
 
         let mut errors: Vec<Error> = vec![];
@@ -233,7 +233,6 @@ impl Banks {
                             &mut ids,
                             &mut uniques,
                             &mut unique_settings,
-                            #[cfg(debug_assertions)]
                             hot_reload,
                         ) {
                             Ok(x) => x,
@@ -253,7 +252,6 @@ impl Banks {
                             &mut ids,
                             &mut genders,
                             &mut gender_settings,
-                            #[cfg(debug_assertions)]
                             hot_reload,
                         ) {
                             Ok(x) => x,
@@ -277,7 +275,6 @@ impl Banks {
                             &mut dual_subs,
                             &mut single_settings,
                             &mut dual_settings,
-                            #[cfg(debug_assertions)]
                             hot_reload,
                         ) {
                             Ok(x) => x,
@@ -297,7 +294,6 @@ impl Banks {
                             &mut ids,
                             &mut uniques,
                             &mut unique_settings,
-                            #[cfg(debug_assertions)]
                             hot_reload,
                         ) {
                             Ok(x) => x,
@@ -316,7 +312,6 @@ impl Banks {
                             &m,
                             &mut ids,
                             &mut unique_settings,
-                            #[cfg(debug_assertions)]
                             hot_reload,
                         ) {
                             Ok(x) => x,
@@ -340,7 +335,7 @@ impl Banks {
             (odsta, odstr, imsta)
         });
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "hot-reload")]
         let errors = errors
             .into_iter()
             .map(std::sync::Arc::new)
@@ -379,14 +374,14 @@ impl Banks {
 }
 
 /// Outcome of [Banks] initialization.
-#[cfg_attr(debug_assertions, derive(Clone))]
+#[cfg_attr(feature = "hot-reload", derive(Clone))]
 pub struct Initialization {
     duration: Duration,
     lengths: String,
     len_ids: usize,
-    #[cfg(not(debug_assertions))]
+    #[cfg(not(feature = "hot-reload"))]
     pub errors: Vec<Error>,
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "hot-reload")]
     pub errors: Vec<std::sync::Arc<Error>>,
 }
 

@@ -17,12 +17,9 @@ use crate::{
     engine::{eq::Preset, Engine},
     queue,
     utils::{lifecycle, warns},
-    Audioware, ElasticTween, EmitterDistances, EmitterSettings, LinearTween, ToEasing, ToTween,
-    Tween,
+    Audioware, ElasticTween, EmitterDistances, EmitterSettings, LinearTween, LocalizationPackage,
+    ToEasing, ToTween, Tween,
 };
-
-#[cfg(debug_assertions)]
-use crate::abi::debug::HotReload;
 
 pub mod command;
 pub mod lifecycle;
@@ -50,7 +47,7 @@ macro_rules! g {
 #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
 #[rustfmt::skip]
 pub fn exports() -> impl Exportable {
-    exports![
+    let exp = exports![
         ClassExport::<AudioSystemExt>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![
@@ -91,9 +88,15 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.SetPlayerGender",            Audioware::set_player_gender),
         g!(c"Audioware.UnsetPlayerGender",          Audioware::unset_player_gender),
         g!(c"Audioware.SetGameLocales",             Audioware::set_game_locales),
-        #[cfg(debug_assertions)]
-        g!(c"HotReload",                            Audioware::hot_reload),
-    ]
+        g!(c"Audioware.DefineSubtitles",            Audioware::define_subtitles),
+    ];
+    #[cfg(not(feature = "hot-reload"))]
+    {exp}
+    #[cfg(feature = "hot-reload")]
+    {
+        use crate::abi::debug::HotReload;
+        exports![exp, g!(c"HotReload", Audioware::hot_reload)]
+    }
 }
 
 /// On RTTI registration.
@@ -145,6 +148,7 @@ pub trait CodewareLifecycle {
     fn set_player_gender(gender: PlayerGender);
     fn unset_player_gender();
     fn set_game_locales(spoken: CName, written: CName);
+    fn define_subtitles(package: Ref<LocalizationPackage>);
 }
 
 pub trait ListenerLifecycle {
@@ -233,6 +237,14 @@ impl CodewareLifecycle for Audioware {
             spoken,
             written,
         }));
+    }
+
+    fn define_subtitles(_package: Ref<LocalizationPackage>) {
+        // let written = WrittenLocale::get();
+        // let subtitles = Banks.subtitles(written);
+        // for (key, (value_f, value_m)) in subtitles.iter() {
+        //     package.subtitle(key.as_str(), value_f.as_str(), value_m.as_str());
+        // }
     }
 }
 
@@ -676,7 +688,7 @@ impl DummyLol {
     }
 }
 
-#[cfg(debug_assertions)]
+#[cfg(feature = "hot-reload")]
 mod debug {
     pub trait HotReload {
         fn hot_reload();

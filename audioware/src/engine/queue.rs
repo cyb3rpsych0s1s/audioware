@@ -97,7 +97,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     break 'game;
                 }
                 Lifecycle::ReportInitialization => engine.report_initialization(false),
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "hot-reload")]
                 Lifecycle::HotReload => {
                     engine.hot_reload();
                     continue 'game;
@@ -181,6 +181,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::Session(Session::BeforeEnd) => {
                     should_sync = false;
                     engine.scene = None;
+                    engine.tracks.clear();
                 }
                 Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
                 Lifecycle::System(System::PlayerAttach) => match engine.try_new_scene() {

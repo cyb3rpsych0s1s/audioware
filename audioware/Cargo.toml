@@ -13,7 +13,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 audioware-core.workspace = true
-audioware-bank.workspace = true
+audioware-bank = { workspace = true }
 audioware-manifest.workspace = true
 cpal = "0.15"
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
@@ -39,5 +39,6 @@ semver = "1.0"
 ignored = ["rust-ini"]
 
 [features]
-default = ["research"]
+default = []
 research = []
+hot-reload = ["audioware-bank/hot-reload"]

@@ -2,15 +2,12 @@ use red4ext_rs::{
     class_kind::{Native, Scripted},
     types::{
         CName, Cruid, EntityId, IScriptable, ISerializable, NodeRef, RaRef, RedArray, RedString,
-        Ref, TweakDbId, Variant, WeakRef,
+        Ref, TweakDbId, WeakRef,
     },
     NativeRepr, ScriptClass,
 };
 
-use super::{
-    CallbackHandle, DelayId, GameObject, GameinteractionsChoiceLookAtDescriptor,
-    InteractionChoiceCaption, InteractionChoiceMetaData, Vector4,
-};
+use super::{CallbackHandle, DelayId, GameObject, InteractionChoice, Vector4};
 
 #[repr(C)]
 pub struct Device {
@@ -298,22 +295,6 @@ pub struct ScriptableDeviceAction {
 unsafe impl ScriptClass for ScriptableDeviceAction {
     const NAME: &'static str = "ScriptableDeviceAction";
     type Kind = Scripted;
-}
-
-#[repr(C, align(8))]
-pub struct InteractionChoice {
-    pub caption: RedString,                          // 0x0
-    pub caption_parts: InteractionChoiceCaption,     // 0x20
-    pub data: RedArray<Variant>,                     // 0x30
-    pub choice_meta_data: InteractionChoiceMetaData, // 0x40
-    pub _padding0: [u8; 0x8],
-    pub look_at_descriptor: GameinteractionsChoiceLookAtDescriptor, // 0x78
-    pub _padding1: [u8; 0x2],
-    pub do_not_turn_off_prevention_system: bool, // 0x9A
-}
-
-unsafe impl NativeRepr for InteractionChoice {
-    const NAME: &'static str = "gameinteractionsChoice";
 }
 
 #[repr(C, align(8))]

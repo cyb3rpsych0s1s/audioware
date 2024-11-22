@@ -74,11 +74,11 @@ impl PlayerGender {
 }
 
 pub trait ToGender {
-    fn into_gender(&self) -> Option<audioware_manifest::PlayerGender>;
+    fn to_gender(&self) -> Option<audioware_manifest::PlayerGender>;
 }
 
 impl ToGender for EntityId {
-    fn into_gender(&self) -> Option<audioware_manifest::PlayerGender> {
+    fn to_gender(&self) -> Option<audioware_manifest::PlayerGender> {
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, *self);
         if entity.is_null() {

@@ -113,6 +113,7 @@ impl Drop for Handles {
     }
 }
 
+#[allow(clippy::type_complexity)]
 static EMITTERS: LazyLock<RwLock<HashSet<(EntityId, Option<CName>)>>> =
     LazyLock::new(|| RwLock::new(HashSet::new()));
 
@@ -604,6 +605,7 @@ impl Emitter {
         Ok((position, busy))
     }
 
+    #[allow(clippy::type_complexity)]
     fn full_infos(
         entity_id: EntityId,
     ) -> Result<

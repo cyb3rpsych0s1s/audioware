@@ -8,7 +8,7 @@ use red4ext_rs::{
 };
 pub use types::*;
 
-#[cfg(debug_assertions)]
+#[cfg(feature = "hot-reload")]
 #[allow(dead_code)]
 pub mod debug;
 

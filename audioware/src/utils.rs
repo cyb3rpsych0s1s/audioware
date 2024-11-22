@@ -1,4 +1,5 @@
 //! Logging utils.
+#![allow(dead_code)]
 
 use red4ext_rs::{
     log,
@@ -30,6 +31,7 @@ pub(crate) use lifecycle;
 macro_rules! intercept {
     ($($arg:tt)*) => {{
         {
+            #[allow(unused_variables)]
             let msg = format!($($arg)*);
             $crate::utils::silly!("*~ {msg}")
         }
@@ -87,19 +89,16 @@ macro_rules! success {
 pub(crate) use success;
 
 /// Exposes `PLog` to Redscript.
-#[allow(dead_code)]
 pub fn plog_info(msg: String) {
     plog(msg, "PLog");
 }
 
 /// Exposes `PLogWarning` to Redscript.
-#[allow(dead_code)]
 pub fn plog_warn(msg: String) {
     plog(msg, "PLogWarning");
 }
 
 /// Exposes `PLogError` to Redscript.
-#[allow(dead_code)]
 pub fn plog_error(msg: String) {
     plog(msg, "PLogError");
 }
@@ -122,7 +121,6 @@ fn plog(msg: String, func_name: &str) {
 }
 
 /// Exposes `FTLog` to Rust on debug builds only.
-#[allow(dead_code)]
 pub fn dbg(msg: impl Into<String>) {
     #[cfg(debug_assertions)]
     console(msg, "FTLog");

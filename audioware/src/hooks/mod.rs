@@ -2,6 +2,7 @@ use red4ext_rs::SdkEnv;
 
 mod audio_system;
 mod entity;
+#[allow(dead_code)]
 mod events;
 mod save_handling_controller;
 mod time_dilatable;

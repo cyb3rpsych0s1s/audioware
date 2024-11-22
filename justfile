@@ -50,7 +50,7 @@ now:
 
 # 📦 build Rust RED4Ext plugin
 build PROFILE='debug' TO=game_dir: (setup join(TO, red4ext_deploy_dir))
-  @'{{ if PROFILE == "release" { `cargo build --release` } else { `cargo build` } }}'
+  @'{{ if PROFILE == "release" { `cargo build --release` } else { `cargo build --features hot-reload` } }}'
   @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just now
 
@@ -62,12 +62,16 @@ lldb TO=game_dir: dev
   @just copy '{{ join(red4ext_bin_dir, "debug", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
   @just now
 
-staging TO=game_dir: (build 'release') reload
+staging TO=game_dir: (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir))
+  @cargo build --release --features hot-reload
   @just copy '{{ join(red4ext_bin_dir, "release", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
+  @just copy '{{ join(red4ext_bin_dir, "release", plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
+  @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{ join(TO, redscript_deploy_dir) }}'
   @just now
 
 ci TO RELEASE='false': (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
   @if('{{RELEASE}}' -ieq 'true') { just no-debug '{{TO}}'; Write-Host "Removed debug files"; } else { Write-Host "Kept debug files untouched"; }
+  @just now
 
 optimize TO:
     upx --best --lzma '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'

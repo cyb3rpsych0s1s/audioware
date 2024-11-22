@@ -21,11 +21,8 @@ unsafe extern "C" fn detour(
     let frame = &mut *f;
     let state = frame.args_state();
 
-    #[cfg(debug_assertions)]
-    {
-        let save_id: i32 = unsafe { StackFrame::get_arg(frame) };
-        frame.restore_args(state);
-        intercept!("gameuiSaveHandlingController::LoadSaveInGame/LoadModdedSave: {save_id}");
-    }
+    let save_id: i32 = unsafe { StackFrame::get_arg(frame) };
+    frame.restore_args(state);
+    intercept!("gameuiSaveHandlingController::LoadSaveInGame/LoadModdedSave: {save_id}");
     cb(i, frame as *mut _, a3, a4);
 }

@@ -1,4 +1,4 @@
-use std::{fmt::Debug, ops::DerefMut};
+use std::fmt::Debug;
 
 use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
 use audioware_core::With;
@@ -38,9 +38,9 @@ mod tweens;
 
 pub use state::ToGender;
 
-#[cfg(not(debug_assertions))]
+#[cfg(not(feature = "hot-reload"))]
 static BANKS: std::sync::OnceLock<Banks> = std::sync::OnceLock::new();
-#[cfg(debug_assertions)]
+#[cfg(feature = "hot-reload")]
 static BANKS: parking_lot::RwLock<Option<Banks>> = parking_lot::RwLock::new(None);
 
 pub struct Engine<B: Backend> {
@@ -65,14 +65,12 @@ where
     <B as Backend>::Error: Debug,
 {
     pub fn try_new(settings: AudioManagerSettings<B>) -> Result<Engine<B>, Error> {
-        let (banks, report) = Banks::new(
-            #[cfg(debug_assertions)]
-            false,
-        );
-        #[cfg(not(debug_assertions))]
+        let (banks, report) = Banks::new(false);
+        #[cfg(not(feature = "hot-reload"))]
         let _ = BANKS.set(banks.clone());
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "hot-reload")]
         {
+            use std::ops::DerefMut;
             *BANKS.write().deref_mut() = Some(banks.clone());
         }
         let mut manager = AudioManager::new(settings).map_err(|_| Error::Engine {
@@ -92,7 +90,7 @@ where
         })
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "hot-reload")]
     pub fn hot_reload(&mut self) {
         self.clear();
         let (banks, report) = Banks::new(true);
@@ -102,13 +100,13 @@ where
         self.report_initialization(true);
     }
 
-    pub fn report_initialization(&self, #[cfg(debug_assertions)] hot_reload: bool) {
-        let conjugation = if cfg!(debug_assertions) && hot_reload {
+    pub fn report_initialization(&self, hot_reload: bool) {
+        let conjugation = if cfg!(feature = "hot-reload") && hot_reload {
             "hot-reloaded"
         } else {
             "initialized"
         };
-        let infinitive = if cfg!(debug_assertions) && hot_reload {
+        let infinitive = if cfg!(feature = "hot-reload") && hot_reload {
             "hot-reload"
         } else {
             "initialize"
@@ -192,7 +190,7 @@ where
         S: AffectedByTimeDilation,
     {
         let spoken = SpokenLocale::get();
-        let gender = entity_id.as_ref().and_then(ToGender::into_gender);
+        let gender = entity_id.as_ref().and_then(ToGender::to_gender);
         if let Ok(key) = self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
             let data = self.banks.data(key);
             let dilatable = ext
@@ -244,7 +242,7 @@ where
         StreamingSoundData<FromFileError>: With<Option<T>>,
         T: AffectedByTimeDilation,
     {
-        let gender = entity_id.into_gender();
+        let gender = entity_id.to_gender();
         let spoken = SpokenLocale::get();
         if let Some(ref mut scene) = self.scene {
             if let Ok(key) = self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
@@ -519,12 +517,12 @@ where
     pub fn exists(sound: &CName) -> bool {
         let spoken = SpokenLocale::get();
         let gender = PlayerGender::get();
-        #[cfg(not(debug_assertions))]
+        #[cfg(not(feature = "hot-reload"))]
         return BANKS
             .get()
-            .and_then(|x| x.try_get(sound, spoken, gender).is_ok())
+            .map(|x| x.try_get(sound, &spoken, gender.as_ref()).is_ok())
             .unwrap_or(false);
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "hot-reload")]
         BANKS
             .try_read()
             .and_then(|x| {
@@ -534,6 +532,7 @@ where
             .unwrap_or(false)
     }
 
+    #[allow(dead_code)]
     pub fn clear(&mut self) {
         self.tracks.clear();
         if let Some(scene) = self.scene.as_mut() {
