@@ -63,6 +63,12 @@ public static exec func TestPlayOnEmitter(game: GameInstance, soundName: String,
     }
 }
 
+/// Game.TestPlayOverThePhone("as_if_I_didnt_know_already");
+public static exec func TestPlayOverThePhone(game: GameInstance, name: String) {
+    let cname = StringToName(name);
+    GameInstance.GetAudioSystemExt(game).PlayOverThePhone(cname, n"Vik", n"Male");
+}
+
 public class AutoEmittersSystem extends ScriptableSystem {
     private func OnAttach() {
         GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnPressF1")

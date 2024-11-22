@@ -23,7 +23,7 @@ use tweens::{
 
 use crate::{
     error::{EngineError, Error},
-    utils::{fails, lifecycle},
+    utils::{fails, lifecycle, success, warns},
     AsAudioSystem, AsGameInstance,
 };
 
@@ -116,20 +116,13 @@ where
 
         match self.report.outcome() {
             InitializationOutcome::Success => {
-                crate::utils::lifecycle!("{}", self.report);
-                crate::utils::info(format!("Audioware {conjugation} successfully!"))
+                success!(["{}", self.report];["Audioware {} successfully!", conjugation]);
             }
             InitializationOutcome::PartialSuccess => {
-                crate::utils::lifecycle!("{}", self.report);
-                crate::utils::warn(format!(
-                    "Audioware {conjugation} partially. See RED4ext log for more details."
-                ))
+                warns!(["{}", self.report];["Audioware partially failed to {infinitive}. See RED4ext log for more details."]);
             }
             InitializationOutcome::CompleteFailure => {
-                crate::utils::fails!("{}", self.report);
-                crate::utils::error(format!(
-                    "Audioware failed to {infinitive}. See RED4ext log for more details."
-                ))
+                fails!(["{}", self.report];["Audioware failed to {infinitive}. See RED4ext log for more details."]);
             }
         };
     }

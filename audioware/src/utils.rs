@@ -1,5 +1,4 @@
 //! Logging utils.
-#![allow(dead_code)]
 
 use red4ext_rs::{
     log,
@@ -9,7 +8,6 @@ use red4ext_rs::{
 
 use crate::Audioware;
 
-#[allow(unused_macros)]
 macro_rules! silly {
     ($($arg:tt)*) => {{
         #[cfg(debug_assertions)]
@@ -19,16 +17,13 @@ macro_rules! silly {
         }
     }};
 }
-#[allow(unused_imports)]
 pub(crate) use silly;
 
-#[allow(unused_macros)]
 macro_rules! lifecycle {
     ($($arg:tt)*) => {
         $crate::utils::silly!($($arg)*)
     };
 }
-#[allow(unused_imports)]
 pub(crate) use lifecycle;
 
 #[allow(unused_macros)]
@@ -43,30 +38,68 @@ macro_rules! intercept {
 #[allow(unused_imports)]
 pub(crate) use intercept;
 
-#[allow(unused_macros)]
-macro_rules! fails {
-    ($($arg:tt)*) => {{
-        #[cfg(debug_assertions)]
-        {
-            use ::red4ext_rs::PluginOps;
-            ::red4ext_rs::log::error!($crate::Audioware::env(), $($arg)*)
-        }
+macro_rules! reports {
+    ([$fn:ident];[$($red4ext:tt)*];[$($reds:tt)*]) => {{
+        use ::red4ext_rs::PluginOps;
+        ::red4ext_rs::log::$fn!($crate::Audioware::env(), $($red4ext)*);
+        $crate::utils::$fn(format!($($reds)*));
+    }};
+    ([error];[$($msg:tt)*]) => {{
+        $crate::utils::reports!([error];[$($msg)*];[$($msg)*]);
+    }};
+    ([warn];[$($msg:tt)*]) => {{
+        $crate::utils::reports!([warn];[$($msg)*];[$($msg)*]);
+    }};
+    ([info];[$($msg:tt)*]) => {{
+        $crate::utils::reports!([info];[$($msg)*];[$($msg)*]);
     }};
 }
-#[allow(unused_imports)]
+pub(crate) use reports;
+
+macro_rules! fails {
+    ([$($red4ext:tt)*];[$($reds:tt)*]) => {{
+        $crate::utils::reports!([error];[$($red4ext)*];[$($reds)*]);
+    }};
+    ($($arg:tt)*) => {{
+        $crate::utils::reports!([error];[$($arg)*]);
+    }};
+}
 pub(crate) use fails;
 
+macro_rules! warns {
+    ([$($red4ext:tt)*];[$($reds:tt)*]) => {{
+        $crate::utils::reports!([warn];[$($red4ext)*];[$($reds)*]);
+    }};
+    ($($arg:tt)*) => {{
+        $crate::utils::reports!([warn];[$($arg)*]);
+    }};
+}
+pub(crate) use warns;
+
+macro_rules! success {
+    ([$($red4ext:tt)*];[$($reds:tt)*]) => {{
+        $crate::utils::reports!([info];[$($red4ext)*];[$($reds)*]);
+    }};
+    ($($arg:tt)*) => {{
+        $crate::utils::reports!([info];[$($arg)*]);
+    }};
+}
+pub(crate) use success;
+
 /// Exposes `PLog` to Redscript.
+#[allow(dead_code)]
 pub fn plog_info(msg: String) {
     plog(msg, "PLog");
 }
 
 /// Exposes `PLogWarning` to Redscript.
+#[allow(dead_code)]
 pub fn plog_warn(msg: String) {
     plog(msg, "PLogWarning");
 }
 
 /// Exposes `PLogError` to Redscript.
+#[allow(dead_code)]
 pub fn plog_error(msg: String) {
     plog(msg, "PLogError");
 }
@@ -89,6 +122,7 @@ fn plog(msg: String, func_name: &str) {
 }
 
 /// Exposes `FTLog` to Rust on debug builds only.
+#[allow(dead_code)]
 pub fn dbg(msg: impl Into<String>) {
     #[cfg(debug_assertions)]
     console(msg, "FTLog");

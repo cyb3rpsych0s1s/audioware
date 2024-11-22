@@ -11,6 +11,7 @@ public native class AudioSystemExt {
     public final native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt ext: ref<AudioSettingsExt>) -> Void;
     public final native func Stop(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void;
     public final native func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueExt: ref<AudioSettingsExt>) -> Void;
+    public final native func PlayOverThePhone(eventName: CName, emitterName: CName, gender: CName) -> Void;
     // enhanced SDK variants
     public final func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt tween: ref<Tween>) -> Void {
         let ext = new AudioSettingsExt();

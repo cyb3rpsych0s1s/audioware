@@ -16,7 +16,7 @@ use red4ext_rs::{
 use crate::{
     engine::{eq::Preset, Engine},
     queue,
-    utils::lifecycle,
+    utils::{lifecycle, warns},
     Audioware, ElasticTween, EmitterDistances, EmitterSettings, LinearTween, ToEasing, ToTween,
     Tween,
 };
@@ -57,6 +57,7 @@ pub fn exports() -> impl Exportable {
                     final c"Play" => AudioSystemExt::play,
                     final c"Stop" => AudioSystemExt::stop,
                     final c"Switch" => AudioSystemExt::switch,
+                    final c"PlayOverThePhone" => AudioSystemExt::play_over_the_phone,
                     final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
                     final c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
                     final c"RegisterEmitter" => AudioSystemExt::register_emitter,
@@ -523,6 +524,7 @@ pub trait ExtCommand {
         line_type: Opt<ScnDialogLineType>,
         ext: Ref<AudioSettingsExt>,
     );
+    fn play_over_the_phone(&self, event_name: CName, emitter_name: CName, gender: CName);
     fn stop(
         &self,
         event_name: CName,
@@ -636,6 +638,21 @@ impl ExtCommand for AudioSystemExt {
             switch_name_tween: switch_name_tween.into_tween(),
             switch_value_settings: switch_value_ext.into_settings(),
         });
+    }
+
+    fn play_over_the_phone(&self, event_name: CName, emitter_name: CName, gender: CName) {
+        match PlayerGender::try_from(gender) {
+            Ok(gender) => {
+                queue::send(Command::PlayOverThePhone {
+                    event_name,
+                    emitter_name,
+                    gender,
+                });
+            }
+            Err(e) => {
+                warns!("invalid gender: {e}");
+            }
+        }
     }
 }
 

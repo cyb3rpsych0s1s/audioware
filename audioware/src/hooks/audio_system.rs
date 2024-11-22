@@ -9,6 +9,7 @@ use crate::{abi::command::Command, attach_native_func, engine::Engine};
 pub fn attach_hooks(env: &SdkEnv) {
     attach_play(env);
     attach_stop(env);
+    attach_switch(env);
 }
 
 attach_native_func!(
@@ -25,6 +26,14 @@ attach_native_func!(
     HOOK_STOP,
     attach_stop,
     detour_stop
+);
+
+attach_native_func!(
+    "AudioSystem::Switch",
+    super::offsets::AUDIOSYSTEM_SWITCH,
+    HOOK_SWITCH,
+    attach_switch,
+    detour_switch
 );
 
 unsafe extern "C" fn detour_play(
