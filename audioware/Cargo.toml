@@ -37,3 +37,7 @@ semver = "1.0"
 
 [package.metadata.cargo-machete]
 ignored = ["rust-ini"]
+
+[features]
+default = ["research"]
+research = []

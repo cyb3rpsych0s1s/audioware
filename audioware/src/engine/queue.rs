@@ -7,7 +7,6 @@ use std::{
     time::Duration,
 };
 
-use audioware_manifest::SpokenLocale;
 use bitflags::bitflags;
 use crossbeam::channel::{bounded, tick, Receiver, Sender};
 use kira::manager::{
@@ -85,8 +84,6 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
 }
 
 pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<CpalBackend>) {
-    let spoken = SpokenLocale::default();
-    let mut gender = None;
     let s = |x| Duration::from_secs_f32(x);
     let ms = |x| Duration::from_millis(x);
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
@@ -144,10 +141,13 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                         ease_out_curve,
                     },
                 ),
-                Lifecycle::Codeware(Codeware::SetPlayerGender { gender: value }) => {
-                    gender = Some(value)
+                Lifecycle::Codeware(Codeware::SetPlayerGender { gender }) => {
+                    engine.set_gender(gender)
                 }
-                Lifecycle::Codeware(Codeware::UnsetPlayerGender) => gender = None,
+                Lifecycle::Codeware(Codeware::UnsetPlayerGender) => engine.unset_gender(),
+                Lifecycle::Codeware(Codeware::SetGameLocales { spoken, written }) => {
+                    engine.set_locales(spoken, written)
+                }
                 Lifecycle::RegisterEmitter {
                     entity_id,
                     emitter_name,
@@ -216,29 +216,20 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     event_name,
                     entity_id,
                     emitter_name,
-                } => engine.play(event_name, entity_id, emitter_name, spoken, gender, None),
+                } => engine.play::<kira::tween::Tween>(event_name, entity_id, emitter_name, None),
                 Command::Play {
-                    sound_name,
-                    entity_id,
-                    emitter_name,
-                    tween,
-                    ..
-                } => engine.play(sound_name, entity_id, emitter_name, spoken, gender, tween),
-                Command::PlayExt {
                     sound_name,
                     entity_id,
                     emitter_name,
                     ext,
                     ..
-                } => engine.play_ext(sound_name, entity_id, emitter_name, spoken, gender, ext),
+                } => engine.play(sound_name, entity_id, emitter_name, ext),
                 Command::PlayOnEmitter {
                     event_name,
                     entity_id,
                     emitter_name,
                     ext,
-                } => {
-                    engine.play_on_emitter(event_name, entity_id, emitter_name, ext, spoken, gender)
-                }
+                } => engine.play_on_emitter(event_name, entity_id, emitter_name, ext),
                 Command::PlayOverThePhone { .. } => {}
                 Command::StopOnEmitter {
                     event_name,
@@ -257,8 +248,34 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     emitter_name,
                     tween,
                 } => engine.stop(event_name, entity_id, emitter_name, tween),
-                Command::StopFor { .. } => {}
-                Command::Switch { .. } => {}
+                Command::Switch {
+                    switch_name,
+                    switch_value,
+                    entity_id,
+                    emitter_name,
+                    switch_name_tween,
+                    switch_value_settings,
+                } => engine.switch(
+                    switch_name,
+                    switch_value,
+                    entity_id,
+                    emitter_name,
+                    switch_name_tween,
+                    switch_value_settings,
+                ),
+                Command::SwitchVanilla {
+                    switch_name,
+                    switch_value,
+                    entity_id,
+                    emitter_name,
+                } => engine.switch::<kira::tween::Tween>(
+                    switch_name,
+                    switch_value,
+                    entity_id,
+                    emitter_name,
+                    None,
+                    None,
+                ),
             }
         }
     }

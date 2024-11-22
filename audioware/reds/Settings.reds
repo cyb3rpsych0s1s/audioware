@@ -25,5 +25,5 @@ public class EmitterSettings {
     public let distances: ref<EmitterDistances>;
     public let attenuationFunction: ref<Tween>;
     public let enableSpatialization: Bool = true;
-    public let persistUntilSoundFinish: Bool = false;
+    public let persistUntilSoundsFinish: Bool = false;
 }

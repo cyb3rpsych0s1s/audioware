@@ -129,7 +129,7 @@ public class AutoEmittersSystem extends ScriptableSystem {
         ext.fadeIn = tween;
 
         let settings = new EmitterSettings();
-        settings.persistUntilSoundFinish = true;
+        settings.persistUntilSoundsFinish = true;
 
         this.PlayOnEmitter(eventName, emitterID, emitterCName, ext, settings);
     }

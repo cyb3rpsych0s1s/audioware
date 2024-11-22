@@ -272,6 +272,26 @@ impl AsScriptedPuppet for Ref<ScriptedPuppet> {
     }
 }
 
+pub trait AsScriptedPuppetExt {
+    /// method found in .reds
+    fn get_template_gender(&self) -> audioware_manifest::PlayerGender;
+}
+
+impl AsScriptedPuppetExt for Ref<ScriptedPuppet> {
+    fn get_template_gender(&self) -> audioware_manifest::PlayerGender {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(ScriptedPuppet::NAME)).unwrap();
+        let method = cls.get_method(CName::new("TemplateGender;")).ok().unwrap();
+        method
+            .as_function()
+            .execute::<_, audioware_manifest::PlayerGender>(
+                unsafe { self.instance() }.map(AsRef::as_ref),
+                (),
+            )
+            .unwrap()
+    }
+}
+
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum GamedataNpcType {

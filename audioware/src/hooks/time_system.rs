@@ -3,7 +3,9 @@ use red4ext_rs::{
     SdkEnv, VoidPtr,
 };
 
-use crate::{abi::lifecycle::Lifecycle, attach_hook, engine::queue::notify, utils::intercept};
+use crate::{
+    abi::lifecycle::Lifecycle, attach_native_func, engine::queue::notify, utils::intercept,
+};
 
 pub fn attach_hooks(env: &SdkEnv) {
     attach_hook_set(env);
@@ -11,7 +13,7 @@ pub fn attach_hooks(env: &SdkEnv) {
 }
 
 // Set time dilation on player.
-attach_hook!(
+attach_native_func!(
     "TimeSystem::SetTimeDilation",
     super::offsets::TIMESYSTEM_SETTIMEDILATION,
     HOOK_SET,
@@ -20,7 +22,7 @@ attach_hook!(
 );
 
 // Unset time dilation on player.
-attach_hook!(
+attach_native_func!(
     "TimeSystem::UnsetTimeDilation",
     super::offsets::TIMESYSTEM_UNSETTIMEDILATION,
     HOOK_UNSET,

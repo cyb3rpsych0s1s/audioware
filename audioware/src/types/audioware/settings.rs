@@ -13,7 +13,7 @@ pub struct EmitterSettings {
     pub distances: Ref<EmitterDistances>,
     pub attenuation_function: Ref<Tween>,
     pub enable_spatialization: bool,
-    pub persist_until_sound_finish: bool,
+    pub persist_until_sounds_finish: bool,
 }
 
 impl Default for EmitterSettings {
@@ -22,7 +22,7 @@ impl Default for EmitterSettings {
             enable_spatialization: true,
             attenuation_function: Default::default(),
             distances: Default::default(),
-            persist_until_sound_finish: false,
+            persist_until_sounds_finish: false,
         }
     }
 }
@@ -71,7 +71,7 @@ impl Clone for EmitterSettings {
             distances: self.distances.clone(),
             attenuation_function: self.attenuation_function.clone(),
             enable_spatialization: self.enable_spatialization,
-            persist_until_sound_finish: self.persist_until_sound_finish,
+            persist_until_sounds_finish: self.persist_until_sounds_finish,
         }
     }
 }

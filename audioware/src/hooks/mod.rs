@@ -1,5 +1,6 @@
 use red4ext_rs::SdkEnv;
 
+mod audio_system;
 mod entity;
 mod events;
 mod save_handling_controller;
@@ -8,20 +9,24 @@ mod time_system;
 
 pub fn attach(env: &SdkEnv) {
     save_handling_controller::attach_hook(env);
+    audio_system::attach_hooks(env);
     entity::attach_hook(env);
     time_dilatable::attach_hooks(env);
     time_system::attach_hooks(env);
 
-    // #[cfg(debug_assertions)]
-    // {
-    //     events::dialog_line::Handler::attach(env);
-    //     events::dialog_line_end::Handler::attach(env);
-    // }
+    #[cfg(feature = "research")]
+    {
+        events::dialog_line_end::attach_hook(env);
+        events::dialog_line::attach_hook(env);
+    }
 }
 
 #[rustfmt::skip]
 #[doc(hidden)]
 mod offsets {
+    pub const AUDIOSYSTEM_PLAY: u32                             = 0xCDB11D0E;   // 0x140974F58 (2.12a)
+    pub const AUDIOSYSTEM_STOP: u32                             = 0xD2781D1E;   // 0x1424503F8 (2.12a)
+    pub const AUDIOSYSTEM_SWITCH: u32                           = 0x15081DEA;   // 0x140291688 (2.12a)
     pub const ENTITY_DISPOSE: u32                               = 0x3221A80;    // 0x14232C744 (2.13)
     pub const TIMEDILATABLE_SETINDIVIDUALTIMEDILATION: u32      = 0x80102488;   // 0x1423AF554 (2.13)
     pub const TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION: u32    = 0xDA20256B;   // 0x14147B424 (2.13)
@@ -36,7 +41,7 @@ mod offsets {
 }
 
 #[macro_export]
-macro_rules! attach_hook {
+macro_rules! attach_native_func {
     ($name:literal, $offset:path, $hook: ident, $me:ident, $to:ident $(, $v:vis)?) => {
         ::red4ext_rs::hooks! {
             static $hook: fn(
@@ -51,10 +56,32 @@ macro_rules! attach_hook {
             let addr = ::red4ext_rs::addr_hashes::resolve($offset);
             let addr = unsafe { ::std::mem::transmute(addr) };
             unsafe { env.attach_hook($hook, addr, $to) };
-            $crate::utils::intercept!("attached hook for {}", $name);
+            $crate::utils::intercept!("attached native func hook for {}", $name);
         }
     };
     ($name:literal, $offset:path) => {
-        attach_hook!($name, $offset, HOOK, attach_hook, detour, pub);
+        attach_native_func!($name, $offset, HOOK, attach_hook, detour, pub);
+    };
+}
+
+#[macro_export]
+macro_rules! attach_native_event {
+    ($name:literal, $offset:path, $class:path, $to:ident $(, $v:vis)?) => {
+        ::red4ext_rs::hooks! {
+            static HOOK: fn(
+                a1: *mut ::red4ext_rs::types::IScriptable,
+                a2: *mut $class) -> ();
+        }
+
+        #[allow(clippy::missing_transmute_annotations)]
+        $($v)? fn attach_hook(env: &::red4ext_rs::SdkEnv) {
+            let addr = ::red4ext_rs::addr_hashes::resolve($offset);
+            let addr = unsafe { ::std::mem::transmute(addr) };
+            unsafe { env.attach_hook(HOOK, addr, $to) };
+            $crate::utils::intercept!("attached native event hook for {}", $name);
+        }
+    };
+    ($name:literal, $offset:path, $class:path) => {
+        attach_native_event!($name, $offset, $class, detour, pub);
     };
 }

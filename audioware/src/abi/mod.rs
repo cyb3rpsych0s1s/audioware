@@ -54,8 +54,9 @@ pub fn exports() -> impl Exportable {
         ClassExport::<AudioSystemExt>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![
-                    final c"Play" => AudioSystemExt::play_ext,
+                    final c"Play" => AudioSystemExt::play,
                     final c"Stop" => AudioSystemExt::stop,
+                    final c"Switch" => AudioSystemExt::switch,
                     final c"PlayOnEmitter" => AudioSystemExt::play_on_emitter,
                     final c"StopOnEmitter" => AudioSystemExt::stop_on_emitter,
                     final c"RegisterEmitter" => AudioSystemExt::register_emitter,
@@ -88,6 +89,7 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.SetVolume",                  Audioware::set_volume),
         g!(c"Audioware.SetPlayerGender",            Audioware::set_player_gender),
         g!(c"Audioware.UnsetPlayerGender",          Audioware::unset_player_gender),
+        g!(c"Audioware.SetGameLocales",             Audioware::set_game_locales),
         #[cfg(debug_assertions)]
         g!(c"HotReload",                            Audioware::hot_reload),
     ]
@@ -141,6 +143,7 @@ pub trait BlackboardLifecycle {
 pub trait CodewareLifecycle {
     fn set_player_gender(gender: PlayerGender);
     fn unset_player_gender();
+    fn set_game_locales(spoken: CName, written: CName);
 }
 
 pub trait ListenerLifecycle {
@@ -222,6 +225,13 @@ impl CodewareLifecycle for Audioware {
 
     fn unset_player_gender() {
         queue::notify(Lifecycle::Codeware(Codeware::UnsetPlayerGender));
+    }
+
+    fn set_game_locales(spoken: CName, written: CName) {
+        queue::notify(Lifecycle::Codeware(Codeware::SetGameLocales {
+            spoken,
+            written,
+        }));
     }
 }
 
@@ -464,14 +474,14 @@ impl ToSettings for Ref<EmitterSettings> {
             distances,
             attenuation_function,
             enable_spatialization,
-            persist_until_sound_finish,
+            persist_until_sounds_finish,
         } = unsafe { self.fields() }?.clone();
-        let mut settings = kira::spatial::emitter::EmitterSettings::default();
-        settings.distances = distances.into_settings().unwrap_or_default();
-        settings.attenuation_function = attenuation_function.into_easing();
-        settings.enable_spatialization = enable_spatialization;
-        settings.persist_until_sounds_finish = persist_until_sound_finish;
-        Some(settings)
+        Some(kira::spatial::emitter::EmitterSettings {
+            distances: distances.into_settings().unwrap_or_default(),
+            attenuation_function: attenuation_function.into_easing(),
+            enable_spatialization,
+            persist_until_sounds_finish,
+        })
     }
 }
 
@@ -511,14 +521,6 @@ pub trait ExtCommand {
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         line_type: Opt<ScnDialogLineType>,
-        tween: Ref<Tween>,
-    );
-    fn play_ext(
-        &self,
-        sound_name: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
-        line_type: Opt<ScnDialogLineType>,
         ext: Ref<AudioSettingsExt>,
     );
     fn stop(
@@ -543,6 +545,15 @@ pub trait ExtCommand {
         emitter_name: CName,
         tween: Ref<Tween>,
     );
+    fn switch(
+        &self,
+        switch_name: CName,
+        switch_value: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        switch_name_tween: Ref<Tween>,
+        switch_value_ext: Ref<AudioSettingsExt>,
+    );
 }
 
 impl ExtCommand for AudioSystemExt {
@@ -552,25 +563,9 @@ impl ExtCommand for AudioSystemExt {
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         line_type: Opt<ScnDialogLineType>,
-        tween: Ref<Tween>,
-    ) {
-        queue::send(Command::Play {
-            sound_name,
-            entity_id: entity_id.into_option(),
-            emitter_name: emitter_name.into_option(),
-            line_type: line_type.into_option(),
-            tween: tween.into_tween(),
-        });
-    }
-    fn play_ext(
-        &self,
-        sound_name: CName,
-        entity_id: Opt<EntityId>,
-        emitter_name: Opt<CName>,
-        line_type: Opt<ScnDialogLineType>,
         ext: Ref<AudioSettingsExt>,
     ) {
-        queue::send(Command::PlayExt {
+        queue::send(Command::Play {
             sound_name,
             entity_id: entity_id.into_option(),
             emitter_name: emitter_name.into_option(),
@@ -621,6 +616,25 @@ impl ExtCommand for AudioSystemExt {
             entity_id,
             emitter_name,
             tween: tween.into_tween(),
+        });
+    }
+
+    fn switch(
+        &self,
+        switch_name: CName,
+        switch_value: CName,
+        entity_id: Opt<EntityId>,
+        emitter_name: Opt<CName>,
+        switch_name_tween: Ref<Tween>,
+        switch_value_ext: Ref<AudioSettingsExt>,
+    ) {
+        queue::send(Command::Switch {
+            switch_name,
+            switch_value,
+            entity_id: entity_id.into_option(),
+            emitter_name: emitter_name.into_option(),
+            switch_name_tween: switch_name_tween.into_tween(),
+            switch_value_settings: switch_value_ext.into_settings(),
         });
     }
 }

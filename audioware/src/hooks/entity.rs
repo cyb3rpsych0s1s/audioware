@@ -5,9 +5,9 @@ use red4ext_rs::{
     VoidPtr,
 };
 
-use crate::{attach_hook, utils::intercept, Entity};
+use crate::{attach_native_func, utils::intercept, Entity};
 
-attach_hook!("Entity::Dispose", super::offsets::ENTITY_DISPOSE);
+attach_native_func!("Entity::Dispose", super::offsets::ENTITY_DISPOSE);
 
 unsafe extern "C" fn detour(
     i: *mut IScriptable,

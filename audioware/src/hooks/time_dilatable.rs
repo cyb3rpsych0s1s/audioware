@@ -2,7 +2,7 @@ use std::{mem, ops::Not};
 
 use red4ext_rs::types::{CName, IScriptable, StackFrame};
 
-use crate::{attach_hook, engine::queue::notify, utils::intercept, Entity};
+use crate::{attach_native_func, engine::queue::notify, utils::intercept, Entity};
 
 use red4ext_rs::{SdkEnv, VoidPtr};
 
@@ -12,7 +12,7 @@ pub fn attach_hooks(env: &SdkEnv) {
 }
 
 // Set time dilation on NPCs.
-attach_hook!(
+attach_native_func!(
     "TimeDilatable::SetIndividualTimeDilation",
     super::offsets::TIMEDILATABLE_SETINDIVIDUALTIMEDILATION,
     HOOK_SET,
@@ -21,7 +21,7 @@ attach_hook!(
 );
 
 // Unset time dilation on NPCs.
-attach_hook!(
+attach_native_func!(
     "TimeDilatable::UnsetIndividualTimeDilation",
     super::offsets::TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION,
     HOOK_UNSET,

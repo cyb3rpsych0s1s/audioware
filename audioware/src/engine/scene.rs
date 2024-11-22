@@ -1,5 +1,6 @@
 use std::{collections::HashSet, sync::LazyLock};
 
+use audioware_manifest::PlayerGender;
 use dashmap::{iter::IterMut, mapref::one::RefMut, DashMap, DashSet};
 use kira::{
     manager::{backend::Backend, AudioManager},
@@ -19,9 +20,9 @@ use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 
 use crate::{
     error::{Error, SceneError},
-    get_player, AIActionHelper, AsEntity, AsGameInstance, AsScriptedPuppet, AsTimeDilatable,
-    AvObject, BikeObject, CarObject, Device, Entity, GameObject, GamedataNpcType, ScriptedPuppet,
-    TankObject, TimeDilatable, Vector4, VehicleObject,
+    get_player, AIActionHelper, AsEntity, AsGameInstance, AsScriptedPuppet, AsScriptedPuppetExt,
+    AsTimeDilatable, AvObject, BikeObject, CarObject, Device, Entity, GameObject, GamedataNpcType,
+    ScriptedPuppet, TankObject, TimeDilatable, Vector4, VehicleObject,
 };
 
 use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY, DilationUpdate};
@@ -41,8 +42,9 @@ pub struct Emitter {
     dilation: Dilation,
     last_known_position: Vector4,
     busy: bool,
-    persist_until_sound_finishes: bool,
+    persist_until_sounds_finishes: bool,
     marked_for_death: bool,
+    gender: Option<PlayerGender>,
 }
 
 impl Emitter {
@@ -246,7 +248,7 @@ impl Scene {
             emitter.names.insert(emitter_name);
             return Ok(());
         }
-        let (position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
+        let (gender, position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
         lifecycle!("emitter settings before {:?} [{entity_id:?}]", settings);
         let settings = match settings {
             Some(settings)
@@ -265,11 +267,12 @@ impl Scene {
         let handle = Emitter {
             handle: emitter,
             handles: Default::default(),
+            gender,
             last_known_position: position,
             busy,
             names,
             dilation: Dilation::new(dilation.unwrap_or(1.)),
-            persist_until_sound_finishes: settings.persist_until_sounds_finish,
+            persist_until_sounds_finishes: settings.persist_until_sounds_finish,
             marked_for_death: false,
         };
         self.emitters.insert(entity_id, emitter_name, handle);
@@ -376,7 +379,7 @@ impl Scene {
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
         self.emitters.retain(|k, v| {
             if *k == entity_id {
-                if !v.persist_until_sound_finishes {
+                if !v.persist_until_sounds_finishes {
                     v.handles
                         .statics
                         .iter_mut()
@@ -400,7 +403,7 @@ impl Scene {
     pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId, tween: Tween) {
         self.emitters
             .iter_mut()
-            .filter(|x| *x.key() == entity_id && !x.value().persist_until_sound_finishes)
+            .filter(|x| *x.key() == entity_id && !x.value().persist_until_sounds_finishes)
             .for_each(|mut x| {
                 x.value_mut()
                     .handles
@@ -603,7 +606,16 @@ impl Emitter {
 
     fn full_infos(
         entity_id: EntityId,
-    ) -> Result<(Vector4, bool, Option<f32>, Option<EmitterDistances>), Error> {
+    ) -> Result<
+        (
+            Option<PlayerGender>,
+            Vector4,
+            bool,
+            Option<f32>,
+            Option<EmitterDistances>,
+        ),
+        Error,
+    > {
         let (position, busy) = Self::infos(entity_id)?;
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, entity_id);
@@ -612,21 +624,23 @@ impl Emitter {
                 source: SceneError::MissingEmitter { entity_id },
             });
         }
+        let gender = entity.get_gender();
         let distances = entity.get_emitter_distances();
         if !entity.is_a::<TimeDilatable>() {
-            return Ok((position, busy, None, distances));
+            return Ok((gender, position, busy, None, distances));
         }
         let dilation = entity
             .clone()
             .cast::<TimeDilatable>()
             .as_ref()
             .map(AsTimeDilatable::get_time_dilation_value);
-        Ok((position, busy, dilation, distances))
+        Ok((gender, position, busy, dilation, distances))
     }
 }
 
 pub trait AsEntityExt {
     fn get_emitter_distances(&self) -> Option<EmitterDistances>;
+    fn get_gender(&self) -> Option<PlayerGender>;
 }
 
 impl AsEntityExt for Ref<Entity> {
@@ -680,6 +694,15 @@ impl AsEntityExt for Ref<Entity> {
                 min_distance: 3.,
                 max_distance: 30.,
             });
+        }
+        None
+    }
+
+    fn get_gender(&self) -> Option<PlayerGender> {
+        if self.is_a::<ScriptedPuppet>() {
+            let puppet = self.clone().cast::<ScriptedPuppet>().unwrap();
+            let gender = puppet.get_template_gender();
+            return Some(gender);
         }
         None
     }

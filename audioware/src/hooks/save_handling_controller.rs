@@ -3,9 +3,9 @@ use red4ext_rs::{
     VoidPtr,
 };
 
-use crate::{attach_hook, utils::intercept};
+use crate::{attach_native_func, utils::intercept};
 
-attach_hook!(
+attach_native_func!(
     "gameuiSaveHandlingController::LoadSaveInGame/LoadModdedSave",
     super::offsets::SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME
 );

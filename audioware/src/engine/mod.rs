@@ -2,18 +2,20 @@ use std::{fmt::Debug, ops::DerefMut};
 
 use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
 use audioware_core::With;
-use audioware_manifest::{PlayerGender, Settings, Source, SpokenLocale};
+use audioware_manifest::{Settings, Source};
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
     manager::{backend::Backend, AudioManager, AudioManagerSettings},
+    sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError},
     spatial::emitter::EmitterSettings,
     tween::Tween,
     OutputDestination,
 };
 use modulators::{Modulators, Parameter};
-use red4ext_rs::types::{CName, EntityId};
+use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
 use scene::Scene;
+use state::{PlayerGender, SpokenLocale};
 use tracks::Tracks;
 use tweens::{
     DEFAULT, DILATION_EASE_IN, DILATION_EASE_OUT, DILATION_LINEAR, IMMEDIATELY, LAST_BREATH,
@@ -21,7 +23,8 @@ use tweens::{
 
 use crate::{
     error::{EngineError, Error},
-    utils::lifecycle,
+    utils::{fails, lifecycle},
+    AsAudioSystem, AsGameInstance,
 };
 
 pub mod queue;
@@ -29,8 +32,11 @@ pub mod queue;
 pub mod eq;
 mod modulators;
 mod scene;
+mod state;
 mod tracks;
 mod tweens;
+
+pub use state::ToGender;
 
 #[cfg(not(debug_assertions))]
 static BANKS: std::sync::OnceLock<Banks> = std::sync::OnceLock::new();
@@ -143,54 +149,24 @@ where
         }
     }
 
-    pub fn play(
+    pub fn play<T>(
         &mut self,
         event_name: CName,
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
-        spoken: SpokenLocale,
-        gender: Option<PlayerGender>,
-        tween: Option<Tween>,
-    ) {
-        if let Ok(key) = self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
-            let data = self.banks.data(key);
-            match data {
-                Either::Left(data) => {
-                    if let Ok(handle) = self.manager.play(
-                        data.output_destination(key.to_output_destination(&self.tracks))
-                            .with(tween),
-                    ) {
-                        self.tracks
-                            .store_static(handle, event_name, entity_id, emitter_name, true);
-                    }
-                }
-                Either::Right(data) => {
-                    if let Ok(handle) = self.manager.play(
-                        data.output_destination(key.to_output_destination(&self.tracks))
-                            .with(tween),
-                    ) {
-                        self.tracks
-                            .store_stream(handle, event_name, entity_id, emitter_name, true);
-                    }
-                }
-            }
-        }
-    }
-
-    pub fn play_ext(
-        &mut self,
-        event_name: CName,
-        entity_id: Option<EntityId>,
-        emitter_name: Option<CName>,
-        spoken: SpokenLocale,
-        gender: Option<PlayerGender>,
-        ext: Option<Settings>,
-    ) {
+        ext: Option<T>,
+    ) where
+        StaticSoundData: With<Option<T>>,
+        StreamingSoundData<FromFileError>: With<Option<T>>,
+        T: AffectedByTimeDilation,
+    {
+        let spoken = SpokenLocale::get();
+        let gender = entity_id.as_ref().and_then(ToGender::into_gender);
         if let Ok(key) = self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
             let data = self.banks.data(key);
             let dilatable = ext
                 .as_ref()
-                .and_then(|x| x.affected_by_time_dilation)
+                .map(|x| x.affected_by_time_dilation())
                 .unwrap_or(true);
             match data {
                 Either::Left(data) => {
@@ -225,15 +201,19 @@ where
         }
     }
 
-    pub fn play_on_emitter(
+    pub fn play_on_emitter<T>(
         &mut self,
         sound_name: CName,
         entity_id: EntityId,
         emitter_name: CName,
-        ext: Option<Settings>,
-        spoken: SpokenLocale,
-        gender: Option<PlayerGender>,
-    ) {
+        ext: Option<T>,
+    ) where
+        StaticSoundData: With<Option<T>>,
+        StreamingSoundData<FromFileError>: With<Option<T>>,
+        T: AffectedByTimeDilation,
+    {
+        let gender = entity_id.into_gender();
+        let spoken = SpokenLocale::get();
         if let Some(ref mut scene) = self.scene {
             if let Ok(key) = self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
                 if let Some(ref mut emitter) = scene
@@ -243,7 +223,7 @@ where
                     let data = self.banks.data(key);
                     let dilatable = ext
                         .as_ref()
-                        .and_then(|x| x.affected_by_time_dilation)
+                        .map(|x| x.affected_by_time_dilation())
                         .unwrap_or(true);
                     match data {
                         Either::Left(data) => {
@@ -293,6 +273,44 @@ where
             emitter_name,
             tween.unwrap_or_default(),
         );
+    }
+
+    pub fn switch<T>(
+        &mut self,
+        switch_name: CName,
+        switch_value: CName,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        switch_name_tween: Option<Tween>,
+        switch_value_settings: Option<T>,
+    ) where
+        StaticSoundData: With<Option<T>>,
+        StreamingSoundData<FromFileError>: With<Option<T>>,
+        T: AffectedByTimeDilation,
+    {
+        if Self::exists(&switch_name) {
+            self.tracks.stop_by(
+                switch_name,
+                entity_id,
+                emitter_name,
+                switch_name_tween.unwrap_or(IMMEDIATELY),
+            );
+        } else {
+            GameInstance::get_audio_system().stop(
+                switch_name,
+                entity_id.map(Opt::from).unwrap_or(Opt::Default),
+                emitter_name.map(Opt::from).unwrap_or(Opt::Default),
+            );
+        }
+        if Self::exists(&switch_value) {
+            self.play(switch_value, entity_id, emitter_name, switch_value_settings);
+        } else {
+            GameInstance::get_audio_system().play(
+                switch_value,
+                entity_id.map(Opt::from).unwrap_or(Opt::Default),
+                emitter_name.map(Opt::from).unwrap_or(Opt::Default),
+            );
+        }
     }
 
     pub fn stop_on_emitter(
@@ -468,7 +486,9 @@ where
         self.tracks.ambience.equalizer().set_preset(preset);
     }
 
-    pub fn exists(sound: &CName, spoken: &SpokenLocale, gender: Option<&PlayerGender>) -> bool {
+    pub fn exists(sound: &CName) -> bool {
+        let spoken = SpokenLocale::get();
+        let gender = PlayerGender::get();
         #[cfg(not(debug_assertions))]
         return BANKS
             .get()
@@ -477,7 +497,10 @@ where
         #[cfg(debug_assertions)]
         BANKS
             .try_read()
-            .and_then(|x| x.as_ref().map(|x| x.try_get(sound, spoken, gender).is_ok()))
+            .and_then(|x| {
+                x.as_ref()
+                    .map(|x| x.try_get(sound, &spoken, gender.as_ref()).is_ok())
+            })
             .unwrap_or(false)
     }
 
@@ -485,6 +508,23 @@ where
         self.tracks.clear();
         if let Some(scene) = self.scene.as_mut() {
             scene.clear();
+        }
+    }
+
+    pub fn set_gender(&mut self, gender: audioware_manifest::PlayerGender) {
+        state::PlayerGender::set(gender);
+    }
+
+    pub fn unset_gender(&mut self) {
+        state::PlayerGender::unset();
+    }
+
+    pub fn set_locales(&mut self, spoken: CName, written: CName) {
+        if let Err(e) = state::SpokenLocale::try_set(spoken) {
+            fails!("failed to set spoken locale: {e}");
+        }
+        if let Err(e) = state::WrittenLocale::try_set(written) {
+            fails!("failed to set written locale: {e}");
         }
     }
 }
@@ -564,5 +604,21 @@ impl PartialEq for DilationUpdate {
             (Self::Unset { reason, .. }, Self::Unset { reason: y, .. }) => *reason == *y,
             _ => false,
         }
+    }
+}
+
+pub trait AffectedByTimeDilation {
+    fn affected_by_time_dilation(&self) -> bool;
+}
+
+impl AffectedByTimeDilation for Settings {
+    fn affected_by_time_dilation(&self) -> bool {
+        self.affected_by_time_dilation.unwrap_or(true)
+    }
+}
+
+impl AffectedByTimeDilation for Tween {
+    fn affected_by_time_dilation(&self) -> bool {
+        true
     }
 }
