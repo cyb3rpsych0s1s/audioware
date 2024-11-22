@@ -169,9 +169,9 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::OnEmitterDefeated { .. } => {}
                 Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
                 Lifecycle::Session(Session::BeforeStart) => engine.reset(),
-                Lifecycle::Session(Session::Start) => {}
-                Lifecycle::Session(Session::End) => {}
-                Lifecycle::Session(Session::Ready) => {}
+                Lifecycle::Session(Session::Start)
+                | Lifecycle::Session(Session::End)
+                | Lifecycle::Session(Session::Ready) => {}
                 Lifecycle::Session(Session::Pause) => {
                     should_sync = false;
                 }
@@ -182,8 +182,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     should_sync = false;
                     engine.scene = None;
                 }
-                Lifecycle::System(System::Attach) => {}
-                Lifecycle::System(System::Detach) => {}
+                Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
                 Lifecycle::System(System::PlayerAttach) => match engine.try_new_scene() {
                     Ok(_) => {
                         should_sync = true;
