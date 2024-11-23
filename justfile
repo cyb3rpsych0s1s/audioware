@@ -49,16 +49,16 @@ now:
   @Write-Host "$(Get-Date) $_"
 
 # 📦 build Rust RED4Ext plugin
-build PROFILE='debug' TO=game_dir: (setup join(TO, red4ext_deploy_dir))
-  @'{{ if PROFILE == "release" { `cargo build --release` } else { `cargo build --features hot-reload` } }}'
+build PROFILE='debug' FEATURES='' TO=game_dir: (setup join(TO, red4ext_deploy_dir))
+  @if ('{{PROFILE}}' -eq "release") { cargo build --release } else { cargo build --features='{{FEATURES}}' }
   @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just now
 
 alias b := build
 
-dev: (build) reload
+dev FEATURES='hot-reload,research': (build 'debug' FEATURES) reload
 
-lldb TO=game_dir: dev
+lldb TO=game_dir: (dev 'hot-reload')
   @just copy '{{ join(red4ext_bin_dir, "debug", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
   @just now
 
