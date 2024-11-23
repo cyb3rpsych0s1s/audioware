@@ -17,6 +17,7 @@ pub fn attach(env: &SdkEnv) {
 
     #[cfg(feature = "research")]
     {
+        // events::audio::attach_hook(env); // 🌊
         events::vehicle_audio::attach_hook(env);
         events::dialog_line_end::attach_hook(env);
         events::dialog_line::attach_hook(env);
@@ -41,6 +42,7 @@ mod offsets {
     pub const EVENT_DIALOGLINE: u32                             = 0x10E71E89;   // 0x1409C12A8 (2.12a)
     pub const EVENT_DIALOGLINEEND: u32                          = 0x6F24331;    // 0x141188BF4 (2.12a)
     pub const VEHICLE_AUDIO_EVENT: u32                          = 0x69EF1461;   // 0x1418D4C44 (2.13)
+    pub const AUDIO_EVENT: u32                                  = 0x10C412FD;   // 0x14065816C (2.13)
 }
 
 #[macro_export]
