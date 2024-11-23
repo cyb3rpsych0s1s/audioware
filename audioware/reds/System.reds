@@ -12,6 +12,11 @@ class LifecycleSubSystem extends ScriptableSystem {
     }
     private func OnDetach() -> Void {
         OnGameSystemDetach();
+        if IsDefined(this.onMenu) {
+            GameInstance.GetBlackboardSystem(this.GetGameInstance())
+            .Get(GetAllBlackboardDefs().UI_System)
+            .UnregisterListenerBool(GetAllBlackboardDefs().UI_System.IsInMenu, this.onMenu);
+        }
     }
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {
         OnGameSystemPlayerAttach();
