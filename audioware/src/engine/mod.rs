@@ -563,15 +563,18 @@ pub trait ToOutputDestination {
 }
 
 impl ToOutputDestination for Id {
+    #[inline(always)]
     fn to_output_destination(&self, tracks: &Tracks) -> OutputDestination {
         match self {
             Id::OnDemand(_, source) | Id::InMemory(_, source) => match source {
-                Source::Sfx | Source::Ono => tracks.sfx.as_ref().into(),
-                Source::Voices => tracks.dialogue.as_ref().into(),
-                Source::Playlist => tracks.radioport.as_ref().into(),
-                Source::Music => tracks.music.as_ref().into(),
-                Source::Jingle => tracks.car_radio.as_ref().into(),
-            },
+                Source::Sfx | Source::Ono => tracks.sfx.as_ref(),
+                Source::Voices => tracks.dialogue.as_ref(),
+                Source::Playlist => tracks.radioport.as_ref(),
+                Source::Music => tracks.music.as_ref(),
+                Source::Jingle => tracks.car_radio.as_ref(),
+            }
+            .id()
+            .into(),
         }
     }
 }
