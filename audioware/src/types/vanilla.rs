@@ -30,6 +30,8 @@ mod quaternion;
 pub use quaternion::*;
 mod maths;
 pub use maths::*;
+mod sound_component;
+pub use sound_component::*;
 mod time_dilatable;
 pub use time_dilatable::*;
 mod world_position;

@@ -1,6 +1,12 @@
 use core::fmt;
 
-use red4ext_rs::{class_kind::Native, NativeRepr, ScriptClass};
+use red4ext_rs::{
+    class_kind::Native,
+    types::{CName, Cruid, IScriptable, Ref},
+    NativeRepr, ScriptClass,
+};
+
+use crate::WorldTransform;
 
 use super::Event;
 
@@ -17,6 +23,12 @@ pub struct VehicleAudioEvent {
 unsafe impl ScriptClass for VehicleAudioEvent {
     type Kind = Native;
     const NAME: &'static str = "vehicleAudioEvent";
+}
+
+impl AsRef<Event> for VehicleAudioEvent {
+    fn as_ref(&self) -> &Event {
+        &self.base
+    }
 }
 
 #[allow(clippy::enum_variant_names)]
