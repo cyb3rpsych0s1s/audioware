@@ -25,12 +25,6 @@ unsafe impl ScriptClass for VehicleAudioEvent {
     const NAME: &'static str = "vehicleAudioEvent";
 }
 
-impl AsRef<Event> for VehicleAudioEvent {
-    fn as_ref(&self) -> &Event {
-        &self.base
-    }
-}
-
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u32)]

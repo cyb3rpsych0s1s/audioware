@@ -13,13 +13,11 @@ unsafe extern "C" fn detour(
     a2: *mut VehicleAudioEvent,
     cb: unsafe extern "C" fn(a1: *mut IScriptable, a2: *mut VehicleAudioEvent),
 ) {
-    if !a2.is_null() {
-        let event = &*a2;
-        let VehicleAudioEvent { action, .. } = event;
-        crate::utils::lifecycle!(
-            "intercepted VehicleAudioEvent:
+    let event = &*a2;
+    let VehicleAudioEvent { action, .. } = event;
+    crate::utils::lifecycle!(
+        "intercepted VehicleAudioEvent:
 - action {action}"
-        );
-    }
+    );
     cb(a1, a2);
 }
