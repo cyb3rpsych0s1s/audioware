@@ -583,7 +583,7 @@ pub fn ensure_music<'a>(
         set,
         map,
         smap,
-        Source::Sfx,
+        Source::Music,
     )?;
 
     add_name_to_pool(&c_string, k, hot_reload);
