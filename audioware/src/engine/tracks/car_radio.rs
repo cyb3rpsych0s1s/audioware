@@ -21,9 +21,7 @@ impl CarRadio {
     ) -> Result<Self, Error> {
         let track = manager.add_sub_track(
             TrackBuilder::new()
-                .routes(
-                    TrackRoutes::parent(ambience.environmental()).with_route(ambience.reverb(), 0.),
-                )
+                .routes(TrackRoutes::parent(ambience.environmental()))
                 .with_effect(modulators.car_radio_volume.try_effect()?),
         )?;
         Ok(Self(track))

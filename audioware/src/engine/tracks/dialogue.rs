@@ -22,7 +22,9 @@ impl Dialogue {
         let track = manager.add_sub_track(
             TrackBuilder::new()
                 .routes(
-                    TrackRoutes::parent(ambience.environmental())
+                    // sum must be 1.0 otherwise sounds crackle
+                    TrackRoutes::empty()
+                        .with_route(ambience.environmental(), 0.75)
                         .with_route(ambience.reverb(), 0.25),
                 )
                 .with_effect(modulators.dialogue_volume.try_effect()?),

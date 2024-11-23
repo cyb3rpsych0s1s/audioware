@@ -21,7 +21,7 @@ impl Radioport {
     ) -> Result<Self, Error> {
         let track = manager.add_sub_track(
             TrackBuilder::new()
-                .routes(TrackRoutes::new().with_route(ambience.reverb(), 0.))
+                .routes(TrackRoutes::new())
                 .with_effect(modulators.radioport_volume.try_effect()?),
         )?;
         Ok(Self(track))
