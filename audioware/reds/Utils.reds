@@ -5,6 +5,7 @@ import Codeware.Localization.PlayerGender
 public static final func IntoPlayerGender(gender: CName) -> PlayerGender {
     switch gender {
         case n"Female":
+        case n"female":
         case n"fem":
             return PlayerGender.Female;
         case n"Male":
