@@ -47,3 +47,13 @@ class AudiowareService extends ScriptableService {
         }
     }
 }
+
+// audio config
+@if(ModuleExists("ModSettingsModule"))
+class ConfigService extends ScriptableService {
+    private let config: ref<AudiowareConfig>;
+
+    private func RegisterModSettings()   = ModSettings.RegisterListenerToModifications(this);
+    private func UnregisterModSettings() = ModSettings.UnregisterListenerToModifications(this);
+    public func OnModSettingsChange()    = this.config = new AudiowareConfig();
+}
