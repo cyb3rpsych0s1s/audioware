@@ -134,7 +134,7 @@ impl Emitters {
     fn get_mut(&mut self, entity_id: &EntityId) -> Option<RefMut<'_, EntityId, Emitter>> {
         self.0.get_mut(entity_id)
     }
-    pub fn get_mut_with_name(
+    pub fn get_mut_by_name(
         &mut self,
         entity_id: &EntityId,
         emitter_name: &Option<CName>,

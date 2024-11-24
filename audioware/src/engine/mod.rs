@@ -248,7 +248,7 @@ where
             if let Ok(key) = self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
                 if let Some(ref mut emitter) = scene
                     .emitters
-                    .get_mut_with_name(&entity_id, &Some(emitter_name))
+                    .get_mut_by_name(&entity_id, &Some(emitter_name))
                 {
                     let data = self.banks.data(key);
                     let dilatable = ext
