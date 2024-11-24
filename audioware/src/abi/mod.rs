@@ -1,6 +1,8 @@
 use std::time::Duration;
 
-use audioware_manifest::{Interpolation, PlayerGender, Region, ScnDialogLineType, Settings};
+use audioware_manifest::{
+    Interpolation, Locale, LocaleExt, PlayerGender, Region, ScnDialogLineType, Settings,
+};
 use command::Command;
 use crossbeam::channel::bounded;
 use kira::{manager::backend::cpal::CpalBackend, tween::Easing};
@@ -8,7 +10,7 @@ use lifecycle::{Board, Codeware, Lifecycle, Session, System};
 use red4ext_rs::{
     class_kind::{Native, Scripted},
     exports, methods,
-    types::{CName, EntityId, IScriptable, Opt, Ref},
+    types::{CName, EntityId, IScriptable, Opt, Ref, StaticArray},
     ClassExport, Exportable, GameApp, RttiRegistrator, ScriptClass, SdkEnv, StateListener,
     StateType,
 };
@@ -16,9 +18,9 @@ use red4ext_rs::{
 use crate::{
     engine::{eq::Preset, Engine},
     queue,
-    utils::{lifecycle, warns},
+    utils::{fails, lifecycle, warns},
     Audioware, ElasticTween, EmitterDistances, EmitterSettings, LinearTween, LocalizationPackage,
-    ToEasing, ToTween, Tween,
+    ToEasing, ToTween, Tween, AUDIOWARE_VERSION,
 };
 
 pub mod command;
@@ -63,6 +65,10 @@ pub fn exports() -> impl Exportable {
                     final c"OnEmitterDies" => AudioSystemExt::on_emitter_dies,
                     final c"OnEmitterIncapacitated" => AudioSystemExt::on_emitter_incapacitated,
                     final c"OnEmitterDefeated" => AudioSystemExt::on_emitter_defeated,
+                    final c"EmittersCount" => AudioSystemExt::emitters_count,
+                    final c"Duration" => AudioSystemExt::duration,
+                    final c"IsDebug" => AudioSystemExt::is_debug,
+                    final c"SemanticVersion" => AudioSystemExt::semantic_version,
                 ])
                 .build(),
         ClassExport::<DummyLol>::builder().base(IScriptable::NAME)
@@ -260,6 +266,7 @@ pub trait SceneLifecycle {
     fn on_emitter_dies(&self, entity_id: EntityId);
     fn on_emitter_incapacitated(&self, entity_id: EntityId);
     fn on_emitter_defeated(&self, entity_id: EntityId);
+    fn emitters_count(&self) -> i32;
 }
 
 impl SceneLifecycle for AudioSystemExt {
@@ -305,6 +312,10 @@ impl SceneLifecycle for AudioSystemExt {
 
     fn on_emitter_defeated(&self, entity_id: EntityId) {
         queue::notify(Lifecycle::OnEmitterDefeated { entity_id });
+    }
+
+    fn emitters_count(&self) -> i32 {
+        Engine::<CpalBackend>::emitters_count()
     }
 }
 
@@ -520,6 +531,37 @@ impl ToSettings for Ref<EmitterDistances> {
 #[repr(C)]
 pub struct AudioSystemExt {
     base: IScriptable,
+}
+
+impl AudioSystemExt {
+    const fn is_debug(&self) -> bool {
+        cfg!(debug_assertions)
+    }
+    fn duration(
+        &self,
+        event_name: CName,
+        locale: Opt<LocaleExt>,
+        gender: Opt<PlayerGender>,
+        total: Opt<bool>,
+    ) -> f32 {
+        let locale = match locale.into_option().map(Locale::try_from) {
+            None => None,
+            Some(Ok(x)) => Some(x),
+            Some(Err(x)) => {
+                fails!("invalid locale ({x})");
+                return -1.;
+            }
+        };
+        Engine::<CpalBackend>::duration(
+            event_name,
+            locale.unwrap_or_default(),
+            gender.into_option().unwrap_or_default(),
+            total.into_option().unwrap_or_default(),
+        )
+    }
+    fn semantic_version(&self) -> StaticArray<u16, 5> {
+        StaticArray::from(AUDIOWARE_VERSION)
+    }
 }
 
 unsafe impl ScriptClass for AudioSystemExt {

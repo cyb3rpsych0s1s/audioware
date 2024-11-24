@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
 use audioware_core::With;
-use audioware_manifest::{Settings, Source};
+use audioware_manifest::{Locale, Settings, Source};
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
@@ -390,6 +390,10 @@ where
         Scene::is_registered_emitter(entity_id)
     }
 
+    pub fn emitters_count() -> i32 {
+        Scene::emitters_count()
+    }
+
     pub fn register_emitter(
         &mut self,
         entity_id: EntityId,
@@ -555,6 +559,28 @@ where
         if let Err(e) = state::WrittenLocale::try_set(written) {
             fails!("failed to set written locale: {e}");
         }
+    }
+
+    pub fn duration(
+        event_name: CName,
+        locale: Locale,
+        gender: audioware_manifest::PlayerGender,
+        total: bool,
+    ) -> f32 {
+        if let Some(banks) = Self::banks().as_ref() {
+            return banks.duration(&event_name, locale, gender, total);
+        }
+        -1.
+    }
+
+    #[cfg(not(feature = "hot-reload"))]
+    pub fn banks<'a>() -> Option<&'a Banks> {
+        BANKS.get()
+    }
+    #[cfg(feature = "hot-reload")]
+    pub fn banks<'a>(
+    ) -> parking_lot::lock_api::RwLockReadGuard<'a, parking_lot::RawRwLock, Option<Banks>> {
+        BANKS.read()
     }
 }
 

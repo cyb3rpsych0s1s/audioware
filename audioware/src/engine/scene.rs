@@ -564,6 +564,10 @@ impl Scene {
     pub fn listener_id(&self) -> EntityId {
         self.v.id
     }
+
+    pub fn emitters_count() -> i32 {
+        EMITTERS.read().len() as i32
+    }
 }
 
 #[derive(Debug)]
