@@ -20,6 +20,26 @@ impl Id {
             Id::OnDemand(_, source) | Id::InMemory(_, source) => source,
         }
     }
+    pub fn is_vocal(&self) -> bool {
+        match self {
+            Id::OnDemand(Usage::Static(_, _), x)
+            | Id::OnDemand(Usage::Streaming(_, _), x)
+            | Id::InMemory(_, x) => match x {
+                Source::Ono | Source::Voices => true,
+                Source::Sfx | Source::Playlist | Source::Music | Source::Jingle => false,
+            },
+        }
+    }
+    pub fn is_emissive(&self) -> bool {
+        match self {
+            Id::OnDemand(Usage::Static(_, _), x)
+            | Id::OnDemand(Usage::Streaming(_, _), x)
+            | Id::InMemory(_, x) => match x {
+                Source::Sfx | Source::Playlist | Source::Music | Source::Jingle => true,
+                Source::Ono | Source::Voices => false,
+            },
+        }
+    }
 }
 
 impl Hash for Id {

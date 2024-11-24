@@ -197,7 +197,19 @@ where
                 .as_ref()
                 .map(AffectedByTimeDilation::affected_by_time_dilation)
                 .unwrap_or(true);
-            let destination = key.to_output_destination(&self.tracks);
+            let is_v = self
+                .scene
+                .as_ref()
+                .is_some_and(|x| Some(x.listener_id()) == entity_id);
+            let destination: OutputDestination = if is_v {
+                if key.is_vocal() {
+                    self.tracks.v.vocal.id().into()
+                } else {
+                    self.tracks.v.emissive.id().into()
+                }
+            } else {
+                key.to_output_destination(&self.tracks)
+            };
             match data {
                 Either::Left(data) => {
                     if let Ok(handle) = self
