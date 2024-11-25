@@ -247,21 +247,12 @@ impl CodewareLifecycle for Audioware {
         }));
     }
 
-    fn define_subtitles(_package: Ref<LocalizationPackage>) {
-        // let written = WrittenLocale::get();
-        // let subtitles = Banks.subtitles(written);
-        // for (key, (value_f, value_m)) in subtitles.iter() {
-        //     package.subtitle(key.as_str(), value_f.as_str(), value_m.as_str());
-        // }
+    fn define_subtitles(package: Ref<LocalizationPackage>) {
+        Engine::<CpalBackend>::define_subtitles(package);
     }
 
     fn supported_languages() -> Vec<CName> {
-        let (sender, receiver) = bounded(0);
-        queue::send(Command::SupportedLanguages { sender });
-        if let Ok(languages) = receiver.recv() {
-            return languages;
-        }
-        vec![]
+        Engine::<CpalBackend>::supported_languages()
     }
 }
 

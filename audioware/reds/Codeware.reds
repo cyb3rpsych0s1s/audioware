@@ -14,23 +14,21 @@ public class LocalizationPackage extends ModLocalizationPackage {
 }
 
 public class LocalizationProvider extends ModLocalizationProvider {
-    protected func OnAttach() {
-        this.OnLocaleChange();
-        this.OnGenderChange();
-    }
-    protected func OnLocaleChange() {
+    public func OnLocaleChange() {
         let system = LocalizationSystem.GetInstance(this.GetGameInstance());
         let spoken = system.GetVoiceLanguage();
         let written = system.GetSubtitleLanguage();
-        FTLog(s"====> game spoken: \(NameToString(spoken)), written: \(NameToString(written))");
+        FTLog(s"update locales: spoken: \(NameToString(spoken)), written: \(NameToString(written))");
         SetGameLocales(spoken, written);
     }
-    protected func OnGenderChange() {
+    public func OnGenderChange() {
         let system = LocalizationSystem.GetInstance(this.GetGameInstance());
         let gender = system.GetPlayerGender();
-        FTLog(s"====> player gender: \(ToString(gender))");
+        FTLog(s"update player gender: \(ToString(gender))");
         SetPlayerGender(gender);
     }
-    public func GetPackage(language: CName) -> ref<ModLocalizationPackage> = new LocalizationPackage();
+    public func GetPackage(language: CName) -> ref<ModLocalizationPackage> {
+        return new LocalizationPackage();
+    }
     public func GetFallback() -> CName = n"";
 }

@@ -13,7 +13,7 @@ use kira::{
     OutputDestination,
 };
 use modulators::{Modulators, Parameter};
-use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
+use red4ext_rs::types::{CName, EntityId, GameInstance, Opt, Ref};
 use scene::Scene;
 use state::{PlayerGender, SpokenLocale};
 use tracks::Tracks;
@@ -24,12 +24,12 @@ use tweens::{
 use crate::{
     error::{EngineError, Error},
     utils::{fails, lifecycle, success, warns},
-    AsAudioSystem, AsGameInstance,
+    AsAudioSystem, AsGameInstance, LocalizationPackage,
 };
 
+pub mod eq;
 pub mod queue;
 
-pub mod eq;
 mod modulators;
 mod scene;
 mod state;
@@ -71,7 +71,7 @@ where
         #[cfg(feature = "hot-reload")]
         {
             use std::ops::DerefMut;
-            *BANKS.write().deref_mut() = Some(banks.clone());
+            *BANKS.write() = Some(banks.clone());
         }
         let mut manager = AudioManager::new(settings).map_err(|_| Error::Engine {
             source: EngineError::Manager {
@@ -565,12 +565,14 @@ where
     }
 
     pub fn set_locales(&mut self, spoken: CName, written: CName) {
-        if let Err(e) = state::SpokenLocale::try_set(spoken) {
-            fails!("failed to set spoken locale: {e}");
-        }
-        if let Err(e) = state::WrittenLocale::try_set(written) {
-            fails!("failed to set written locale: {e}");
-        }
+        match Locale::try_from(spoken) {
+            Ok(spoken) => state::SpokenLocale::set(spoken),
+            Err(e) => fails!("failed to set spoken locale: {e}"),
+        };
+        match Locale::try_from(written) {
+            Ok(written) => state::WrittenLocale::set(written),
+            Err(e) => fails!("failed to set written locale: {e}"),
+        };
     }
 
     pub fn duration(
@@ -592,6 +594,21 @@ where
             }
         }
         vec![]
+    }
+
+    pub fn define_subtitles(package: Ref<LocalizationPackage>) {
+        use crate::types::Subtitle;
+        use audioware_bank::BankSubtitles;
+        lifecycle!("Codeware request to define subtitles");
+        let written = state::WrittenLocale::get();
+        if let Some(banks) = Self::banks().as_ref() {
+            let subtitles = banks.subtitles(written);
+            for (key, (value_f, value_m)) in subtitles.iter() {
+                package.subtitle(key.as_str(), value_f.as_str(), value_m.as_str());
+            }
+        } else {
+            warns!("banks aren't initialized yet, skipping subtitles definition");
+        }
     }
 
     #[cfg(not(feature = "hot-reload"))]

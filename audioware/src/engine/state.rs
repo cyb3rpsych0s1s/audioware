@@ -1,8 +1,9 @@
 use std::sync::atomic::{AtomicU32, AtomicU8};
 
-use red4ext_rs::types::{CName, EntityId, GameInstance};
+use audioware_manifest::Locale;
+use red4ext_rs::types::{EntityId, GameInstance};
 
-use crate::{error::Error, AsGameInstance, PlayerPuppet};
+use crate::{AsGameInstance, PlayerPuppet};
 
 use super::scene::AsEntityExt;
 
@@ -20,12 +21,10 @@ pub struct WrittenLocale(AtomicU32);
 pub struct PlayerGender(AtomicU8);
 
 impl SpokenLocale {
-    pub fn try_set(value: CName) -> Result<(), Error> {
-        SPOKEN_LOCALE.0.store(
-            audioware_manifest::Locale::try_from(value)?.into(),
-            std::sync::atomic::Ordering::Release,
-        );
-        Ok(())
+    pub fn set(value: Locale) {
+        SPOKEN_LOCALE
+            .0
+            .store(value.into(), std::sync::atomic::Ordering::Release);
     }
     pub fn get() -> audioware_manifest::SpokenLocale {
         SPOKEN_LOCALE
@@ -37,12 +36,10 @@ impl SpokenLocale {
 }
 
 impl WrittenLocale {
-    pub fn try_set(value: CName) -> Result<(), Error> {
-        WRITTEN_LOCALE.0.store(
-            audioware_manifest::Locale::try_from(value)?.into(),
-            std::sync::atomic::Ordering::Release,
-        );
-        Ok(())
+    pub fn set(value: Locale) {
+        WRITTEN_LOCALE
+            .0
+            .store(value.into(), std::sync::atomic::Ordering::Release);
     }
     pub fn get() -> audioware_manifest::WrittenLocale {
         WRITTEN_LOCALE

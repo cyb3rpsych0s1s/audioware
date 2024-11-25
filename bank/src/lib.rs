@@ -93,10 +93,10 @@ impl Banks {
     /// All languages found in [Manifest]s.
     pub fn languages(&self) -> HashSet<Locale> {
         let mut out = HashSet::new();
-        for key in LOC_SUB.keys() {
+        for key in self.single_subs.keys() {
             out.insert(key.1);
         }
-        for key in MUL_SUB.keys() {
+        for key in self.dual_subs.keys() {
             out.insert(key.1);
         }
         out

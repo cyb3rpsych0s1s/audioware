@@ -84,6 +84,7 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
 }
 
 pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<CpalBackend>) {
+    crate::utils::lifecycle!("run engine thread");
     let s = |x| Duration::from_secs_f32(x);
     let ms = |x| Duration::from_millis(x);
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
