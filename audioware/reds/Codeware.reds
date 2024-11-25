@@ -3,6 +3,7 @@ module Audioware
 import Codeware.Localization.*
 
 native func DefineSubtitles(package: ref<LocalizationPackage>);
+public native func SupportedLanguages() -> array<CName>;
 
 public class LocalizationPackage extends ModLocalizationPackage {
     public func VoiceLanguage() -> CName    = LocalizationSystem.GetInstance(GetGameInstance()).GetVoiceLanguage();
@@ -30,4 +31,14 @@ public class LocalizationProvider extends ModLocalizationProvider {
         FTLog(s"====> player gender: \(ToString(gender))");
         SetPlayerGender(gender);
     }
+    public func GetPackage(language: CName) -> ref<ModLocalizationPackage> {
+        let languages = SupportedLanguages();
+        let supported = ArrayContains(languages, language);
+        if supported {
+            let package = new LocalizationPackage();
+            return package;
+        }
+        return null;
+    }
+    public func GetFallback() -> CName = n"";
 }

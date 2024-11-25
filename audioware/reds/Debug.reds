@@ -6,6 +6,7 @@ import Audioware.EmitterSettings
 import Audioware.Preset
 import Audioware.Audioware_SettingsDef
 import Audioware.DummyLol
+import Audioware.*
 
 /// HotReload();
 private native static func HotReload() -> Void;
@@ -96,6 +97,17 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
     GameInstance.GetBlackboardSystem(game)
     .Get(GetAllBlackboardDefs().Audioware_Settings)
     .SetInt(GetAllBlackboardDefs().Audioware_Settings.AudioPreset, value, true);
+}
+
+/// Game.TestSupportedLanguages();
+public static exec func TestSupportedLanguages(game: GameInstance) {
+    let languages = SupportedLanguages();
+    if ArraySize(languages) == 0 { FTLog(s"banks do not contain entries for any language"); }
+    else {
+        for language in languages {
+            FTLog(s"banks contain entries for \(NameToString(language))");
+        }
+    }
 }
 
 public class AutoEmittersSystem extends ScriptableSystem {

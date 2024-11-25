@@ -95,6 +95,7 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.UnsetPlayerGender",          Audioware::unset_player_gender),
         g!(c"Audioware.SetGameLocales",             Audioware::set_game_locales),
         g!(c"Audioware.DefineSubtitles",            Audioware::define_subtitles),
+        g!(c"Audioware.SupportedLanguages",         Audioware::supported_languages),
     ];
     #[cfg(not(feature = "hot-reload"))]
     {exp}
@@ -155,6 +156,7 @@ pub trait CodewareLifecycle {
     fn unset_player_gender();
     fn set_game_locales(spoken: CName, written: CName);
     fn define_subtitles(package: Ref<LocalizationPackage>);
+    fn supported_languages() -> Vec<CName>;
 }
 
 pub trait ListenerLifecycle {
@@ -251,6 +253,10 @@ impl CodewareLifecycle for Audioware {
         // for (key, (value_f, value_m)) in subtitles.iter() {
         //     package.subtitle(key.as_str(), value_f.as_str(), value_m.as_str());
         // }
+    }
+
+    fn supported_languages() -> Vec<CName> {
+        vec![]
     }
 }
 
