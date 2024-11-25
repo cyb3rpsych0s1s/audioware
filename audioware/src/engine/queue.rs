@@ -280,6 +280,16 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     None,
                     None,
                 ),
+                Command::SupportedLanguages { sender } => {
+                    let languages = engine
+                        .banks
+                        .languages()
+                        .iter()
+                        .cloned()
+                        .map(CName::from)
+                        .collect::<Vec<_>>();
+                    let _ = sender.try_send(languages);
+                }
             }
         }
     }

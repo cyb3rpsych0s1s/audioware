@@ -585,6 +585,15 @@ where
         -1.
     }
 
+    pub fn supported_languages() -> Vec<CName> {
+        if let Some(banks) = Self::banks().as_ref() {
+            if cfg!(not(test)) {
+                return banks.languages().iter().cloned().map(CName::from).collect();
+            }
+        }
+        vec![]
+    }
+
     #[cfg(not(feature = "hot-reload"))]
     pub fn banks<'a>() -> Option<&'a Banks> {
         BANKS.get()

@@ -1,4 +1,5 @@
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Settings};
+use crossbeam::channel::Sender;
 use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId};
 
@@ -59,6 +60,9 @@ pub enum Command {
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
     },
+    SupportedLanguages {
+        sender: Sender<Vec<CName>>,
+    },
 }
 
 impl std::fmt::Debug for Command {
@@ -116,6 +120,7 @@ impl std::fmt::Display for Command {
                 Command::Stop { .. } => "stop",
                 Command::Switch { .. } => "switch",
                 Command::SwitchVanilla { .. } => "switch vanilla",
+                Command::SupportedLanguages { .. } => "supported languages",
             }
         )
     }

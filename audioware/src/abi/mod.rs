@@ -256,6 +256,11 @@ impl CodewareLifecycle for Audioware {
     }
 
     fn supported_languages() -> Vec<CName> {
+        let (sender, receiver) = bounded(0);
+        queue::send(Command::SupportedLanguages { sender });
+        if let Ok(languages) = receiver.recv() {
+            return languages;
+        }
         vec![]
     }
 }
