@@ -8,7 +8,8 @@ use std::{
 use audioware_core::{AudioDuration, With};
 use audioware_manifest::{
     error::{CannotParseManifest, CannotReadManifest},
-    Depot, DialogLine, Locale, Manifest, PlayerGender, R6Audioware, REDmod, Settings, SpokenLocale,
+    Depot, DialogLine, Locale, Manifest, Mod, PlayerGender, R6Audioware, REDmod, Settings,
+    SpokenLocale,
 };
 use either::Either;
 use ensure::*;
@@ -28,6 +29,10 @@ mod storage;
 pub use storage::*;
 
 use crate::error::registry::Error as RegistryError;
+
+#[cfg(feature = "hot-reload")]
+static PREVIOUS_IDS: std::sync::LazyLock<std::sync::Mutex<HashSet<Id>>> =
+    std::sync::LazyLock::new(Default::default);
 
 #[derive(Clone)]
 pub struct Banks {
@@ -157,12 +162,8 @@ impl Banks {
         }
         Err(RegistryError::NotFound { cname: *name }.into())
     }
-    /// Initialize banks.
-    pub fn new(hot_reload: bool) -> (Self, Initialization) {
-        let since = Instant::now();
-
-        let mut errors: Vec<Error> = vec![];
-
+    fn mods() -> (Vec<Mod>, Vec<Error>) {
+        let mut errors = Vec::with_capacity(10);
         let mut mods = Vec::with_capacity(30);
         let mut redmod_exists = false;
         if let Ok(redmod) = REDmod::try_new() {
@@ -180,9 +181,16 @@ impl Banks {
                 mods.push(m);
             }
         }
+        (mods, errors)
+    }
+    /// Initialize banks.
+    pub fn new() -> (Self, Initialization) {
+        let since = Instant::now();
 
         let mut file: Vec<u8>;
         let mut manifest: Manifest;
+        let (mods, mut errors) = Self::mods();
+
         let mut ids: HashSet<Id> = HashSet::new();
         let mut uniques: HashMap<UniqueKey, StaticSoundData> = HashMap::new();
         let mut genders: HashMap<GenderKey, StaticSoundData> = HashMap::new();
@@ -233,7 +241,6 @@ impl Banks {
                             &mut ids,
                             &mut uniques,
                             &mut unique_settings,
-                            hot_reload,
                         ) {
                             Ok(x) => x,
                             Err(e) => {
@@ -252,7 +259,6 @@ impl Banks {
                             &mut ids,
                             &mut genders,
                             &mut gender_settings,
-                            hot_reload,
                         ) {
                             Ok(x) => x,
                             Err(e) => {
@@ -275,7 +281,6 @@ impl Banks {
                             &mut dual_subs,
                             &mut single_settings,
                             &mut dual_settings,
-                            hot_reload,
                         ) {
                             Ok(x) => x,
                             Err(e) => {
@@ -294,7 +299,6 @@ impl Banks {
                             &mut ids,
                             &mut uniques,
                             &mut unique_settings,
-                            hot_reload,
                         ) {
                             Ok(x) => x,
                             Err(e) => {
@@ -312,7 +316,6 @@ impl Banks {
                             &m,
                             &mut ids,
                             &mut unique_settings,
-                            hot_reload,
                         ) {
                             Ok(x) => x,
                             Err(e) => {
@@ -370,6 +373,26 @@ impl Banks {
             },
             report,
         )
+    }
+    #[cfg(feature = "hot-reload")]
+    pub fn hot_reload(&mut self) -> Initialization {
+        PREVIOUS_IDS
+            .lock()
+            .expect("already loaded before")
+            .clone_from(&self.ids.drain().collect());
+        let (banks, initialization) = Self::new();
+        self.ids = banks.ids;
+        self.uniques = banks.uniques;
+        self.genders = banks.genders;
+        self.single_voices = banks.single_voices;
+        self.dual_voices = banks.dual_voices;
+        self.single_subs = banks.single_subs;
+        self.dual_subs = banks.dual_subs;
+        self.unique_settings = banks.unique_settings;
+        self.gender_settings = banks.gender_settings;
+        self.single_settings = banks.single_settings;
+        self.dual_settings = banks.dual_settings;
+        initialization
     }
 }
 

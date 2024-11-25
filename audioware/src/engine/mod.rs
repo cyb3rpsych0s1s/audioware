@@ -65,7 +65,7 @@ where
     <B as Backend>::Error: Debug,
 {
     pub fn try_new(settings: AudioManagerSettings<B>) -> Result<Engine<B>, Error> {
-        let (banks, report) = Banks::new(false);
+        let (banks, report) = Banks::new();
         #[cfg(not(feature = "hot-reload"))]
         let _ = BANKS.set(banks.clone());
         #[cfg(feature = "hot-reload")]
@@ -93,10 +93,8 @@ where
     #[cfg(feature = "hot-reload")]
     pub fn hot_reload(&mut self) {
         self.clear();
-        let (banks, report) = Banks::new(true);
-        *BANKS.write() = Some(banks.clone());
-        self.banks = banks;
-        self.report = report;
+        self.report = self.banks.hot_reload();
+        *BANKS.write() = Some(self.banks.clone());
         self.report_initialization(true);
     }
 

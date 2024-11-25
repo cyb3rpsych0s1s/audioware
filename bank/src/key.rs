@@ -56,6 +56,12 @@ impl Key {
             _ => None,
         }
     }
+    pub fn locale(&self) -> Option<Locale> {
+        match self {
+            Key::Both(BothKey(_, locale, _)) | Key::Locale(LocaleKey(_, locale)) => Some(*locale),
+            _ => None,
+        }
+    }
 }
 
 impl AsRef<CName> for Key {

@@ -46,12 +46,82 @@ pub fn ensure_no_duplicate_accross_depots(
     Ok(())
 }
 
+#[cfg(not(feature = "hot-reload"))]
+#[inline]
+pub fn ensure_key_unique_or_inserted(cname: &str) -> Result<bool, Error> {
+    ensure_key_unique(cname)?;
+    Ok(true)
+}
+
+#[cfg(feature = "hot-reload")]
+#[inline]
+pub fn ensure_key_unique_or_inserted(cname: &str) -> Result<bool, Error> {
+    // if it already existed in a previous load, it's probably a recycled key.
+    if crate::PREVIOUS_IDS
+        .lock()
+        .unwrap()
+        .iter()
+        .any(|x| AsRef::<CName>::as_ref(x).as_str() == cname)
+    {
+        return Ok(true);
+    }
+    ensure_key_unique(cname)?;
+    Ok(false)
+}
+
+#[cfg(not(feature = "hot-reload"))]
+#[inline]
+pub fn ensure_localized_key_unique_or_inserted(
+    ids: &HashSet<Id>,
+    cname: &str,
+    locale: Locale,
+) -> Result<bool, Error> {
+    let existed = ensure_localized_key_unique(ids, cname, locale)?;
+    Ok(existed)
+}
+
+#[cfg(feature = "hot-reload")]
+#[inline]
+pub fn ensure_localized_key_unique_or_inserted(
+    ids: &HashSet<Id>,
+    cname: &str,
+    locale: Locale,
+) -> Result<bool, Error> {
+    // if it already existed in a previous load, it's probably a recycled key.
+    if crate::PREVIOUS_IDS
+        .lock()
+        .unwrap()
+        .iter()
+        .any(|x| AsRef::<CName>::as_ref(x).as_str() == cname && x.locale() == Some(locale))
+    {
+        return Ok(true);
+    }
+    let existed = ensure_localized_key_unique(ids, cname, locale)?;
+    Ok(existed)
+}
+
+/// Ensure [CName] does not already exist in [game pool](CNamePool),
+/// unless it already exists for some [locale](Locale).
+#[inline]
+pub fn ensure_localized_key_unique(
+    ids: &HashSet<Id>,
+    cname: &str,
+    _: Locale,
+) -> Result<bool, Error> {
+    // Conflict trait will make sure there's no identical duplicate, so no need to check twice.
+    if ids
+        .iter()
+        .any(|x| AsRef::<CName>::as_ref(x).as_str() == cname && x.locale().is_some())
+    {
+        return Ok(true);
+    }
+    ensure_key_unique(cname)?;
+    Ok(false)
+}
+
 /// Ensure [CName] does not already exist in [game pool](CNamePool).
 #[inline]
-pub fn ensure_key_unique(cname: &str, hot_reload: bool) -> Result<(), Error> {
-    if hot_reload {
-        return Ok(());
-    }
+pub fn ensure_key_unique(cname: &str) -> Result<(), Error> {
     ensure!(
         CName::new(cname).to_string().as_str() != cname,
         NonUniqueKeySnafu {
@@ -411,9 +481,8 @@ pub fn ensure_sfx<'a>(
     set: &'a mut HashSet<Id>,
     map: &'a mut HashMap<UniqueKey, StaticSoundData>,
     smap: &'a mut HashMap<UniqueKey, Settings>,
-    hot_reload: bool,
 ) -> Result<(), Error> {
-    ensure_key_unique(k, hot_reload)?;
+    let existed = ensure_key_unique_or_inserted(k)?;
     let UsableAudio {
         audio: Audio { file, settings },
         usage,
@@ -434,7 +503,9 @@ pub fn ensure_sfx<'a>(
         Source::Sfx,
     )?;
 
-    add_name_to_pool(&c_string, k, hot_reload);
+    if !existed {
+        CNamePool::add_cstr(&c_string);
+    }
     Ok(())
 }
 
@@ -446,9 +517,8 @@ pub fn ensure_ono<'a>(
     set: &'a mut HashSet<Id>,
     map: &'a mut HashMap<GenderKey, StaticSoundData>,
     smap: &'a mut HashMap<GenderKey, Settings>,
-    hot_reload: bool,
 ) -> Result<(), Error> {
-    ensure_key_unique(k, hot_reload)?;
+    let existed = ensure_key_unique_or_inserted(k)?;
     let (usage, genders) = v.into();
     let c_string = std::ffi::CString::new(k)?;
     let cname = CName::new(k);
@@ -469,7 +539,9 @@ pub fn ensure_ono<'a>(
         )?;
     }
 
-    add_name_to_pool(&c_string, k, hot_reload);
+    if !existed {
+        CNamePool::add_cstr(&c_string);
+    }
     Ok(())
 }
 
@@ -486,9 +558,8 @@ pub fn ensure_voice<'a>(
     complex_subs: &'a mut HashMap<BothKey, DialogLine>,
     simple_settings: &'a mut HashMap<LocaleKey, Settings>,
     complex_settings: &'a mut HashMap<BothKey, Settings>,
-    hot_reload: bool,
 ) -> Result<(), Error> {
-    ensure_key_unique(k, hot_reload)?;
+    let mut existed = false;
     let v: AnyVoice = v.into();
     let c_string = std::ffi::CString::new(k)?;
     let cname = CName::new(k);
@@ -497,6 +568,7 @@ pub fn ensure_voice<'a>(
     match v {
         Either::Left((aud, usage, subs)) => {
             for (locale, Audio { file, settings }) in aud {
+                existed = existed || ensure_localized_key_unique_or_inserted(set, k, locale)?;
                 simple_key = LocaleKey(cname, locale);
                 if let Some(subs) = subs.as_ref().and_then(|x| x.get(&locale)) {
                     ensure_store_subtitle::<LocaleKey>(
@@ -521,6 +593,7 @@ pub fn ensure_voice<'a>(
         }
         Either::Right((aud, usage, subs)) => {
             for (locale, genders) in aud {
+                existed = existed || ensure_localized_key_unique_or_inserted(set, k, locale)?;
                 for (gender, Audio { file, settings }) in genders {
                     complex_key = BothKey(cname, locale, gender);
                     if let Some(subs) = subs.as_ref().and_then(|x| x.get(&locale)) {
@@ -551,7 +624,9 @@ pub fn ensure_voice<'a>(
         }
     }
 
-    add_name_to_pool(&c_string, k, hot_reload);
+    if !existed {
+        CNamePool::add_cstr(&c_string);
+    }
     Ok(())
 }
 
@@ -563,9 +638,8 @@ pub fn ensure_music<'a>(
     set: &'a mut HashSet<Id>,
     map: &'a mut HashMap<UniqueKey, StaticSoundData>,
     smap: &'a mut HashMap<UniqueKey, Settings>,
-    hot_reload: bool,
 ) -> Result<(), Error> {
-    ensure_key_unique(k, hot_reload)?;
+    let existed = ensure_key_unique_or_inserted(k)?;
     let UsableAudio {
         audio: Audio { file, settings },
         usage,
@@ -586,7 +660,9 @@ pub fn ensure_music<'a>(
         Source::Music,
     )?;
 
-    add_name_to_pool(&c_string, k, hot_reload);
+    if !existed {
+        CNamePool::add_cstr(&c_string);
+    }
     Ok(())
 }
 
@@ -597,9 +673,8 @@ pub fn ensure_jingles<'a>(
     m: &Mod,
     set: &'a mut HashSet<Id>,
     smap: &'a mut HashMap<UniqueKey, Settings>,
-    hot_reload: bool,
 ) -> Result<(), Error> {
-    ensure_key_unique(k, hot_reload)?;
+    let existed = ensure_key_unique_or_inserted(k)?;
     let Audio { file, settings } = (&v).into();
     ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref(), v.captions())?;
     let c_string = std::ffi::CString::new(k)?;
@@ -615,16 +690,8 @@ pub fn ensure_jingles<'a>(
     }
     ensure_store_id(id, set)?;
 
-    add_name_to_pool(&c_string, k, hot_reload);
-    Ok(())
-}
-
-#[allow(unused_variables)]
-fn add_name_to_pool(c_string: &std::ffi::CString, str: &str, hot_reload: bool) {
-    #[cfg(not(feature = "hot-reload"))]
-    CNamePool::add_cstr(c_string);
-    #[cfg(feature = "hot-reload")]
-    if !hot_reload || CName::new(str).as_str() != str {
-        CNamePool::add_cstr(c_string);
+    if !existed {
+        CNamePool::add_cstr(&c_string);
     }
+    Ok(())
 }

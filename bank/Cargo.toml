@@ -9,6 +9,7 @@ audioware-core.workspace = true
 audioware-manifest.workspace = true
 either = "1.12"
 kira.workspace = true
+rayon.workspace = true
 red4ext-rs.workspace = true
 serde.workspace = true
 serde_yaml = "0.9"

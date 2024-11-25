@@ -33,6 +33,7 @@ pub mod registry {
 }
 
 pub mod validation {
+
     use snafu::Snafu;
 
     use crate::{Id, Key};

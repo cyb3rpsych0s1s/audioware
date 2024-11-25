@@ -20,6 +20,13 @@ impl Id {
             Id::OnDemand(_, source) | Id::InMemory(_, source) => source,
         }
     }
+    pub fn locale(&self) -> Option<Locale> {
+        match self {
+            Id::OnDemand(Usage::Static(key, _), _)
+            | Id::OnDemand(Usage::Streaming(key, _), _)
+            | Id::InMemory(key, _) => key.locale(),
+        }
+    }
     pub fn is_vocal(&self) -> bool {
         match self {
             Id::OnDemand(Usage::Static(_, _), x)
