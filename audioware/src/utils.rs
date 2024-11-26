@@ -21,20 +21,20 @@ macro_rules! silly {
 pub(crate) use silly;
 
 macro_rules! lifecycle {
-    ($($arg:tt)*) => {
+    ($($arg:tt)*) => {{
+        #[allow(unused_variables, reason = "unused lint")]
+        let msg = format!($($arg)*);
         $crate::utils::silly!($($arg)*)
-    };
+    }};
 }
 pub(crate) use lifecycle;
 
 #[allow(unused_macros)]
 macro_rules! intercept {
     ($($arg:tt)*) => {{
-        {
-            #[allow(unused_variables, reason = "unused lint")]
-            let msg = format!($($arg)*);
-            $crate::utils::silly!("*~ {msg}")
-        }
+        #[allow(unused_variables, reason = "unused lint")]
+        let msg = format!($($arg)*);
+        $crate::utils::silly!("*~ {msg}")
     }};
 }
 #[allow(unused_imports)]
@@ -121,8 +121,8 @@ fn plog(msg: String, func_name: &str) {
 }
 
 /// Exposes `FTLog` to Rust on debug builds only.
+#[cfg(debug_assertions)]
 pub fn dbg(msg: impl Into<String>) {
-    #[cfg(debug_assertions)]
     console(msg, "FTLog");
 }
 

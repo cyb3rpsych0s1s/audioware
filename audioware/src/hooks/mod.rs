@@ -2,10 +2,12 @@ use red4ext_rs::SdkEnv;
 
 mod audio_system;
 mod entity;
-mod events;
 mod save_handling_controller;
 mod time_dilatable;
 mod time_system;
+
+#[cfg(feature = "research")]
+mod events;
 
 pub fn attach(env: &SdkEnv) {
     save_handling_controller::attach_hook(env);
@@ -38,10 +40,15 @@ mod offsets {
     // note: LoadSaveInGame and LoadModdedSave share same underlying address
     pub const SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME: u32     = 0x9AB824D9;   // 0x14083FB6C (2.13)
 
-    pub const EVENT_DIALOGLINE: u32                             = 0x10E71E89;   // 0x1409C12A8 (2.12a)
-    pub const EVENT_DIALOGLINEEND: u32                          = 0x6F24331;    // 0x141188BF4 (2.12a)
-    pub const VEHICLE_AUDIO_EVENT: u32                          = 0x69EF1461;   // 0x1418D4C44 (2.13)
-    pub const AUDIO_EVENT: u32                                  = 0x10C412FD;   // 0x14065816C (2.13)
+    #[cfg(feature = "research")]
+    mod events {
+        pub const EVENT_DIALOGLINE: u32                             = 0x10E71E89;   // 0x1409C12A8 (2.12a)
+        pub const EVENT_DIALOGLINEEND: u32                          = 0x6F24331;    // 0x141188BF4 (2.12a)
+        pub const VEHICLE_AUDIO_EVENT: u32                          = 0x69EF1461;   // 0x1418D4C44 (2.13)
+        pub const AUDIO_EVENT: u32                                  = 0x10C412FD;   // 0x14065816C (2.13)
+    }
+    #[cfg(feature = "research")]
+    use events::*;
 }
 
 #[macro_export]
