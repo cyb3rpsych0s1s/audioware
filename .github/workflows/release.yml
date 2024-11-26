@@ -31,7 +31,7 @@ jobs:
   release:
     if: ${{ startsWith(github.event.ref, 'refs/tags') }}
     runs-on: windows-2019
-    needs: bundle
+    needs: [bundle, bundle-dev-only]
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
