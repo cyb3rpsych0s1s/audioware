@@ -48,7 +48,7 @@ mod offsets {
         pub const AUDIO_EVENT: u32                                  = 0x10C412FD;   // 0x14065816C (2.13)
     }
     #[cfg(feature = "research")]
-    use events::*;
+    pub use events::*;
 }
 
 #[macro_export]
