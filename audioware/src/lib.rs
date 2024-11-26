@@ -9,7 +9,7 @@ use red4ext_rs::{
 pub use types::*;
 
 #[cfg(feature = "hot-reload")]
-#[allow(dead_code)]
+#[allow(dead_code, reason = "depends on feature enabled")]
 pub mod debug;
 
 mod abi;
@@ -39,7 +39,7 @@ impl Plugin for Audioware {
     }
 
     /// Register types in [RTTI][RttiSystem].
-    #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
+    #[allow(clippy::transmute_ptr_to_ref, reason = "upstream lint")]
     fn exports() -> impl Exportable {
         abi::exports()
     }

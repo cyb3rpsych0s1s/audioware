@@ -293,19 +293,6 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
     lifecycle!("closed engine");
 }
 
-#[allow(dead_code)]
-pub fn join() {
-    lifecycle!("join engine thread");
-    if let Some(Err(e)) = THREAD
-        .get()
-        .and_then(|x| x.try_lock().ok())
-        .and_then(|mut x| x.take())
-        .map(|x| x.join())
-    {
-        fails!("failed to join engine thread: {e:?}");
-    }
-}
-
 pub fn notify(lifecycle: Lifecycle) {
     lifecycle!("{lifecycle}");
     if let Some(x) = LIFECYCLE.get() {

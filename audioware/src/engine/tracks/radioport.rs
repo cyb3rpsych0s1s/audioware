@@ -16,7 +16,7 @@ pub struct Radioport(TrackHandle);
 impl Radioport {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
-        #[allow(unused_variables)] ambience: &Ambience,
+        #[allow(unused_variables, reason = "check routing")] ambience: &Ambience,
         modulators: &Modulators,
     ) -> Result<Self, Error> {
         let track = manager.add_sub_track(

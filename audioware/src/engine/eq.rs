@@ -6,10 +6,10 @@ use crate::utils;
 use super::tweens::DEFAULT;
 
 /// suppress high frequences (from 20k to x)
-#[allow(dead_code)]
+#[allow(dead_code, reason = "kept as a reminder")]
 pub const EQ_LOW_PASS_DEFAULT_FREQUENCES: f64 = 20_000.;
 /// suppress low frequences (from 0 to x)
-#[allow(dead_code)]
+#[allow(dead_code, reason = "kept as a reminder")]
 pub const EQ_HIGH_PASS_DEFAULT_FREQUENCES: f64 = 0.;
 
 pub const EQ_LOW_PASS_PHONE_CUTOFF: f64 = 5_000.;
@@ -26,7 +26,7 @@ pub struct EQ {
 pub struct LowPass(pub FilterHandle);
 pub struct HighPass(pub FilterHandle);
 
-#[allow(dead_code)]
+#[allow(dead_code, reason = "externally set")]
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 #[repr(i64)]
 pub enum Preset {

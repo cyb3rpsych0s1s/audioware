@@ -10,7 +10,6 @@ attach_native_func!(
     super::offsets::SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME
 );
 
-#[allow(unused_variables)]
 unsafe extern "C" fn detour(
     i: *mut IScriptable,
     f: *mut StackFrame,

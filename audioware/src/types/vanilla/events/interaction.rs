@@ -90,7 +90,11 @@ impl AsRef<IScriptable> for ChoiceEvent {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u32)]
-#[allow(non_camel_case_types, clippy::upper_case_acronyms)]
+#[allow(
+    non_camel_case_types,
+    clippy::upper_case_acronyms,
+    reason = "see RED4ext.SDK"
+)]
 pub enum ActionType {
     BUTTON_PRESSED = 0,
     BUTTON_RELEASED = 1,

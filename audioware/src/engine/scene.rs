@@ -44,7 +44,7 @@ pub struct Emitter {
     busy: bool,
     persist_until_sounds_finishes: bool,
     marked_for_death: bool,
-    #[allow(dead_code)]
+    #[allow(dead_code, reason = "todo")]
     gender: Option<PlayerGender>,
 }
 

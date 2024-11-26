@@ -31,7 +31,7 @@ pub(crate) use lifecycle;
 macro_rules! intercept {
     ($($arg:tt)*) => {{
         {
-            #[allow(unused_variables)]
+            #[allow(unused_variables, reason = "unused lint")]
             let msg = format!($($arg)*);
             $crate::utils::silly!("*~ {msg}")
         }
