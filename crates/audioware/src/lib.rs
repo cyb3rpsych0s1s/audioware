@@ -38,7 +38,7 @@ impl Plugin for Audioware {
         }
     }
 
-    /// Register types in [RTTI][RttiSystem].
+    /// Register types in [RTTI][red4ext_rs::RttiSystem].
     #[allow(clippy::transmute_ptr_to_ref, reason = "upstream lint")]
     fn exports() -> impl Exportable {
         abi::exports()

@@ -148,8 +148,8 @@ pub fn ensure_key_no_conflict<T: Conflictual>(
 }
 
 /// Ensure [Manifest] does not contain duplicate keys among
-/// [Sfx]
-/// [Ono]
+/// [Sfx],
+/// [Ono],
 /// etc.
 pub fn ensure_manifest_no_duplicates(manifest: &Manifest) -> Result<(), Error> {
     let mut hashset = HashSet::with_capacity(100);
@@ -188,7 +188,7 @@ pub fn ensure_manifest_no_duplicates(manifest: &Manifest) -> Result<(), Error> {
     Ok(())
 }
 
-/// Ensure audio file [Path](std::path::Path) is located inside [Mod] depot.
+/// Ensure audio file [Path] is located inside [Mod] depot.
 pub fn ensure_located_in_depot(
     file: &impl AsRef<std::path::Path>,
     folder: &Mod,

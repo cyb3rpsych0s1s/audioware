@@ -23,7 +23,7 @@ pub mod lifecycle;
 mod types;
 use types::*;
 
-/// Register [plugin][Plugin] lifecycle listeners.
+/// Register [plugin][super::Plugin] lifecycle listeners.
 pub fn register_listeners(env: &SdkEnv) {
     RttiRegistrator::add(Some(register), Some(post_register));
     env.add_listener(
@@ -42,7 +42,7 @@ macro_rules! g {
     };
 }
 
-/// Register types in [RTTI][RttiSystem].
+/// Register types in [RTTI][red4ext_rs::RttiSystem].
 #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
 #[rustfmt::skip]
 pub fn exports() -> impl Exportable {
@@ -115,7 +115,7 @@ unsafe extern "C" fn on_exit_initialization(_: &GameApp) {
     Audioware::once_exit_initialization();
 }
 
-/// Unload [Plugin].
+/// Unload [Plugin][super::Plugin].
 unsafe extern "C" fn on_exit_running(_: &GameApp) {
     queue::notify(Lifecycle::Terminate);
 }
