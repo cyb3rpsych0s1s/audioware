@@ -1,48 +1,29 @@
-use std::sync::{Mutex, MutexGuard, OnceLock};
-
 use kira::{
     effect::{reverb::ReverbBuilder, EffectBuilder},
+    manager::backend::Backend,
     modulator::tweener::{TweenerBuilder, TweenerHandle},
     tween::{ModulatorMapping, Tween, Value},
 };
 
-use crate::error::InternalError;
-
 use super::Parameter;
 
-const MODULATOR_NAME: &str = "ReverbMix";
-static MODULATOR: OnceLock<Mutex<TweenerHandle>> = OnceLock::new();
-
 /// Reverb mix parameter.
-pub struct ReverbMix;
-impl ReverbMix {
-    pub fn try_lock<'a>() -> Result<MutexGuard<'a, TweenerHandle>, InternalError> {
-        MODULATOR
-            .get()
-            .unwrap()
-            .try_lock()
-            .map_err(|_| InternalError::Contention {
-                origin: MODULATOR_NAME,
-            })
-    }
-}
+pub struct ReverbMix(TweenerHandle);
 impl Parameter for ReverbMix {
     type Value = f32;
 
-    fn setup(manager: &mut kira::manager::AudioManager) -> Result<(), crate::error::Error> {
+    fn try_new<B: Backend>(
+        manager: &mut kira::manager::AudioManager<B>,
+    ) -> Result<Self, crate::error::Error> {
         let handle = manager.add_modulator(TweenerBuilder { initial_value: 0.0 })?;
-        MODULATOR
-            .set(Mutex::new(handle))
-            .expect("store tweener handle once");
-        Ok(())
+        Ok(Self(handle))
     }
 
-    fn effect() -> Result<impl EffectBuilder, crate::error::Error> {
-        use std::ops::Deref;
+    fn try_effect(&self) -> Result<impl EffectBuilder, crate::error::Error> {
         Ok(ReverbBuilder::new()
             .stereo_width(1.0)
             .mix(Value::<f64>::from_modulator(
-                Self::try_lock()?.deref(),
+                &self.0,
                 ModulatorMapping {
                     input_range: (0.0, 1.0),
                     output_range: (0.0, 1.0),
@@ -52,8 +33,7 @@ impl Parameter for ReverbMix {
             )))
     }
 
-    fn update(value: Self::Value, tween: Tween) -> Result<bool, crate::error::Error> {
-        Self::try_lock()?.set(value as f64, tween);
-        Ok(true)
+    fn update(&mut self, value: Self::Value, tween: Tween) {
+        self.0.set(value as f64, tween);
     }
 }

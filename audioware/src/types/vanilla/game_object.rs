@@ -4,15 +4,11 @@ use red4ext_rs::{
     RttiSystem, ScriptClass,
 };
 
-use super::{ECustomCameraTarget, GamePlayerSocket, RedTagList, RenderSceneLayerMask};
+use super::{Entity, GamePlayerSocket, RedTagList};
 
 #[repr(C)]
 pub struct GameObject {
-    pub base: IScriptable,
-    pub _padding0: [u8; 0x114],
-    pub custom_camera_target: ECustomCameraTarget, // 0x154
-    pub _padding1: [u8; 0x6],
-    pub render_scene_layer_mask: RenderSceneLayerMask, // 0x15B
+    pub base: Entity,
     pub _padding2: [u8; 0xC],
     pub persistent_state: Ref<IScriptable>,      // 0x168
     pub display_name: LocalizationString,        // 0x178
@@ -31,10 +27,17 @@ unsafe impl ScriptClass for GameObject {
     type Kind = Native;
 }
 
+impl AsRef<Entity> for GameObject {
+    #[inline]
+    fn as_ref(&self) -> &Entity {
+        &self.base
+    }
+}
+
 impl AsRef<IScriptable> for GameObject {
     #[inline]
     fn as_ref(&self) -> &IScriptable {
-        &self.base
+        self.base.as_ref()
     }
 }
 
@@ -82,7 +85,133 @@ impl AsRef<GameObject> for VehicleObject {
     }
 }
 
+impl AsRef<Entity> for VehicleObject {
+    fn as_ref(&self) -> &Entity {
+        self.base.as_ref()
+    }
+}
+
 impl AsRef<IScriptable> for VehicleObject {
+    fn as_ref(&self) -> &IScriptable {
+        self.base.as_ref()
+    }
+}
+
+#[repr(C)]
+pub struct WheeledObject {
+    pub base: VehicleObject,
+}
+
+unsafe impl ScriptClass for WheeledObject {
+    const NAME: &'static str = "vehicleWheeledBaseObject";
+    type Kind = Native;
+}
+
+impl AsRef<VehicleObject> for WheeledObject {
+    #[inline]
+    fn as_ref(&self) -> &VehicleObject {
+        &self.base
+    }
+}
+
+impl AsRef<IScriptable> for WheeledObject {
+    #[inline]
+    fn as_ref(&self) -> &IScriptable {
+        self.base.as_ref()
+    }
+}
+
+#[repr(C)]
+pub struct BikeObject {
+    pub base: WheeledObject,
+}
+
+unsafe impl ScriptClass for BikeObject {
+    const NAME: &'static str = "vehicleBikeBaseObject";
+    type Kind = Native;
+}
+
+impl AsRef<VehicleObject> for BikeObject {
+    #[inline]
+    fn as_ref(&self) -> &VehicleObject {
+        self.base.as_ref()
+    }
+}
+
+impl AsRef<IScriptable> for BikeObject {
+    #[inline]
+    fn as_ref(&self) -> &IScriptable {
+        self.base.as_ref()
+    }
+}
+
+#[repr(C)]
+pub struct CarObject {
+    pub base: WheeledObject,
+}
+
+unsafe impl ScriptClass for CarObject {
+    const NAME: &'static str = "vehicleCarBaseObject";
+    type Kind = Native;
+}
+
+impl AsRef<VehicleObject> for CarObject {
+    #[inline]
+    fn as_ref(&self) -> &VehicleObject {
+        self.base.as_ref()
+    }
+}
+
+impl AsRef<IScriptable> for CarObject {
+    #[inline]
+    fn as_ref(&self) -> &IScriptable {
+        self.base.as_ref()
+    }
+}
+
+#[repr(C)]
+pub struct AvObject {
+    pub base: VehicleObject,
+}
+
+unsafe impl ScriptClass for AvObject {
+    const NAME: &'static str = "vehicleAVBaseObject";
+    type Kind = Native;
+}
+
+impl AsRef<VehicleObject> for AvObject {
+    #[inline]
+    fn as_ref(&self) -> &VehicleObject {
+        &self.base
+    }
+}
+
+impl AsRef<IScriptable> for AvObject {
+    #[inline]
+    fn as_ref(&self) -> &IScriptable {
+        self.base.as_ref()
+    }
+}
+
+#[repr(C)]
+pub struct TankObject {
+    pub base: VehicleObject,
+}
+
+unsafe impl ScriptClass for TankObject {
+    const NAME: &'static str = "vehicleTankBaseObject";
+    type Kind = Native;
+}
+
+impl AsRef<VehicleObject> for TankObject {
+    #[inline]
+    fn as_ref(&self) -> &VehicleObject {
+        &self.base
+    }
+}
+
+impl AsRef<IScriptable> for TankObject {
+    #[inline]
     fn as_ref(&self) -> &IScriptable {
         self.base.as_ref()
     }

@@ -13,7 +13,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 audioware-core.workspace = true
-audioware-bank.workspace = true
+audioware-bank = { workspace = true }
 audioware-manifest.workspace = true
 cpal = "0.15"
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
@@ -22,16 +22,19 @@ either.workspace = true
 glam = { workspace = true, features = ["mint"] }
 kira.workspace = true
 mint = { version = "0.5" }
-once_cell = "1.19"
 parking_lot = "0.12"
-rayon.workspace = true
 red4ext-rs.workspace = true
 rust-ini = "0.21"
 snafu.workspace = true
-snowflake.workspace = true
+bitflags = "2.6.0"
 
 [build-dependencies]
 semver = "1.0"
 
 [package.metadata.cargo-machete]
 ignored = ["rust-ini"]
+
+[features]
+default = []
+research = []
+hot-reload = ["audioware-bank/hot-reload"]

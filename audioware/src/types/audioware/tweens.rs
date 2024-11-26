@@ -11,9 +11,9 @@ use super::Easing;
 #[repr(C)]
 pub struct Tween {
     /// delay before starting: in seconds
-    start_time: f32,
+    pub start_time: f32,
     /// tween duration: in seconds
-    duration: f32,
+    pub duration: f32,
 }
 unsafe impl ScriptClass for Tween {
     type Kind = Scripted;

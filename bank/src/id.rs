@@ -14,6 +14,41 @@ pub enum Id {
     InMemory(Key, Source),
 }
 
+impl Id {
+    pub fn source(&self) -> &Source {
+        match self {
+            Id::OnDemand(_, source) | Id::InMemory(_, source) => source,
+        }
+    }
+    pub fn locale(&self) -> Option<Locale> {
+        match self {
+            Id::OnDemand(Usage::Static(key, _), _)
+            | Id::OnDemand(Usage::Streaming(key, _), _)
+            | Id::InMemory(key, _) => key.locale(),
+        }
+    }
+    pub fn is_vocal(&self) -> bool {
+        match self {
+            Id::OnDemand(Usage::Static(_, _), x)
+            | Id::OnDemand(Usage::Streaming(_, _), x)
+            | Id::InMemory(_, x) => match x {
+                Source::Ono | Source::Voices => true,
+                Source::Sfx | Source::Playlist | Source::Music | Source::Jingle => false,
+            },
+        }
+    }
+    pub fn is_emissive(&self) -> bool {
+        match self {
+            Id::OnDemand(Usage::Static(_, _), x)
+            | Id::OnDemand(Usage::Streaming(_, _), x)
+            | Id::InMemory(_, x) => match x {
+                Source::Sfx | Source::Playlist | Source::Music | Source::Jingle => true,
+                Source::Ono | Source::Voices => false,
+            },
+        }
+    }
+}
+
 impl Hash for Id {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         let key: &Key = self.as_ref();

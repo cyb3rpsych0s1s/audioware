@@ -2,14 +2,14 @@
 
 use std::{
     collections::{HashMap, HashSet},
-    sync::OnceLock,
     time::{Duration, Instant},
 };
 
 use audioware_core::{AudioDuration, With};
 use audioware_manifest::{
     error::{CannotParseManifest, CannotReadManifest},
-    Depot, DialogLine, Locale, Manifest, PlayerGender, R6Audioware, REDmod, Settings, SpokenLocale,
+    Depot, DialogLine, Locale, Manifest, Mod, PlayerGender, R6Audioware, REDmod, Settings,
+    SpokenLocale,
 };
 use either::Either;
 use ensure::*;
@@ -30,37 +30,57 @@ pub use storage::*;
 
 use crate::error::registry::Error as RegistryError;
 
-static KEYS: OnceLock<HashSet<Id>> = OnceLock::new();
+#[cfg(feature = "hot-reload")]
+static PREVIOUS_IDS: std::sync::LazyLock<std::sync::Mutex<HashSet<Id>>> =
+    std::sync::LazyLock::new(Default::default);
 
-pub struct Banks;
+#[derive(Clone)]
+pub struct Banks {
+    pub ids: HashSet<Id>,
+    pub uniques: HashMap<UniqueKey, StaticSoundData>,
+    pub genders: HashMap<GenderKey, StaticSoundData>,
+    pub single_voices: HashMap<LocaleKey, StaticSoundData>,
+    pub dual_voices: HashMap<BothKey, StaticSoundData>,
+    pub single_subs: HashMap<LocaleKey, DialogLine>,
+    pub dual_subs: HashMap<BothKey, DialogLine>,
+    pub unique_settings: HashMap<UniqueKey, Settings>,
+    pub gender_settings: HashMap<GenderKey, Settings>,
+    pub single_settings: HashMap<LocaleKey, Settings>,
+    pub dual_settings: HashMap<BothKey, Settings>,
+}
+
 impl Banks {
     /// # Safety
     ///
     /// Will panic if [Banks] are not initialized yet.
-    pub unsafe fn ids<'a>() -> &'a HashSet<Id> {
-        KEYS.get().unwrap_unchecked()
+    pub unsafe fn ids(&self) -> &HashSet<Id> {
+        &self.ids
     }
     /// Whether audio ID exists in banks or not.
-    pub fn exists(cname: &CName) -> bool {
+    pub fn exists(&self, cname: &CName) -> bool {
         if cname == &CName::undefined() {
             return false;
         }
-        KEYS.get()
-            .and_then(|x| x.iter().find(|x| AsRef::<CName>::as_ref(x) == cname))
-            .is_some()
+        self.ids.iter().any(|x| AsRef::<CName>::as_ref(&x) == cname)
     }
     /// Return audio duration (as seconds) if any, otherwise `-1.0`.
-    pub fn duration(cname: &CName, locale: Locale, gender: PlayerGender, total: bool) -> f32 {
+    pub fn duration(
+        &self,
+        cname: &CName,
+        locale: Locale,
+        gender: PlayerGender,
+        total: bool,
+    ) -> f32 {
         let locale = SpokenLocale::from(locale);
-        if let Ok(id) = Self::try_get(cname, &locale, Some(&gender)) {
-            match (total, id, Banks.data(id)) {
+        if let Ok(id) = self.try_get(cname, &locale, Some(&gender)) {
+            match (total, id, self.data(id)) {
                 // if no need for total and in-memory, sound data already embed settings
                 (false, Id::InMemory(..), data) => data
                     .left()
                     .expect("streaming cannot be stored in-memory")
                     .slice_duration(),
                 // if no need for total and on-demand, check settings
-                (false, Id::OnDemand(..), data) => match (data, Banks.settings(id)) {
+                (false, Id::OnDemand(..), data) => match (data, self.settings(id)) {
                     (Either::Left(x), settings) => x.with(settings).slice_duration(),
                     (Either::Right(x), settings) => x.with(settings).slice_duration(),
                 },
@@ -76,59 +96,58 @@ impl Banks {
         }
     }
     /// All languages found in [Manifest]s.
-    pub fn languages() -> HashSet<Locale> {
+    pub fn languages(&self) -> HashSet<Locale> {
         let mut out = HashSet::new();
-        for key in LOC_SUB.keys() {
+        for key in self.single_subs.keys() {
             out.insert(key.1);
         }
-        for key in MUL_SUB.keys() {
+        for key in self.dual_subs.keys() {
             out.insert(key.1);
         }
         out
     }
-    pub fn try_get<'a>(
+    pub fn try_get(
+        &self,
         name: &CName,
         spoken: &SpokenLocale,
         gender: Option<&PlayerGender>,
-    ) -> Result<&'a Id, Error> {
+    ) -> Result<&Id, Error> {
         let mut maybe_missing_locale = false;
-        if let Some(ids) = KEYS.get() {
-            let mut key: &Key;
-            for id in ids {
-                key = id.as_ref();
-                if let Some(key) = key.as_unique() {
-                    if key.as_ref() == name {
+        let mut key: &Key;
+        for id in self.ids.iter() {
+            key = id.as_ref();
+            if let Some(key) = key.as_unique() {
+                if key.as_ref() == name {
+                    return Ok(id);
+                }
+            }
+            if let Some(GenderKey(k, g)) = key.as_gender() {
+                if k == name {
+                    if gender.is_none() {
+                        return Err(RegistryError::RequireGender { cname: *name }.into());
+                    }
+                    if Some(g) == gender {
                         return Ok(id);
                     }
                 }
-                if let Some(GenderKey(k, g)) = key.as_gender() {
-                    if k == name {
+            }
+            if let Some(LocaleKey(k, l)) = key.as_locale() {
+                if k == name {
+                    maybe_missing_locale = true;
+                    if l == spoken {
+                        return Ok(id);
+                    }
+                }
+            }
+            if let Some(BothKey(k, l, g)) = key.as_both() {
+                if k == name {
+                    maybe_missing_locale = true;
+                    if l == spoken {
                         if gender.is_none() {
                             return Err(RegistryError::RequireGender { cname: *name }.into());
                         }
-                        if Some(g) == gender {
+                        if gender == Some(g) {
                             return Ok(id);
-                        }
-                    }
-                }
-                if let Some(LocaleKey(k, l)) = key.as_locale() {
-                    if k == name {
-                        maybe_missing_locale = true;
-                        if l == spoken {
-                            return Ok(id);
-                        }
-                    }
-                }
-                if let Some(BothKey(k, l, g)) = key.as_both() {
-                    if k == name {
-                        maybe_missing_locale = true;
-                        if l == spoken {
-                            if gender.is_none() {
-                                return Err(RegistryError::RequireGender { cname: *name }.into());
-                            }
-                            if gender == Some(g) {
-                                return Ok(id);
-                            }
                         }
                     }
                 }
@@ -143,12 +162,8 @@ impl Banks {
         }
         Err(RegistryError::NotFound { cname: *name }.into())
     }
-    /// Initialize banks.
-    pub fn setup() -> Initialization {
-        let since = Instant::now();
-
-        let mut errors: Vec<Error> = vec![];
-
+    fn mods() -> (Vec<Mod>, Vec<Error>) {
+        let mut errors = Vec::with_capacity(10);
         let mut mods = Vec::with_capacity(30);
         let mut redmod_exists = false;
         if let Ok(redmod) = REDmod::try_new() {
@@ -166,9 +181,16 @@ impl Banks {
                 mods.push(m);
             }
         }
+        (mods, errors)
+    }
+    /// Initialize banks.
+    pub fn new() -> (Self, Initialization) {
+        let since = Instant::now();
 
         let mut file: Vec<u8>;
         let mut manifest: Manifest;
+        let (mods, mut errors) = Self::mods();
+
         let mut ids: HashSet<Id> = HashSet::new();
         let mut uniques: HashMap<UniqueKey, StaticSoundData> = HashMap::new();
         let mut genders: HashMap<GenderKey, StaticSoundData> = HashMap::new();
@@ -316,6 +338,12 @@ impl Banks {
             (odsta, odstr, imsta)
         });
 
+        #[cfg(feature = "hot-reload")]
+        let errors = errors
+            .into_iter()
+            .map(std::sync::Arc::new)
+            .collect::<Vec<_>>();
+
         let report = Initialization {
             duration: Instant::now() - since,
             lengths: format!(
@@ -329,28 +357,73 @@ impl Banks {
             errors,
         };
 
-        let _ = KEYS.set(ids);
-        let _ = UNIQUES.set(uniques);
-        let _ = GENDERS.set(genders);
-        let _ = LOCALES.set(single_voices);
-        let _ = MULTIS.set(dual_voices);
-        let _ = LOC_SUB.set(single_subs);
-        let _ = MUL_SUB.set(dual_subs);
-        let _ = UNI_SET.set(unique_settings);
-        let _ = GEN_SET.set(gender_settings);
-        let _ = LOC_SET.set(single_settings);
-        let _ = MUL_SET.set(dual_settings);
-
-        report
+        (
+            Self {
+                ids,
+                uniques,
+                genders,
+                single_voices,
+                dual_voices,
+                single_subs,
+                dual_subs,
+                unique_settings,
+                gender_settings,
+                single_settings,
+                dual_settings,
+            },
+            report,
+        )
+    }
+    #[cfg(feature = "hot-reload")]
+    pub fn hot_reload(&mut self) -> Initialization {
+        PREVIOUS_IDS
+            .lock()
+            .expect("already loaded before")
+            .clone_from(&self.ids.drain().collect());
+        let (banks, initialization) = Self::new();
+        self.ids = banks.ids;
+        self.uniques = banks.uniques;
+        self.genders = banks.genders;
+        self.single_voices = banks.single_voices;
+        self.dual_voices = banks.dual_voices;
+        self.single_subs = banks.single_subs;
+        self.dual_subs = banks.dual_subs;
+        self.unique_settings = banks.unique_settings;
+        self.gender_settings = banks.gender_settings;
+        self.single_settings = banks.single_settings;
+        self.dual_settings = banks.dual_settings;
+        initialization
     }
 }
 
 /// Outcome of [Banks] initialization.
+#[cfg_attr(feature = "hot-reload", derive(Clone))]
 pub struct Initialization {
     duration: Duration,
     lengths: String,
     len_ids: usize,
+    #[cfg(not(feature = "hot-reload"))]
     pub errors: Vec<Error>,
+    #[cfg(feature = "hot-reload")]
+    pub errors: Vec<std::sync::Arc<Error>>,
+}
+
+pub enum InitializationOutcome {
+    CompleteFailure = 0,
+    PartialSuccess = 1,
+    Success = 2,
+}
+
+impl Initialization {
+    pub fn outcome(&self) -> InitializationOutcome {
+        if self.errors.is_empty() {
+            InitializationOutcome::Success
+        } else if self.len_ids == 0 {
+            InitializationOutcome::CompleteFailure
+        } else {
+            InitializationOutcome::PartialSuccess
+        }
+    }
 }
 
 impl std::fmt::Display for Initialization {

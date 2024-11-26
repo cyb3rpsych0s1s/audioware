@@ -2,6 +2,7 @@
 
 use audioware_manifest::error::ConversionError;
 use kira::{manager::error::PlaySoundError, sound::FromFileError, ResourceLimitReached};
+use red4ext_rs::types::EntityId;
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
@@ -29,6 +30,10 @@ pub enum InternalError {
 
 #[derive(Debug, Snafu)]
 pub enum EngineError {
+    #[snafu(display("Thread: {source}"))]
+    Thread { source: std::io::Error },
+    #[snafu(display("Audio manager error: {origin}"))]
+    Manager { origin: &'static str },
     #[snafu(display("Resource limit error: {source}"))]
     Limit { source: ResourceLimitReached },
     #[snafu(display("Play sound error: {source}"))]
@@ -42,6 +47,8 @@ pub enum EngineError {
 pub enum SceneError {
     #[snafu(display("V cannot be registered as an emitter."))]
     InvalidEmitter,
+    #[snafu(display("emitter is null [{:?}]", entity_id))]
+    MissingEmitter { entity_id: EntityId },
 }
 
 impl From<InternalError> for Error {
@@ -89,5 +96,13 @@ impl From<PlaySoundError<FromFileError>> for Error {
 impl From<audioware_bank::Error> for Error {
     fn from(source: audioware_bank::Error) -> Self {
         Self::Bank { source }
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(source: std::io::Error) -> Self {
+        Self::Engine {
+            source: EngineError::Thread { source },
+        }
     }
 }

@@ -392,6 +392,69 @@ impl From<Locale> for red4ext_rs::types::CName {
     }
 }
 
+impl TryFrom<u32> for Locale {
+    type Error = crate::error::ConversionError;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::English),
+            1 => Ok(Self::Spanish),
+            2 => Ok(Self::French),
+            3 => Ok(Self::Italian),
+            4 => Ok(Self::German),
+            5 => Ok(Self::LatinAmericanSpanish),
+            6 => Ok(Self::Korean),
+            7 => Ok(Self::SimplifiedChinese),
+            8 => Ok(Self::Russian),
+            9 => Ok(Self::BrazilianPortuguese),
+            10 => Ok(Self::Japanese),
+            11 => Ok(Self::TraditionalChinese),
+            12 => Ok(Self::Arabic),
+            13 => Ok(Self::Czech),
+            14 => Ok(Self::Hungarian),
+            15 => Ok(Self::Turkish),
+            16 => Ok(Self::Thai),
+            _ => Err(Self::Error::InvalidLocale {
+                value: value.to_string(),
+            }),
+        }
+    }
+}
+
+impl TryFrom<u32> for SpokenLocale {
+    type Error = crate::error::ConversionError;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        Ok(Self(Locale::try_from(value)?))
+    }
+}
+
+impl TryFrom<u32> for WrittenLocale {
+    type Error = crate::error::ConversionError;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        Ok(Self(Locale::try_from(value)?))
+    }
+}
+
+impl From<Locale> for u32 {
+    fn from(value: Locale) -> Self {
+        value as u32
+    }
+}
+
+impl From<SpokenLocale> for u32 {
+    fn from(value: SpokenLocale) -> Self {
+        value.0.into()
+    }
+}
+
+impl From<WrittenLocale> for u32 {
+    fn from(value: WrittenLocale) -> Self {
+        value.0.into()
+    }
+}
+
 #[cfg(not(test))]
 impl TryFrom<red4ext_rs::types::CName> for Locale {
     type Error = crate::error::ConversionError;

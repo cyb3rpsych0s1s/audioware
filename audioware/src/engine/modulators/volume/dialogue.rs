@@ -1,3 +1,3 @@
 use super::impl_volume;
 
-impl_volume!(DialogueVolume, "DialogueVolume");
+impl_volume!(DialogueVolume);

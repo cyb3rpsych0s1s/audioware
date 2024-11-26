@@ -1,6 +1,6 @@
 use kira::{
     effect::filter::{FilterBuilder, FilterMode},
-    manager::AudioManager,
+    manager::{backend::Backend, AudioManager},
     track::{TrackBuilder, TrackHandle},
     OutputDestination,
 };
@@ -8,7 +8,7 @@ use kira::{
 use crate::{
     engine::{
         eq::{EQ_HIGH_PASS_PHONE_CUTOFF, EQ_LOW_PASS_PHONE_CUTOFF, EQ_RESONANCE},
-        modulators::{DialogueVolume, Parameter},
+        modulators::{Modulators, Parameter},
     },
     error::Error,
 };
@@ -16,7 +16,10 @@ use crate::{
 pub struct Holocall(TrackHandle);
 
 impl Holocall {
-    pub(super) fn setup(manager: &mut AudioManager) -> Result<Self, Error> {
+    pub fn try_new<B: Backend>(
+        manager: &mut AudioManager<B>,
+        modulators: &Modulators,
+    ) -> Result<Self, Error> {
         let track = manager.add_sub_track({
             let mut builder = TrackBuilder::new();
             builder.add_effect(
@@ -30,7 +33,7 @@ impl Holocall {
                     .cutoff(EQ_HIGH_PASS_PHONE_CUTOFF)
                     .resonance(EQ_RESONANCE),
             );
-            builder.with_effect(DialogueVolume::effect()?)
+            builder.with_effect(modulators.dialogue_volume.try_effect()?)
         })?;
         Ok(Self(track))
     }

@@ -17,6 +17,12 @@ unsafe impl ScriptClass for DialogLine {
     type Kind = Native;
 }
 
+impl AsRef<Event> for DialogLine {
+    fn as_ref(&self) -> &Event {
+        &self.base
+    }
+}
+
 #[repr(C)]
 pub struct DialogLineEnd {
     base: Event,

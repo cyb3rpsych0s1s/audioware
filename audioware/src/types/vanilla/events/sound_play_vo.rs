@@ -46,7 +46,11 @@ impl AsRef<IScriptable> for SoundPlayVO {
 
 #[repr(u8)]
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[allow(non_camel_case_types, clippy::enum_variant_names)]
+#[allow(
+    non_camel_case_types,
+    clippy::enum_variant_names,
+    reason = "see RED4ext.SDK"
+)]
 pub enum VoiceoverContext {
     Vo_Context_Quest = 0,
     Vo_Context_Community = 1,
@@ -78,7 +82,11 @@ impl fmt::Display for VoiceoverContext {
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[allow(non_camel_case_types, clippy::enum_variant_names)]
+#[allow(
+    non_camel_case_types,
+    clippy::enum_variant_names,
+    reason = "see RED4ext.SDK"
+)]
 pub enum VoiceoverExpression {
     Vo_Expression_Spoken = 0,
     Vo_Expression_Phone = 1,

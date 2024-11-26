@@ -1,6 +1,12 @@
 use core::fmt;
 
-use red4ext_rs::{class_kind::Native, NativeRepr, ScriptClass};
+use red4ext_rs::{
+    class_kind::Native,
+    types::{CName, Cruid, IScriptable, Ref},
+    NativeRepr, ScriptClass,
+};
+
+use crate::WorldTransform;
 
 use super::Event;
 
@@ -19,7 +25,7 @@ unsafe impl ScriptClass for VehicleAudioEvent {
     const NAME: &'static str = "vehicleAudioEvent";
 }
 
-#[allow(clippy::enum_variant_names)]
+#[allow(clippy::enum_variant_names, reason = "see RED4ext.SDK")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum AudioEventAction {

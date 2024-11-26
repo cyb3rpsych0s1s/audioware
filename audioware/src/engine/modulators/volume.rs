@@ -10,51 +10,24 @@ mod sfx;
 pub use sfx::*;
 
 macro_rules! impl_volume {
-    ($struct:ident, $name:literal) => {
-        const MODULATOR_NAME: &str = $name;
-
-        static MODULATOR: std::sync::OnceLock<
-            std::sync::Mutex<kira::modulator::tweener::TweenerHandle>,
-        > = std::sync::OnceLock::new();
-
-        pub struct $struct;
-
-        impl $struct {
-            fn set_once(handle: kira::modulator::tweener::TweenerHandle) {
-                MODULATOR
-                    .set(std::sync::Mutex::new(handle))
-                    .expect("store tweener handle once")
-            }
-            pub fn try_lock<'a>() -> Result<
-                std::sync::MutexGuard<'a, kira::modulator::tweener::TweenerHandle>,
-                $crate::error::InternalError,
-            > {
-                MODULATOR.get().unwrap().try_lock().map_err(|_| {
-                    $crate::error::InternalError::Contention {
-                        origin: MODULATOR_NAME,
-                    }
-                })
-            }
-        }
-
+    ($struct:ident) => {
+        pub struct $struct(::kira::modulator::tweener::TweenerHandle);
         impl $crate::engine::modulators::Parameter for $struct {
             type Value = f64;
-
-            fn setup(
-                manager: &mut kira::manager::AudioManager,
-            ) -> Result<(), $crate::error::Error> {
+            fn try_new<B: ::kira::manager::backend::Backend>(
+                manager: &mut ::kira::manager::AudioManager<B>,
+            ) -> Result<Self, $crate::error::Error> {
                 let handle = manager.add_modulator(kira::modulator::tweener::TweenerBuilder {
                     initial_value: 100., // here, RTTI hasn't loaded yet
                 })?;
-                Self::set_once(handle);
-                Ok(())
+                Ok(Self(handle))
             }
-
-            fn effect() -> Result<impl kira::effect::EffectBuilder, $crate::error::Error> {
-                use std::ops::Deref;
+            fn try_effect(
+                &self,
+            ) -> Result<impl ::kira::effect::EffectBuilder, $crate::error::Error> {
                 Ok(kira::effect::volume_control::VolumeControlBuilder::new(
                     kira::tween::Value::<kira::Volume>::from_modulator(
-                        $struct::try_lock()?.deref(),
+                        &self.0,
                         kira::tween::ModulatorMapping {
                             input_range: (0.0, 100.0),
                             output_range: (
@@ -67,13 +40,8 @@ macro_rules! impl_volume {
                     ),
                 ))
             }
-
-            fn update(
-                value: Self::Value,
-                tween: kira::tween::Tween,
-            ) -> Result<bool, $crate::error::Error> {
-                Self::try_lock()?.set(value, tween);
-                Ok(true)
+            fn update(&mut self, value: Self::Value, tween: ::kira::tween::Tween) {
+                self.0.set(value, tween);
             }
         }
     };

@@ -1,12 +1,10 @@
-use audioware_manifest::Source;
 use kira::{
-    manager::AudioManager,
+    manager::{backend::Backend, AudioManager},
     track::{TrackBuilder, TrackHandle, TrackRoutes},
-    OutputDestination,
 };
 
 use crate::{
-    engine::modulators::{DialogueVolume, Parameter, SfxVolume},
+    engine::modulators::{Modulators, Parameter},
     error::Error,
 };
 
@@ -14,30 +12,39 @@ use super::ambience::Ambience;
 
 pub struct V {
     pub vocal: TrackHandle,
-    #[allow(dead_code)]
+    #[allow(dead_code, reason = "todo")]
     pub mental: TrackHandle,
     pub emissive: TrackHandle,
 }
 
 impl V {
-    pub(super) fn setup(manager: &mut AudioManager, ambience: &Ambience) -> Result<Self, Error> {
+    pub fn try_new<B: Backend>(
+        manager: &mut AudioManager<B>,
+        ambience: &Ambience,
+        modulators: &Modulators,
+    ) -> Result<Self, Error> {
         let vocal = manager.add_sub_track(
             TrackBuilder::new()
                 .routes(
-                    TrackRoutes::parent(ambience.environmental())
+                    // sum must be 1.0 otherwise sounds crackle
+                    TrackRoutes::empty()
+                        .with_route(ambience.environmental(), 0.75)
                         .with_route(ambience.reverb(), 0.25),
                 )
-                .with_effect(DialogueVolume::effect()?),
+                .with_effect(modulators.dialogue_volume.try_effect()?),
         )?;
-        let mental =
-            manager.add_sub_track(TrackBuilder::new().with_effect(DialogueVolume::effect()?))?;
+        let mental = manager.add_sub_track(
+            TrackBuilder::new().with_effect(modulators.dialogue_volume.try_effect()?),
+        )?;
         let emissive = manager.add_sub_track(
             TrackBuilder::new()
                 .routes(
-                    TrackRoutes::parent(ambience.environmental())
+                    // sum must be 1.0 otherwise sounds crackle
+                    TrackRoutes::empty()
+                        .with_route(ambience.environmental(), 0.75)
                         .with_route(ambience.reverb(), 0.25),
                 )
-                .with_effect(SfxVolume::effect()?),
+                .with_effect(modulators.sfx_volume.try_effect()?),
         )?;
 
         Ok(V {
@@ -45,16 +52,5 @@ impl V {
             mental,
             emissive,
         })
-    }
-}
-
-impl V {
-    pub fn output_destination(&self, source: &Source) -> Option<OutputDestination> {
-        match source {
-            Source::Sfx => return Some((&self.emissive).into()),
-            Source::Ono | Source::Voices => return Some((&self.vocal).into()),
-            _ => {}
-        };
-        None
     }
 }

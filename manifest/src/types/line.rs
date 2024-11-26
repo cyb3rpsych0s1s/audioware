@@ -35,6 +35,26 @@ pub enum ScnDialogLineType {
     Narrator = 13,
 }
 
+impl ScnDialogLineType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Regular => "regular",
+            Self::Holocall => "holocall",
+            Self::SceneComment => "scene_comment",
+            Self::OverHead => "over_head",
+            Self::Radio => "radio",
+            Self::GlobalTv => "global_tv",
+            Self::Invisible => "invisible",
+            Self::OverHeadAlwaysVisible => "over_head_always_visible",
+            Self::OwnerlessRegular => "ownerless_regular",
+            Self::AlwaysCinematicNoSpeaker => "always_cinematic_no_speaker",
+            Self::GlobalTvAlwaysVisible => "global_tv_always_visible",
+            Self::Narrator => "narrator",
+        }
+    }
+}
+
 #[cfg(not(test))]
 unsafe impl red4ext_rs::NativeRepr for ScnDialogLineType {
     const NAME: &'static str = "scnDialogLineType";

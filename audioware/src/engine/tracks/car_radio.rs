@@ -1,20 +1,29 @@
 use kira::{
-    manager::AudioManager,
-    track::{TrackBuilder, TrackHandle},
+    manager::{backend::Backend, AudioManager},
+    track::{TrackBuilder, TrackHandle, TrackRoutes},
     OutputDestination,
 };
 
 use crate::{
-    engine::modulators::{CarRadioVolume, Parameter},
+    engine::modulators::{Modulators, Parameter},
     error::Error,
 };
+
+use super::ambience::Ambience;
 
 pub struct CarRadio(TrackHandle);
 
 impl CarRadio {
-    pub(super) fn setup(manager: &mut AudioManager) -> Result<Self, Error> {
-        let track =
-            manager.add_sub_track(TrackBuilder::new().with_effect(CarRadioVolume::effect()?))?;
+    pub fn try_new<B: Backend>(
+        manager: &mut AudioManager<B>,
+        ambience: &Ambience,
+        modulators: &Modulators,
+    ) -> Result<Self, Error> {
+        let track = manager.add_sub_track(
+            TrackBuilder::new()
+                .routes(TrackRoutes::parent(ambience.environmental()))
+                .with_effect(modulators.car_radio_volume.try_effect()?),
+        )?;
         Ok(Self(track))
     }
 }

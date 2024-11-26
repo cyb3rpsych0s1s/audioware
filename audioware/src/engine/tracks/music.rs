@@ -1,20 +1,29 @@
 use kira::{
-    manager::AudioManager,
-    track::{TrackBuilder, TrackHandle},
+    manager::{backend::Backend, AudioManager},
+    track::{TrackBuilder, TrackHandle, TrackRoutes},
     OutputDestination,
 };
 
 use crate::{
-    engine::modulators::{MusicVolume, Parameter},
+    engine::modulators::{Modulators, Parameter},
     error::Error,
 };
+
+use super::ambience::Ambience;
 
 pub struct Music(TrackHandle);
 
 impl Music {
-    pub(super) fn setup(manager: &mut AudioManager) -> Result<Self, Error> {
-        let track =
-            manager.add_sub_track(TrackBuilder::new().with_effect(MusicVolume::effect()?))?;
+    pub fn try_new<B: Backend>(
+        manager: &mut AudioManager<B>,
+        #[allow(unused_variables, reason = "check routing")] ambience: &Ambience,
+        modulators: &Modulators,
+    ) -> Result<Self, Error> {
+        let track = manager.add_sub_track(
+            TrackBuilder::new()
+                .routes(TrackRoutes::new())
+                .with_effect(modulators.music_volume.try_effect()?),
+        )?;
         Ok(Self(track))
     }
 }

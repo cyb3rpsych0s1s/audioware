@@ -1,28 +1,35 @@
 //! Interop types for [kira].
 
 use core::fmt;
+use std::ops::Not;
 
-use red4ext_rs::{class_kind::Native, types::Ref, NativeRepr, ScriptClass};
+use red4ext_rs::{class_kind::Scripted, types::Ref, ScriptClass};
 
 use super::{ToEasing, Tween};
 
 /// Interop type for [kira::spatial::emitter::EmitterSettings].
-#[derive(Default)]
 #[repr(C)]
 pub struct EmitterSettings {
-    pub distances: EmitterDistances,
+    pub distances: Ref<EmitterDistances>,
     pub attenuation_function: Ref<Tween>,
     pub enable_spatialization: bool,
     pub persist_until_sounds_finish: bool,
 }
 
-unsafe impl NativeRepr for EmitterSettings {
-    const NAME: &'static str = "Audioware.EmitterSettings";
+impl Default for EmitterSettings {
+    fn default() -> Self {
+        Self {
+            enable_spatialization: true,
+            attenuation_function: Default::default(),
+            distances: Default::default(),
+            persist_until_sounds_finish: false,
+        }
+    }
 }
 
 unsafe impl ScriptClass for EmitterSettings {
-    type Kind = Native;
-    const NAME: &'static str = <Self as NativeRepr>::NAME;
+    type Kind = Scripted;
+    const NAME: &'static str = "Audioware.EmitterSettings";
 }
 
 impl PartialEq for EmitterSettings {
@@ -35,9 +42,26 @@ impl PartialEq for EmitterSettings {
             (Some(x), Some(y)) if x != y => return false,
             _ => {}
         };
-        self.distances == other.distances
-            && self.enable_spatialization == other.enable_spatialization
-            && self.persist_until_sounds_finish == other.persist_until_sounds_finish
+        match (
+            self.distances
+                .clone()
+                .is_null()
+                .not()
+                .then_some(unsafe { self.distances.fields() })
+                .flatten(),
+            other
+                .distances
+                .clone()
+                .is_null()
+                .not()
+                .then_some(unsafe { self.distances.fields() })
+                .flatten(),
+        ) {
+            (None, Some(_)) | (Some(_), None) => return false,
+            (Some(x), Some(y)) if x != y => return false,
+            _ => {}
+        };
+        self.enable_spatialization == other.enable_spatialization
     }
 }
 
@@ -55,13 +79,8 @@ impl Clone for EmitterSettings {
 impl fmt::Debug for EmitterSettings {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AudiowareEmitterSettings")
-            .field("distances", &self.distances)
             .field("attenuation_function", &self.attenuation_function.is_null())
             .field("enable_spatialization", &self.enable_spatialization)
-            .field(
-                "persist_until_sounds_finish",
-                &self.persist_until_sounds_finish,
-            )
             .finish()
     }
 }
@@ -74,43 +93,7 @@ pub struct EmitterDistances {
     pub max_distance: f32,
 }
 
-unsafe impl NativeRepr for EmitterDistances {
-    const NAME: &'static str = "Audioware.EmitterDistances";
-}
-
 unsafe impl ScriptClass for EmitterDistances {
-    type Kind = Native;
-    const NAME: &'static str = <Self as NativeRepr>::NAME;
-}
-
-impl From<EmitterSettings> for kira::spatial::emitter::EmitterSettings {
-    fn from(
-        EmitterSettings {
-            distances,
-            attenuation_function,
-            enable_spatialization,
-            persist_until_sounds_finish,
-        }: EmitterSettings,
-    ) -> Self {
-        Self {
-            distances: distances.into(),
-            attenuation_function: attenuation_function.into_easing(),
-            enable_spatialization,
-            persist_until_sounds_finish,
-        }
-    }
-}
-
-impl From<EmitterDistances> for kira::spatial::emitter::EmitterDistances {
-    fn from(
-        EmitterDistances {
-            min_distance,
-            max_distance,
-        }: EmitterDistances,
-    ) -> Self {
-        Self {
-            min_distance,
-            max_distance,
-        }
-    }
+    type Kind = Scripted;
+    const NAME: &'static str = "Audioware.EmitterDistances";
 }

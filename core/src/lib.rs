@@ -48,7 +48,8 @@ pub trait AudioSettings {
 
 impl<T, U> With<Option<U>> for T
 where
-    T: With<U>,
+    T: With<U> + Sized,
+    U: Sized,
 {
     /// Consumes `T`, absorbing its data if any.
     #[inline]

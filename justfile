@@ -49,25 +49,30 @@ now:
   @Write-Host "$(Get-Date) $_"
 
 # 📦 build Rust RED4Ext plugin
-build PROFILE='debug' TO=game_dir: (setup join(TO, red4ext_deploy_dir))
-  @'{{ if PROFILE == "release" { `cargo build --release` } else { `cargo build` } }}'
+build PROFILE='debug' FEATURES='' TO=game_dir: (setup join(TO, red4ext_deploy_dir))
+  @if ('{{PROFILE}}' -eq "release") { cargo build --release } else { cargo build --features='{{FEATURES}}' }
   @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just now
 
 alias b := build
 
-dev: (build) reload
+dev FEATURES='hot-reload,research': (build 'debug' FEATURES) reload
 
-lldb TO=game_dir: dev
+lldb TO=game_dir: (dev 'hot-reload')
   @just copy '{{ join(red4ext_bin_dir, "debug", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
   @just now
 
-staging TO=game_dir: (build 'release') reload
+staging TO=game_dir: (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir))
+  @cargo build --release --features='hot-reload'
+  @just copy '{{ join(red4ext_bin_dir, "release", plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just copy '{{ join(red4ext_bin_dir, "release", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
+  @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{ join(TO, redscript_deploy_dir) }}'
   @just now
 
-ci TO RELEASE='false': (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' TO) (reload TO)
-  @if('{{RELEASE}}' -ieq 'true') { just no-debug '{{TO}}'; Write-Host "Removed debug files"; } else { Write-Host "Kept debug files untouched"; }
+ci TO PROFILE='release' FEATURES='': (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build PROFILE FEATURES TO) (reload TO)
+  @if('{{PROFILE}}' -ieq 'release') { just no-debug '{{TO}}'; Write-Host "Removed debug files"; } else { Write-Host "Kept debug files untouched"; }
+  @if('{{PROFILE}}' -ieq 'debug')   { just copy '{{ join(red4ext_bin_dir, "release", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'; }
+  @just now
 
 optimize TO:
     upx --best --lzma '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
@@ -114,8 +119,9 @@ test:
 
 alias t := test
 
-check:
-  @cargo check --all
+check PROFILE='':
+  @cargo check --release
+  @cargo check --features='hot-reload'
 
 alias c := check
 

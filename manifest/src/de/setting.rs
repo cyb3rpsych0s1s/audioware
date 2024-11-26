@@ -14,7 +14,7 @@ use serde::Deserialize;
 /// Deserialization type
 /// for [kira::sound::static_sound::StaticSoundSettings]
 /// and [kira::sound::streaming::StreamingSoundSettings].
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Default, Deserialize, Clone)]
 pub struct Settings {
     #[serde(with = "humantime_serde", default)]
     pub start_time: Option<Duration>,
@@ -28,6 +28,7 @@ pub struct Settings {
     #[serde(deserialize_with = "factor_or_semitones", default)]
     pub playback_rate: Option<PlaybackRate>,
     pub fade_in_tween: Option<Interpolation>,
+    pub affected_by_time_dilation: Option<bool>,
 }
 
 macro_rules! impl_with {
@@ -49,11 +50,18 @@ macro_rules! impl_with {
         if let Some(x) = $settings.panning {
             $self = $self.panning(x);
         }
-        if let Some(x) = $settings.region {
-            if $settings.r#loop.unwrap_or(false) {
-                $self = $self.loop_region(x);
+        if $settings.region.is_some() || $settings.r#loop.unwrap_or(false) {
+            if let Some(x) = $settings.region {
+                if $settings.r#loop.unwrap_or(false) {
+                    $self = $self.loop_region(x);
+                } else {
+                    $self = $self.slice(x);
+                }
             } else {
-                $self = $self.slice(x);
+                $self = $self.loop_region(kira::sound::Region {
+                    start: PlaybackPosition::Seconds(0.),
+                    end: EndPosition::EndOfAudio,
+                });
             }
         }
         if let Some(x) = $settings.playback_rate {

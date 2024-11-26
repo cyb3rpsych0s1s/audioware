@@ -16,3 +16,7 @@ snafu.workspace = true
 
 [package.metadata.cargo-machete]
 ignored = ["serde"]
+
+[features]
+default = []
+hot-reload = []

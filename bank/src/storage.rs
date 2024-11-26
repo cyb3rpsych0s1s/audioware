@@ -14,7 +14,7 @@ use audioware_manifest::{
 };
 use red4ext_rs::types::CName;
 
-use crate::{Banks, BothKey, GenderKey, Id, Key, LocaleKey, UniqueKey, Usage};
+use crate::{Banks, BothKey, Id, Key, LocaleKey, Usage};
 
 pub trait BankData {
     type Key;
@@ -52,6 +52,9 @@ impl<K, V> OnceStorage<K, V> {
     }
     pub fn keys(&self) -> Keys<'_, K, V> {
         self.0.get().expect("should be initialized").keys()
+    }
+    pub fn safe_keys(&self) -> Option<Keys<'_, K, V>> {
+        self.0.get().map(|x| x.keys())
     }
 }
 impl<K: Eq + Hash> BankData for OnceStorage<K, StaticSoundData> {
@@ -96,18 +99,18 @@ impl BankSubtitles for OnceStorage<BothKey, DialogLine> {
     }
 }
 
-pub(super) static UNIQUES: OnceStorage<UniqueKey, StaticSoundData> = OnceStorage::new();
-pub(super) static GENDERS: OnceStorage<GenderKey, StaticSoundData> = OnceStorage::new();
-pub(super) static LOCALES: OnceStorage<LocaleKey, StaticSoundData> = OnceStorage::new();
-pub(super) static MULTIS: OnceStorage<BothKey, StaticSoundData> = OnceStorage::new();
+// pub(super) static UNIQUES: OnceStorage<UniqueKey, StaticSoundData> = OnceStorage::new();
+// pub(super) static GENDERS: OnceStorage<GenderKey, StaticSoundData> = OnceStorage::new();
+// pub(super) static LOCALES: OnceStorage<LocaleKey, StaticSoundData> = OnceStorage::new();
+// pub(super) static MULTIS: OnceStorage<BothKey, StaticSoundData> = OnceStorage::new();
 
-pub(super) static UNI_SET: OnceStorage<UniqueKey, ManifestSettings> = OnceStorage::new();
-pub(super) static GEN_SET: OnceStorage<GenderKey, ManifestSettings> = OnceStorage::new();
-pub(super) static LOC_SET: OnceStorage<LocaleKey, ManifestSettings> = OnceStorage::new();
-pub(super) static MUL_SET: OnceStorage<BothKey, ManifestSettings> = OnceStorage::new();
+// pub(super) static UNI_SET: OnceStorage<UniqueKey, ManifestSettings> = OnceStorage::new();
+// pub(super) static GEN_SET: OnceStorage<GenderKey, ManifestSettings> = OnceStorage::new();
+// pub(super) static LOC_SET: OnceStorage<LocaleKey, ManifestSettings> = OnceStorage::new();
+// pub(super) static MUL_SET: OnceStorage<BothKey, ManifestSettings> = OnceStorage::new();
 
-pub(super) static LOC_SUB: OnceStorage<LocaleKey, DialogLine> = OnceStorage::new();
-pub(super) static MUL_SUB: OnceStorage<BothKey, DialogLine> = OnceStorage::new();
+// pub(super) static LOC_SUB: OnceStorage<LocaleKey, DialogLine> = OnceStorage::new();
+// pub(super) static MUL_SUB: OnceStorage<BothKey, DialogLine> = OnceStorage::new();
 
 impl BankSettings for Banks {
     type Key = Id;
@@ -119,16 +122,13 @@ impl BankSettings for Banks {
             Id::OnDemand(usage, ..) => {
                 let settings = match usage {
                     Usage::Static(key, _) | Usage::Streaming(key, _) => match key {
-                        Key::Unique(key) => UNI_SET.settings(key),
-                        Key::Gender(key) => GEN_SET.settings(key),
-                        Key::Locale(key) => LOC_SET.settings(key),
-                        Key::Both(key) => MUL_SET.settings(key),
+                        Key::Unique(key) => self.unique_settings.get(key),
+                        Key::Gender(key) => self.gender_settings.get(key),
+                        Key::Locale(key) => self.single_settings.get(key),
+                        Key::Both(key) => self.dual_settings.get(key),
                     },
                 };
-                match usage {
-                    Usage::Static(_, _) => settings,
-                    Usage::Streaming(_, _) => settings,
-                }
+                settings.cloned()
             }
             // in-memory sound data already embed settings
             Id::InMemory(_, _) => None,
@@ -162,10 +162,21 @@ impl BankData for Banks {
                 Either::Right(data)
             }
             // in-memory sound data already embed settings
-            Id::InMemory(Key::Unique(key), ..) => Either::Left(UNIQUES.data(key)),
-            Id::InMemory(Key::Gender(key), ..) => Either::Left(GENDERS.data(key)),
-            Id::InMemory(Key::Locale(key), ..) => Either::Left(LOCALES.data(key)),
-            Id::InMemory(Key::Both(key), ..) => Either::Left(MULTIS.data(key)),
+            Id::InMemory(Key::Unique(key), ..) => {
+                Either::Left(self.uniques.get(key).cloned().expect("key guarantees"))
+            }
+            Id::InMemory(Key::Gender(key), ..) => {
+                Either::Left(self.genders.get(key).cloned().expect("key guarantees"))
+            }
+            Id::InMemory(Key::Locale(key), ..) => Either::Left(
+                self.single_voices
+                    .get(key)
+                    .cloned()
+                    .expect("key guarantees"),
+            ),
+            Id::InMemory(Key::Both(key), ..) => {
+                Either::Left(self.dual_voices.get(key).cloned().expect("key guarantees"))
+            }
         }
     }
 }
@@ -173,7 +184,19 @@ impl BankData for Banks {
 impl BankSubtitles for Banks {
     type Key = Id;
     fn subtitles(&self, locale: WrittenLocale) -> Vec<(CName, (String, String))> {
-        [LOC_SUB.subtitles(locale), MUL_SUB.subtitles(locale)].concat()
+        [
+            self.single_subs
+                .iter()
+                .filter(|x| x.0 .1 == locale)
+                .map(|x| (x.0 .0, (x.1.msg.clone(), x.1.msg.clone())))
+                .collect::<Vec<_>>(),
+            self.dual_subs
+                .iter()
+                .filter(|x| x.0 .1 == locale)
+                .map(|x| (x.0 .0, (x.1.msg.clone(), x.1.msg.clone())))
+                .collect::<Vec<_>>(),
+        ]
+        .concat()
     }
 }
 

@@ -1,47 +1,92 @@
 //! Logging utils.
+#![allow(dead_code)]
 
 use red4ext_rs::{
     log,
     types::{CName, ScriptRef},
-    IntoRepr, PluginOps, RttiSystem,
+    IntoRepr, RttiSystem,
 };
 
 use crate::Audioware;
 
-#[allow(unused_macros)]
 macro_rules! silly {
-    ($($arg:tt)*) => {
+    ($($arg:tt)*) => {{
         #[cfg(debug_assertions)]
         {
             use ::red4ext_rs::PluginOps;
             ::red4ext_rs::log::info!($crate::Audioware::env(), $($arg)*)
         }
-    };
+    }};
 }
-#[allow(unused_imports)]
 pub(crate) use silly;
 
-#[allow(unused_macros)]
 macro_rules! lifecycle {
-    ($($arg:tt)*) => {
-        $crate::utils::silly!($($arg)*)
-    };
+    ($($arg:tt)*) => {{
+        #[allow(unused_variables, reason = "unused lint")]
+        let msg = format!($($arg)*);
+        $crate::utils::silly!("{msg}")
+    }};
 }
-#[allow(unused_imports)]
 pub(crate) use lifecycle;
 
 #[allow(unused_macros)]
-macro_rules! fails {
-    ($env:expr, $($arg:tt)*) => {
-        #[cfg(debug_assertions)]
-        {
-            use ::red4ext_rs::PluginOps;
-            ::red4ext_rs::log::error!($crate::Audioware::env(), $($arg)*)
-        }
-    };
+macro_rules! intercept {
+    ($($arg:tt)*) => {{
+        #[allow(unused_variables, reason = "unused lint")]
+        let msg = format!($($arg)*);
+        $crate::utils::silly!("*~ {msg}")
+    }};
 }
 #[allow(unused_imports)]
+pub(crate) use intercept;
+
+macro_rules! reports {
+    ([$fn:ident];[$($red4ext:tt)*];[$($reds:tt)*]) => {{
+        use ::red4ext_rs::PluginOps;
+        ::red4ext_rs::log::$fn!($crate::Audioware::env(), $($red4ext)*);
+        $crate::utils::$fn(format!($($reds)*));
+    }};
+    ([error];[$($msg:tt)*]) => {{
+        $crate::utils::reports!([error];[$($msg)*];[$($msg)*]);
+    }};
+    ([warn];[$($msg:tt)*]) => {{
+        $crate::utils::reports!([warn];[$($msg)*];[$($msg)*]);
+    }};
+    ([info];[$($msg:tt)*]) => {{
+        $crate::utils::reports!([info];[$($msg)*];[$($msg)*]);
+    }};
+}
+pub(crate) use reports;
+
+macro_rules! fails {
+    ([$($red4ext:tt)*];[$($reds:tt)*]) => {{
+        $crate::utils::reports!([error];[$($red4ext)*];[$($reds)*]);
+    }};
+    ($($arg:tt)*) => {{
+        $crate::utils::reports!([error];[$($arg)*]);
+    }};
+}
 pub(crate) use fails;
+
+macro_rules! warns {
+    ([$($red4ext:tt)*];[$($reds:tt)*]) => {{
+        $crate::utils::reports!([warn];[$($red4ext)*];[$($reds)*]);
+    }};
+    ($($arg:tt)*) => {{
+        $crate::utils::reports!([warn];[$($arg)*]);
+    }};
+}
+pub(crate) use warns;
+
+macro_rules! success {
+    ([$($red4ext:tt)*];[$($reds:tt)*]) => {{
+        $crate::utils::reports!([info];[$($red4ext)*];[$($reds)*]);
+    }};
+    ($($arg:tt)*) => {{
+        $crate::utils::reports!([info];[$($arg)*]);
+    }};
+}
+pub(crate) use success;
 
 /// Exposes `PLog` to Redscript.
 pub fn plog_info(msg: String) {
@@ -60,6 +105,7 @@ pub fn plog_error(msg: String) {
 
 #[inline]
 fn plog(msg: String, func_name: &str) {
+    use ::red4ext_rs::PluginOps;
     match func_name {
         "PLog" => {
             log::info!(Audioware::env(), "{msg}");
@@ -72,6 +118,12 @@ fn plog(msg: String, func_name: &str) {
         }
         _ => unreachable!(),
     }
+}
+
+/// Exposes `FTLog` to Rust on debug builds only.
+#[cfg(debug_assertions)]
+pub fn dbg(msg: impl Into<String>) {
+    console(msg, "FTLog");
 }
 
 /// Exposes `FTLog` to Rust.
@@ -91,6 +143,7 @@ pub fn error(msg: impl Into<String>) {
 
 #[inline]
 fn console(msg: impl Into<String>, func_name: &str) {
+    use ::red4ext_rs::PluginOps;
     let env = Audioware::env();
     if let Some(ft_log) = RttiSystem::get()
         .get_global_functions()

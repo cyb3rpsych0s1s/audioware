@@ -14,6 +14,26 @@ pub enum PlayerGender {
     Male = 1,
 }
 
+impl From<PlayerGender> for u8 {
+    fn from(value: PlayerGender) -> Self {
+        value as u8
+    }
+}
+
+impl TryFrom<u8> for PlayerGender {
+    type Error = crate::error::ConversionError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Female),
+            1 => Ok(Self::Male),
+            v => Err(crate::error::ConversionError::InvalidGender {
+                value: v.to_string(),
+            }),
+        }
+    }
+}
+
 impl fmt::Display for PlayerGender {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(

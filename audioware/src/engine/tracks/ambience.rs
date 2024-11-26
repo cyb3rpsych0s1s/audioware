@@ -1,34 +1,35 @@
-use std::sync::{Mutex, MutexGuard};
-
 use kira::{
     effect::filter::{FilterBuilder, FilterHandle, FilterMode},
-    manager::AudioManager,
+    manager::{backend::Backend, AudioManager},
     track::{TrackBuilder, TrackHandle},
 };
 
 use crate::{
     engine::{
         eq::{HighPass, LowPass, EQ},
-        modulators::{Parameter, ReverbMix},
+        modulators::{Modulators, Parameter},
     },
-    error::{Error, InternalError},
+    error::Error,
 };
 
 /// Sub-track to provide reverb and environmental effects.
 pub struct Ambience {
+    eq: EQ,
     reverb: TrackHandle,
     environmental: TrackHandle,
-    eq: Mutex<EQ>,
 }
 
 impl Ambience {
-    pub(super) fn setup(manager: &mut AudioManager) -> Result<Self, Error> {
+    pub fn try_new<B: Backend>(
+        manager: &mut AudioManager<B>,
+        modulators: &Modulators,
+    ) -> Result<Self, Error> {
         let low: FilterHandle;
         let high: FilterHandle;
-        let reverb =
-            manager.add_sub_track(TrackBuilder::new().with_effect(ReverbMix::effect()?))?;
+        let reverb = manager
+            .add_sub_track(TrackBuilder::new().with_effect(modulators.reverb_mix.try_effect()?))?;
         let environmental = manager.add_sub_track({
-            let mut builder = TrackBuilder::new().with_effect(ReverbMix::effect()?);
+            let mut builder = TrackBuilder::new();
             low = builder.add_effect(FilterBuilder::default().mix(0.));
             high = builder.add_effect(FilterBuilder::default().mode(FilterMode::HighPass).mix(0.));
             builder
@@ -36,10 +37,10 @@ impl Ambience {
         Ok(Self {
             reverb,
             environmental,
-            eq: Mutex::new(EQ {
+            eq: EQ {
                 lowpass: LowPass(low),
                 highpass: HighPass(high),
-            }),
+            },
         })
     }
     pub fn reverb(&self) -> &TrackHandle {
@@ -48,12 +49,7 @@ impl Ambience {
     pub fn environmental(&self) -> &TrackHandle {
         &self.environmental
     }
-    pub fn try_eq(&self) -> Result<MutexGuard<'_, EQ>, Error> {
-        self.eq.try_lock().map_err(|_| {
-            InternalError::Contention {
-                origin: "preset equalizer",
-            }
-            .into()
-        })
+    pub fn equalizer(&mut self) -> &mut EQ {
+        &mut self.eq
     }
 }

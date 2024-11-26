@@ -46,6 +46,79 @@ pub fn ensure_no_duplicate_accross_depots(
     Ok(())
 }
 
+#[cfg(not(feature = "hot-reload"))]
+#[inline]
+pub fn ensure_key_unique_or_inserted(cname: &str) -> Result<bool, Error> {
+    ensure_key_unique(cname)?;
+    Ok(true)
+}
+
+#[cfg(feature = "hot-reload")]
+#[inline]
+pub fn ensure_key_unique_or_inserted(cname: &str) -> Result<bool, Error> {
+    // if it already existed in a previous load, it's probably a recycled key.
+    if crate::PREVIOUS_IDS
+        .lock()
+        .unwrap()
+        .iter()
+        .any(|x| AsRef::<CName>::as_ref(x).as_str() == cname)
+    {
+        return Ok(true);
+    }
+    ensure_key_unique(cname)?;
+    Ok(false)
+}
+
+#[cfg(not(feature = "hot-reload"))]
+#[inline]
+pub fn ensure_localized_key_unique_or_inserted(
+    ids: &HashSet<Id>,
+    cname: &str,
+    locale: Locale,
+) -> Result<bool, Error> {
+    let existed = ensure_localized_key_unique(ids, cname, locale)?;
+    Ok(existed)
+}
+
+#[cfg(feature = "hot-reload")]
+#[inline]
+pub fn ensure_localized_key_unique_or_inserted(
+    ids: &HashSet<Id>,
+    cname: &str,
+    locale: Locale,
+) -> Result<bool, Error> {
+    // if it already existed in a previous load, it's probably a recycled key.
+    if crate::PREVIOUS_IDS
+        .lock()
+        .unwrap()
+        .iter()
+        .any(|x| AsRef::<CName>::as_ref(x).as_str() == cname && x.locale() == Some(locale))
+    {
+        return Ok(true);
+    }
+    let existed = ensure_localized_key_unique(ids, cname, locale)?;
+    Ok(existed)
+}
+
+/// Ensure [CName] does not already exist in [game pool](CNamePool),
+/// unless it already exists for some [locale](Locale).
+#[inline]
+pub fn ensure_localized_key_unique(
+    ids: &HashSet<Id>,
+    cname: &str,
+    _: Locale,
+) -> Result<bool, Error> {
+    // Conflict trait will make sure there's no identical duplicate, so no need to check twice.
+    if ids
+        .iter()
+        .any(|x| AsRef::<CName>::as_ref(x).as_str() == cname && x.locale().is_some())
+    {
+        return Ok(true);
+    }
+    ensure_key_unique(cname)?;
+    Ok(false)
+}
+
 /// Ensure [CName] does not already exist in [game pool](CNamePool).
 #[inline]
 pub fn ensure_key_unique(cname: &str) -> Result<(), Error> {
@@ -409,7 +482,7 @@ pub fn ensure_sfx<'a>(
     map: &'a mut HashMap<UniqueKey, StaticSoundData>,
     smap: &'a mut HashMap<UniqueKey, Settings>,
 ) -> Result<(), Error> {
-    ensure_key_unique(k)?;
+    let existed = ensure_key_unique_or_inserted(k)?;
     let UsableAudio {
         audio: Audio { file, settings },
         usage,
@@ -429,7 +502,10 @@ pub fn ensure_sfx<'a>(
         smap,
         Source::Sfx,
     )?;
-    CNamePool::add_cstr(&c_string);
+
+    if !existed {
+        CNamePool::add_cstr(&c_string);
+    }
     Ok(())
 }
 
@@ -442,7 +518,7 @@ pub fn ensure_ono<'a>(
     map: &'a mut HashMap<GenderKey, StaticSoundData>,
     smap: &'a mut HashMap<GenderKey, Settings>,
 ) -> Result<(), Error> {
-    ensure_key_unique(k)?;
+    let existed = ensure_key_unique_or_inserted(k)?;
     let (usage, genders) = v.into();
     let c_string = std::ffi::CString::new(k)?;
     let cname = CName::new(k);
@@ -462,7 +538,10 @@ pub fn ensure_ono<'a>(
             Source::Ono,
         )?;
     }
-    CNamePool::add_cstr(&c_string);
+
+    if !existed {
+        CNamePool::add_cstr(&c_string);
+    }
     Ok(())
 }
 
@@ -480,7 +559,7 @@ pub fn ensure_voice<'a>(
     simple_settings: &'a mut HashMap<LocaleKey, Settings>,
     complex_settings: &'a mut HashMap<BothKey, Settings>,
 ) -> Result<(), Error> {
-    ensure_key_unique(k)?;
+    let mut existed = false;
     let v: AnyVoice = v.into();
     let c_string = std::ffi::CString::new(k)?;
     let cname = CName::new(k);
@@ -489,6 +568,7 @@ pub fn ensure_voice<'a>(
     match v {
         Either::Left((aud, usage, subs)) => {
             for (locale, Audio { file, settings }) in aud {
+                existed = existed || ensure_localized_key_unique_or_inserted(set, k, locale)?;
                 simple_key = LocaleKey(cname, locale);
                 if let Some(subs) = subs.as_ref().and_then(|x| x.get(&locale)) {
                     ensure_store_subtitle::<LocaleKey>(
@@ -513,6 +593,7 @@ pub fn ensure_voice<'a>(
         }
         Either::Right((aud, usage, subs)) => {
             for (locale, genders) in aud {
+                existed = existed || ensure_localized_key_unique_or_inserted(set, k, locale)?;
                 for (gender, Audio { file, settings }) in genders {
                     complex_key = BothKey(cname, locale, gender);
                     if let Some(subs) = subs.as_ref().and_then(|x| x.get(&locale)) {
@@ -542,7 +623,10 @@ pub fn ensure_voice<'a>(
             }
         }
     }
-    CNamePool::add_cstr(&c_string);
+
+    if !existed {
+        CNamePool::add_cstr(&c_string);
+    }
     Ok(())
 }
 
@@ -555,7 +639,7 @@ pub fn ensure_music<'a>(
     map: &'a mut HashMap<UniqueKey, StaticSoundData>,
     smap: &'a mut HashMap<UniqueKey, Settings>,
 ) -> Result<(), Error> {
-    ensure_key_unique(k)?;
+    let existed = ensure_key_unique_or_inserted(k)?;
     let UsableAudio {
         audio: Audio { file, settings },
         usage,
@@ -573,9 +657,12 @@ pub fn ensure_music<'a>(
         set,
         map,
         smap,
-        Source::Sfx,
+        Source::Music,
     )?;
-    CNamePool::add_cstr(&c_string);
+
+    if !existed {
+        CNamePool::add_cstr(&c_string);
+    }
     Ok(())
 }
 
@@ -587,7 +674,7 @@ pub fn ensure_jingles<'a>(
     set: &'a mut HashSet<Id>,
     smap: &'a mut HashMap<UniqueKey, Settings>,
 ) -> Result<(), Error> {
-    ensure_key_unique(k)?;
+    let existed = ensure_key_unique_or_inserted(k)?;
     let Audio { file, settings } = (&v).into();
     ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref(), v.captions())?;
     let c_string = std::ffi::CString::new(k)?;
@@ -602,6 +689,9 @@ pub fn ensure_jingles<'a>(
         ensure_store_settings::<UniqueKey>(&key, settings, smap)?;
     }
     ensure_store_id(id, set)?;
-    CNamePool::add_cstr(&c_string);
+
+    if !existed {
+        CNamePool::add_cstr(&c_string);
+    }
     Ok(())
 }
