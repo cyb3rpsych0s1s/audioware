@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU32, AtomicU8};
 
-use audioware_manifest::Locale;
+use audioware_manifest::{Locale, LocaleExt};
 use red4ext_rs::types::{EntityId, GameInstance};
 
 use crate::{AsGameInstance, PlayerPuppet};
@@ -8,7 +8,7 @@ use crate::{AsGameInstance, PlayerPuppet};
 use super::scene::AsEntityExt;
 
 const NO_PLAYER_GENDER: u8 = 2;
-const ENGLISH: u32 = audioware_manifest::Locale::English as u32;
+const ENGLISH: u32 = LocaleExt::English as u32;
 
 static SPOKEN_LOCALE: SpokenLocale = SpokenLocale(AtomicU32::new(ENGLISH));
 static WRITTEN_LOCALE: WrittenLocale = WrittenLocale(AtomicU32::new(ENGLISH));
