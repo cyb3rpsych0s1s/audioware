@@ -119,8 +119,9 @@ test:
 
 alias t := test
 
-check:
-  @cargo check --all
+check PROFILE='':
+  @cargo check --release
+  @cargo check --features='hot-reload'
 
 alias c := check
 
