@@ -217,14 +217,20 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     event_name,
                     entity_id,
                     emitter_name,
-                } => engine.play::<kira::tween::Tween>(event_name, entity_id, emitter_name, None),
+                } => engine.play::<kira::tween::Tween>(
+                    event_name,
+                    entity_id,
+                    emitter_name,
+                    None,
+                    None,
+                ),
                 Command::Play {
                     sound_name,
                     entity_id,
                     emitter_name,
                     ext,
-                    ..
-                } => engine.play(sound_name, entity_id, emitter_name, ext),
+                    line_type,
+                } => engine.play(sound_name, entity_id, emitter_name, ext, line_type),
                 Command::PlayOnEmitter {
                     event_name,
                     entity_id,

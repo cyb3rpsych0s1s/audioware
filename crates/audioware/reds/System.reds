@@ -93,3 +93,77 @@ class SettingsSubSystem extends ScriptableSystem {
         SetPreset(diving ? Preset.Underwater : Preset.None);
     }
 }
+
+class SubtitleSubSystem extends ScriptableSystem {
+    private let subtitleDelayID: DelayID;
+    private let subtitleRemaining: Float = 0.0;
+    private let subtitleLine: scnDialogLineData;
+
+    private let menuListener: ref<CallbackHandle>;
+
+    private func OnAttach() -> Void {
+        let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
+        let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
+        let ui: ref<IBlackboard> = system.Get(definitions.UI_System);
+        this.menuListener = ui
+        .RegisterListenerBool(definitions.UI_System.IsInMenu, this, n"OnInMenu");
+    }
+
+    private func OnDetach() -> Void {
+        this.CancelHideSubtitle();
+        let system: ref<BlackboardSystem> = GameInstance.GetBlackboardSystem(this.GetGameInstance());
+        let definitions: ref<AllBlackboardDefinitions> = GetAllBlackboardDefs();
+        if IsDefined(this.menuListener) {
+            let ui: ref<IBlackboard> = system.Get(definitions.UI_System);
+            ui.UnregisterListenerBool(definitions.UI_System.IsInMenu, this.menuListener);
+            this.menuListener = null;
+        }
+    }
+
+    public func DelayHideSubtitle(line: scnDialogLineData, duration: Float) {
+        let callback: ref<HideSubtitleCallback> = new HideSubtitleCallback();
+        callback.line = line;
+        this.subtitleLine = line;
+        this.subtitleDelayID = GameInstance
+        .GetDelaySystem(GetGameInstance())
+        .DelayCallback(callback, duration);
+    }
+
+    public func CancelHideSubtitle() {
+        if NotEquals(this.subtitleDelayID, GetInvalidDelayID()) {
+            GameInstance
+            .GetDelaySystem(this.GetGameInstance())
+            .CancelCallback(this.subtitleDelayID);
+            this.subtitleRemaining = 0.0;
+            this.subtitleDelayID = GetInvalidDelayID();
+        }
+    }
+
+    public func PauseHideSubtitleCallback() -> Void {
+        if NotEquals(this.subtitleDelayID, GetInvalidDelayID()) {
+            this.subtitleRemaining = GameInstance.GetDelaySystem(GetGameInstance())
+            .GetRemainingDelayTime(this.subtitleDelayID);
+            GameInstance.GetDelaySystem(GetGameInstance()).CancelCallback(this.subtitleDelayID);
+        }
+    }
+
+    public func ResumeHideSubtitleCallback() -> Void {
+        if this.subtitleRemaining >= 0.3 {
+            let callback: ref<HideSubtitleCallback> = new HideSubtitleCallback();
+            callback.line = this.subtitleLine;
+            this.subtitleDelayID = GameInstance
+            .GetDelaySystem(this.GetGameInstance())
+            .DelayCallback(callback, this.subtitleRemaining);
+        }
+    }
+
+    protected cb func OnInMenu(value: Bool) -> Bool {
+        if value {
+            this.PauseHideSubtitleCallback();
+        } else {
+            this.ResumeHideSubtitleCallback();
+        }
+    }
+
+    public final static func GetInstance(game: GameInstance) -> ref<SubtitleSubSystem> = GameInstance.GetScriptableSystemsContainer(game).Get(n"Audioware.SubtitleSubSystem") as SubtitleSubSystem;
+}

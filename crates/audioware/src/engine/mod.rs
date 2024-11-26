@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
 use audioware_core::With;
-use audioware_manifest::{Locale, Settings, Source};
+use audioware_manifest::{Locale, ScnDialogLineType, Settings, Source};
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
@@ -15,7 +15,7 @@ use kira::{
 use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId, GameInstance, Opt, Ref};
 use scene::Scene;
-use state::{PlayerGender, SpokenLocale};
+use state::SpokenLocale;
 use tracks::Tracks;
 use tweens::{
     DEFAULT, DILATION_EASE_IN, DILATION_EASE_OUT, DILATION_LINEAR, IMMEDIATELY, LAST_BREATH,
@@ -23,6 +23,7 @@ use tweens::{
 
 use crate::{
     error::{EngineError, Error},
+    propagate_subtitles,
     utils::{fails, lifecycle, success, warns},
     AsAudioSystem, AsGameInstance, LocalizationPackage,
 };
@@ -181,6 +182,7 @@ where
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
         ext: Option<T>,
+        line_type: Option<ScnDialogLineType>,
     ) where
         StaticSoundData: With<Option<T>>,
         StreamingSoundData<FromFileError>: With<Option<T>>,
@@ -190,6 +192,7 @@ where
         let gender = entity_id.as_ref().and_then(ToGender::to_gender);
         if let Ok(key) = self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
             let data = self.banks.data(key);
+            let duration: f32;
             let dilatable = ext
                 .as_ref()
                 .map(AffectedByTimeDilation::affected_by_time_dilation)
@@ -209,6 +212,7 @@ where
             };
             match data {
                 Either::Left(data) => {
+                    duration = data.duration().as_secs_f32();
                     if let Ok(handle) = self
                         .manager
                         .play(data.output_destination(destination).with(ext))
@@ -223,6 +227,7 @@ where
                     }
                 }
                 Either::Right(data) => {
+                    duration = data.duration().as_secs_f32();
                     if let Ok(handle) = self
                         .manager
                         .play(data.output_destination(destination).with(ext))
@@ -236,6 +241,15 @@ where
                         );
                     }
                 }
+            }
+            if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
+                propagate_subtitles(
+                    event_name,
+                    entity_id,
+                    emitter_name,
+                    line_type.unwrap_or_default(),
+                    duration,
+                )
             }
         }
     }
@@ -259,6 +273,7 @@ where
                     .emitters
                     .get_mut_by_name(&entity_id, &Some(emitter_name))
                 {
+                    let duration: f32;
                     let data = self.banks.data(key);
                     let dilatable = ext
                         .as_ref()
@@ -266,6 +281,7 @@ where
                         .unwrap_or(true);
                     match data {
                         Either::Left(data) => {
+                            duration = data.duration().as_secs_f32();
                             if let Ok(handle) = self
                                 .manager
                                 .play(data.output_destination(emitter.as_ref()).with(ext))
@@ -279,6 +295,7 @@ where
                             }
                         }
                         Either::Right(data) => {
+                            duration = data.duration().as_secs_f32();
                             if let Ok(handle) = self
                                 .manager
                                 .play(data.output_destination(emitter.as_ref()).with(ext))
@@ -292,6 +309,13 @@ where
                             }
                         }
                     }
+                    propagate_subtitles(
+                        sound_name,
+                        entity_id,
+                        emitter_name,
+                        ScnDialogLineType::default(),
+                        duration,
+                    );
                 } else {
                     lifecycle!("failed to find emitter {entity_id:?} with name {emitter_name}",);
                 }
@@ -342,7 +366,13 @@ where
             );
         }
         if Self::exists(&switch_value) {
-            self.play(switch_value, entity_id, emitter_name, switch_value_settings);
+            self.play(
+                switch_value,
+                entity_id,
+                emitter_name,
+                switch_value_settings,
+                None,
+            );
         } else {
             GameInstance::get_audio_system().play(
                 switch_value,
@@ -528,20 +558,12 @@ where
     }
 
     pub fn exists(sound: &CName) -> bool {
-        let spoken = SpokenLocale::get();
-        let gender = PlayerGender::get();
         #[cfg(not(feature = "hot-reload"))]
-        return BANKS
-            .get()
-            .map(|x| x.try_get(sound, &spoken, gender.as_ref()).is_ok())
-            .unwrap_or(false);
+        return BANKS.get().map(|x| x.exists(sound)).unwrap_or(false);
         #[cfg(feature = "hot-reload")]
         BANKS
             .try_read()
-            .and_then(|x| {
-                x.as_ref()
-                    .map(|x| x.try_get(sound, &spoken, gender.as_ref()).is_ok())
-            })
+            .and_then(|x| x.as_ref().map(|x| x.exists(sound)))
             .unwrap_or(false)
     }
 

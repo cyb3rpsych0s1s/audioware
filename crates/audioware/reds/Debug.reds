@@ -10,6 +10,10 @@ import Audioware.*
 /// HotReload();
 private native static func HotReload() -> Void;
 
+/// Game.TestPlay("as_if_I_didnt_know_already");
+public static exec func TestPlay(game: GameInstance, name: String) {
+    GameInstance.GetAudioSystem(game).Play(StringToName(name), GetPlayer(game).GetEntityID(), n"V");
+}
 /// Game.TestPlayExt("straight_outta_compton");
 public static exec func TestPlayExt(game: GameInstance, name: String) {
     GameInstance.GetAudioSystemExt(game).Play(StringToName(name));
