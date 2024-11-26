@@ -24,7 +24,7 @@ macro_rules! lifecycle {
     ($($arg:tt)*) => {{
         #[allow(unused_variables, reason = "unused lint")]
         let msg = format!($($arg)*);
-        $crate::utils::silly!($($arg)*)
+        $crate::utils::silly!("{msg}")
     }};
 }
 pub(crate) use lifecycle;
