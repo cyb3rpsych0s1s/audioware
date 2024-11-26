@@ -12,12 +12,12 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_NET_GIT_FETCH_WITH_CLI: true
-  BIN-FOLDER: bundle${{ inputs.release && '' || '-dev-only' }}
-  BIN-NAME: Audioware-windows-latest-${{ inputs.tag }}${{ inputs.release && '' || '-DEV_ONLY' }}
-  CHECKSUM-NAME: checksum${{ inputs.release && '' || '-DEV_ONLY' }}
+  BIN-FOLDER: bundle${{ (inputs.release && '') || '-dev-only' }}
+  BIN-NAME: Audioware-windows-latest-${{ inputs.tag }}${{ (inputs.release && '') || '-DEV_ONLY' }}
+  CHECKSUM-NAME: checksum${{ (inputs.release && '') || '-DEV_ONLY' }}
   BUILD-PROFILE: ${{ inputs.release && 'release' || 'debug' }}
-  BUILD-FEATURES: ${{ inputs.release && '' || 'hot-reload' }}
-  ARTIFACT-NAME: windows-latest-${{ inputs.tag }}${{ inputs.release && '' || '-dev-only' }}-artifact
+  BUILD-FEATURES: ${{ (inputs.release && '') || 'hot-reload' }}
+  ARTIFACT-NAME: windows-latest-${{ inputs.tag }}${{ (inputs.release && '') || '-dev-only' }}-artifact
 
 jobs:
   bundle:
