@@ -16,7 +16,7 @@ pub struct Music(TrackHandle);
 impl Music {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
-        ambience: &Ambience,
+        #[allow(unused_variables)] ambience: &Ambience,
         modulators: &Modulators,
     ) -> Result<Self, Error> {
         let track = manager.add_sub_track(
