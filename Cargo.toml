@@ -1,5 +1,5 @@
 [workspace]
-members = ["manifest", "bank", "audioware", "core"]
+members = ["crates/core", "crates/manifest", "crates/bank", "crates/audioware"]
 resolver = "2"
 
 [workspace.package]
@@ -13,9 +13,9 @@ strip = true
 codegen-units = 1
 
 [workspace.dependencies]
-audioware-core = { path = "core" }
-audioware-manifest = { path = "manifest" }
-audioware-bank = { path = "bank" }
+audioware-core = { path = "crates/core" }
+audioware-manifest = { path = "crates/manifest" }
+audioware-bank = { path = "crates/bank" }
 either = "1.13"
 glam = "0.29"
 kira = { version = "0.9.6", features = ["serde"] }

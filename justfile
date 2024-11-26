@@ -9,7 +9,7 @@ plugin_name         := 'audioware'
 
 # codebase (here)
 red4ext_bin_dir     := join(justfile_directory(), "target")
-redscript_repo_dir  := join(justfile_directory(), "audioware", "reds")
+redscript_repo_dir  := join(justfile_directory(), "crates", "audioware", "reds")
 rustdoc_target_dir  := join(justfile_directory(), "book", "pages", "docs")
 
 # game files
