@@ -69,8 +69,9 @@ staging TO=game_dir: (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscr
   @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{ join(TO, redscript_deploy_dir) }}'
   @just now
 
-ci TO RELEASE='false': (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build 'release' '' TO) (reload TO)
-  @if('{{RELEASE}}' -ieq 'true') { just no-debug '{{TO}}'; Write-Host "Removed debug files"; } else { Write-Host "Kept debug files untouched"; }
+ci TO PROFILE='release' FEATURES='': (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build PROFILE FEATURES TO) (reload TO)
+  @if('{{PROFILE}}' -ieq 'release') { just no-debug '{{TO}}'; Write-Host "Removed debug files"; } else { Write-Host "Kept debug files untouched"; }
+  @if('{{PROFILE}}' -ieq 'debug')   { just copy '{{ join(red4ext_bin_dir, "release", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'; }
   @just now
 
 optimize TO:

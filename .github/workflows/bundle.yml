@@ -1,0 +1,62 @@
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Git tag"
+        required: true
+        type: string
+      release:
+        description: "Cargo build profile"
+        type: boolean
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+  BIN-FOLDER: bundle${{ inputs.release && '' || '-dev-only' }}
+  BIN-NAME: Audioware-windows-latest-${{ inputs.tag }}${{ inputs.release && '' || '-DEV_ONLY' }}
+  CHECKSUM-NAME: checksum${{ inputs.release && '' || '-DEV_ONLY' }}
+  BUILD-PROFILE: ${{ inputs.release && 'release' || 'debug' }}
+  BUILD-FEATURES: ${{ inputs.release && '' || 'hot-reload' }}
+  ARTIFACT-NAME: windows-latest-${{ inputs.tag }}${{ inputs.release && '' || '-dev-only' }}-artifact
+
+jobs:
+  bundle:
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Prepare Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release
+      - name: Additional tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - name: Bundle mod files
+        run: just ci ${{ env.BIN-FOLDER }}\${{ env.BIN-NAME }} ${{ env.BUILD-PROFILE }} ${{ env.BUILD-FEATURES }}
+      - name: Zip files
+        uses: thedoctor0/zip-release@0.7.6
+        with:
+          type: zip
+          filename: ${{ env.BIN-NAME }}.zip
+          directory: ${{ env.BIN-FOLDER }}
+          path: .
+      - name: Generate zip checksum
+        run: Get-FileHash -Path "${{ env.BIN-FOLDER }}\${{ env.BIN-NAME }}.zip" -Algorithm SHA256 | Select-Object -ExpandProperty Hash > "${{ env.CHECKSUM-NAME }}.txt"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT-NAME }}
+          path: ${{ env.BIN-FOLDER }}/${{ env.BIN-NAME }}.zip
+          if-no-files-found: error
+      - name: Upload artifact checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT-NAME }}-checksum
+          path: ${{ env.CHECKSUM-NAME }}.txt
+          if-no-files-found: error

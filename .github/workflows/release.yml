@@ -14,49 +14,20 @@ env:
   IS_DRAFT: ${{ startsWith(github.ref_name, 'beta') || startsWith(github.ref_name, 'alpha') }}
   IS_PRERELEASE: ${{ startsWith(github.ref_name, 'rc') }}
   IS_RELEASE: ${{ startsWith(github.ref_name, 'v') }}
+  BIN-NAME: Audioware-windows-latest-${{ github.ref_name }}
   CARGO_NET_GIT_FETCH_WITH_CLI: true
 
 jobs:
   bundle:
-    runs-on: windows-2019
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Prepare Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-pc-windows-msvc
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: release
-      - name: Additional tools
-        uses: taiki-e/install-action@v2
-        with:
-          tool: just
-      - name: Bundle mod files
-        run: just ci 'Audioware-windows-latest-${{ github.ref_name }}' '${{ env.IS_RELEASE }}'
-      - name: Zip files
-        uses: thedoctor0/zip-release@0.7.6
-        with:
-          type: zip
-          filename: Audioware-windows-latest-${{ github.ref_name }}.zip
-          directory: Audioware-windows-latest-${{ github.ref_name }}
-          path: .
-      - name: Generate zip checksum
-        run: Get-FileHash -Path "Audioware-windows-latest-${{ github.ref_name }}\Audioware-windows-latest-${{ github.ref_name }}.zip" -Algorithm SHA256 | Select-Object -ExpandProperty Hash > "checksum.txt"
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-latest-${{ github.ref_name }}-artifact
-          path: Audioware-windows-latest-${{ github.ref_name }}/Audioware-windows-latest-${{ github.ref_name }}.zip
-          if-no-files-found: error
-      - name: Upload artifact checksum
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-latest-${{ github.ref_name }}-artifact-checksum
-          path: checksum.txt
-          if-no-files-found: error
+    uses: ./.github/workflows/bundle.yml
+    with:
+      tag: ${{ github.ref_name }}
+      release: true
+  bundle-dev-only:
+    uses: ./.github/workflows/bundle.yml
+    with:
+      tag: ${{ github.ref_name }}
+      release: false
   release:
     if: ${{ startsWith(github.event.ref, 'refs/tags') }}
     runs-on: windows-2019
@@ -70,7 +41,7 @@ jobs:
       - name: Create release ${{ github.ref_name }}
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "release/Audioware-windows-latest-${{ github.ref_name }}.zip,release/checksum.txt"
+          artifacts: "release/${{ env.BIN-NAME }}.zip,release/${{ env.BIN-NAME }}-DEV_ONLY.zip,release/checksum.txt,release/checksum-DEV_ONLY.txt"
           draft: ${{ env.IS_DRAFT }}
           prerelease: ${{ env.IS_PRERELEASE }}
           token: ${{ secrets.GITHUB_TOKEN }}

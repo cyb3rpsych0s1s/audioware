@@ -110,6 +110,12 @@ public static exec func TestSupportedLanguages(game: GameInstance) {
     }
 }
 
+/// Game.TestVersion();
+public static exec func TestVersion(game: GameInstance) {
+    let semver = GameInstance.GetAudioSystemExt(game).Version();
+    FTLog(semver);
+}
+
 public class AutoEmittersSystem extends ScriptableSystem {
     private func OnAttach() {
         GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnPressF1")
