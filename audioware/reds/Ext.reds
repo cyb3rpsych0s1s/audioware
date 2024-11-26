@@ -44,6 +44,7 @@ public native class AudioSystemExt {
     }
     
     // misc
+    /// debug or release build ?
     public final native func IsDebug() -> Bool;
     /// returns sound duration as seconds if found, or -1.0 otherwise
     ///
