@@ -71,11 +71,6 @@ pub fn exports() -> impl Exportable {
                     final c"SemanticVersion" => AudioSystemExt::semantic_version,
                 ])
                 .build(),
-        ClassExport::<DummyLol>::builder().base(IScriptable::NAME)
-        .methods(methods![
-            final c"Hi" => DummyLol::hi,
-        ])
-        .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
         g!(c"Audioware.OnGameSessionStart",         Audioware::on_game_session_start),
         g!(c"Audioware.OnGameSessionReady",         Audioware::on_game_session_ready),
@@ -709,26 +704,6 @@ impl ExtCommand for AudioSystemExt {
                 warns!("invalid gender: {e}");
             }
         }
-    }
-}
-
-#[derive(Debug, Clone, Default)]
-#[repr(C)]
-pub struct DummyLol {
-    pub base: IScriptable,
-}
-unsafe impl ScriptClass for DummyLol {
-    type Kind = Native;
-    const NAME: &'static str = "Audioware.DummyLol";
-}
-impl Drop for DummyLol {
-    fn drop(&mut self) {
-        lifecycle!("drop DummyLol");
-    }
-}
-impl DummyLol {
-    pub fn hi(&self) {
-        lifecycle!("Hi from DummyLol");
     }
 }
 
