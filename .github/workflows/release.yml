@@ -18,12 +18,12 @@ env:
   CARGO_NET_GIT_FETCH_WITH_CLI: true
 
 jobs:
-  bundle:
+  gaming:
     uses: ./.github/workflows/bundle.yml
     with:
       tag: ${{ github.ref_name }}
       release: true
-  bundle-dev-only:
+  modding:
     uses: ./.github/workflows/bundle.yml
     with:
       tag: ${{ github.ref_name }}
@@ -31,7 +31,7 @@ jobs:
   release:
     if: ${{ startsWith(github.event.ref, 'refs/tags') }}
     runs-on: windows-2019
-    needs: [bundle, bundle-dev-only]
+    needs: [gaming, modding]
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
