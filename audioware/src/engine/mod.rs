@@ -70,7 +70,6 @@ where
         let _ = BANKS.set(banks.clone());
         #[cfg(feature = "hot-reload")]
         {
-            use std::ops::DerefMut;
             *BANKS.write() = Some(banks.clone());
         }
         let mut manager = AudioManager::new(settings).map_err(|_| Error::Engine {
