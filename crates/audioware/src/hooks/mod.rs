@@ -22,6 +22,7 @@ pub fn attach(env: &SdkEnv) {
         events::vehicle_audio::attach_hook(env);
         events::dialog_line_end::attach_hook(env);
         events::dialog_line::attach_hook(env);
+        events::weapon::attach_hook(env);
     }
 }
 
@@ -46,6 +47,7 @@ mod offsets {
         pub const EVENT_DIALOGLINEEND: u32                          = 0x6F24331;    // 0x141188BF4 (2.12a)
         pub const VEHICLE_AUDIO_EVENT: u32                          = 0x69EF1461;   // 0x1418D4C44 (2.13)
         pub const AUDIO_EVENT: u32                                  = 0x10C412FD;   // 0x14065816C (2.13)
+        pub const WEAPON_PRE_FIRE_EVENT: u32                        = 0x7BC51906;   // 0x140652AB4 (2.13)
     }
     #[cfg(feature = "research")]
     pub use events::*;
