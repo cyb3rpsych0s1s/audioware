@@ -5,11 +5,7 @@ use red4ext_rs::{
 
 use crate::{attach_native_event, DialogLine, DialogLineEventData, Entity};
 
-attach_native_event!(
-    "DialogLine",
-    super::super::offsets::EVENT_DIALOGLINE,
-    crate::DialogLine
-);
+attach_native_event!(super::super::offsets::EVENT_DIALOGLINE, crate::DialogLine);
 
 unsafe extern "C" fn detour(
     a1: *mut IScriptable,
@@ -39,7 +35,7 @@ unsafe extern "C" fn detour(
         .then_some(unsafe { std::mem::transmute::<&IScriptable, &Entity>(this) })
         .map(|x| x.entity_id);
     crate::utils::lifecycle!(
-        "intercepted DialogLine on {id:?}:
+        "intercepted {} on {id:?}:
 - data.string_id {string_id:?}
 - data.context {context}
 - data.expression {expression}
@@ -49,6 +45,7 @@ unsafe extern "C" fn detour(
 - data.custom_vo_event {custom_vo_event}
 - data.seek_time {seek_time}
 - data.playback_speed_parameter {playback_speed_parameter}",
+        DialogLine::NAME
     );
     cb(a1, a2);
 }

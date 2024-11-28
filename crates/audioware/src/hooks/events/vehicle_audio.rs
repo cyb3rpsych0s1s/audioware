@@ -1,9 +1,9 @@
 use red4ext_rs::types::IScriptable;
+use red4ext_rs::ScriptClass;
 
 use crate::{attach_native_event, VehicleAudioEvent};
 
 attach_native_event!(
-    "vehicleAudioEvent",
     super::super::offsets::VEHICLE_AUDIO_EVENT,
     crate::VehicleAudioEvent
 );
@@ -16,8 +16,9 @@ unsafe extern "C" fn detour(
     let event = &*a2;
     let VehicleAudioEvent { action, .. } = event;
     crate::utils::lifecycle!(
-        "intercepted VehicleAudioEvent:
-- action {action}"
+        "intercepted {}:
+- action {action}",
+        VehicleAudioEvent::NAME
     );
     cb(a1, a2);
 }

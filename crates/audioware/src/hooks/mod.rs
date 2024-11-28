@@ -77,7 +77,7 @@ macro_rules! attach_native_func {
 
 #[macro_export]
 macro_rules! attach_native_event {
-    ($name:literal, $offset:path, $class:path, $to:ident $(, $v:vis)?) => {
+    ($offset:path, $class:path, $to:ident $(, $v:vis)?) => {
         ::red4ext_rs::hooks! {
             static HOOK: fn(
                 a1: *mut ::red4ext_rs::types::IScriptable,
@@ -89,10 +89,10 @@ macro_rules! attach_native_event {
             let addr = ::red4ext_rs::addr_hashes::resolve($offset);
             let addr = unsafe { ::std::mem::transmute(addr) };
             unsafe { env.attach_hook(HOOK, addr, $to) };
-            $crate::utils::intercept!("attached native event hook for {}", $name);
+            $crate::utils::intercept!("attached native event hook for {}", <$class as ::red4ext_rs::ScriptClass>::NAME);
         }
     };
-    ($name:literal, $offset:path, $class:path) => {
-        attach_native_event!($name, $offset, $class, detour, pub);
+    ($offset:path, $class:path) => {
+        attach_native_event!($offset, $class, detour, pub);
     };
 }

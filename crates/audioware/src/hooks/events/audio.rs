@@ -1,12 +1,9 @@
 use red4ext_rs::types::IScriptable;
+use red4ext_rs::ScriptClass;
 
 use crate::{attach_native_event, AudioEvent};
 
-attach_native_event!(
-    "entAudioEvent",
-    super::super::offsets::AUDIO_EVENT,
-    crate::AudioEvent
-);
+attach_native_event!(super::super::offsets::AUDIO_EVENT, crate::AudioEvent);
 
 unsafe extern "C" fn detour(
     a1: *mut IScriptable,
@@ -30,13 +27,14 @@ unsafe extern "C" fn detour(
     //     || *event_type == EventActionType::SetAppearanceName
     // {
     crate::utils::lifecycle!(
-        "intercepted entAudioEvent:
+        "intercepted {}:
     - event_name: {event_name}
     - emitter_name: {emitter_name}
     - name_data: {name_data}
     - float_data: {float_data}
     - event_type: {event_type}
-    - event_flags: {event_flags}"
+    - event_flags: {event_flags}",
+        AudioEvent::NAME
     );
     // }
     cb(a1, a2);
