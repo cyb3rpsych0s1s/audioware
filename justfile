@@ -103,8 +103,8 @@ format:
 
 # 🎨 lint code
 @lint:
-  cargo clippy --fix --allow-dirty --allow-staged
-  cargo fix --allow-dirty --allow-staged
+  cargo clippy --fix --allow-dirty --allow-staged --all-features
+  cargo fix --allow-dirty --allow-staged --all-features
   just format
 
 alias l := lint
