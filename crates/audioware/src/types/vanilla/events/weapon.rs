@@ -52,6 +52,29 @@ impl AsRef<IScriptable> for StopWeaponFire {
 
 #[repr(C)]
 #[derive(Debug)]
+pub struct StopFiringEvent {
+    base: Event,
+}
+
+unsafe impl ScriptClass for StopFiringEvent {
+    type Kind = Native;
+    const NAME: &'static str = "gameweaponeventsStopFiringEvent";
+}
+
+impl AsRef<Event> for StopFiringEvent {
+    fn as_ref(&self) -> &Event {
+        &self.base
+    }
+}
+
+impl AsRef<IScriptable> for StopFiringEvent {
+    fn as_ref(&self) -> &IScriptable {
+        self.base.as_ref()
+    }
+}
+
+#[repr(C)]
+#[derive(Debug)]
 pub struct SetActiveWeaponEvent {
     base: Event,
 }

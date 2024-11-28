@@ -48,6 +48,7 @@ mod offsets {
         pub const VEHICLE_AUDIO_EVENT: u32                          = 0x69EF1461;   // 0x1418D4C44 (2.13)
         pub const AUDIO_EVENT: u32                                  = 0x10C412FD;   // 0x14065816C (2.13)
         pub const WEAPON_PRE_FIRE_EVENT: u32                        = 0x7BC51906;   // 0x140652AB4 (2.13)
+        pub const WEAPON_STOP_FIRING_EVENT: u32                     = 0xA83C1996;   // 0x140652AF8 (2.13)
     }
     #[cfg(feature = "research")]
     pub use events::*;
