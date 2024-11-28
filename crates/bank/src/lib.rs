@@ -432,14 +432,27 @@ impl std::fmt::Display for Initialization {
             duration,
             lengths,
             len_ids,
-            ..
+            errors,
         } = self;
         write!(
             f,
             r##"{lengths}
 for a total of: {len_ids} id(s)
 in {duration:?}
-"##
+{}
+"##,
+            if errors.is_empty() {
+                "no error reported!".to_string()
+            } else {
+                format!(
+                    "error(s):\n{}",
+                    errors
+                        .iter()
+                        .map(|e| format!("- {e}"))
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                )
+            }
         )
     }
 }
