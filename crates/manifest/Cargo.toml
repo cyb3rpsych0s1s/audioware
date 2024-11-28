@@ -19,6 +19,8 @@ serde_yaml = "0.9"
 snafu.workspace = true
 strum = "0.26"
 strum_macros = "0.26"
+
+[dev-dependencies]
 test-case = "3.3"
 
 [package.metadata.cargo-machete]
