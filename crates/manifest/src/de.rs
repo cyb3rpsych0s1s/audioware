@@ -3,6 +3,7 @@
 use std::{collections::HashMap, fmt, hash::Hash, path::PathBuf};
 
 use crate::{PlayerGender, ScnDialogLineType};
+use fixed_map::Map;
 use semver::Version;
 use serde::Deserialize;
 
@@ -209,10 +210,10 @@ where
 impl<T> IntoIterator for GenderBased<T> {
     type Item = (PlayerGender, T);
 
-    type IntoIter = std::collections::hash_map::IntoIter<PlayerGender, T>;
+    type IntoIter = fixed_map::map::IntoIter<PlayerGender, T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        let mut map = HashMap::with_capacity(2);
+        let mut map = Map::new();
         map.insert(PlayerGender::Female, self.female);
         map.insert(PlayerGender::Male, self.male);
         map.into_iter()

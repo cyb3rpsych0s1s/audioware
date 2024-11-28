@@ -2,10 +2,11 @@
 
 use std::fmt;
 
+use fixed_map::Key;
 use serde::Deserialize;
 
 /// See [Codeware](https://github.com/psiberx/cp2077-codeware/blob/main/scripts/Localization/Data/PlayerGender.reds).
-#[derive(Debug, Default, Clone, Copy, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, Deserialize, PartialEq, Eq, Hash, Key)]
 pub enum PlayerGender {
     #[default]
     #[serde(rename = "fem")]
