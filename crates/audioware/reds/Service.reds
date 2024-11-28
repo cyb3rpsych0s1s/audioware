@@ -53,7 +53,7 @@ class AudiowareService extends ScriptableService {
 class ConfigService extends ScriptableService {
     private let config: ref<AudiowareConfig>;
 
-    private func RegisterModSettings()   = ModSettings.RegisterListenerToModifications(this);
-    private func UnregisterModSettings() = ModSettings.UnregisterListenerToModifications(this);
-    public func OnModSettingsChange()    = this.config = new AudiowareConfig();
+    private func RegisterModSettings()   { ModSettings.RegisterListenerToModifications(this);   }
+    private func UnregisterModSettings() { ModSettings.UnregisterListenerToModifications(this); }
+    public func OnModSettingsChange()    { this.config = new AudiowareConfig();                 }
 }
