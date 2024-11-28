@@ -23,7 +23,7 @@ use std::sync::{Mutex, RwLock};
 use crate::{
     abi::{
         command::Command,
-        lifecycle::{Board, Codeware, Lifecycle, Session, System},
+        lifecycle::{Board, Lifecycle, Session, System},
     },
     config::BufferSize,
     engine::DilationUpdate,
@@ -142,13 +142,6 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                         ease_out_curve,
                     },
                 ),
-                Lifecycle::Codeware(Codeware::SetPlayerGender { gender }) => {
-                    engine.set_gender(gender)
-                }
-                Lifecycle::Codeware(Codeware::UnsetPlayerGender) => engine.unset_gender(),
-                Lifecycle::Codeware(Codeware::SetGameLocales { spoken, written }) => {
-                    engine.set_locales(spoken, written)
-                }
                 Lifecycle::RegisterEmitter {
                     entity_id,
                     emitter_name,

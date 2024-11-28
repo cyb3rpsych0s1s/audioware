@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicU32, AtomicU8};
 use audioware_manifest::{Locale, LocaleExt};
 use red4ext_rs::types::{EntityId, GameInstance};
 
-use crate::{AsGameInstance, PlayerPuppet};
+use crate::{utils::warns, AsGameInstance, PlayerPuppet};
 
 use super::scene::AsEntityExt;
 
@@ -27,11 +27,17 @@ impl SpokenLocale {
             .store(value.into(), std::sync::atomic::Ordering::Release);
     }
     pub fn get() -> audioware_manifest::SpokenLocale {
-        SPOKEN_LOCALE
+        match SPOKEN_LOCALE
             .0
             .load(std::sync::atomic::Ordering::Acquire)
             .try_into()
-            .expect("checked on set")
+        {
+            Ok(x) => x,
+            Err(e) => {
+                warns!("invalid spoken locale in state: {}", e);
+                Locale::English.into()
+            }
+        }
     }
 }
 
@@ -42,11 +48,17 @@ impl WrittenLocale {
             .store(value.into(), std::sync::atomic::Ordering::Release);
     }
     pub fn get() -> audioware_manifest::WrittenLocale {
-        WRITTEN_LOCALE
+        match WRITTEN_LOCALE
             .0
             .load(std::sync::atomic::Ordering::Acquire)
             .try_into()
-            .expect("checked on set")
+        {
+            Ok(x) => x,
+            Err(e) => {
+                warns!("invalid written locale in state: {}", e);
+                Locale::English.into()
+            }
+        }
     }
 }
 

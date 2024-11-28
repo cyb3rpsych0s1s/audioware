@@ -13,9 +13,9 @@ use kira::{
     OutputDestination,
 };
 use modulators::{Modulators, Parameter};
-use red4ext_rs::types::{CName, EntityId, GameInstance, Opt, Ref};
+use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
 use scene::Scene;
-use state::SpokenLocale;
+use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
 use tweens::{
     DEFAULT, DILATION_EASE_IN, DILATION_EASE_OUT, DILATION_LINEAR, IMMEDIATELY, LAST_BREATH,
@@ -25,19 +25,17 @@ use crate::{
     error::{EngineError, Error},
     propagate_subtitles,
     utils::{fails, lifecycle, success, warns},
-    AsAudioSystem, AsGameInstance, LocalizationPackage,
+    AsAudioSystem, AsGameInstance,
 };
 
 pub mod eq;
 pub mod queue;
+pub mod state;
 
 mod modulators;
 mod scene;
-mod state;
 mod tracks;
 mod tweens;
-
-pub use state::ToGender;
 
 #[cfg(not(feature = "hot-reload"))]
 static BANKS: std::sync::OnceLock<Banks> = std::sync::OnceLock::new();
@@ -575,25 +573,6 @@ where
         }
     }
 
-    pub fn set_gender(&mut self, gender: audioware_manifest::PlayerGender) {
-        state::PlayerGender::set(gender);
-    }
-
-    pub fn unset_gender(&mut self) {
-        state::PlayerGender::unset();
-    }
-
-    pub fn set_locales(&mut self, spoken: CName, written: CName) {
-        match Locale::try_from(spoken) {
-            Ok(spoken) => state::SpokenLocale::set(spoken),
-            Err(e) => fails!("failed to set spoken locale: {e}"),
-        };
-        match Locale::try_from(written) {
-            Ok(written) => state::WrittenLocale::set(written),
-            Err(e) => fails!("failed to set written locale: {e}"),
-        };
-    }
-
     pub fn duration(
         event_name: CName,
         locale: Locale,
@@ -613,21 +592,6 @@ where
             }
         }
         vec![]
-    }
-
-    pub fn define_subtitles(package: Ref<LocalizationPackage>) {
-        use crate::types::Subtitle;
-        use audioware_bank::BankSubtitles;
-        lifecycle!("Codeware request to define subtitles");
-        let written = state::WrittenLocale::get();
-        if let Some(banks) = Self::banks().as_ref() {
-            let subtitles = banks.subtitles(written);
-            for (key, (value_f, value_m)) in subtitles.iter() {
-                package.subtitle(key.as_str(), value_f.as_str(), value_m.as_str());
-            }
-        } else {
-            warns!("banks aren't initialized yet, skipping subtitles definition");
-        }
     }
 
     #[cfg(not(feature = "hot-reload"))]

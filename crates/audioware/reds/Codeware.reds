@@ -18,19 +18,29 @@ public class LocalizationProvider extends ModLocalizationProvider {
         let system = LocalizationSystem.GetInstance(this.GetGameInstance());
         let spoken = system.GetVoiceLanguage();
         let written = system.GetSubtitleLanguage();
-        FTLog(s"update locales: spoken: \(NameToString(spoken)), written: \(NameToString(written))");
         SetGameLocales(spoken, written);
     }
     public func OnGenderChange() {
         let system = LocalizationSystem.GetInstance(this.GetGameInstance());
         let gender = system.GetPlayerGender();
-        FTLog(s"update player gender: \(ToString(gender))");
         SetPlayerGender(gender);
     }
     public func GetPackage(language: CName) -> ref<ModLocalizationPackage> {
         return new LocalizationPackage();
     }
     public func GetFallback() -> CName = n"";
+}
+
+class LocalizationService extends ScriptableService {
+    private cb func OnLoad() {
+        GameInstance.GetCallbackSystem()
+            .RegisterCallback(n"Session/Ready", this, n"OnSessionReady")
+            .SetRunMode(CallbackRunMode.Once);
+    }
+    private cb func OnSessionReady(event: ref<GameSessionEvent>) {
+        let provider = GameInstance.GetScriptableSystemsContainer(GetGameInstance()).Get(n"Audioware.LocalizationProvider") as LocalizationProvider;
+        provider.OnLocaleChange();
+    }
 }
 
 private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName: CName, lineType: scnDialogLineType, duration: Float) -> Void {

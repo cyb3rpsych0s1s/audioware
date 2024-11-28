@@ -1,8 +1,8 @@
-use audioware_manifest::{PlayerGender, ScnDialogLineType};
+use audioware_manifest::{Locale, PlayerGender, ScnDialogLineType};
 use command::Command;
 use crossbeam::channel::bounded;
 use kira::manager::backend::cpal::CpalBackend;
-use lifecycle::{Board, Codeware, Lifecycle, Session, System};
+use lifecycle::{Board, Lifecycle, Session, System};
 use red4ext_rs::{
     exports, methods,
     types::{CName, EntityId, IScriptable, Opt, Ref},
@@ -11,7 +11,7 @@ use red4ext_rs::{
 };
 
 use crate::{
-    engine::{eq::Preset, Engine},
+    engine::{eq::Preset, state, Engine},
     queue,
     utils::{fails, lifecycle, warns},
     Audioware, EmitterSettings, LocalizationPackage, ToTween, Tween,
@@ -225,22 +225,37 @@ impl ListenerLifecycle for Audioware {
 
 impl CodewareLifecycle for Audioware {
     fn set_player_gender(gender: PlayerGender) {
-        queue::notify(Lifecycle::Codeware(Codeware::SetPlayerGender { gender }));
+        state::PlayerGender::set(gender);
     }
 
     fn unset_player_gender() {
-        queue::notify(Lifecycle::Codeware(Codeware::UnsetPlayerGender));
+        state::PlayerGender::unset();
     }
 
     fn set_game_locales(spoken: CName, written: CName) {
-        queue::notify(Lifecycle::Codeware(Codeware::SetGameLocales {
-            spoken,
-            written,
-        }));
+        match Locale::try_from(spoken) {
+            Ok(spoken) => state::SpokenLocale::set(spoken),
+            Err(e) => fails!("failed to set spoken locale: {e}"),
+        };
+        match Locale::try_from(written) {
+            Ok(written) => state::WrittenLocale::set(written),
+            Err(e) => fails!("failed to set written locale: {e}"),
+        };
     }
 
     fn define_subtitles(package: Ref<LocalizationPackage>) {
-        Engine::<CpalBackend>::define_subtitles(package);
+        use crate::types::Subtitle;
+        use audioware_bank::BankSubtitles;
+        let written = state::WrittenLocale::get();
+        lifecycle!("define localization package subtitles for {written}");
+        if let Some(banks) = Engine::<CpalBackend>::banks().as_ref() {
+            let subtitles = banks.subtitles(written);
+            for (key, (value_f, value_m)) in subtitles.iter() {
+                package.subtitle(key.as_str(), value_f.as_str(), value_m.as_str());
+            }
+        } else {
+            warns!("banks aren't initialized yet, skipping subtitles definition");
+        }
     }
 
     fn supported_languages() -> Vec<CName> {
