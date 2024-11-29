@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, ops::Div};
 
 use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
 use audioware_core::With;
@@ -536,6 +536,8 @@ where
     }
 
     pub fn set_volume(&mut self, setting: CName, value: f64) {
+        // default volume from game settings is 100.
+        let value = value.div(100.).clamp(0., 1.);
         match setting.as_str() {
             "MasterVolume" => self.manager.main_track().set_volume(value, DEFAULT),
             "SfxVolume" => self.modulators.sfx_volume.update(value, DEFAULT),

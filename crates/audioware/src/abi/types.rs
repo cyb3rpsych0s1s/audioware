@@ -47,7 +47,7 @@ impl Default for AudioSettingsExt {
             start_position: 0.,
             region: Ref::default(),
             r#loop: false,
-            volume: 100.,
+            volume: 1.,
             fade_in: Ref::default(),
             panning: 0.5,
             playback_rate: 1.,
@@ -165,7 +165,7 @@ impl ToSettings for Ref<AudioSettingsExt> {
         if r#loop {
             settings.r#loop = Some(true);
         }
-        if volume != 100. {
+        if volume != 1.0 {
             settings.volume = Some(volume as f64);
         }
         settings.fade_in_tween = fade_in.into_interpolation();
