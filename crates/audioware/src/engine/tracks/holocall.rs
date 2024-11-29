@@ -1,7 +1,7 @@
 use kira::{
     effect::filter::{FilterBuilder, FilterMode},
     manager::{backend::Backend, AudioManager},
-    track::{TrackBuilder, TrackHandle},
+    track::{TrackBuilder, TrackHandle, TrackRoutes},
     OutputDestination,
 };
 
@@ -13,15 +13,24 @@ use crate::{
     error::Error,
 };
 
+use super::ambience::Ambience;
+
 pub struct Holocall(TrackHandle);
 
 impl Holocall {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
+        ambience: &Ambience,
         modulators: &Modulators,
     ) -> Result<Self, Error> {
+        let main = manager.main_track().id();
         let track = manager.add_sub_track({
-            let mut builder = TrackBuilder::new();
+            let mut builder = TrackBuilder::new().routes(
+                // sum must be 1.0 otherwise sounds crackle
+                TrackRoutes::empty()
+                    .with_route(main, 1.)
+                    .with_route(ambience.reverb(), 0.),
+            );
             builder.add_effect(
                 FilterBuilder::default()
                     .cutoff(EQ_LOW_PASS_PHONE_CUTOFF)

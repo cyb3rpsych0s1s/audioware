@@ -74,7 +74,7 @@ impl Tracks {
     ) -> Result<Self, Error> {
         let ambience = Ambience::try_new(manager, modulators)?;
         let v = V::try_new(manager, &ambience, modulators)?;
-        let holocall = Holocall::try_new(manager, modulators)?;
+        let holocall = Holocall::try_new(manager, &ambience, modulators)?;
         let sfx = Sfx::try_new(manager, &ambience, modulators)?;
         let radioport = Radioport::try_new(manager, &ambience, modulators)?;
         let music = Music::try_new(manager, &ambience, modulators)?;

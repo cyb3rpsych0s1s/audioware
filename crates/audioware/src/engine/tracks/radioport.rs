@@ -16,12 +16,18 @@ pub struct Radioport(TrackHandle);
 impl Radioport {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
-        #[allow(unused_variables, reason = "check routing")] ambience: &Ambience,
+        ambience: &Ambience,
         modulators: &Modulators,
     ) -> Result<Self, Error> {
+        let main = manager.main_track().id();
         let track = manager.add_sub_track(
             TrackBuilder::new()
-                .routes(TrackRoutes::new())
+                .routes(
+                    // sum must be 1.0 otherwise sounds crackle
+                    TrackRoutes::empty()
+                        .with_route(main, 1.)
+                        .with_route(ambience.reverb(), 0.),
+                )
                 .with_effect(modulators.radioport_volume.try_effect()?),
         )?;
         Ok(Self(track))
