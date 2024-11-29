@@ -87,12 +87,10 @@ impl AsEntity for Ref<Entity> {
         let cls = rtti.get_class(CName::new(Entity::NAME)).unwrap();
         let method: &Method = cls.get_method(CName::new("GetWorldPosition")).ok().unwrap();
         match unsafe { self.instance() } {
-            Some(x) if x.status == EntityStatus::Attached => {
-                return method
-                    .as_function()
-                    .execute::<_, Vector4>(Some(x.as_ref()), ())
-                    .unwrap()
-            }
+            Some(x) if x.status == EntityStatus::Attached => method
+                .as_function()
+                .execute::<_, Vector4>(Some(x.as_ref()), ())
+                .unwrap(),
             _ => Vec3::ZERO.into(),
         }
     }
@@ -102,12 +100,10 @@ impl AsEntity for Ref<Entity> {
         let cls = rtti.get_class(CName::new(Entity::NAME)).unwrap();
         let method: &Method = cls.get_method(CName::new("GetWorldForward")).ok().unwrap();
         match unsafe { self.instance() } {
-            Some(x) if x.status == EntityStatus::Attached => {
-                return method
-                    .as_function()
-                    .execute::<_, Vector4>(Some(x.as_ref()), ())
-                    .unwrap()
-            }
+            Some(x) if x.status == EntityStatus::Attached => method
+                .as_function()
+                .execute::<_, Vector4>(Some(x.as_ref()), ())
+                .unwrap(),
             _ => Vec3::NEG_Z.into(),
         }
     }
@@ -120,12 +116,10 @@ impl AsEntity for Ref<Entity> {
             .ok()
             .unwrap();
         match unsafe { self.instance() } {
-            Some(x) if x.status == EntityStatus::Attached => {
-                return method
-                    .as_function()
-                    .execute::<_, Quaternion>(Some(x.as_ref()), ())
-                    .unwrap()
-            }
+            Some(x) if x.status == EntityStatus::Attached => method
+                .as_function()
+                .execute::<_, Quaternion>(Some(x.as_ref()), ())
+                .unwrap(),
             _ => Quat::IDENTITY.into(),
         }
     }
@@ -138,12 +132,10 @@ impl AsEntity for Ref<Entity> {
             .ok()
             .unwrap();
         match unsafe { self.instance() } {
-            Some(x) if x.status == EntityStatus::Attached => {
-                return method
-                    .as_function()
-                    .execute::<_, WorldTransform>(Some(x.as_ref()), ())
-                    .unwrap()
-            }
+            Some(x) if x.status == EntityStatus::Attached => method
+                .as_function()
+                .execute::<_, WorldTransform>(Some(x.as_ref()), ())
+                .unwrap(),
             _ => WorldTransform::default(),
         }
     }
