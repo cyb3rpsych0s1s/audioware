@@ -44,9 +44,8 @@ class LocalizationService extends ScriptableService {
 }
 
 private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName: CName, lineType: scnDialogLineType, duration: Float) -> Void {
-    if !IsNameValid(reaction) || !EntityID.IsDefined(entityID) { return; }
-    let target = GameInstance.FindEntityByID(GetGameInstance(), entityID);
-    if !IsDefined(target) || !target.IsA(n"gameObject") { return; }
+    if !IsNameValid(reaction) { return; }
+    let target = EntityID.IsDefined(entityID) ? GameInstance.FindEntityByID(GetGameInstance(), entityID) : null;
     let key: String = NameToString(reaction);
     let subtitle: String = LocalizationSystem.GetInstance(GetGameInstance()).GetSubtitle(key);
     if StrLen(key) > 0 && NotEquals(key, subtitle) {

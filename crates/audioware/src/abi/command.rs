@@ -20,7 +20,7 @@ pub enum Command {
     PlayOnEmitter {
         event_name: CName,
         entity_id: EntityId,
-        emitter_name: CName,
+        emitter_name: Option<CName>,
         ext: Option<Settings>,
     },
     PlayOverThePhone {
@@ -31,7 +31,7 @@ pub enum Command {
     StopOnEmitter {
         event_name: CName,
         entity_id: EntityId,
-        emitter_name: CName,
+        emitter_name: Option<CName>,
         tween: Option<Tween>,
     },
     StopVanilla {
@@ -70,32 +70,32 @@ impl std::fmt::Debug for Command {
                 emitter_name,
                 line_type,
                 ..
-            } => write!(f, "Command::Play {{ sound_name: {:?}, entity_id: {:?}, emitter_name: {:?}, line_type: {:?}, .. }}", sound_name, entity_id, emitter_name, line_type),
+            } => write!(f, "Command::Play {{ sound_name: {}, entity_id: {:?}, emitter_name: {}, line_type: {:?}, .. }}", sound_name, entity_id, emitter_name.map(|x| x.as_str()).unwrap_or("None"), line_type),
             Command::PlayOnEmitter {
                 event_name,
                 entity_id,
                 emitter_name,
                 ..
-            } => write!(f, "Command::PlayOnEmitter {{ event_name: {:?}, entity_id: {:?}, emitter_name: {:?}, .. }}", event_name, entity_id, emitter_name),
+            } => write!(f, "Command::PlayOnEmitter {{ event_name: {}, entity_id: {:?}, emitter_name: {}, .. }}", event_name, entity_id, emitter_name.map(|x| x.as_str()).unwrap_or("None")),
             Command::StopOnEmitter {
                 event_name,
                 entity_id,
                 emitter_name,
                 ..
-            } => write!(f, "Command::StopOnEmitter {{ event_name: {:?}, entity_id: {:?}, emitter_name: {:?}, .. }}", event_name, entity_id, emitter_name),
+            } => write!(f, "Command::StopOnEmitter {{ event_name: {}, entity_id: {:?}, emitter_name: {}, .. }}", event_name, entity_id, emitter_name.map(|x| x.as_str()).unwrap_or("None")),
             Command::Stop {
                 event_name,
                 entity_id,
                 emitter_name,
                 ..
-            } => write!(f, "Command::Stop {{ event_name: {:?}, entity_id: {:?}, emitter_name: {:?}, .. }}", event_name, entity_id, emitter_name),
+            } => write!(f, "Command::Stop {{ event_name: {}, entity_id: {:?}, emitter_name: {}, .. }}", event_name, entity_id, emitter_name.map(|x| x.as_str()).unwrap_or("None")),
             Command::Switch {
                 switch_name,
                 switch_value,
                 entity_id,
                 emitter_name,
                 ..
-            } => write!(f, "Command::Switch {{ switch_name: {:?}, switch_value: {:?}, entity_id: {:?}, emitter_name: {:?}, .. }}", switch_name, switch_value, entity_id, emitter_name),
+            } => write!(f, "Command::Switch {{ switch_name: {}, switch_value: {}, entity_id: {:?}, emitter_name: {}, .. }}", switch_name, switch_value, entity_id, emitter_name.map(|x| x.as_str()).unwrap_or("None")),
             x => write!(f, "{x:?}"),
         }
     }

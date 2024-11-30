@@ -167,7 +167,7 @@ public class AutoEmittersSystem extends ScriptableSystem {
         if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }
         let eventName = this.RandomSong();
         let emitterID: EntityID;
-        let emitterCName: CName = n"DummyTest";
+        let emitterCName: CName = evt.IsShiftDown() ? n"None" : n"DummyTest";
 
         this.PlayOnEmitter(eventName, emitterID, emitterCName);
     }
@@ -175,7 +175,7 @@ public class AutoEmittersSystem extends ScriptableSystem {
         if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }
         let eventName = this.RandomSong();
         let emitterID: EntityID;
-        let emitterCName: CName = n"DummyTest";
+        let emitterCName: CName = evt.IsShiftDown() ? n"None" : n"DummyTest";
 
         let tween = new LinearTween();
         tween.duration = 0.0;

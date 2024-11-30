@@ -350,14 +350,14 @@ pub trait ExtCommand {
         &self,
         sound_name: CName,
         entity_id: EntityId,
-        emitter_name: CName,
+        emitter_name: Opt<CName>,
         ext: Ref<AudioSettingsExt>,
     );
     fn stop_on_emitter(
         &self,
         sound_name: CName,
         entity_id: EntityId,
-        emitter_name: CName,
+        emitter_name: Opt<CName>,
         tween: Ref<Tween>,
     );
     fn switch(
@@ -408,13 +408,13 @@ impl ExtCommand for AudioSystemExt {
         &self,
         event_name: CName,
         entity_id: EntityId,
-        emitter_name: CName,
+        emitter_name: Opt<CName>,
         ext: Ref<AudioSettingsExt>,
     ) {
         queue::send(Command::PlayOnEmitter {
             event_name,
             entity_id,
-            emitter_name,
+            emitter_name: emitter_name.into_option(),
             ext: ext.into_settings(),
         });
     }
@@ -423,13 +423,13 @@ impl ExtCommand for AudioSystemExt {
         &self,
         event_name: CName,
         entity_id: EntityId,
-        emitter_name: CName,
+        emitter_name: Opt<CName>,
         tween: Ref<Tween>,
     ) {
         queue::send(Command::StopOnEmitter {
             event_name,
             entity_id,
-            emitter_name,
+            emitter_name: emitter_name.into_option(),
             tween: tween.into_tween(),
         });
     }

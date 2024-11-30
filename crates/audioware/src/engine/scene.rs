@@ -132,6 +132,9 @@ impl Emitters {
         *EMITTERS.write() = HashSet::with_capacity(capacity);
         Self(DashMap::with_capacity(capacity))
     }
+    pub fn exists(&self, entity_id: &EntityId) -> bool {
+        self.0.contains_key(entity_id)
+    }
     fn get_mut(&mut self, entity_id: &EntityId) -> Option<RefMut<'_, EntityId, Emitter>> {
         self.0.get_mut(entity_id)
     }

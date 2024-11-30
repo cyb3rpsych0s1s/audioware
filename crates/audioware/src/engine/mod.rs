@@ -143,33 +143,54 @@ where
         gender: audioware_manifest::PlayerGender,
     ) {
         let spoken = SpokenLocale::get();
-        if let Ok(key) = self.banks.try_get(&event_name, &spoken, Some(&gender)) {
-            let data = self.banks.data(key);
-            let destination = &self.tracks.holocall;
-            let dilatable = true;
-            match data {
-                Either::Left(data) => {
-                    if let Ok(handle) = self.manager.play(data.output_destination(destination)) {
-                        self.tracks.store_static(
-                            handle,
-                            event_name,
-                            None,
-                            Some(emitter_name),
-                            dilatable,
-                        );
+        match self.banks.try_get(&event_name, &spoken, Some(&gender)) {
+            Ok(key) => {
+                let data = self.banks.data(key);
+                let destination = &self.tracks.holocall;
+                let dilatable = true;
+                let duration: f32;
+                match data {
+                    Either::Left(data) => {
+                        duration = data.duration().as_secs_f32();
+                        if let Ok(handle) = self.manager.play(data.output_destination(destination))
+                        {
+                            self.tracks.store_static(
+                                handle,
+                                event_name,
+                                None,
+                                Some(emitter_name),
+                                dilatable,
+                            );
+                        }
                     }
-                }
-                Either::Right(data) => {
-                    if let Ok(handle) = self.manager.play(data.output_destination(destination)) {
-                        self.tracks.store_stream(
-                            handle,
-                            event_name,
-                            None,
-                            Some(emitter_name),
-                            dilatable,
-                        );
+                    Either::Right(data) => {
+                        duration = data.duration().as_secs_f32();
+                        if let Ok(handle) = self.manager.play(data.output_destination(destination))
+                        {
+                            self.tracks.store_stream(
+                                handle,
+                                event_name,
+                                None,
+                                Some(emitter_name),
+                                dilatable,
+                            );
+                        }
                     }
+                };
+                if !emitter_name.as_str().is_empty() && emitter_name.as_str() != "None" {
+                    propagate_subtitles(
+                        event_name,
+                        EntityId::default(),
+                        emitter_name,
+                        ScnDialogLineType::Holocall,
+                        duration,
+                    );
+                } else if *key.source() == Source::Voices {
+                    warns!("cannot propagate subtitles for voice, emitterName must be defined: {event_name}");
                 }
+            }
+            Err(e) => {
+                warns!("cannot play over the phone: {e}");
             }
         }
     }
@@ -263,21 +284,25 @@ where
         &mut self,
         sound_name: CName,
         entity_id: EntityId,
-        emitter_name: CName,
+        emitter_name: Option<CName>,
         ext: Option<T>,
     ) where
         StaticSoundData: With<Option<T>>,
         StreamingSoundData<FromFileError>: With<Option<T>>,
         T: AffectedByTimeDilation,
     {
+        if !entity_id.is_defined() {
+            warns!("cannot play sound on undefined entity: {sound_name}");
+            return;
+        }
         let gender = entity_id.to_gender();
         let spoken = SpokenLocale::get();
         if let Some(ref mut scene) = self.scene {
             match self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
                 Ok(key) => {
-                    if let Some(ref mut emitter) = scene
-                        .emitters
-                        .get_mut_by_name(&entity_id, &Some(emitter_name))
+                    let emitter_exists = scene.emitters.exists(&entity_id);
+                    if let Some(ref mut emitter) =
+                        scene.emitters.get_mut_by_name(&entity_id, &emitter_name)
                     {
                         let duration: f32;
                         let data = self.banks.data(key);
@@ -316,21 +341,26 @@ where
                             }
                         }
                         if entity_id.is_defined()
-                            && !emitter_name.as_str().is_empty()
-                            && !emitter_name.as_str().eq("None")
+                            && emitter_name
+                                .is_some_and(|x| !x.as_str().is_empty() && x.as_str() != "None")
                         {
                             propagate_subtitles(
                                 sound_name,
                                 entity_id,
-                                emitter_name,
+                                emitter_name.unwrap(),
                                 ScnDialogLineType::default(),
                                 duration,
                             );
                         } else if *key.source() == Source::Voices {
                             warns!("cannot propagate subtitles for voice, both entityID and emitterName must be defined: {sound_name}");
                         }
+                    } else if emitter_exists {
+                        warns!("failed to find emitter {entity_id:?} with name {}, but the entityID is already registered as an emitter: did you use the same emitterName as when you registered?", emitter_name.map(|x| x.as_str()).unwrap_or("None"));
                     } else {
-                        warns!("failed to find emitter {entity_id:?} with name {emitter_name}",);
+                        warns!(
+                            "failed to find emitter {entity_id:?} with name {}",
+                            emitter_name.map(|x| x.as_str()).unwrap_or("None")
+                        );
                     }
                 }
                 Err(e) => {
@@ -403,14 +433,14 @@ where
         &mut self,
         event_name: CName,
         entity_id: EntityId,
-        emitter_name: CName,
+        emitter_name: Option<CName>,
         tween: Option<Tween>,
     ) {
         if let Some(x) = self.scene.as_mut() {
             x.stop_on_emitter(
                 event_name,
                 entity_id,
-                Some(emitter_name),
+                emitter_name,
                 tween.unwrap_or_default(),
             );
         }

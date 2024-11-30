@@ -31,13 +31,13 @@ public native class AudioSystemExt {
     public final native func UnregisterEmitter(entityID: EntityID) -> Bool;
     public final native func IsRegisteredEmitter(entityID: EntityID) -> Bool;
     public final native func EmittersCount() -> Int32;
-    public final native func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt ext: ref<AudioSettingsExt>) -> Void;
-    public final native func StopOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void;
+    public final native func PlayOnEmitter(eventName: CName, entityID: EntityID, opt emitterName: CName, opt ext: ref<AudioSettingsExt>) -> Void;
+    public final native func StopOnEmitter(eventName: CName, entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void;
     public final native func OnEmitterDies(entityID: EntityID) -> Void;
     public final native func OnEmitterIncapacitated(entityID: EntityID) -> Void;
     public final native func OnEmitterDefeated(entityID: EntityID) -> Void;
     public final func IsValidEmitter(className: CName) -> Bool = NotEquals(className, n"PlayerPuppet") && Reflection.GetClass(className).IsA(n"gameObject");
-    public final func PlayOnEmitter(eventName: CName, entityID: EntityID, emitterName: CName, opt tween: ref<Tween>) -> Void {
+    public final func PlayOnEmitter(eventName: CName, entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void {
         let settings = new AudioSettingsExt();
         settings.fadeIn = tween;
         this.PlayOnEmitter(eventName, entityID, emitterName, settings);
