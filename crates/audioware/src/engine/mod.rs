@@ -273,56 +273,68 @@ where
         let gender = entity_id.to_gender();
         let spoken = SpokenLocale::get();
         if let Some(ref mut scene) = self.scene {
-            if let Ok(key) = self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
-                if let Some(ref mut emitter) = scene
-                    .emitters
-                    .get_mut_by_name(&entity_id, &Some(emitter_name))
-                {
-                    let duration: f32;
-                    let data = self.banks.data(key);
-                    let dilatable = ext
-                        .as_ref()
-                        .map(AffectedByTimeDilation::affected_by_time_dilation)
-                        .unwrap_or(true);
-                    match data {
-                        Either::Left(data) => {
-                            duration = data.duration().as_secs_f32();
-                            if let Ok(handle) = self
-                                .manager
-                                .play(data.output_destination(emitter.as_ref()).with(ext))
-                            {
-                                lifecycle!(
-                                    "playing static sound {} on {:?}",
-                                    sound_name.as_str(),
-                                    entity_id
-                                );
-                                emitter.store_static(sound_name, handle, dilatable);
+            match self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
+                Ok(key) => {
+                    if let Some(ref mut emitter) = scene
+                        .emitters
+                        .get_mut_by_name(&entity_id, &Some(emitter_name))
+                    {
+                        let duration: f32;
+                        let data = self.banks.data(key);
+                        let dilatable = ext
+                            .as_ref()
+                            .map(AffectedByTimeDilation::affected_by_time_dilation)
+                            .unwrap_or(true);
+                        match data {
+                            Either::Left(data) => {
+                                duration = data.duration().as_secs_f32();
+                                if let Ok(handle) = self
+                                    .manager
+                                    .play(data.output_destination(emitter.as_ref()).with(ext))
+                                {
+                                    lifecycle!(
+                                        "playing static sound {} on {:?}",
+                                        sound_name.as_str(),
+                                        entity_id
+                                    );
+                                    emitter.store_static(sound_name, handle, dilatable);
+                                }
+                            }
+                            Either::Right(data) => {
+                                duration = data.duration().as_secs_f32();
+                                if let Ok(handle) = self
+                                    .manager
+                                    .play(data.output_destination(emitter.as_ref()).with(ext))
+                                {
+                                    lifecycle!(
+                                        "playing stream sound {} on {:?}",
+                                        sound_name.as_str(),
+                                        entity_id
+                                    );
+                                    emitter.store_stream(sound_name, handle, dilatable);
+                                }
                             }
                         }
-                        Either::Right(data) => {
-                            duration = data.duration().as_secs_f32();
-                            if let Ok(handle) = self
-                                .manager
-                                .play(data.output_destination(emitter.as_ref()).with(ext))
-                            {
-                                lifecycle!(
-                                    "playing stream sound {} on {:?}",
-                                    sound_name.as_str(),
-                                    entity_id
-                                );
-                                emitter.store_stream(sound_name, handle, dilatable);
-                            }
+                        if entity_id.is_defined()
+                            && !emitter_name.as_str().is_empty()
+                            && !emitter_name.as_str().eq("None")
+                        {
+                            propagate_subtitles(
+                                sound_name,
+                                entity_id,
+                                emitter_name,
+                                ScnDialogLineType::default(),
+                                duration,
+                            );
+                        } else if *key.source() == Source::Voices {
+                            warns!("cannot propagate subtitles for voice, both entityID and emitterName must be defined: {sound_name}");
                         }
+                    } else {
+                        warns!("failed to find emitter {entity_id:?} with name {emitter_name}",);
                     }
-                    propagate_subtitles(
-                        sound_name,
-                        entity_id,
-                        emitter_name,
-                        ScnDialogLineType::default(),
-                        duration,
-                    );
-                } else {
-                    lifecycle!("failed to find emitter {entity_id:?} with name {emitter_name}",);
+                }
+                Err(e) => {
+                    warns!("cannot play sound: {e}");
                 }
             }
         }
