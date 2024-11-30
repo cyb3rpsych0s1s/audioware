@@ -188,66 +188,73 @@ where
     {
         let spoken = SpokenLocale::get();
         let gender = entity_id.as_ref().and_then(ToGender::to_gender);
-        if let Ok(key) = self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
-            let data = self.banks.data(key);
-            let duration: f32;
-            let dilatable = ext
-                .as_ref()
-                .map(AffectedByTimeDilation::affected_by_time_dilation)
-                .unwrap_or(true);
-            let is_v = self
-                .scene
-                .as_ref()
-                .is_some_and(|x| Some(x.listener_id()) == entity_id);
-            let destination: OutputDestination = if is_v {
-                if key.is_vocal() {
-                    self.tracks.v.vocal.id().into()
+        match self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
+            Ok(key) => {
+                let data = self.banks.data(key);
+                let duration: f32;
+                let dilatable = ext
+                    .as_ref()
+                    .map(AffectedByTimeDilation::affected_by_time_dilation)
+                    .unwrap_or(true);
+                let is_v = self
+                    .scene
+                    .as_ref()
+                    .is_some_and(|x| Some(x.listener_id()) == entity_id);
+                let destination: OutputDestination = if is_v {
+                    if key.is_vocal() {
+                        self.tracks.v.vocal.id().into()
+                    } else {
+                        self.tracks.v.emissive.id().into()
+                    }
                 } else {
-                    self.tracks.v.emissive.id().into()
-                }
-            } else {
-                key.to_output_destination(&self.tracks)
-            };
-            match data {
-                Either::Left(data) => {
-                    duration = data.duration().as_secs_f32();
-                    if let Ok(handle) = self
-                        .manager
-                        .play(data.output_destination(destination).with(ext))
-                    {
-                        self.tracks.store_static(
-                            handle,
-                            event_name,
-                            entity_id,
-                            emitter_name,
-                            dilatable,
-                        );
+                    key.to_output_destination(&self.tracks)
+                };
+                match data {
+                    Either::Left(data) => {
+                        duration = data.duration().as_secs_f32();
+                        if let Ok(handle) = self
+                            .manager
+                            .play(data.output_destination(destination).with(ext))
+                        {
+                            self.tracks.store_static(
+                                handle,
+                                event_name,
+                                entity_id,
+                                emitter_name,
+                                dilatable,
+                            );
+                        }
+                    }
+                    Either::Right(data) => {
+                        duration = data.duration().as_secs_f32();
+                        if let Ok(handle) = self
+                            .manager
+                            .play(data.output_destination(destination).with(ext))
+                        {
+                            self.tracks.store_stream(
+                                handle,
+                                event_name,
+                                entity_id,
+                                emitter_name,
+                                dilatable,
+                            );
+                        }
                     }
                 }
-                Either::Right(data) => {
-                    duration = data.duration().as_secs_f32();
-                    if let Ok(handle) = self
-                        .manager
-                        .play(data.output_destination(destination).with(ext))
-                    {
-                        self.tracks.store_stream(
-                            handle,
-                            event_name,
-                            entity_id,
-                            emitter_name,
-                            dilatable,
-                        );
-                    }
+                if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
+                    propagate_subtitles(
+                        event_name,
+                        entity_id,
+                        emitter_name,
+                        line_type.unwrap_or_default(),
+                        duration,
+                    )
+                } else if *key.source() == Source::Voices {
+                    warns!("cannot propagate subtitles for voice, both entityID and emitterName must be defined: {event_name}");
                 }
             }
-            if let (Some(entity_id), Some(emitter_name)) = (entity_id, emitter_name) {
-                propagate_subtitles(
-                    event_name,
-                    entity_id,
-                    emitter_name,
-                    line_type.unwrap_or_default(),
-                    duration,
-                )
+            Err(e) => {
+                warns!("cannot play sound: {e}");
             }
         }
     }
