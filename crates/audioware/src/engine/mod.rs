@@ -318,7 +318,7 @@ where
                                     .play(data.output_destination(emitter.as_ref()).with(ext))
                                 {
                                     lifecycle!(
-                                        "playing static sound {} on {:?}",
+                                        "playing static sound {} on {}",
                                         sound_name.as_str(),
                                         entity_id
                                     );
@@ -332,7 +332,7 @@ where
                                     .play(data.output_destination(emitter.as_ref()).with(ext))
                                 {
                                     lifecycle!(
-                                        "playing stream sound {} on {:?}",
+                                        "playing stream sound {} on {}",
                                         sound_name.as_str(),
                                         entity_id
                                     );

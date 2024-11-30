@@ -67,19 +67,19 @@ impl std::fmt::Display for Lifecycle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Lifecycle::RegisterEmitter { entity_id, .. } => {
-                write!(f, "register emitter [{:?}]", entity_id)
+                write!(f, "register emitter [{entity_id}]")
             }
             Lifecycle::UnregisterEmitter { entity_id, .. } => {
-                write!(f, "unregister emitter [{:?}]", entity_id)
+                write!(f, "unregister emitter [{entity_id}]")
             }
             Lifecycle::OnEmitterDies { entity_id } => {
-                write!(f, "on emitter dies [{:?}]", entity_id)
+                write!(f, "on emitter dies [{entity_id}]")
             }
             Lifecycle::OnEmitterIncapacitated { entity_id } => {
-                write!(f, "on emitter incapacitated [{:?}]", entity_id)
+                write!(f, "on emitter incapacitated [{entity_id}]")
             }
             Lifecycle::OnEmitterDefeated { entity_id } => {
-                write!(f, "on emitter defeated [{:?}]", entity_id)
+                write!(f, "on emitter defeated [{entity_id}]")
             }
             Lifecycle::Terminate => write!(f, "terminate"),
             Lifecycle::Session(x) => write!(f, "{x}"),
@@ -97,9 +97,9 @@ impl std::fmt::Display for Lifecycle {
                 entity_id,
                 value: dilation,
                 ease_in_curve,
-            } => write!(f, "set emitter dilation {dilation}, reason: {reason}, curve: {ease_in_curve} [{entity_id:?}]"),
+            } => write!(f, "set emitter dilation {dilation}, reason: {reason}, curve: {ease_in_curve} [{entity_id}]"),
             Lifecycle::UnsetEmitterDilation { entity_id,  ease_out_curve } => {
-                write!(f, "unset emitter dilation, curve: {ease_out_curve} [{entity_id:?}]")
+                write!(f, "unset emitter dilation, curve: {ease_out_curve} [{entity_id}]")
             }
             Lifecycle::ReportInitialization => write!(f, "report initialization"),
             #[cfg(feature = "hot-reload")]

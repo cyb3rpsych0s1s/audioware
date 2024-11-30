@@ -254,7 +254,7 @@ impl Scene {
             return Ok(());
         }
         let (gender, position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
-        lifecycle!("emitter settings before {:?} [{entity_id:?}]", settings);
+        lifecycle!("emitter settings before {:?} [{entity_id}]", settings);
         let settings = match settings {
             Some(settings)
                 if settings.distances.min_distance == 0.
@@ -268,7 +268,7 @@ impl Scene {
         let emitter = self.scene.add_emitter(position, settings)?;
         let names = DashSet::with_capacity(3);
         names.insert(emitter_name);
-        lifecycle!("emitter settings after {:?} [{entity_id:?}]", settings);
+        lifecycle!("emitter settings after {:?} [{entity_id}]", settings);
         let handle = Emitter {
             handle: emitter,
             handles: Default::default(),
@@ -281,13 +281,16 @@ impl Scene {
             marked_for_death: false,
         };
         self.emitters.insert(entity_id, emitter_name, handle);
-        lifecycle!("added emitter {entity_id:?}");
+        lifecycle!(
+            "added emitter {entity_id} with name {}",
+            emitter_name.map(|x| x.as_str()).unwrap_or("None")
+        );
         Ok(())
     }
 
     pub fn remove_emitter(&mut self, entity_id: EntityId) -> bool {
         if self.emitters.remove(entity_id) {
-            lifecycle!("removed emitter {entity_id:?}");
+            lifecycle!("removed emitter {entity_id}");
             return true;
         }
         false

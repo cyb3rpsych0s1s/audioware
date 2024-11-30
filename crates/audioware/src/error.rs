@@ -47,7 +47,7 @@ pub enum EngineError {
 pub enum SceneError {
     #[snafu(display("V cannot be registered as an emitter."))]
     InvalidEmitter,
-    #[snafu(display("emitter is null [{:?}]", entity_id))]
+    #[snafu(display("emitter is null [{}]", entity_id))]
     MissingEmitter { entity_id: EntityId },
 }
 
