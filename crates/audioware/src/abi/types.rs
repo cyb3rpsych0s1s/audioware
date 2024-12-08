@@ -157,28 +157,21 @@ impl ToSettings for Ref<AudioSettingsExt> {
             playback_rate,
             affected_by_time_dilation,
         } = unsafe { self.fields() }?.clone();
-        let mut settings = Settings::default();
-        if start_position != 0.0 {
-            settings.start_position = Some(Duration::from_secs_f32(start_position));
+        if let Err(e) = Duration::try_from_secs_f32(start_position) {
+            fails!("invalid start position: {e}");
+            return None;
         }
-        settings.region = region.into_region();
-        if r#loop {
-            settings.r#loop = Some(true);
-        }
-        if volume != 1.0 {
-            settings.volume = Some(volume as f64);
-        }
-        settings.fade_in_tween = fade_in.into_interpolation();
-        if panning != 0.5 {
-            settings.panning = Some(panning as f64);
-        }
-        if playback_rate != 1.0 {
-            settings.playback_rate = Some(kira::sound::PlaybackRate::Factor(playback_rate as f64));
-        }
-        if !affected_by_time_dilation {
-            settings.affected_by_time_dilation = Some(false);
-        }
-        Some(settings)
+        Some(Settings {
+            start_time: Default::default(),
+            start_position: Some(Duration::from_secs_f32(start_position)),
+            region: region.into_region(),
+            r#loop: Some(r#loop),
+            volume: Some(volume as f64),
+            fade_in_tween: fade_in.into_interpolation(),
+            panning: Some(panning as f64),
+            playback_rate: Some(kira::sound::PlaybackRate::Factor(playback_rate as f64)),
+            affected_by_time_dilation: Some(affected_by_time_dilation),
+        })
     }
 }
 
