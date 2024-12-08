@@ -284,7 +284,7 @@ impl Validate for Settings {
     }
 }
 
-impl<'a> Validate for Option<&'a Settings> {
+impl Validate for Option<&Settings> {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         self.map(Validate::validate).unwrap_or(Ok(()))
     }
@@ -373,9 +373,7 @@ impl ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>> for
     }
 }
 
-impl<'a> ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>>
-    for Option<&'a Settings>
-{
+impl ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>> for Option<&Settings> {
     fn validate_for(
         &self,
         rhs: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
