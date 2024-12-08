@@ -66,11 +66,11 @@ pub mod validation {
         )]
         /// An error occured while converting audio ID to CName.
         InvalidAudioID { source: std::ffi::NulError },
-        #[snafu(
-            display("invalid audio setting {which}: {why}"),
-            visibility(pub(crate))
-        )]
-        InvalidAudioSetting { which: &'static str, why: String },
+        #[snafu(display("invalid audio setting(s) {which}: {}", why.iter().map(|x| format!("{}: {}", x.which, x.why)).collect::<Vec<_>>().join("\n")), visibility(pub(crate)))]
+        InvalidAudioSettings {
+            which: String,
+            why: Vec<audioware_manifest::error::ValidationError>,
+        },
         #[snafu(display("invalid audio caption"), visibility(pub(crate)))]
         InvalidAudioCaption { which: String, why: String },
         #[snafu(display("cannot store data: {key}"), visibility(pub(crate)))]

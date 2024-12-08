@@ -1,15 +1,26 @@
 use std::time::Duration;
 
 use audioware_core::With;
+use either::Either;
 use kira::{
     sound::{
-        static_sound::StaticSoundData, streaming::StreamingSoundData, EndPosition,
+        static_sound::StaticSoundData, streaming::StreamingSoundData, EndPosition, FromFileError,
         IntoOptionalRegion, PlaybackPosition, PlaybackRate,
     },
     tween::Tween,
     StartTime, Volume,
 };
 use serde::Deserialize;
+
+use crate::error::ValidationError;
+
+pub trait Validate {
+    fn validate(&self) -> Result<(), Vec<ValidationError>>;
+}
+
+pub trait ValidateFor<T> {
+    fn validate_for(&self, rhs: &T) -> Result<(), Vec<ValidationError>>;
+}
 
 /// Deserialization type
 /// for [kira::sound::static_sound::StaticSoundSettings]
@@ -246,6 +257,142 @@ macro_rules! impl_from_settings {
 
 impl_from_settings!(::kira::sound::static_sound::StaticSoundSettings);
 impl_from_settings!(::kira::sound::streaming::StreamingSoundSettings);
+
+impl Validate for Settings {
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        let mut errors: Vec<_> = vec![];
+        if let Some(panning) = self.panning {
+            if !(0.0..=1.0).contains(&panning) {
+                errors.push(ValidationError {
+                    which: "panning",
+                    why: "must be a value between 0.0 and 1.0 (inclusive)",
+                });
+            }
+        }
+        if let Some(volume) = self.volume {
+            if Volume::Amplitude(volume).as_decibels() > 85.0 {
+                errors.push(ValidationError {
+                    which: "volume",
+                    why: "audio should not be louder than 85.0 dB",
+                });
+            }
+        }
+        if errors.is_empty() {
+            return Ok(());
+        }
+        Err(errors)
+    }
+}
+
+impl<'a> Validate for Option<&'a Settings> {
+    fn validate(&self) -> Result<(), Vec<ValidationError>> {
+        self.map(Validate::validate).unwrap_or(Ok(()))
+    }
+}
+
+impl ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>> for Settings {
+    fn validate_for(
+        &self,
+        audio: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
+    ) -> Result<(), Vec<ValidationError>> {
+        let mut errors = vec![];
+        if let Some(ref region) = self.region {
+            let total_duration = match audio {
+                Either::Left(x) => x.total_duration(),
+                Either::Right(x) => x.total_duration(),
+            }
+            .as_secs_f64();
+            let start: f64 = match (region.starts(), audio) {
+                (Some(PlaybackPosition::Seconds(seconds)), _) => seconds,
+                (Some(PlaybackPosition::Samples(samples)), Either::Left(data)) => {
+                    samples as f64 / data.sample_rate as f64
+                }
+                // no sample rate method yet
+                (Some(PlaybackPosition::Samples(_)), Either::Right(_)) => {
+                    errors.push(ValidationError {
+                        which: "region.starts",
+                        why: "samples unit is not supported with streaming sound yet",
+                    });
+                    return Err(errors);
+                }
+                // none implicitly means beginning of the audio
+                (None, _) => 0.0,
+            };
+            let end: f64 = match (region.ends(), audio) {
+                (Some(EndPosition::Custom(PlaybackPosition::Seconds(x))), _) => x,
+                (
+                    Some(EndPosition::Custom(PlaybackPosition::Samples(samples))),
+                    Either::Left(data),
+                ) => samples as f64 / data.sample_rate as f64,
+                // no sample rate method yet
+                (Some(EndPosition::Custom(PlaybackPosition::Samples(_))), Either::Right(_)) => {
+                    errors.push(ValidationError { which: "region.ends", why: "samples unit is not supported with streaming sound yet" });
+                    return Err(errors);
+                }
+                (Some(EndPosition::EndOfAudio), Either::Left(_)) |
+                (Some(EndPosition::EndOfAudio), Either::Right(_)) |
+                // none implicitly means end of the audio
+                (None, _) => total_duration,
+            };
+            if start < 0.
+                || end <= 0.
+                || start >= total_duration
+                || end > total_duration
+                || start >= end
+            {
+                errors.push(ValidationError {
+                    which: "region",
+                    why: "must be within audio duration and starts before it ends",
+                });
+            }
+            if let Some(start_position) = self.start_position.map(|x| x.as_secs_f64()) {
+                if start_position >= end {
+                    errors.push(ValidationError {
+                        which: "start_position",
+                        why: "greater than audio duration",
+                    });
+                }
+            }
+        } else if let Some(start_position) = self.start_position.map(|x| x.as_secs_f64()) {
+            let duration = match audio {
+                Either::Left(x) => x.duration(),
+                Either::Right(x) => x.duration(),
+            }
+            .as_secs_f64();
+            if start_position >= duration {
+                errors.push(ValidationError {
+                    which: "start_position",
+                    why: "greater than audio duration",
+                });
+            }
+        }
+        if errors.is_empty() {
+            return Ok(());
+        }
+        Err(errors)
+    }
+}
+
+impl<'a> ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>>
+    for Option<&'a Settings>
+{
+    fn validate_for(
+        &self,
+        rhs: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
+    ) -> Result<(), Vec<ValidationError>> {
+        self.map(|x| x.validate_for(rhs)).unwrap_or(Ok(()))
+    }
+}
+
+impl ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>> for Tween {
+    #[inline]
+    fn validate_for(
+        &self,
+        _: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
+    ) -> Result<(), Vec<ValidationError>> {
+        Ok(())
+    }
+}
 
 #[cfg(test)]
 mod tests {

@@ -2,7 +2,7 @@ use std::{fmt::Debug, ops::Div};
 
 use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
 use audioware_core::With;
-use audioware_manifest::{Locale, ScnDialogLineType, Settings, Source};
+use audioware_manifest::{Locale, ScnDialogLineType, Settings, Source, ValidateFor};
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
@@ -205,13 +205,18 @@ where
     ) where
         StaticSoundData: With<Option<T>>,
         StreamingSoundData<FromFileError>: With<Option<T>>,
-        T: AffectedByTimeDilation,
+        T: AffectedByTimeDilation
+            + ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>>,
     {
         let spoken = SpokenLocale::get();
         let gender = entity_id.as_ref().and_then(ToGender::to_gender);
         match self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
             Ok(key) => {
                 let data = self.banks.data(key);
+                if let Some(Err(e)) = ext.as_ref().map(|x| x.validate_for(&data)) {
+                    warns!("invalid setting(s) for audio: {e:#?}");
+                    return;
+                }
                 let duration: f32;
                 let dilatable = ext
                     .as_ref()
@@ -289,7 +294,8 @@ where
     ) where
         StaticSoundData: With<Option<T>>,
         StreamingSoundData<FromFileError>: With<Option<T>>,
-        T: AffectedByTimeDilation,
+        T: AffectedByTimeDilation
+            + ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>>,
     {
         if !entity_id.is_defined() {
             warns!("cannot play sound on undefined entity: {sound_name}");
@@ -306,6 +312,11 @@ where
                     {
                         let duration: f32;
                         let data = self.banks.data(key);
+
+                        if let Some(Err(e)) = ext.as_ref().map(|x| x.validate_for(&data)) {
+                            warns!("invalid setting(s) for audio: {e:#?}");
+                            return;
+                        }
                         let dilatable = ext
                             .as_ref()
                             .map(AffectedByTimeDilation::affected_by_time_dilation)
@@ -396,7 +407,8 @@ where
     ) where
         StaticSoundData: With<Option<T>>,
         StreamingSoundData<FromFileError>: With<Option<T>>,
-        T: AffectedByTimeDilation,
+        T: AffectedByTimeDilation
+            + ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>>,
     {
         if Self::exists(&switch_name) {
             self.tracks.stop_by(

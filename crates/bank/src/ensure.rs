@@ -10,13 +10,7 @@ use std::{
 use audioware_core::With;
 use audioware_manifest::*;
 use either::Either;
-use kira::{
-    sound::{
-        static_sound::StaticSoundData, streaming::StreamingSoundData, EndPosition, FromFileError,
-        PlaybackPosition,
-    },
-    Volume,
-};
+use kira::sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError};
 use red4ext_rs::types::{CName, CNamePool};
 use snafu::ensure;
 
@@ -228,7 +222,7 @@ pub fn ensure_valid_audio(
             })
             .map(Either::Right)?,
     };
-    ensure_valid_audio_settings(&data, settings, path.as_ref())?;
+    ensure_valid_contextual_audio_settings(&data, settings, path.as_ref())?;
     if let Some(captions) = captions {
         ensure_valid_jingle_captions(&data, captions)?;
     }
@@ -236,103 +230,20 @@ pub fn ensure_valid_audio(
 }
 
 /// Ensure given settings are valid for audio.
-pub fn ensure_valid_audio_settings(
+pub fn ensure_valid_contextual_audio_settings(
     audio: &Either<StaticSoundData, StreamingSoundData<FromFileError>>,
     settings: Option<&Settings>,
     path: &Path,
 ) -> Result<(), Error> {
-    if let Some(settings) = settings {
-        let duration = match audio {
-            Either::Left(x) => x.duration(),
-            Either::Right(x) => x.duration(),
+    let mut errors = settings.validate().err().unwrap_or_default();
+    errors.extend(settings.validate_for(audio).err().unwrap_or_default());
+    ensure!(
+        errors.is_empty(),
+        InvalidAudioSettingsSnafu {
+            which: path.display().to_string(),
+            why: errors
         }
-        .as_secs_f64();
-        if let Some(start_position) = settings.start_position.map(|x| x.as_secs_f64()) {
-            ensure!(
-                start_position < duration,
-                InvalidAudioSettingSnafu {
-                    which: "start_position",
-                    why: format!("greater than audio duration: {}", path.display())
-                }
-            );
-        }
-        if let Some(panning) = settings.panning {
-            ensure!(
-                (0.0..=1.0).contains(&panning),
-                InvalidAudioSettingSnafu {
-                    which: "panning",
-                    why: format!(
-                        "must be a value between 0.0 and 1.0 (inclusive): {}",
-                        path.display()
-                    )
-                }
-            );
-        }
-        if let Some(volume) = settings.volume {
-            ensure!(
-                Volume::Amplitude(volume).as_decibels() <= 85.0,
-                InvalidAudioSettingSnafu {
-                    which: "volume",
-                    why: format!(
-                        "audio should not be louder than 85.0 dB: {}",
-                        path.display()
-                    )
-                }
-            );
-        }
-        if let Some(ref region) = settings.region {
-            let start: f64 = match (region.starts(), audio) {
-                (Some(PlaybackPosition::Seconds(seconds)), _) => seconds,
-                (Some(PlaybackPosition::Samples(samples)), Either::Left(data)) => {
-                    samples as f64 / data.sample_rate as f64
-                }
-                // no sample rate method yet
-                (Some(PlaybackPosition::Samples(_)), Either::Right(_)) => {
-                    return InvalidAudioSettingSnafu {
-                        which: "region.starts",
-                        why: format!(
-                            "samples unit is not supported with streaming sound yet: {}",
-                            path.display()
-                        ),
-                    }
-                    .fail()
-                    .map_err(Into::<Error>::into)
-                }
-                // none implicitly means beginning of the audio
-                (None, _) => 0.0,
-            };
-            let end: f64 = match (region.ends(), audio) {
-                (Some(EndPosition::Custom(PlaybackPosition::Seconds(x))), _) => x,
-                (
-                    Some(EndPosition::Custom(PlaybackPosition::Samples(samples))),
-                    Either::Left(data),
-                ) => samples as f64 / data.sample_rate as f64,
-                // no sample rate method yet
-                (Some(EndPosition::Custom(PlaybackPosition::Samples(_))), Either::Right(_)) => {
-                    return InvalidAudioSettingSnafu {
-                        which: "region.ends",
-                        why: format!("samples unit is not supported with streaming sound yet: {}", path.display()),
-                    }
-                    .fail()
-                    .map_err(Into::<Error>::into)
-                }
-                (Some(EndPosition::EndOfAudio), Either::Left(_)) |
-                (Some(EndPosition::EndOfAudio), Either::Right(_)) |
-                // none implicitly means end of the audio
-                (None, _) => duration,
-            };
-            ensure!(
-                start >= 0.0 && end > 0.0 && start < duration && end <= duration && start < end,
-                InvalidAudioSettingSnafu {
-                    which: "region",
-                    why: format!(
-                        "must be within audio duration and starts before it ends: {}",
-                        path.display()
-                    )
-                }
-            );
-        }
-    }
+    );
     Ok(())
 }
 

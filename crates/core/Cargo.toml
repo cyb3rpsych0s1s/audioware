@@ -6,3 +6,4 @@ rust-version.workspace = true
 
 [dependencies]
 kira.workspace = true
+snafu.workspace = true

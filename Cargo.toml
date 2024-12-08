@@ -18,7 +18,8 @@ audioware-manifest = { path = "crates/manifest" }
 audioware-bank = { path = "crates/bank" }
 either = "1.13"
 glam = "0.29"
-kira = { version = "0.9.6", features = ["serde"] }
+# kira = { version = "0.9.6", features = ["serde"] }
+kira = { git = "https://github.com/Roms1383/kira", branch = "feat/total-duration", features = ["serde"] }
 rayon = "1.10"
 red4ext-rs = { git = "https://github.com/Roms1383/red4ext-rs", branch = "chore/solo" }
 # red4ext-rs-bindings = { git = "https://github.com/jac3km4/red4ext-rs-bindings", rev = "v0.5.0" }

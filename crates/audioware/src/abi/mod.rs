@@ -1,4 +1,4 @@
-use audioware_manifest::{Locale, PlayerGender, ScnDialogLineType};
+use audioware_manifest::{Locale, PlayerGender, ScnDialogLineType, Validate};
 use command::Command;
 use crossbeam::channel::bounded;
 use kira::manager::backend::cpal::CpalBackend;
@@ -380,12 +380,17 @@ impl ExtCommand for AudioSystemExt {
         line_type: Opt<ScnDialogLineType>,
         ext: Ref<AudioSettingsExt>,
     ) {
+        let ext = ext.into_settings();
+        if let Some(Err(e)) = ext.as_ref().map(Validate::validate) {
+            warns!("invalid audio settings: {:#?}", e);
+            return;
+        }
         queue::send(Command::Play {
             sound_name,
             entity_id: entity_id.into_option(),
             emitter_name: emitter_name.into_option(),
             line_type: line_type.into_option(),
-            ext: ext.into_settings(),
+            ext,
         });
     }
 
@@ -411,11 +416,16 @@ impl ExtCommand for AudioSystemExt {
         emitter_name: Opt<CName>,
         ext: Ref<AudioSettingsExt>,
     ) {
+        let ext = ext.into_settings();
+        if let Some(Err(e)) = ext.as_ref().map(Validate::validate) {
+            warns!("invalid audio settings: {:#?}", e);
+            return;
+        }
         queue::send(Command::PlayOnEmitter {
             event_name,
             entity_id,
             emitter_name: emitter_name.into_option(),
-            ext: ext.into_settings(),
+            ext,
         });
     }
 
@@ -443,13 +453,18 @@ impl ExtCommand for AudioSystemExt {
         switch_name_tween: Ref<Tween>,
         switch_value_ext: Ref<AudioSettingsExt>,
     ) {
+        let switch_value_ext = switch_value_ext.into_settings();
+        if let Some(Err(e)) = switch_value_ext.as_ref().map(Validate::validate) {
+            warns!("invalid audio settings: {:#?}", e);
+            return;
+        }
         queue::send(Command::Switch {
             switch_name,
             switch_value,
             entity_id: entity_id.into_option(),
             emitter_name: emitter_name.into_option(),
             switch_name_tween: switch_name_tween.into_tween(),
-            switch_value_settings: switch_value_ext.into_settings(),
+            switch_value_settings: switch_value_ext,
         });
     }
 

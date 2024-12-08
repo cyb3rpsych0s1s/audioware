@@ -54,3 +54,10 @@ pub enum ConversionError {
     #[snafu(display("missing buffer size"))]
     MissingBufferSize,
 }
+
+#[derive(Debug, Snafu)]
+#[snafu(display("invalid audio setting {which}: {why}"), visibility(pub))]
+pub struct ValidationError {
+    pub which: &'static str,
+    pub why: &'static str,
+}
