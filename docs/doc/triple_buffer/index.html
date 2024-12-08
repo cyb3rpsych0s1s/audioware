@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Triple buffering in Rust"><title>triple_buffer - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-b0742ba02757f159.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="triple_buffer" data-themes="" data-resource-suffix="" data-rustdoc-version="1.83.0 (90b35a623 2024-11-26)" data-channel="1.83.0" data-search-js="search-f0d225181b97f9a4.js" data-settings-js="settings-805db61a62df4bd2.js" ><script src="../static.files/storage-1d39b6787ed640ff.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-f070b9041d14864c.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-0111fcff984fae8f.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../triple_buffer/index.html">triple_<wbr>buffer</a><span class="version">8.0.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>triple_buffer</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/triple_buffer/lib.rs.html#1-981">source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Triple buffering in Rust</p>
+<p>In this crate, we propose a Rust implementation of triple buffering. This is
+a non-blocking thread synchronization mechanism that can be used when a
+single producer thread is frequently updating a shared data block, and a
+single consumer thread wants to be able to read the latest available version
+of the shared data whenever it feels like it.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>For many use cases, you can use the ergonomic write/read interface, where
+the producer moves values into the buffer and the consumer accesses the
+latest buffer by shared reference:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Create a triple buffer
+</span><span class="kw">use </span>triple_buffer::triple_buffer;
+<span class="kw">let </span>(<span class="kw-2">mut </span>buf_input, <span class="kw-2">mut </span>buf_output) = triple_buffer(<span class="kw-2">&amp;</span><span class="number">0</span>);
+
+<span class="comment">// The producer thread can move a value into the buffer at any time
+</span><span class="kw">let </span>producer = std::thread::spawn(<span class="kw">move </span>|| buf_input.write(<span class="number">42</span>));
+
+<span class="comment">// The consumer thread can read the latest value at any time
+</span><span class="kw">let </span>consumer = std::thread::spawn(<span class="kw">move </span>|| {
+    <span class="kw">let </span>latest = buf_output.read();
+    <span class="macro">assert!</span>(<span class="kw-2">*</span>latest == <span class="number">42 </span>|| <span class="kw-2">*</span>latest == <span class="number">0</span>);
+});
+</code></pre></div>
+<p>In situations where moving the original value away and being unable to
+modify it on the consumer’s side is too costly, such as if creating a new
+value involves dynamic memory allocation, you can use a lower-level API
+which allows you to access the producer and consumer’s buffers in place
+and to precisely control when updates are propagated:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Create and split a triple buffer
+</span><span class="kw">use </span>triple_buffer::triple_buffer;
+<span class="kw">let </span>(<span class="kw-2">mut </span>buf_input, <span class="kw-2">mut </span>buf_output) = triple_buffer(<span class="kw-2">&amp;</span>String::with_capacity(<span class="number">42</span>));
+
+<span class="comment">// Mutate the input buffer in place
+</span>{
+    <span class="comment">// Acquire a reference to the input buffer
+    </span><span class="kw">let </span>input = buf_input.input_buffer();
+
+    <span class="comment">// In general, you don't know what's inside of the buffer, so you should
+    // always reset the value before use (this is a type-specific process).
+    </span>input.clear();
+
+    <span class="comment">// Perform an in-place update
+    </span>input.push_str(<span class="string">"Hello, "</span>);
+}
+
+<span class="comment">// Publish the above input buffer update
+</span>buf_input.publish();
+
+<span class="comment">// Manually fetch the buffer update from the consumer interface
+</span>buf_output.update();
+
+<span class="comment">// Acquire reference to the output buffer
+</span><span class="kw">let </span>output = buf_output.peek_output_buffer();
+<span class="macro">assert_eq!</span>(<span class="kw-2">*</span>output, <span class="string">"Hello, "</span>);
+
+<span class="comment">// Or acquire it mutably if necessary
+</span><span class="kw">let </span>output_mut = buf_output.output_buffer();
+
+<span class="comment">// Post-process the output value before use
+</span>output_mut.push_str(<span class="string">"world!"</span>);</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Input.html" title="struct triple_buffer::Input">Input</a></div><div class="desc docblock-short">Producer interface to the triple buffer</div></li><li><div class="item-name"><a class="struct" href="struct.Output.html" title="struct triple_buffer::Output">Output</a></div><div class="desc docblock-short">Consumer interface to the triple buffer</div></li><li><div class="item-name"><a class="struct" href="struct.TripleBuffer.html" title="struct triple_buffer::TripleBuffer">Triple<wbr>Buffer</a></div><div class="desc docblock-short">A triple buffer, useful for nonblocking and thread-safe data sharing</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.triple_buffer.html" title="fn triple_buffer::triple_buffer">triple_<wbr>buffer</a></div><div class="desc docblock-short">Shorthand for <code>TripleBuffer::new(initial).split()</code></div></li></ul></section></div></main></body></html>
