@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"static":["EMITTERS"],"struct":["Dilation","Emitter","Emitters","Handle","Handles","Listener","Scene"],"trait":["AsEntityExt"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["PADDING_13","PADDING_4C","PADDING_A"],"struct":["DialogLine","DialogLineEnd","DialogLineEventData","StopDialogLine"]};

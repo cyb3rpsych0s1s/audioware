@@ -1,0 +1,1 @@
+searchState.loadedDescShard("symphonia_format_ogg", 0, "OGG demultiplexer.\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.")
