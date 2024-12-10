@@ -251,6 +251,10 @@ impl Scene {
         }
         if let Some(emitter) = self.emitters.get_mut(&entity_id) {
             emitter.names.insert(emitter_name);
+            lifecycle!(
+                "emitter already exists, paired {} [{entity_id}]: emitter settings skipped",
+                emitter_name.map(|x| x.as_str()).unwrap_or("None")
+            );
             return Ok(());
         }
         let (gender, position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
