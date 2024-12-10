@@ -43,6 +43,7 @@ impl AsRef<IScriptable> for GameObject {
 
 pub trait AsGameObject {
     fn is_player(&self) -> bool;
+    fn get_display_name(&self) -> String;
 }
 
 impl AsGameObject for Ref<GameObject> {
@@ -54,6 +55,29 @@ impl AsGameObject for Ref<GameObject> {
             .as_function()
             .execute::<_, bool>(unsafe { self.instance() }.map(AsRef::as_ref), ())
             .unwrap()
+    }
+
+    fn get_display_name(&self) -> String {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(GameObject::NAME)).unwrap();
+        let method = cls.get_method(CName::new("GetDisplayName")).ok().unwrap();
+        method
+            .as_function()
+            .execute::<_, String>(unsafe { self.instance() }.map(AsRef::as_ref), ())
+            .unwrap()
+    }
+}
+
+pub trait AsGameObjectExt {
+    /// Provide a simple interface to resolve
+    /// the name the most likely to be displayed
+    /// for any game object and descendants.
+    fn resolve_display_name(&self) -> String;
+}
+
+impl AsGameObjectExt for Ref<GameObject> {
+    fn resolve_display_name(&self) -> String {
+        self.get_display_name()
     }
 }
 
@@ -94,6 +118,13 @@ impl AsRef<Entity> for VehicleObject {
 impl AsRef<IScriptable> for VehicleObject {
     fn as_ref(&self) -> &IScriptable {
         self.base.as_ref()
+    }
+}
+
+impl AsGameObjectExt for Ref<VehicleObject> {
+    fn resolve_display_name(&self) -> String {
+        let go = unsafe { std::mem::transmute::<&Ref<VehicleObject>, &Ref<GameObject>>(self) };
+        go.resolve_display_name()
     }
 }
 
