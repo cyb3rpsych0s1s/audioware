@@ -4,10 +4,10 @@ use red4ext_rs::{
         CName, Cruid, EntityId, IScriptable, ISerializable, NodeRef, RaRef, RedArray, RedString,
         Ref, TweakDbId, WeakRef,
     },
-    NativeRepr, ScriptClass,
+    NativeRepr, RttiSystem, ScriptClass,
 };
 
-use super::{CallbackHandle, DelayId, GameObject, InteractionChoice, Vector4};
+use super::{AsGameObjectExt, CallbackHandle, DelayId, GameObject, InteractionChoice, Vector4};
 
 #[repr(C)]
 pub struct Device {
@@ -68,6 +68,33 @@ pub struct Device {
 unsafe impl ScriptClass for Device {
     const NAME: &'static str = "Device";
     type Kind = Scripted;
+}
+
+pub trait AsDevice {
+    fn get_device_name(&self) -> String;
+}
+
+impl AsDevice for Ref<Device> {
+    fn get_device_name(&self) -> String {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(Device::NAME)).unwrap();
+        let method = cls.get_method(CName::new("GetDeviceName;")).ok().unwrap();
+        method
+            .as_function()
+            .execute::<_, String>(unsafe { self.instance() }.map(AsRef::as_ref), ())
+            .unwrap()
+    }
+}
+
+impl AsGameObjectExt for Ref<Device> {
+    fn resolve_display_name(&self) -> String {
+        let name = self.get_device_name();
+        if name.is_empty() {
+            let go = unsafe { std::mem::transmute::<&Ref<Device>, &Ref<GameObject>>(self) };
+            return go.resolve_display_name();
+        }
+        name
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
