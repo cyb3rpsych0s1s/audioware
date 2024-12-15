@@ -1,205 +1,40 @@
-use std::{collections::HashSet, sync::LazyLock};
-
 use audioware_manifest::PlayerGender;
-use dashmap::{iter::IterMut, mapref::one::RefMut, DashMap, DashSet};
+use dashmap::DashSet;
+use dilation::Dilation;
+use emitter::{Emitter, Emitters, EMITTERS};
 use kira::{
     manager::{backend::Backend, AudioManager},
-    sound::{
-        static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError,
-        PlaybackState,
-    },
+    sound::PlaybackState,
     spatial::{
-        emitter::{EmitterDistances, EmitterHandle, EmitterSettings},
-        listener::{ListenerHandle, ListenerSettings},
+        emitter::{EmitterDistances, EmitterSettings},
+        listener::ListenerSettings,
         scene::{SpatialSceneHandle, SpatialSceneSettings},
     },
     tween::Tween,
 };
-use parking_lot::RwLock;
+use listener::Listener;
 use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 
 use crate::{
     error::{Error, SceneError},
-    get_player, AIActionHelper, AsEntity, AsGameInstance, AsScriptedPuppet, AsScriptedPuppetExt,
-    AsTimeDilatable, AvObject, BikeObject, CarObject, Device, Entity, GameObject, GamedataNpcType,
-    ScriptedPuppet, TankObject, TimeDilatable, Vector4, VehicleObject,
+    get_player, AsEntity, AsScriptedPuppet, AsScriptedPuppetExt, AsTimeDilatable, AvObject,
+    BikeObject, CarObject, Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject,
+    TimeDilatable, VehicleObject,
 };
 
-use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY, DilationUpdate};
+use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
 
-#[derive(Debug)]
-pub struct Listener {
-    id: EntityId,
-    handle: ListenerHandle,
-    dilation: Dilation,
-}
+mod dilation;
+mod emitter;
+mod listener;
 
-#[derive(Debug)]
-pub struct Emitter {
-    handles: Handles,
-    handle: EmitterHandle,
-    names: DashSet<Option<CName>>,
-    dilation: Dilation,
-    last_known_position: Vector4,
-    busy: bool,
-    persist_until_sounds_finishes: bool,
-    marked_for_death: bool,
-    #[allow(dead_code, reason = "todo")]
-    gender: Option<PlayerGender>,
-}
-
-impl Emitter {
-    pub fn store_static(
-        &mut self,
-        event_name: CName,
-        handle: StaticSoundHandle,
-        affected_by_time_dilation: bool,
-    ) {
-        self.handles.statics.push(Handle {
-            event_name,
-            handle,
-            affected_by_time_dilation,
-        });
-    }
-    pub fn store_stream(
-        &mut self,
-        event_name: CName,
-        handle: StreamingSoundHandle<FromFileError>,
-        affected_by_time_dilation: bool,
-    ) {
-        self.handles.streams.push(Handle {
-            event_name,
-            handle,
-            affected_by_time_dilation,
-        });
-    }
-    pub fn any_playing_handle(&self) -> bool {
-        self.handles
-            .statics
-            .iter()
-            .any(|x| x.handle.state() == PlaybackState::Playing)
-            || self
-                .handles
-                .streams
-                .iter()
-                .any(|x| x.handle.state() == PlaybackState::Playing)
-    }
-}
-
-impl AsRef<EmitterHandle> for Emitter {
-    fn as_ref(&self) -> &EmitterHandle {
-        &self.handle
-    }
-}
-
-#[derive(Debug)]
-pub struct Handle<T> {
-    event_name: CName,
-    handle: T,
-    affected_by_time_dilation: bool,
-}
-
-#[derive(Debug, Default)]
-pub struct Handles {
-    pub statics: Vec<Handle<StaticSoundHandle>>,
-    pub streams: Vec<Handle<StreamingSoundHandle<FromFileError>>>,
-}
-
-impl Drop for Handles {
-    fn drop(&mut self) {
-        // bug in kira DecodeScheduler NextStep::Wait
-        self.streams.iter_mut().for_each(|x| {
-            x.handle.stop(IMMEDIATELY);
-        });
-    }
-}
-
-#[allow(clippy::type_complexity)]
-static EMITTERS: LazyLock<RwLock<HashSet<(EntityId, Option<CName>)>>> =
-    LazyLock::new(|| RwLock::new(HashSet::new()));
+pub use dilation::{AffectedByTimeDilation, DilationUpdate};
 
 /// Audio spatial scene.
 pub struct Scene {
     pub emitters: Emitters,
     pub v: Listener,
     pub scene: SpatialSceneHandle,
-}
-
-pub struct Emitters(DashMap<EntityId, Emitter>);
-
-impl Emitters {
-    fn with_capacity(capacity: usize) -> Self {
-        *EMITTERS.write() = HashSet::with_capacity(capacity);
-        Self(DashMap::with_capacity(capacity))
-    }
-    pub fn exists(&self, entity_id: &EntityId) -> bool {
-        self.0.contains_key(entity_id)
-    }
-    fn get_mut(&mut self, entity_id: &EntityId) -> Option<RefMut<'_, EntityId, Emitter>> {
-        self.0.get_mut(entity_id)
-    }
-    pub fn get_mut_by_name(
-        &mut self,
-        entity_id: &EntityId,
-        emitter_name: &Option<CName>,
-    ) -> Option<RefMut<'_, EntityId, Emitter>> {
-        if let Some(emitter) = self.0.get_mut(entity_id) {
-            if emitter.names.contains(emitter_name) {
-                return Some(emitter);
-            }
-        }
-        None
-    }
-    fn insert(
-        &mut self,
-        entity_id: EntityId,
-        emitter_name: Option<CName>,
-        value: Emitter,
-    ) -> Option<Emitter> {
-        let inserted = self.0.insert(entity_id, value);
-        if inserted.is_none() {
-            EMITTERS.write().insert((entity_id, emitter_name));
-        }
-        inserted
-    }
-    fn remove(&mut self, entity_id: EntityId) -> bool {
-        let mut removed = false;
-        self.0.retain(|k, _| {
-            if *k == entity_id {
-                removed = true;
-                false
-            } else {
-                true
-            }
-        });
-        if !removed {
-            return false;
-        }
-        EMITTERS.write().retain(|(id, _)| *id != entity_id);
-        true
-    }
-    fn iter_mut(&mut self) -> IterMut<EntityId, Emitter> {
-        self.0.iter_mut()
-    }
-    fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-    fn retain<F>(&mut self, f: F)
-    where
-        F: FnMut(&EntityId, &mut Emitter) -> bool,
-    {
-        self.0.retain(f)
-    }
-    fn clear(&mut self) {
-        EMITTERS.write().clear();
-        self.0.clear();
-    }
-}
-
-impl Drop for Emitters {
-    fn drop(&mut self) {
-        EMITTERS.write().clear();
-    }
 }
 
 impl Scene {
@@ -578,80 +413,6 @@ impl Scene {
 
     pub fn emitters_count() -> i32 {
         EMITTERS.read().len() as i32
-    }
-}
-
-#[derive(Debug)]
-pub struct Dilation {
-    value: f32,
-    last: Option<DilationUpdate>,
-}
-
-impl Dilation {
-    fn new(value: f32) -> Self {
-        Self { value, last: None }
-    }
-    pub fn dilation(&self) -> f64 {
-        match self.last {
-            Some(ref update) => update.dilation(),
-            None => self.value as f64,
-        }
-    }
-    pub fn tween(&self) -> Option<Tween> {
-        self.last.as_ref().map(|x| x.tween_curve())
-    }
-}
-
-impl Emitter {
-    fn infos(entity_id: EntityId) -> Result<(Vector4, bool), Error> {
-        let game = GameInstance::new();
-        let entity = GameInstance::find_entity_by_id(game, entity_id);
-        if entity.is_null() {
-            return Err(Error::Scene {
-                source: SceneError::MissingEmitter { entity_id },
-            });
-        }
-        let busy = entity
-            .clone()
-            .cast::<GameObject>()
-            .map(AIActionHelper::is_in_workspot)
-            .unwrap_or(false);
-        let position = entity.get_world_position();
-        Ok((position, busy))
-    }
-
-    #[allow(clippy::type_complexity)]
-    fn full_infos(
-        entity_id: EntityId,
-    ) -> Result<
-        (
-            Option<PlayerGender>,
-            Vector4,
-            bool,
-            Option<f32>,
-            Option<EmitterDistances>,
-        ),
-        Error,
-    > {
-        let (position, busy) = Self::infos(entity_id)?;
-        let game = GameInstance::new();
-        let entity = GameInstance::find_entity_by_id(game, entity_id);
-        if entity.is_null() {
-            return Err(Error::Scene {
-                source: SceneError::MissingEmitter { entity_id },
-            });
-        }
-        let gender = entity.get_gender();
-        let distances = entity.get_emitter_distances();
-        if !entity.is_a::<TimeDilatable>() {
-            return Ok((gender, position, busy, None, distances));
-        }
-        let dilation = entity
-            .clone()
-            .cast::<TimeDilatable>()
-            .as_ref()
-            .map(AsTimeDilatable::get_time_dilation_value);
-        Ok((gender, position, busy, dilation, distances))
     }
 }
 

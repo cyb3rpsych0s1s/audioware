@@ -2,7 +2,7 @@ use std::{fmt::Debug, ops::Div};
 
 use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
 use audioware_core::With;
-use audioware_manifest::{Locale, ScnDialogLineType, Settings, Source, ValidateFor};
+use audioware_manifest::{Locale, ScnDialogLineType, Source, ValidateFor};
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
@@ -17,9 +17,7 @@ use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
 use scene::Scene;
 use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
-use tweens::{
-    DEFAULT, DILATION_EASE_IN, DILATION_EASE_OUT, DILATION_LINEAR, IMMEDIATELY, LAST_BREATH,
-};
+use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
 use crate::{
     error::{EngineError, Error},
@@ -36,6 +34,8 @@ mod modulators;
 mod scene;
 mod tracks;
 mod tweens;
+
+pub use scene::{AffectedByTimeDilation, DilationUpdate};
 
 #[cfg(not(feature = "hot-reload"))]
 static BANKS: std::sync::OnceLock<Banks> = std::sync::OnceLock::new();
@@ -691,83 +691,5 @@ impl ToOutputDestination for Id {
             .id()
             .into(),
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum DilationUpdate {
-    Set {
-        value: f32,
-        reason: CName,
-        ease_in_curve: CName,
-    },
-    Unset {
-        reason: CName,
-        ease_out_curve: CName,
-    },
-}
-
-impl DilationUpdate {
-    pub fn dilation(&self) -> f64 {
-        match self {
-            Self::Set { value, .. } => *value as f64,
-            Self::Unset { .. } => 1.,
-        }
-    }
-    pub fn tween_curve(&self) -> Tween {
-        if !self.has_curve() {
-            DILATION_LINEAR
-        } else {
-            match self {
-                Self::Set { .. } => DILATION_EASE_IN,
-                Self::Unset { .. } => DILATION_EASE_OUT,
-            }
-        }
-    }
-}
-
-impl DilationUpdate {
-    pub fn has_curve(&self) -> bool {
-        let curve = match self {
-            Self::Set { ease_in_curve, .. } => ease_in_curve,
-            Self::Unset { ease_out_curve, .. } => ease_out_curve,
-        }
-        .as_str();
-        curve != "None" && !curve.is_empty()
-    }
-}
-
-impl PartialEq for DilationUpdate {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (
-                Self::Set { value, reason, .. },
-                Self::Set {
-                    value: x,
-                    reason: y,
-                    ..
-                },
-            ) => *value == *x && *reason == *y,
-            (Self::Unset { reason, .. }, Self::Unset { reason: y, .. }) => *reason == *y,
-            _ => false,
-        }
-    }
-}
-
-pub trait AffectedByTimeDilation {
-    fn affected_by_time_dilation(&self) -> bool;
-}
-
-impl AffectedByTimeDilation for Settings {
-    #[inline(always)]
-    fn affected_by_time_dilation(&self) -> bool {
-        self.affected_by_time_dilation.unwrap_or(true)
-    }
-}
-
-impl AffectedByTimeDilation for Tween {
-    #[inline(always)]
-    fn affected_by_time_dilation(&self) -> bool {
-        true
     }
 }
