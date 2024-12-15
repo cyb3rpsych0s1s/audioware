@@ -1,10 +1,10 @@
+use std::num::NonZero;
+
 use audioware_manifest::PlayerGender;
-use dashmap::DashSet;
 use dilation::Dilation;
-use emitter::{Emitter, Emitters, EMITTERS};
+use emitters::{Emitter, Emitters, EMITTERS};
 use kira::{
     manager::{backend::Backend, AudioManager},
-    sound::PlaybackState,
     spatial::{
         emitter::{EmitterDistances, EmitterSettings},
         listener::ListenerSettings,
@@ -25,11 +25,11 @@ use crate::{
 use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
 
 mod dilation;
-mod emitter;
+mod emitters;
 mod listener;
 
 pub use dilation::{AffectedByTimeDilation, DilationUpdate};
-pub use emitter::EmitterKey;
+pub use emitters::Store;
 
 /// Audio spatial scene.
 pub struct Scene {
@@ -76,72 +76,47 @@ impl Scene {
 
     pub fn add_emitter(
         &mut self,
-        key: EmitterKey,
+        entity_id: EntityId,
         tag_name: CName,
-        settings: Option<EmitterSettings>,
+        emitter_name: Option<CName>,
+        settings: Option<(EmitterSettings, NonZero<u64>)>,
     ) -> Result<(), Error> {
-        let EmitterKey { entity_id, .. } = key;
         if entity_id == self.v.id {
             return Err(Error::Scene {
                 source: SceneError::InvalidEmitter,
             });
         }
-        // check whether the emitter has already been registered for this tag
-        if self.emitters.exists(&entity_id, &tag_name) {
-            return Err(Error::Scene {
-                source: SceneError::DuplicateEmitter {
-                    entity_id,
-                    tag_name,
-                },
-            });
-        }
-        // check whether a previously registered emitter with same settings can be reused
-        if let Some(emitter) = self.emitters.get_mut(&key) {
-            emitter.sharers.insert(tag_name);
-            lifecycle!(
-                "emitter already exists, paired {} [{entity_id}]",
-                tag_name.as_str()
-            );
-            return Ok(());
-        }
-        let (gender, position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
-        lifecycle!("emitter settings before {:?} [{entity_id}]", settings);
-        let settings = match settings {
-            Some(settings)
-                if settings.distances.min_distance == 0.
-                    && settings.distances.max_distance == 0. =>
-            {
-                settings.distances(distances.unwrap_or_default())
-            }
-            Some(settings) => settings,
-            None => EmitterSettings::default().distances(distances.unwrap_or_default()),
-        };
-        let emitter = self.scene.add_emitter(position, settings)?;
-        let names = DashSet::with_capacity(3);
-        names.insert(tag_name);
-        lifecycle!("emitter settings after {:?} [{entity_id}]", settings);
-        let handle = Emitter {
-            handle: emitter,
-            handles: Default::default(),
-            gender,
-            last_known_position: position,
-            busy,
-            sharers: names,
-            dilation: Dilation::new(dilation.unwrap_or(1.)),
-            persist_until_sounds_finishes: settings.persist_until_sounds_finish,
-            marked_for_death: false,
-        };
-        self.emitters.insert(key, tag_name, handle);
-        lifecycle!("added emitter {entity_id} with name {}", tag_name.as_str());
-        Ok(())
-    }
+        let paired = self
+            .emitters
+            .pair_emitter(entity_id, tag_name, emitter_name, settings)?;
+        if !paired {
+            let (position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
 
-    pub fn remove_emitter(&mut self, entity_id: EntityId) -> bool {
-        if self.emitters.remove(entity_id) {
-            lifecycle!("removed emitter {entity_id}");
-            return true;
+            lifecycle!("emitter settings before {:?} [{entity_id}]", settings);
+            let mapped = match settings {
+                Some((settings, _))
+                    if settings.distances.min_distance == 0.
+                        && settings.distances.max_distance == 0. =>
+                {
+                    settings.distances(distances.unwrap_or_default())
+                }
+                Some((settings, _)) => settings,
+                None => EmitterSettings::default().distances(distances.unwrap_or_default()),
+            };
+            lifecycle!("emitter settings after {:?} [{entity_id}]", mapped);
+            let handle = self.scene.add_emitter(position, mapped)?;
+            self.emitters.add_emitter(
+                entity_id,
+                tag_name,
+                emitter_name,
+                settings,
+                handle,
+                dilation,
+                position,
+                busy,
+            )?;
         }
-        false
+        Ok(())
     }
 
     pub fn stop_on_emitter(
@@ -152,37 +127,11 @@ impl Scene {
         tween: Tween,
     ) {
         self.emitters
-            .iter_mut()
-            .filter(|x| x.key().entity_id == entity_id && x.value().sharers.contains(&tag_name))
-            .for_each(|mut x| {
-                x.value_mut()
-                    .handles
-                    .statics
-                    .iter_mut()
-                    .filter(|x| x.event_name == event_name)
-                    .for_each(|x| {
-                        x.handle.stop(tween);
-                    });
-                x.value_mut()
-                    .handles
-                    .streams
-                    .iter_mut()
-                    .filter(|x| x.event_name == event_name)
-                    .for_each(|x| {
-                        x.handle.stop(tween);
-                    });
-            });
+            .stop_on_emitter(event_name, entity_id, tag_name, tween);
     }
 
     pub fn stop_emitters(&mut self, tween: Tween) {
-        self.emitters.iter_mut().for_each(|mut x| {
-            x.value_mut().handles.statics.iter_mut().for_each(|x| {
-                x.handle.stop(tween);
-            });
-            x.value_mut().handles.streams.iter_mut().for_each(|x| {
-                x.handle.stop(tween);
-            });
-        });
+        self.emitters.stop_emitters(tween);
     }
 
     fn sync_listener(&mut self) -> Result<(), Error> {
@@ -200,25 +149,7 @@ impl Scene {
     }
 
     fn sync_emitters(&mut self) -> Result<(), Error> {
-        if self.emitters.is_empty() {
-            return Ok(());
-        }
-        self.emitters.retain(|k, v| {
-            if v.marked_for_death && !v.any_playing_handle() {
-                EMITTERS.write().retain(|(id, _)| *id != k.entity_id);
-                return false;
-            }
-            let Ok((position, busy)) = Emitter::infos(k.entity_id) else {
-                EMITTERS.write().retain(|(id, _)| *id != k.entity_id);
-                return false;
-            };
-            v.busy = busy;
-            v.last_known_position = position;
-            // weirdly enough if emitter is not updated, sound(s) won't update as expected.
-            // e.g. when listener moves but emitter stands still.
-            v.handle.set_position(position, IMMEDIATELY);
-            true
-        });
+        self.emitters.sync_emitters()?;
         Ok(())
     }
 
@@ -228,50 +159,23 @@ impl Scene {
         Ok(())
     }
 
-    pub fn is_registered_emitter(entity_id: EntityId) -> bool {
-        EMITTERS.read().iter().any(|(id, _)| *id == entity_id)
+    pub fn is_registered_emitter(entity_id: EntityId, tag_name: Option<CName>) -> bool {
+        EMITTERS
+            .read()
+            .iter()
+            .any(|(id, tag)| *id == entity_id && tag_name.map(|x| x == *tag).unwrap_or(true))
+    }
+
+    pub fn unregister_emitter(&mut self, entity_id: &EntityId, tag_name: &CName) -> bool {
+        self.emitters.unregister_emitter(entity_id, tag_name)
     }
 
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
-        self.emitters.retain(|k, v| {
-            if k.entity_id == entity_id {
-                if !v.persist_until_sounds_finishes {
-                    v.handles
-                        .statics
-                        .iter_mut()
-                        .for_each(|x| x.handle.stop(IMMEDIATELY));
-                    v.handles
-                        .streams
-                        .iter_mut()
-                        .for_each(|x| x.handle.stop(IMMEDIATELY));
-                    EMITTERS.write().retain(|(id, _)| *id != k.entity_id);
-                    false
-                } else {
-                    v.marked_for_death = true;
-                    true
-                }
-            } else {
-                true
-            }
-        });
+        self.emitters.on_emitter_dies(&entity_id);
     }
 
     pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId, tween: Tween) {
-        self.emitters
-            .iter_mut()
-            .filter(|x| x.key().entity_id == entity_id && !x.value().persist_until_sounds_finishes)
-            .for_each(|mut x| {
-                x.value_mut()
-                    .handles
-                    .statics
-                    .iter_mut()
-                    .for_each(|x| x.handle.stop(tween));
-                x.value_mut()
-                    .handles
-                    .streams
-                    .iter_mut()
-                    .for_each(|x| x.handle.stop(tween));
-            });
+        self.emitters.on_emitter_incapacitated(entity_id, tween);
     }
 
     pub fn any_emitter(&self) -> bool {
@@ -284,46 +188,15 @@ impl Scene {
     }
 
     pub fn pause(&mut self, tween: Tween) {
-        self.emitters.iter_mut().for_each(|mut x| {
-            x.value_mut()
-                .handles
-                .statics
-                .iter_mut()
-                .for_each(|x| x.handle.pause(tween));
-            x.value_mut()
-                .handles
-                .streams
-                .iter_mut()
-                .for_each(|x| x.handle.pause(tween));
-        });
+        self.emitters.pause(tween);
     }
 
     pub fn resume(&mut self, tween: Tween) {
-        self.emitters.iter_mut().for_each(|mut x| {
-            x.value_mut()
-                .handles
-                .statics
-                .iter_mut()
-                .for_each(|x| x.handle.resume(tween));
-            x.value_mut()
-                .handles
-                .streams
-                .iter_mut()
-                .for_each(|x| x.handle.resume(tween));
-        });
+        self.emitters.resume(tween);
     }
 
     pub fn reclaim(&mut self) {
-        self.emitters.iter_mut().for_each(|mut x| {
-            x.value_mut()
-                .handles
-                .statics
-                .retain(|x| x.handle.state() != PlaybackState::Stopped);
-            x.value_mut()
-                .handles
-                .streams
-                .retain(|x| x.handle.state() != PlaybackState::Stopped);
-        });
+        self.emitters.reclaim();
     }
 
     pub fn set_listener_dilation(&mut self, dilation: &DilationUpdate) -> bool {
@@ -346,13 +219,9 @@ impl Scene {
 
     pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: &DilationUpdate) -> bool {
         let mut updated = false;
-        for mut emitter in self
-            .emitters
-            .iter_mut()
-            .filter(|x| x.key().entity_id == entity_id)
-        {
-            if emitter.dilation.last.as_ref() != Some(dilation) {
-                emitter.dilation.last = Some(dilation.clone());
+        if let Some(mut slots) = self.emitters.get_mut(&entity_id) {
+            if slots.value().dilation.last.as_ref() != Some(dilation) {
+                slots.value_mut().dilation.last = Some(dilation.clone());
                 updated = true;
             }
         }
@@ -368,13 +237,9 @@ impl Scene {
         dilation: &DilationUpdate,
     ) -> bool {
         let mut updated = false;
-        for mut emitter in self
-            .emitters
-            .iter_mut()
-            .filter(|x| x.key().entity_id == entity_id)
-        {
-            if emitter.dilation.last.as_ref() != Some(dilation) {
-                emitter.dilation.last = Some(dilation.clone());
+        if let Some(mut slots) = self.emitters.get_mut(&entity_id) {
+            if slots.value().dilation.last.as_ref() != Some(dilation) {
+                slots.value_mut().dilation.last = Some(dilation.clone());
                 updated = true;
             }
         }
@@ -387,12 +252,12 @@ impl Scene {
     fn sync_dilation(&mut self) {
         let listener = self.v.dilation.dilation(); // e.g. 0.7
         let mut tween = self.v.dilation.tween();
-        let mut rate: f64 = 1.;
-        self.emitters.iter_mut().for_each(|mut x| {
-            rate = 1. - (1. - listener)
+        for ref mut slots in self.emitters.iter_mut() {
+            let rate: f64 = 1. - (1. - listener)
                 + (
                     // e.g. 5 or 7
-                    x.dilation
+                    slots
+                        .dilation
                         .last
                         .as_ref()
                         .filter(|x| x.dilation() != 1.)
@@ -400,28 +265,11 @@ impl Scene {
                         .unwrap_or(0.)
                 );
             if tween.is_none() {
-                tween = x.dilation.tween();
+                tween = slots.dilation.tween();
             }
             lifecycle!("sync emitter handle dilation: {rate} {tween:?}");
-            x.value_mut()
-                .handles
-                .statics
-                .iter_mut()
-                .filter(|x| x.affected_by_time_dilation)
-                .for_each(|x| {
-                    x.handle
-                        .set_playback_rate(rate, tween.unwrap_or(IMMEDIATELY));
-                });
-            x.value_mut()
-                .handles
-                .streams
-                .iter_mut()
-                .filter(|x| x.affected_by_time_dilation)
-                .for_each(|x| {
-                    x.handle
-                        .set_playback_rate(rate, tween.unwrap_or(IMMEDIATELY));
-                });
-        });
+            slots.sync_dilation(rate, tween.unwrap_or(IMMEDIATELY));
+        }
     }
 
     pub fn listener_id(&self) -> EntityId {

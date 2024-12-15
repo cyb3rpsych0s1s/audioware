@@ -11,7 +11,7 @@ pub enum Command {
         emitter_name: Option<CName>,
     },
     Play {
-        sound_name: CName,
+        event_name: CName,
         entity_id: Option<EntityId>,
         emitter_name: Option<CName>,
         line_type: Option<ScnDialogLineType>,
@@ -65,7 +65,7 @@ impl std::fmt::Debug for Command {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Command::Play {
-                sound_name,
+                event_name: sound_name,
                 entity_id,
                 emitter_name,
                 line_type,

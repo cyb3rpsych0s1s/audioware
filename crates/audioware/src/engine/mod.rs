@@ -1,5 +1,6 @@
 use std::{
     fmt::Debug,
+    num::NonZero,
     ops::{Div, Not},
 };
 
@@ -17,11 +18,12 @@ use kira::{
 };
 use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
-pub use scene::{AffectedByTimeDilation, DilationUpdate, EmitterKey, Scene};
+pub use scene::{AffectedByTimeDilation, DilationUpdate, Scene};
 use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
 use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
+use crate::engine::scene::Store;
 use crate::{
     error::{EngineError, Error},
     propagate_subtitles,
@@ -307,8 +309,8 @@ where
         if let Some(ref mut scene) = self.scene {
             match self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
                 Ok(key) => {
-                    if let Some(ref mut emitter) =
-                        scene.emitters.get_mut_by_name(&entity_id, &tag_name)
+                    if let Some((emitter_id, emitter_name)) =
+                        scene.emitters.emitter_destination(&entity_id, &tag_name)
                     {
                         let duration: f32;
                         let data = self.banks.data(key);
@@ -326,35 +328,47 @@ where
                                 duration = data.duration().as_secs_f32();
                                 if let Ok(handle) = self
                                     .manager
-                                    .play(data.output_destination(emitter.as_ref()).with(ext))
+                                    .play(data.output_destination(emitter_id).with(ext))
                                 {
                                     lifecycle!(
                                         "playing static sound {} on {}",
                                         sound_name.as_str(),
                                         entity_id
                                     );
-                                    emitter.store_static(sound_name, handle, dilatable);
+                                    scene
+                                        .emitters
+                                        .store(tag_name, emitter_id, sound_name, handle, dilatable);
                                 }
                             }
                             Either::Right(data) => {
                                 duration = data.duration().as_secs_f32();
                                 if let Ok(handle) = self
                                     .manager
-                                    .play(data.output_destination(emitter.as_ref()).with(ext))
+                                    .play(data.output_destination(emitter_id).with(ext))
                                 {
                                     lifecycle!(
                                         "playing stream sound {} on {}",
                                         sound_name.as_str(),
                                         entity_id
                                     );
-                                    emitter.store_stream(sound_name, handle, dilatable);
+                                    scene
+                                        .emitters
+                                        .store(tag_name, emitter_id, sound_name, handle, dilatable);
                                 }
                             }
                         }
-                        let go = GameInstance::find_entity_by_id(GameInstance::new(), entity_id)
-                            .cast::<GameObject>();
-                        let emitter_name =
-                            go.and_then(|x| x.is_null().not().then_some(x.resolve_display_name()));
+                        let emitter_name = match emitter_name {
+                            Some(emitter_name) => Some(emitter_name.as_str().to_string()),
+                            None => {
+                                let go =
+                                    GameInstance::find_entity_by_id(GameInstance::new(), entity_id)
+                                        .cast::<GameObject>();
+
+                                go.and_then(|x| {
+                                    x.is_null().not().then_some(x.resolve_display_name())
+                                })
+                            }
+                        };
                         if let Some(emitter_name) = emitter_name {
                             propagate_subtitles(
                                 sound_name,
@@ -478,8 +492,8 @@ where
         self.set_preset(eq::Preset::None);
     }
 
-    pub fn is_registered_emitter(entity_id: EntityId) -> bool {
-        Scene::is_registered_emitter(entity_id)
+    pub fn is_registered_emitter(entity_id: EntityId, tag_name: Option<CName>) -> bool {
+        Scene::is_registered_emitter(entity_id, tag_name)
     }
 
     pub fn emitters_count() -> i32 {
@@ -488,12 +502,15 @@ where
 
     pub fn register_emitter(
         &mut self,
-        key: EmitterKey,
+        entity_id: EntityId,
         tag_name: CName,
-        emitter_settings: Option<EmitterSettings>,
+        emitter_name: Option<CName>,
+        emitter_settings: Option<(EmitterSettings, NonZero<u64>)>,
     ) -> bool {
         match self.scene {
-            Some(ref mut scene) => scene.add_emitter(key, tag_name, emitter_settings).is_ok(),
+            Some(ref mut scene) => scene
+                .add_emitter(entity_id, tag_name, emitter_name, emitter_settings)
+                .is_ok(),
             None => {
                 lifecycle!("scene is not initialized");
                 false
@@ -501,12 +518,9 @@ where
         }
     }
 
-    pub fn unregister_emitter(&mut self, entity_id: EntityId) -> bool {
+    pub fn unregister_emitter(&mut self, entity_id: EntityId, tag_name: CName) -> bool {
         match self.scene {
-            Some(ref mut scene) => {
-                scene.on_emitter_dies(entity_id);
-                scene.remove_emitter(entity_id)
-            }
+            Some(ref mut scene) => scene.unregister_emitter(&entity_id, &tag_name),
             None => {
                 lifecycle!("scene is not initialized");
                 false

@@ -44,6 +44,7 @@ pub enum EngineError {
 }
 
 #[derive(Debug, Snafu)]
+#[allow(clippy::enum_variant_names)]
 pub enum SceneError {
     #[snafu(display("V cannot be registered as an emitter."))]
     InvalidEmitter,

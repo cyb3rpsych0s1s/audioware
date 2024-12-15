@@ -3,11 +3,7 @@
 use core::fmt;
 use std::{hash::Hash, ops::Not};
 
-use red4ext_rs::{
-    class_kind::Scripted,
-    types::{CName, Opt, Ref},
-    ScriptClass,
-};
+use red4ext_rs::{class_kind::Scripted, types::Ref, ScriptClass};
 
 use super::{ElasticTween, LinearTween, ToEasing, Tween};
 
@@ -18,7 +14,6 @@ pub struct EmitterSettings {
     pub attenuation_function: Ref<Tween>,
     pub enable_spatialization: bool,
     pub persist_until_sounds_finish: bool,
-    pub override_emitter_name: Opt<CName>,
 }
 
 impl Default for EmitterSettings {
@@ -28,7 +23,6 @@ impl Default for EmitterSettings {
             attenuation_function: Default::default(),
             distances: Default::default(),
             persist_until_sounds_finish: false,
-            override_emitter_name: Default::default(),
         }
     }
 }
@@ -70,7 +64,6 @@ impl Hash for EmitterSettings {
 
         self.enable_spatialization.hash(state);
         self.persist_until_sounds_finish.hash(state);
-        // self.override_emitter_name is ignored on purpose
     }
 }
 
@@ -114,7 +107,6 @@ impl Clone for EmitterSettings {
             attenuation_function: self.attenuation_function.clone(),
             enable_spatialization: self.enable_spatialization,
             persist_until_sounds_finish: self.persist_until_sounds_finish,
-            override_emitter_name: self.override_emitter_name,
         }
     }
 }
@@ -128,14 +120,6 @@ impl fmt::Debug for EmitterSettings {
             .field(
                 "persist_until_sounds_finish",
                 &self.persist_until_sounds_finish,
-            )
-            .field(
-                "override_emitter_name",
-                &self
-                    .override_emitter_name
-                    .into_option()
-                    .map(|x| x.as_str())
-                    .unwrap_or("None"),
             )
             .finish()
     }
