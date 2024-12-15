@@ -287,7 +287,7 @@ impl SceneLifecycle for AudioSystemExt {
     ) -> bool {
         let (sender, receiver) = bounded(0);
         let Some(tag_name) = tag_name.into_option() else {
-            warns!("invalid tag name: {tag_name}");
+            warns!("invalid tag name: \"{tag_name}\"");
             return false;
         };
         let emitter_key = EmitterKey::from((&entity_id, &emitter_settings));
@@ -424,7 +424,7 @@ impl ExtCommand for AudioSystemExt {
     ) {
         let ext = ext.into_settings();
         let Some(tag_name) = tag_name.into_option() else {
-            warns!("invalid tag name: {tag_name}");
+            warns!("invalid tag name: \"{tag_name}\"");
             return;
         };
         if let Some(Err(e)) = ext.as_ref().map(Validate::validate) {
@@ -447,7 +447,7 @@ impl ExtCommand for AudioSystemExt {
         tween: Ref<Tween>,
     ) {
         let Some(tag_name) = tag_name.into_option() else {
-            warns!("invalid tag name: {tag_name}");
+            warns!("invalid tag name: \"{tag_name}\"");
             return;
         };
         queue::send(Command::StopOnEmitter {
