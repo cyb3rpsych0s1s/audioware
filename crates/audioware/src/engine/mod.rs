@@ -1,4 +1,7 @@
-use std::{fmt::Debug, ops::Div};
+use std::{
+    fmt::Debug,
+    ops::{Div, Not},
+};
 
 use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
 use audioware_core::With;
@@ -14,7 +17,7 @@ use kira::{
 };
 use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
-use scene::Scene;
+pub use scene::{AffectedByTimeDilation, DilationUpdate, EmitterKey, Scene};
 use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
 use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
@@ -23,7 +26,7 @@ use crate::{
     error::{EngineError, Error},
     propagate_subtitles,
     utils::{fails, lifecycle, success, warns},
-    AsAudioSystem, AsGameInstance,
+    AsAudioSystem, AsGameInstance, AsGameObjectExt, GameObject,
 };
 
 pub mod eq;
@@ -34,8 +37,6 @@ mod modulators;
 mod scene;
 mod tracks;
 mod tweens;
-
-pub use scene::{AffectedByTimeDilation, DilationUpdate};
 
 #[cfg(not(feature = "hot-reload"))]
 static BANKS: std::sync::OnceLock<Banks> = std::sync::OnceLock::new();
@@ -289,7 +290,7 @@ where
         &mut self,
         sound_name: CName,
         entity_id: EntityId,
-        emitter_name: Option<CName>,
+        tag_name: CName,
         ext: Option<T>,
     ) where
         StaticSoundData: With<Option<T>>,
@@ -308,7 +309,7 @@ where
                 Ok(key) => {
                     let emitter_exists = scene.emitters.exists(&entity_id);
                     if let Some(ref mut emitter) =
-                        scene.emitters.get_mut_by_name(&entity_id, &emitter_name)
+                        scene.emitters.get_mut_by_name(&entity_id, &tag_name)
                     {
                         let duration: f32;
                         let data = self.banks.data(key);
@@ -351,14 +352,15 @@ where
                                 }
                             }
                         }
-                        if entity_id.is_defined()
-                            && emitter_name
-                                .is_some_and(|x| !x.as_str().is_empty() && x.as_str() != "None")
-                        {
+                        let go = GameInstance::find_entity_by_id(GameInstance::new(), entity_id)
+                            .cast::<GameObject>();
+                        let emitter_name =
+                            go.and_then(|x| x.is_null().not().then_some(x.resolve_display_name()));
+                        if let Some(emitter_name) = emitter_name {
                             propagate_subtitles(
                                 sound_name,
                                 entity_id,
-                                emitter_name.unwrap(),
+                                CName::new(emitter_name.as_str()),
                                 ScnDialogLineType::default(),
                                 duration,
                             );
@@ -366,11 +368,11 @@ where
                             warns!("cannot propagate subtitles for voice, both entityID and emitterName must be defined: {sound_name}");
                         }
                     } else if emitter_exists {
-                        warns!("failed to find emitter {entity_id:?} with name {}, but the entityID is already registered as an emitter: did you use the same emitterName as when you registered?", emitter_name.map(|x| x.as_str()).unwrap_or("None"));
+                        warns!("failed to find emitter {entity_id:?} with name {}, but the entityID is already registered as an emitter: did you use the same emitterName as when you registered?", tag_name.as_str());
                     } else {
                         warns!(
                             "failed to find emitter {entity_id:?} with name {}",
-                            emitter_name.map(|x| x.as_str()).unwrap_or("None")
+                            tag_name.as_str()
                         );
                     }
                 }
@@ -445,16 +447,11 @@ where
         &mut self,
         event_name: CName,
         entity_id: EntityId,
-        emitter_name: Option<CName>,
+        tag_name: CName,
         tween: Option<Tween>,
     ) {
         if let Some(x) = self.scene.as_mut() {
-            x.stop_on_emitter(
-                event_name,
-                entity_id,
-                emitter_name,
-                tween.unwrap_or_default(),
-            );
+            x.stop_on_emitter(event_name, entity_id, tag_name, tween.unwrap_or_default());
         }
     }
 
@@ -494,14 +491,12 @@ where
 
     pub fn register_emitter(
         &mut self,
-        entity_id: EntityId,
-        emitter_name: Option<CName>,
+        key: EmitterKey,
+        tag_name: CName,
         emitter_settings: Option<EmitterSettings>,
     ) -> bool {
         match self.scene {
-            Some(ref mut scene) => scene
-                .add_emitter(entity_id, emitter_name, emitter_settings)
-                .is_ok(),
+            Some(ref mut scene) => scene.add_emitter(key, tag_name, emitter_settings).is_ok(),
             None => {
                 lifecycle!("scene is not initialized");
                 false

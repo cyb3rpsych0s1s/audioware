@@ -143,13 +143,13 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     },
                 ),
                 Lifecycle::RegisterEmitter {
-                    entity_id,
-                    emitter_name,
+                    tag_name,
+                    emitter_key,
                     emitter_settings,
                     sender,
                 } => {
                     let registered =
-                        engine.register_emitter(entity_id, emitter_name, emitter_settings);
+                        engine.register_emitter(emitter_key, tag_name, emitter_settings);
                     let _ = sender.try_send(registered);
                 }
                 Lifecycle::UnregisterEmitter { entity_id, sender } => {
@@ -227,9 +227,9 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Command::PlayOnEmitter {
                     event_name,
                     entity_id,
-                    emitter_name,
+                    tag_name,
                     ext,
-                } => engine.play_on_emitter(event_name, entity_id, emitter_name, ext),
+                } => engine.play_on_emitter(event_name, entity_id, tag_name, ext),
                 Command::PlayOverThePhone {
                     event_name,
                     emitter_name,
@@ -238,9 +238,9 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Command::StopOnEmitter {
                     event_name,
                     entity_id,
-                    emitter_name,
+                    tag_name,
                     tween,
-                } => engine.stop_on_emitter(event_name, entity_id, emitter_name, tween),
+                } => engine.stop_on_emitter(event_name, entity_id, tag_name, tween),
                 Command::StopVanilla {
                     event_name,
                     entity_id,

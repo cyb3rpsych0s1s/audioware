@@ -20,7 +20,7 @@ pub enum Command {
     PlayOnEmitter {
         event_name: CName,
         entity_id: EntityId,
-        emitter_name: Option<CName>,
+        tag_name: CName,
         ext: Option<Settings>,
     },
     PlayOverThePhone {
@@ -31,7 +31,7 @@ pub enum Command {
     StopOnEmitter {
         event_name: CName,
         entity_id: EntityId,
-        emitter_name: Option<CName>,
+        tag_name: CName,
         tween: Option<Tween>,
     },
     StopVanilla {
@@ -74,15 +74,15 @@ impl std::fmt::Debug for Command {
             Command::PlayOnEmitter {
                 event_name,
                 entity_id,
-                emitter_name,
+                tag_name,
                 ..
-            } => write!(f, "Command::PlayOnEmitter {{ event_name: {event_name}, entity_id: {entity_id}, emitter_name: {}, .. }}", emitter_name.map(|x| x.as_str()).unwrap_or("None")),
+            } => write!(f, "Command::PlayOnEmitter {{ event_name: {event_name}, entity_id: {entity_id}, emitter_name: {}, .. }}", tag_name.as_str()),
             Command::StopOnEmitter {
                 event_name,
                 entity_id,
-                emitter_name,
+                tag_name,
                 ..
-            } => write!(f, "Command::StopOnEmitter {{ event_name: {event_name}, entity_id: {entity_id}, emitter_name: {}, .. }}", emitter_name.map(|x| x.as_str()).unwrap_or("None")),
+            } => write!(f, "Command::StopOnEmitter {{ event_name: {event_name}, entity_id: {entity_id}, emitter_name: {}, .. }}", tag_name.as_str()),
             Command::Stop {
                 event_name,
                 entity_id,

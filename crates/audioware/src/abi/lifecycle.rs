@@ -9,12 +9,14 @@ pub use board::Board;
 pub use session::Session;
 pub use system::System;
 
+use crate::engine::EmitterKey;
+
 /// Engine inner lifecycle.
 #[derive(Debug)]
 pub enum Lifecycle {
     RegisterEmitter {
-        entity_id: EntityId,
-        emitter_name: Option<CName>,
+        tag_name: CName,
+        emitter_key: EmitterKey,
         emitter_settings: Option<EmitterSettings>,
         sender: Sender<bool>,
     },
@@ -66,8 +68,8 @@ pub enum Lifecycle {
 impl std::fmt::Display for Lifecycle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Lifecycle::RegisterEmitter { entity_id, .. } => {
-                write!(f, "register emitter [{entity_id}]")
+            Lifecycle::RegisterEmitter { emitter_key, .. } => {
+                write!(f, "register emitter [{}]", emitter_key.entity_id)
             }
             Lifecycle::UnregisterEmitter { entity_id, .. } => {
                 write!(f, "unregister emitter [{entity_id}]")

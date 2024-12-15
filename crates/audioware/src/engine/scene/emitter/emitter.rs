@@ -21,7 +21,7 @@ use super::super::{dilation::Dilation, AsEntityExt};
 pub struct Emitter {
     pub handles: Handles,
     pub handle: EmitterHandle,
-    pub names: DashSet<Option<CName>>,
+    pub sharers: DashSet<CName>,
     pub dilation: Dilation,
     pub last_known_position: Vector4,
     pub busy: bool,

@@ -29,6 +29,7 @@ mod emitter;
 mod listener;
 
 pub use dilation::{AffectedByTimeDilation, DilationUpdate};
+pub use emitter::EmitterKey;
 
 /// Audio spatial scene.
 pub struct Scene {
@@ -75,20 +76,21 @@ impl Scene {
 
     pub fn add_emitter(
         &mut self,
-        entity_id: EntityId,
-        emitter_name: Option<CName>,
+        key: EmitterKey,
+        tag_name: CName,
         settings: Option<EmitterSettings>,
     ) -> Result<(), Error> {
+        let EmitterKey { entity_id, .. } = key;
         if entity_id == self.v.id {
             return Err(Error::Scene {
                 source: SceneError::InvalidEmitter,
             });
         }
-        if let Some(emitter) = self.emitters.get_mut(&entity_id) {
-            emitter.names.insert(emitter_name);
+        if let Some(emitter) = self.emitters.get_mut(&key) {
+            emitter.sharers.insert(tag_name);
             lifecycle!(
-                "emitter already exists, paired {} [{entity_id}]: emitter settings skipped",
-                emitter_name.map(|x| x.as_str()).unwrap_or("None")
+                "emitter already exists, paired {} [{entity_id}]",
+                tag_name.as_str()
             );
             return Ok(());
         }
@@ -106,7 +108,7 @@ impl Scene {
         };
         let emitter = self.scene.add_emitter(position, settings)?;
         let names = DashSet::with_capacity(3);
-        names.insert(emitter_name);
+        names.insert(tag_name);
         lifecycle!("emitter settings after {:?} [{entity_id}]", settings);
         let handle = Emitter {
             handle: emitter,
@@ -114,16 +116,13 @@ impl Scene {
             gender,
             last_known_position: position,
             busy,
-            names,
+            sharers: names,
             dilation: Dilation::new(dilation.unwrap_or(1.)),
             persist_until_sounds_finishes: settings.persist_until_sounds_finish,
             marked_for_death: false,
         };
-        self.emitters.insert(entity_id, emitter_name, handle);
-        lifecycle!(
-            "added emitter {entity_id} with name {}",
-            emitter_name.map(|x| x.as_str()).unwrap_or("None")
-        );
+        self.emitters.insert(key, tag_name, handle);
+        lifecycle!("added emitter {entity_id} with name {}", tag_name.as_str());
         Ok(())
     }
 
@@ -139,12 +138,12 @@ impl Scene {
         &mut self,
         event_name: CName,
         entity_id: EntityId,
-        emitter_name: Option<CName>,
+        tag_name: CName,
         tween: Tween,
     ) {
         self.emitters
             .iter_mut()
-            .filter(|x| *x.key() == entity_id && x.value().names.contains(&emitter_name))
+            .filter(|x| x.key().entity_id == entity_id && x.value().sharers.contains(&tag_name))
             .for_each(|mut x| {
                 x.value_mut()
                     .handles
@@ -196,11 +195,11 @@ impl Scene {
         }
         self.emitters.retain(|k, v| {
             if v.marked_for_death && !v.any_playing_handle() {
-                EMITTERS.write().retain(|(id, _)| id != k);
+                EMITTERS.write().retain(|(id, _)| *id != k.entity_id);
                 return false;
             }
-            let Ok((position, busy)) = Emitter::infos(*k) else {
-                EMITTERS.write().retain(|(id, _)| id != k);
+            let Ok((position, busy)) = Emitter::infos(k.entity_id) else {
+                EMITTERS.write().retain(|(id, _)| *id != k.entity_id);
                 return false;
             };
             v.busy = busy;
@@ -225,7 +224,7 @@ impl Scene {
 
     pub fn on_emitter_dies(&mut self, entity_id: EntityId) {
         self.emitters.retain(|k, v| {
-            if *k == entity_id {
+            if k.entity_id == entity_id {
                 if !v.persist_until_sounds_finishes {
                     v.handles
                         .statics
@@ -235,7 +234,7 @@ impl Scene {
                         .streams
                         .iter_mut()
                         .for_each(|x| x.handle.stop(IMMEDIATELY));
-                    EMITTERS.write().retain(|(id, _)| id != k);
+                    EMITTERS.write().retain(|(id, _)| *id != k.entity_id);
                     false
                 } else {
                     v.marked_for_death = true;
@@ -250,7 +249,7 @@ impl Scene {
     pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId, tween: Tween) {
         self.emitters
             .iter_mut()
-            .filter(|x| *x.key() == entity_id && !x.value().persist_until_sounds_finishes)
+            .filter(|x| x.key().entity_id == entity_id && !x.value().persist_until_sounds_finishes)
             .for_each(|mut x| {
                 x.value_mut()
                     .handles
@@ -337,7 +336,11 @@ impl Scene {
 
     pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: &DilationUpdate) -> bool {
         let mut updated = false;
-        if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
+        for mut emitter in self
+            .emitters
+            .iter_mut()
+            .filter(|x| x.key().entity_id == entity_id)
+        {
             if emitter.dilation.last.as_ref() != Some(dilation) {
                 emitter.dilation.last = Some(dilation.clone());
                 updated = true;
@@ -355,7 +358,11 @@ impl Scene {
         dilation: &DilationUpdate,
     ) -> bool {
         let mut updated = false;
-        if let Some(mut emitter) = self.emitters.get_mut(&entity_id) {
+        for mut emitter in self
+            .emitters
+            .iter_mut()
+            .filter(|x| x.key().entity_id == entity_id)
+        {
             if emitter.dilation.last.as_ref() != Some(dilation) {
                 emitter.dilation.last = Some(dilation.clone());
                 updated = true;
@@ -442,7 +449,7 @@ impl AsEntityExt for Ref<Entity> {
                     }
                 }
                 GamedataNpcType::Invalid | GamedataNpcType::Count | GamedataNpcType::Any => {
-                    EmitterDistances::default()
+                    return None;
                 }
             };
             return Some(s);
