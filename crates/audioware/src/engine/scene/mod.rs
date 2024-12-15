@@ -86,6 +86,16 @@ impl Scene {
                 source: SceneError::InvalidEmitter,
             });
         }
+        // check whether the emitter has already been registered for this tag
+        if self.emitters.exists(&entity_id, &tag_name) {
+            return Err(Error::Scene {
+                source: SceneError::DuplicateEmitter {
+                    entity_id,
+                    tag_name,
+                },
+            });
+        }
+        // check whether a previously registered emitter with same settings can be reused
         if let Some(emitter) = self.emitters.get_mut(&key) {
             emitter.sharers.insert(tag_name);
             lifecycle!(

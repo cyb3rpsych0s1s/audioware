@@ -2,7 +2,7 @@
 
 use audioware_manifest::error::ConversionError;
 use kira::{manager::error::PlaySoundError, sound::FromFileError, ResourceLimitReached};
-use red4ext_rs::types::EntityId;
+use red4ext_rs::types::{CName, EntityId};
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
@@ -47,6 +47,11 @@ pub enum EngineError {
 pub enum SceneError {
     #[snafu(display("V cannot be registered as an emitter."))]
     InvalidEmitter,
+    #[snafu(display("emitter previously registered for tag {} [{}]", tag_name.as_str(), entity_id))]
+    DuplicateEmitter {
+        entity_id: EntityId,
+        tag_name: CName,
+    },
     #[snafu(display("emitter is null [{}]", entity_id))]
     MissingEmitter { entity_id: EntityId },
 }

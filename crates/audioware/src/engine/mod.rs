@@ -307,7 +307,6 @@ where
         if let Some(ref mut scene) = self.scene {
             match self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
                 Ok(key) => {
-                    let emitter_exists = scene.emitters.exists(&entity_id);
                     if let Some(ref mut emitter) =
                         scene.emitters.get_mut_by_name(&entity_id, &tag_name)
                     {
@@ -365,13 +364,11 @@ where
                                 duration,
                             );
                         } else if *key.source() == Source::Voices {
-                            warns!("cannot propagate subtitles for voice, both entityID and emitterName must be defined: {sound_name}");
+                            warns!("cannot propagate subtitles for voice, couldn't resolve emitter name: {sound_name} [{entity_id}]");
                         }
-                    } else if emitter_exists {
-                        warns!("failed to find emitter {entity_id:?} with name {}, but the entityID is already registered as an emitter: did you use the same emitterName as when you registered?", tag_name.as_str());
                     } else {
                         warns!(
-                            "failed to find emitter {entity_id:?} with name {}",
+                            "failed to find emitter {entity_id:?} with tag {}",
                             tag_name.as_str()
                         );
                     }

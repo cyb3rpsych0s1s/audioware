@@ -26,8 +26,10 @@ impl Emitters {
             ahash::RandomState::new(),
         ))
     }
-    pub fn exists(&self, entity_id: &EntityId) -> bool {
-        self.0.iter().any(|x| x.key().entity_id == *entity_id)
+    pub fn exists(&self, entity_id: &EntityId, tag_name: &CName) -> bool {
+        self.0
+            .iter()
+            .any(|x| x.key().entity_id == *entity_id && x.value().sharers.contains(tag_name))
     }
     pub fn get_mut(&mut self, key: &EmitterKey) -> Option<RefMut<'_, EmitterKey, Emitter>> {
         self.0.get_mut(key)
