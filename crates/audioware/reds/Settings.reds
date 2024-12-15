@@ -26,4 +26,5 @@ public class EmitterSettings {
     public let attenuationFunction: ref<Tween>;
     public let enableSpatialization: Bool = true;
     public let persistUntilSoundsFinish: Bool = false;
+    public let overrideEmitterName: CName = n"None";
 }

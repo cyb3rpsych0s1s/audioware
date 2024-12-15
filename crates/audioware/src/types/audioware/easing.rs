@@ -2,7 +2,7 @@ use red4ext_rs::NativeRepr;
 
 /// Interop type for [kira::tween::Easing].
 #[allow(clippy::enum_variant_names)]
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(i64)]
 pub enum Easing {
     #[default]

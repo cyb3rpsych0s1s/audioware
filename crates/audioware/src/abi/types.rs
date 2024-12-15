@@ -186,6 +186,7 @@ impl ToSettings for Ref<EmitterSettings> {
             attenuation_function,
             enable_spatialization,
             persist_until_sounds_finish,
+            ..
         } = unsafe { self.fields() }?.clone();
         Some(kira::spatial::emitter::EmitterSettings {
             distances: distances.into_settings().unwrap_or_default(),
