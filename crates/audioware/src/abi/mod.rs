@@ -1,4 +1,4 @@
-use std::{num::NonZeroU64, ops::Not};
+use std::num::NonZeroU64;
 
 use audioware_manifest::{Locale, PlayerGender, ScnDialogLineType, Validate};
 use command::Command;
@@ -294,15 +294,18 @@ impl SceneLifecycle for AudioSystemExt {
             return false;
         }
         let (sender, receiver) = bounded(0);
-        let emitter_settings_hash = emitter_settings.is_null().not().then_some({
+        let mut emitter_settings_hash = None;
+        if !emitter_settings.is_null() {
             use std::hash::Hash;
             use std::hash::Hasher;
             let mut hasher = ahash::AHasher::default();
-            unsafe { emitter_settings.fields() }
-                .expect("defined")
-                .hash(&mut hasher);
-            hasher.finish()
-        });
+            if let Some(x) = unsafe { emitter_settings.fields() }.cloned() {
+                x.hash(&mut hasher);
+                emitter_settings_hash = Some(hasher.finish());
+            } else {
+                fails!("emitter settings fields should be available when not null");
+            }
+        }
         let emitter_settings = emitter_settings.into_settings();
         queue::notify(Lifecycle::RegisterEmitter {
             tag_name,
