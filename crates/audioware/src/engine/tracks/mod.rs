@@ -30,17 +30,17 @@ mod sfx;
 mod v;
 
 pub struct Handle<T> {
-    event_name: CName,
-    entity_id: Option<EntityId>,
-    emitter_name: Option<CName>,
-    handle: T,
-    affected_by_time_dilation: bool,
+    pub event_name: CName,
+    pub entity_id: Option<EntityId>,
+    pub emitter_name: Option<CName>,
+    pub handle: T,
+    pub affected_by_time_dilation: bool,
 }
 
 #[derive(Default)]
 pub struct Handles {
-    statics: Vec<Handle<StaticSoundHandle>>,
-    streams: Vec<Handle<StreamingSoundHandle<FromFileError>>>,
+    pub statics: Vec<Handle<StaticSoundHandle>>,
+    pub streams: Vec<Handle<StreamingSoundHandle<FromFileError>>>,
 }
 
 impl Drop for Handles {

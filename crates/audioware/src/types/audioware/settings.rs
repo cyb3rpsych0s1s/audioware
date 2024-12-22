@@ -1,11 +1,11 @@
 //! Interop types for [kira].
 
 use core::fmt;
-use std::ops::Not;
+use std::{hash::Hash, ops::Not};
 
 use red4ext_rs::{class_kind::Scripted, types::Ref, ScriptClass};
 
-use super::{ToEasing, Tween};
+use super::{ElasticTween, LinearTween, ToEasing, Tween};
 
 /// Interop type for [kira::spatial::emitter::EmitterSettings].
 #[repr(C)]
@@ -30,6 +30,41 @@ impl Default for EmitterSettings {
 unsafe impl ScriptClass for EmitterSettings {
     type Kind = Scripted;
     const NAME: &'static str = "Audioware.EmitterSettings";
+}
+
+impl Hash for EmitterSettings {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let distance = self
+            .distances
+            .is_null()
+            .not()
+            .then_some(unsafe { self.distances.fields() }.unwrap().clone());
+        distance.hash(state);
+        match self
+            .attenuation_function
+            .is_null()
+            .not()
+            .then_some(self.attenuation_function.clone())
+        {
+            None => {
+                None::<crate::Tween>.hash(state);
+            }
+            Some(x) if x.is_a::<LinearTween>() => {
+                let x = unsafe { std::mem::transmute::<&Ref<Tween>, &Ref<LinearTween>>(&x) };
+                unsafe { x.fields() }.unwrap().hash(state);
+            }
+            Some(x) if x.is_a::<ElasticTween>() => {
+                let x = unsafe { std::mem::transmute::<&Ref<Tween>, &Ref<ElasticTween>>(&x) };
+                unsafe { x.fields() }.unwrap().hash(state);
+            }
+            _ => {
+                unreachable!("unknown attenuation function");
+            }
+        };
+
+        self.enable_spatialization.hash(state);
+        self.persist_until_sounds_finish.hash(state);
+    }
 }
 
 impl PartialEq for EmitterSettings {
@@ -79,8 +114,13 @@ impl Clone for EmitterSettings {
 impl fmt::Debug for EmitterSettings {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AudiowareEmitterSettings")
+            .field("distances", &self.attenuation_function.is_null())
             .field("attenuation_function", &self.attenuation_function.is_null())
             .field("enable_spatialization", &self.enable_spatialization)
+            .field(
+                "persist_until_sounds_finish",
+                &self.persist_until_sounds_finish,
+            )
             .finish()
     }
 }
@@ -96,4 +136,11 @@ pub struct EmitterDistances {
 unsafe impl ScriptClass for EmitterDistances {
     type Kind = Scripted;
     const NAME: &'static str = "Audioware.EmitterDistances";
+}
+
+impl Hash for EmitterDistances {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        ((self.min_distance * 100.).clamp(0., u64::MAX as f32) as u64).hash(state);
+        ((self.max_distance * 100.).clamp(0., u64::MAX as f32) as u64).hash(state);
+    }
 }

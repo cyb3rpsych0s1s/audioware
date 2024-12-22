@@ -6,7 +6,7 @@ use red4ext_rs::{
     NativeRepr, RttiSystem, ScriptClass,
 };
 
-use super::{Entity, GameObject};
+use super::{AsGameObjectExt, Entity, GameObject};
 
 const PADDING: usize = std::mem::size_of::<Entity>() - 0xF0;
 
@@ -258,6 +258,8 @@ impl AsRef<Entity> for ScriptedPuppet {
 
 pub trait AsScriptedPuppet {
     fn get_npc_type(&self) -> GamedataNpcType;
+    fn get_tweak_db_display_name(&self, use_display_name_as_fallback: bool) -> String;
+    fn get_tweak_db_full_display_name(&self, use_display_name_as_fallback: bool) -> String;
 }
 
 impl AsScriptedPuppet for Ref<ScriptedPuppet> {
@@ -268,6 +270,38 @@ impl AsScriptedPuppet for Ref<ScriptedPuppet> {
         method
             .as_function()
             .execute::<_, GamedataNpcType>(unsafe { self.instance() }.map(AsRef::as_ref), ())
+            .unwrap()
+    }
+
+    fn get_tweak_db_display_name(&self, use_display_name_as_fallback: bool) -> String {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(ScriptedPuppet::NAME)).unwrap();
+        let method = cls
+            .get_method(CName::new("GetTweakDBDisplayName"))
+            .ok()
+            .unwrap();
+        method
+            .as_function()
+            .execute::<_, String>(
+                unsafe { self.instance() }.map(AsRef::as_ref),
+                (use_display_name_as_fallback,),
+            )
+            .unwrap()
+    }
+
+    fn get_tweak_db_full_display_name(&self, use_display_name_as_fallback: bool) -> String {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(ScriptedPuppet::NAME)).unwrap();
+        let method = cls
+            .get_method(CName::new("GetTweakDBFullDisplayName"))
+            .ok()
+            .unwrap();
+        method
+            .as_function()
+            .execute::<_, String>(
+                unsafe { self.instance() }.map(AsRef::as_ref),
+                (use_display_name_as_fallback,),
+            )
             .unwrap()
     }
 }
@@ -289,6 +323,16 @@ impl AsScriptedPuppetExt for Ref<ScriptedPuppet> {
                 (),
             )
             .unwrap()
+    }
+}
+
+impl AsGameObjectExt for Ref<ScriptedPuppet> {
+    fn resolve_display_name(&self) -> String {
+        let mut name = self.get_tweak_db_display_name(true);
+        if name.is_empty() {
+            name = self.get_tweak_db_full_display_name(true);
+        }
+        name
     }
 }
 

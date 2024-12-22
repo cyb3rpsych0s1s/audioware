@@ -1,8 +1,12 @@
-use std::{fmt::Debug, ops::Div};
+use std::{
+    fmt::Debug,
+    num::NonZero,
+    ops::{Div, Not},
+};
 
 use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
 use audioware_core::With;
-use audioware_manifest::{Locale, ScnDialogLineType, Settings, Source, ValidateFor};
+use audioware_manifest::{Locale, ScnDialogLineType, Source, ValidateFor};
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
@@ -14,19 +18,20 @@ use kira::{
 };
 use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
-use scene::Scene;
+pub use scene::{AffectedByTimeDilation, DilationUpdate, Scene};
 use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
-use tweens::{
-    DEFAULT, DILATION_EASE_IN, DILATION_EASE_OUT, DILATION_LINEAR, IMMEDIATELY, LAST_BREATH,
-};
+use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
+use crate::engine::scene::Store;
 use crate::{
     error::{EngineError, Error},
     propagate_subtitles,
     utils::{fails, lifecycle, success, warns},
-    AsAudioSystem, AsGameInstance,
+    AsAudioSystem, AsGameInstance, AsGameObjectExt, GameObject,
 };
+
+pub use scene::ToDistances;
 
 pub mod eq;
 pub mod queue;
@@ -289,7 +294,7 @@ where
         &mut self,
         sound_name: CName,
         entity_id: EntityId,
-        emitter_name: Option<CName>,
+        tag_name: CName,
         ext: Option<T>,
     ) where
         StaticSoundData: With<Option<T>>,
@@ -306,9 +311,8 @@ where
         if let Some(ref mut scene) = self.scene {
             match self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
                 Ok(key) => {
-                    let emitter_exists = scene.emitters.exists(&entity_id);
-                    if let Some(ref mut emitter) =
-                        scene.emitters.get_mut_by_name(&entity_id, &emitter_name)
+                    if let Some((emitter_id, emitter_name)) =
+                        scene.emitters.emitter_destination(&entity_id, &tag_name)
                     {
                         let duration: f32;
                         let data = self.banks.data(key);
@@ -326,51 +330,62 @@ where
                                 duration = data.duration().as_secs_f32();
                                 if let Ok(handle) = self
                                     .manager
-                                    .play(data.output_destination(emitter.as_ref()).with(ext))
+                                    .play(data.output_destination(emitter_id).with(ext))
                                 {
                                     lifecycle!(
                                         "playing static sound {} on {}",
                                         sound_name.as_str(),
                                         entity_id
                                     );
-                                    emitter.store_static(sound_name, handle, dilatable);
+                                    scene
+                                        .emitters
+                                        .store(tag_name, emitter_id, sound_name, handle, dilatable);
                                 }
                             }
                             Either::Right(data) => {
                                 duration = data.duration().as_secs_f32();
                                 if let Ok(handle) = self
                                     .manager
-                                    .play(data.output_destination(emitter.as_ref()).with(ext))
+                                    .play(data.output_destination(emitter_id).with(ext))
                                 {
                                     lifecycle!(
                                         "playing stream sound {} on {}",
                                         sound_name.as_str(),
                                         entity_id
                                     );
-                                    emitter.store_stream(sound_name, handle, dilatable);
+                                    scene
+                                        .emitters
+                                        .store(tag_name, emitter_id, sound_name, handle, dilatable);
                                 }
                             }
                         }
-                        if entity_id.is_defined()
-                            && emitter_name
-                                .is_some_and(|x| !x.as_str().is_empty() && x.as_str() != "None")
-                        {
+                        let emitter_name = match emitter_name {
+                            Some(emitter_name) => Some(emitter_name.as_str().to_string()),
+                            None => {
+                                let go =
+                                    GameInstance::find_entity_by_id(GameInstance::new(), entity_id)
+                                        .cast::<GameObject>();
+
+                                go.and_then(|x| {
+                                    x.is_null().not().then_some(x.resolve_display_name())
+                                })
+                            }
+                        };
+                        if let Some(emitter_name) = emitter_name {
                             propagate_subtitles(
                                 sound_name,
                                 entity_id,
-                                emitter_name.unwrap(),
+                                CName::new(emitter_name.as_str()),
                                 ScnDialogLineType::default(),
                                 duration,
                             );
                         } else if *key.source() == Source::Voices {
-                            warns!("cannot propagate subtitles for voice, both entityID and emitterName must be defined: {sound_name}");
+                            warns!("cannot propagate subtitles for voice, couldn't resolve emitter name: {sound_name} [{entity_id}]");
                         }
-                    } else if emitter_exists {
-                        warns!("failed to find emitter {entity_id:?} with name {}, but the entityID is already registered as an emitter: did you use the same emitterName as when you registered?", emitter_name.map(|x| x.as_str()).unwrap_or("None"));
                     } else {
                         warns!(
-                            "failed to find emitter {entity_id:?} with name {}",
-                            emitter_name.map(|x| x.as_str()).unwrap_or("None")
+                            "failed to find emitter {entity_id:?} with tag {}",
+                            tag_name.as_str()
                         );
                     }
                 }
@@ -445,16 +460,11 @@ where
         &mut self,
         event_name: CName,
         entity_id: EntityId,
-        emitter_name: Option<CName>,
+        tag_name: CName,
         tween: Option<Tween>,
     ) {
         if let Some(x) = self.scene.as_mut() {
-            x.stop_on_emitter(
-                event_name,
-                entity_id,
-                emitter_name,
-                tween.unwrap_or_default(),
-            );
+            x.stop_on_emitter(event_name, entity_id, tag_name, tween.unwrap_or_default());
         }
     }
 
@@ -484,8 +494,8 @@ where
         self.set_preset(eq::Preset::None);
     }
 
-    pub fn is_registered_emitter(entity_id: EntityId) -> bool {
-        Scene::is_registered_emitter(entity_id)
+    pub fn is_registered_emitter(entity_id: EntityId, tag_name: Option<CName>) -> bool {
+        Scene::is_registered_emitter(entity_id, tag_name)
     }
 
     pub fn emitters_count() -> i32 {
@@ -495,12 +505,14 @@ where
     pub fn register_emitter(
         &mut self,
         entity_id: EntityId,
+        tag_name: CName,
         emitter_name: Option<CName>,
-        emitter_settings: Option<EmitterSettings>,
+        emitter_settings: Option<(EmitterSettings, NonZero<u64>)>,
     ) -> bool {
         match self.scene {
             Some(ref mut scene) => scene
-                .add_emitter(entity_id, emitter_name, emitter_settings)
+                .add_emitter(entity_id, tag_name, emitter_name, emitter_settings)
+                .inspect_err(|e| warns!("failed to register emitter: {e}"))
                 .is_ok(),
             None => {
                 lifecycle!("scene is not initialized");
@@ -509,12 +521,9 @@ where
         }
     }
 
-    pub fn unregister_emitter(&mut self, entity_id: EntityId) -> bool {
+    pub fn unregister_emitter(&mut self, entity_id: EntityId, tag_name: CName) -> bool {
         match self.scene {
-            Some(ref mut scene) => {
-                scene.on_emitter_dies(entity_id);
-                scene.remove_emitter(entity_id)
-            }
+            Some(ref mut scene) => scene.unregister_emitter(&entity_id, &tag_name),
             None => {
                 lifecycle!("scene is not initialized");
                 false
@@ -691,83 +700,5 @@ impl ToOutputDestination for Id {
             .id()
             .into(),
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum DilationUpdate {
-    Set {
-        value: f32,
-        reason: CName,
-        ease_in_curve: CName,
-    },
-    Unset {
-        reason: CName,
-        ease_out_curve: CName,
-    },
-}
-
-impl DilationUpdate {
-    pub fn dilation(&self) -> f64 {
-        match self {
-            Self::Set { value, .. } => *value as f64,
-            Self::Unset { .. } => 1.,
-        }
-    }
-    pub fn tween_curve(&self) -> Tween {
-        if !self.has_curve() {
-            DILATION_LINEAR
-        } else {
-            match self {
-                Self::Set { .. } => DILATION_EASE_IN,
-                Self::Unset { .. } => DILATION_EASE_OUT,
-            }
-        }
-    }
-}
-
-impl DilationUpdate {
-    pub fn has_curve(&self) -> bool {
-        let curve = match self {
-            Self::Set { ease_in_curve, .. } => ease_in_curve,
-            Self::Unset { ease_out_curve, .. } => ease_out_curve,
-        }
-        .as_str();
-        curve != "None" && !curve.is_empty()
-    }
-}
-
-impl PartialEq for DilationUpdate {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (
-                Self::Set { value, reason, .. },
-                Self::Set {
-                    value: x,
-                    reason: y,
-                    ..
-                },
-            ) => *value == *x && *reason == *y,
-            (Self::Unset { reason, .. }, Self::Unset { reason: y, .. }) => *reason == *y,
-            _ => false,
-        }
-    }
-}
-
-pub trait AffectedByTimeDilation {
-    fn affected_by_time_dilation(&self) -> bool;
-}
-
-impl AffectedByTimeDilation for Settings {
-    #[inline(always)]
-    fn affected_by_time_dilation(&self) -> bool {
-        self.affected_by_time_dilation.unwrap_or(true)
-    }
-}
-
-impl AffectedByTimeDilation for Tween {
-    #[inline(always)]
-    fn affected_by_time_dilation(&self) -> bool {
-        true
     }
 }

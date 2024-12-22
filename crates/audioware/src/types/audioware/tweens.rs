@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{hash::Hash, time::Duration};
 
 use red4ext_rs::{class_kind::Scripted, log, types::Ref, PluginOps, ScriptClass};
 
@@ -18,6 +18,12 @@ pub struct Tween {
 unsafe impl ScriptClass for Tween {
     type Kind = Scripted;
     const NAME: &'static str = "Audioware.Tween";
+}
+impl Hash for Tween {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        (self.start_time as u64).hash(state);
+        (self.duration as u64).hash(state);
+    }
 }
 
 /// Intermediate representation for [kira::tween::Tween]
@@ -41,6 +47,13 @@ impl LinearTween {
     }
 }
 
+impl Hash for LinearTween {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.base.hash(state);
+        Self::NAME.hash(state);
+    }
+}
+
 /// Intermediate representation for [kira::tween::Tween]
 /// used in Redscript.
 #[derive(Debug, PartialEq)]
@@ -55,6 +68,14 @@ pub struct ElasticTween {
 unsafe impl ScriptClass for ElasticTween {
     type Kind = Scripted;
     const NAME: &'static str = "Audioware.ElasticTween";
+}
+impl Hash for ElasticTween {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.base.hash(state);
+        self.easing.hash(state);
+        ((self.value * 100.) as u64).hash(state);
+        Self::NAME.hash(state);
+    }
 }
 
 impl ElasticTween {

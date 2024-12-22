@@ -267,11 +267,12 @@ pub trait SceneLifecycle {
     fn register_emitter(
         &self,
         entity_id: EntityId,
+        tag_name: CName,
         emitter_name: Opt<CName>,
         emitter_settings: Ref<EmitterSettings>,
     ) -> bool;
-    fn unregister_emitter(&self, entity_id: EntityId) -> bool;
-    fn is_registered_emitter(&self, entity_id: EntityId) -> bool;
+    fn unregister_emitter(&self, entity_id: EntityId, tag_name: CName) -> bool;
+    fn is_registered_emitter(&self, entity_id: EntityId, tag_name: Opt<CName>) -> bool;
     fn on_emitter_dies(&self, entity_id: EntityId);
     fn on_emitter_incapacitated(&self, entity_id: EntityId);
     fn on_emitter_defeated(&self, entity_id: EntityId);
@@ -282,14 +283,22 @@ impl SceneLifecycle for AudioSystemExt {
     fn register_emitter(
         &self,
         entity_id: EntityId,
+        tag_name: CName,
         emitter_name: Opt<CName>,
         emitter_settings: Ref<EmitterSettings>,
     ) -> bool {
+        use crate::engine::ToDistances;
+        if tag_name.as_str() == "None" || tag_name.as_str().is_empty() {
+            warns!("invalid tag name: \"{tag_name}\"");
+            return false;
+        }
         let (sender, receiver) = bounded(0);
+        let emitter_settings = emitter_settings.into_settings_ext(entity_id.to_distances());
         queue::notify(Lifecycle::RegisterEmitter {
+            tag_name,
             entity_id,
             emitter_name: emitter_name.into_option(),
-            emitter_settings: emitter_settings.into_settings(),
+            emitter_settings,
             sender,
         });
         if let Ok(registered) = receiver.recv() {
@@ -298,17 +307,25 @@ impl SceneLifecycle for AudioSystemExt {
         false
     }
 
-    fn unregister_emitter(&self, entity_id: EntityId) -> bool {
+    fn unregister_emitter(&self, entity_id: EntityId, tag_name: CName) -> bool {
+        if tag_name.as_str() == "None" || tag_name.as_str().is_empty() {
+            warns!("invalid tag name: \"{tag_name}\"");
+            return false;
+        }
         let (sender, receiver) = bounded(0);
-        queue::notify(Lifecycle::UnregisterEmitter { entity_id, sender });
+        queue::notify(Lifecycle::UnregisterEmitter {
+            entity_id,
+            tag_name,
+            sender,
+        });
         if let Ok(unregistered) = receiver.recv() {
             return unregistered;
         }
         false
     }
 
-    fn is_registered_emitter(&self, entity_id: EntityId) -> bool {
-        Engine::<CpalBackend>::is_registered_emitter(entity_id)
+    fn is_registered_emitter(&self, entity_id: EntityId, tag_name: Opt<CName>) -> bool {
+        Engine::<CpalBackend>::is_registered_emitter(entity_id, tag_name.into_option())
     }
 
     fn on_emitter_dies(&self, entity_id: EntityId) {
@@ -331,7 +348,7 @@ impl SceneLifecycle for AudioSystemExt {
 pub trait ExtCommand {
     fn play(
         &self,
-        sound_name: CName,
+        event_name: CName,
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         line_type: Opt<ScnDialogLineType>,
@@ -348,16 +365,16 @@ pub trait ExtCommand {
     /// Play sound on audio emitter with optional [tween][Tween].
     fn play_on_emitter(
         &self,
-        sound_name: CName,
+        event_name: CName,
         entity_id: EntityId,
-        emitter_name: Opt<CName>,
+        tag_name: Opt<CName>,
         ext: Ref<AudioSettingsExt>,
     );
     fn stop_on_emitter(
         &self,
-        sound_name: CName,
+        event_name: CName,
         entity_id: EntityId,
-        emitter_name: Opt<CName>,
+        tag_name: Opt<CName>,
         tween: Ref<Tween>,
     );
     fn switch(
@@ -374,7 +391,7 @@ pub trait ExtCommand {
 impl ExtCommand for AudioSystemExt {
     fn play(
         &self,
-        sound_name: CName,
+        event_name: CName,
         entity_id: Opt<EntityId>,
         emitter_name: Opt<CName>,
         line_type: Opt<ScnDialogLineType>,
@@ -386,7 +403,7 @@ impl ExtCommand for AudioSystemExt {
             return;
         }
         queue::send(Command::Play {
-            sound_name,
+            event_name,
             entity_id: entity_id.into_option(),
             emitter_name: emitter_name.into_option(),
             line_type: line_type.into_option(),
@@ -413,10 +430,14 @@ impl ExtCommand for AudioSystemExt {
         &self,
         event_name: CName,
         entity_id: EntityId,
-        emitter_name: Opt<CName>,
+        tag_name: Opt<CName>,
         ext: Ref<AudioSettingsExt>,
     ) {
         let ext = ext.into_settings();
+        let Some(tag_name) = tag_name.into_option() else {
+            warns!("invalid tag name: \"{tag_name}\"");
+            return;
+        };
         if let Some(Err(e)) = ext.as_ref().map(Validate::validate) {
             warns!("invalid audio settings: {:#?}", e);
             return;
@@ -424,7 +445,7 @@ impl ExtCommand for AudioSystemExt {
         queue::send(Command::PlayOnEmitter {
             event_name,
             entity_id,
-            emitter_name: emitter_name.into_option(),
+            tag_name,
             ext,
         });
     }
@@ -433,13 +454,17 @@ impl ExtCommand for AudioSystemExt {
         &self,
         event_name: CName,
         entity_id: EntityId,
-        emitter_name: Opt<CName>,
+        tag_name: Opt<CName>,
         tween: Ref<Tween>,
     ) {
+        let Some(tag_name) = tag_name.into_option() else {
+            warns!("invalid tag name: \"{tag_name}\"");
+            return;
+        };
         queue::send(Command::StopOnEmitter {
             event_name,
             entity_id,
-            emitter_name: emitter_name.into_option(),
+            tag_name,
             tween: tween.into_tween(),
         });
     }

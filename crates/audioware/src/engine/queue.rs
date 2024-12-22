@@ -144,16 +144,25 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 ),
                 Lifecycle::RegisterEmitter {
                     entity_id,
+                    tag_name,
                     emitter_name,
                     emitter_settings,
                     sender,
                 } => {
-                    let registered =
-                        engine.register_emitter(entity_id, emitter_name, emitter_settings);
+                    let registered = engine.register_emitter(
+                        entity_id,
+                        tag_name,
+                        emitter_name,
+                        emitter_settings,
+                    );
                     let _ = sender.try_send(registered);
                 }
-                Lifecycle::UnregisterEmitter { entity_id, sender } => {
-                    let unregistered = engine.unregister_emitter(entity_id);
+                Lifecycle::UnregisterEmitter {
+                    entity_id,
+                    tag_name,
+                    sender,
+                } => {
+                    let unregistered = engine.unregister_emitter(entity_id, tag_name);
                     let _ = sender.try_send(unregistered);
                 }
                 Lifecycle::OnEmitterDies { entity_id } => engine.on_emitter_dies(entity_id),
@@ -218,7 +227,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     None,
                 ),
                 Command::Play {
-                    sound_name,
+                    event_name: sound_name,
                     entity_id,
                     emitter_name,
                     ext,
@@ -227,9 +236,9 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Command::PlayOnEmitter {
                     event_name,
                     entity_id,
-                    emitter_name,
+                    tag_name,
                     ext,
-                } => engine.play_on_emitter(event_name, entity_id, emitter_name, ext),
+                } => engine.play_on_emitter(event_name, entity_id, tag_name, ext),
                 Command::PlayOverThePhone {
                     event_name,
                     emitter_name,
@@ -238,9 +247,9 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Command::StopOnEmitter {
                     event_name,
                     entity_id,
-                    emitter_name,
+                    tag_name,
                     tween,
-                } => engine.stop_on_emitter(event_name, entity_id, emitter_name, tween),
+                } => engine.stop_on_emitter(event_name, entity_id, tag_name, tween),
                 Command::StopVanilla {
                     event_name,
                     entity_id,

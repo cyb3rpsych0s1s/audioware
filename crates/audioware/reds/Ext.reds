@@ -27,20 +27,20 @@ public native class AudioSystemExt {
     }
 
     // spatial scene
-    public final native func RegisterEmitter(entityID: EntityID, opt emitterName: CName, opt emitterSettings: ref<EmitterSettings>) -> Bool;
-    public final native func UnregisterEmitter(entityID: EntityID) -> Bool;
-    public final native func IsRegisteredEmitter(entityID: EntityID) -> Bool;
+    public final native func RegisterEmitter(entityID: EntityID, tagName: CName, opt emitterName: CName, opt emitterSettings: ref<EmitterSettings>) -> Bool;
+    public final native func UnregisterEmitter(entityID: EntityID, tagName: CName) -> Bool;
+    public final native func IsRegisteredEmitter(entityID: EntityID, opt tagName: CName) -> Bool;
     public final native func EmittersCount() -> Int32;
-    public final native func PlayOnEmitter(eventName: CName, entityID: EntityID, opt emitterName: CName, opt ext: ref<AudioSettingsExt>) -> Void;
-    public final native func StopOnEmitter(eventName: CName, entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void;
+    public final native func PlayOnEmitter(eventName: CName, entityID: EntityID, tagName: CName, opt ext: ref<AudioSettingsExt>) -> Void;
+    public final native func StopOnEmitter(eventName: CName, entityID: EntityID, tagName: CName, opt tween: ref<Tween>) -> Void;
     public final native func OnEmitterDies(entityID: EntityID) -> Void;
     public final native func OnEmitterIncapacitated(entityID: EntityID) -> Void;
     public final native func OnEmitterDefeated(entityID: EntityID) -> Void;
     public final func IsValidEmitter(className: CName) -> Bool = NotEquals(className, n"PlayerPuppet") && Reflection.GetClass(className).IsA(n"gameObject");
-    public final func PlayOnEmitter(eventName: CName, entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void {
+    public final func PlayOnEmitter(eventName: CName, entityID: EntityID, tagName: CName, opt tween: ref<Tween>) -> Void {
         let settings = new AudioSettingsExt();
         settings.fadeIn = tween;
-        this.PlayOnEmitter(eventName, entityID, emitterName, settings);
+        this.PlayOnEmitter(eventName, entityID, tagName, settings);
     }
     
     // misc

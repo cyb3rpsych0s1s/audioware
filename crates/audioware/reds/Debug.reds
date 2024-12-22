@@ -37,7 +37,7 @@ public static exec func TestRegisterEmitter(game: GameInstance) {
     let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
     emitterID = target.GetEntityID();
     emitterName = n"Jean-Guy";
-    let added = GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID, emitterName);
+    let added = GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID, n"Audioware", emitterName);
     FTLog(s"registered? \(added)");
 }
 /// Game.TestUnregisterEmitter();
@@ -48,7 +48,7 @@ public static exec func TestUnregisterEmitter(game: GameInstance) {
     let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
     emitterID = target.GetEntityID();
     emitterName = n"Jean-Guy";
-    let added = GameInstance.GetAudioSystemExt(game).UnregisterEmitter(emitterID);
+    let added = GameInstance.GetAudioSystemExt(game).UnregisterEmitter(emitterID, n"Audioware");
     FTLog(s"unregistered? \(added)");
 }
 
@@ -158,9 +158,9 @@ public class AutoEmittersSystem extends ScriptableSystem {
         let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
         if !IsDefined(target) { return; }
         emitterID = target.GetEntityID();
-        if GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID, emitterCName, settings) {
+        if GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID, n"Audioware", emitterCName, settings) {
             FTLog(s"play on emitter: AutoEmittersSystem");
-            GameInstance.GetAudioSystemExt(game).PlayOnEmitter(eventName, emitterID, emitterCName, ext);
+            GameInstance.GetAudioSystemExt(game).PlayOnEmitter(eventName, emitterID, n"Audioware", ext);
         }
     }
     private cb func OnPressF1(evt: ref<KeyInputEvent>) {
@@ -177,10 +177,8 @@ public class AutoEmittersSystem extends ScriptableSystem {
         let emitterID: EntityID;
         let emitterCName: CName = evt.IsShiftDown() ? n"None" : n"DummyTest";
 
-        let tween = new LinearTween();
-        tween.duration = 0.0;
         let ext = new AudioSettingsExt();
-        ext.fadeIn = tween;
+        ext.fadeIn = LinearTween.Immediate(2.0);
 
         let settings = new EmitterSettings();
         settings.persistUntilSoundsFinish = true;
@@ -195,7 +193,7 @@ public class AutoEmittersSystem extends ScriptableSystem {
         if !IsDefined(target) { return; }
         emitterID = target.GetEntityID();
 
-        GameInstance.GetAudioSystemExt(this.GetGameInstance()).UnregisterEmitter(emitterID);
+        GameInstance.GetAudioSystemExt(this.GetGameInstance()).UnregisterEmitter(emitterID, n"Audioware");
     }
     private cb func OnPressF4(evt: ref<KeyInputEvent>) {
         if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }

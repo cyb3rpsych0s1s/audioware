@@ -27,6 +27,7 @@ red4ext-rs.workspace = true
 rust-ini = "0.21"
 snafu.workspace = true
 bitflags = "2.6.0"
+ahash = "0.8.11"
 
 [build-dependencies]
 semver = "1.0"

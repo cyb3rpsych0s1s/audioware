@@ -21,7 +21,8 @@ glam = "0.29"
 # kira = { version = "0.9.6", features = ["serde"] }
 kira = { git = "https://github.com/Roms1383/kira", branch = "feat/total-duration", features = ["serde"] }
 rayon = "1.10"
-red4ext-rs = { git = "https://github.com/Roms1383/red4ext-rs", branch = "chore/solo" }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "ae1c7b3cbc247b48fa1a90e7a082bede6909d501" }
+# red4ext-rs = { git = "https://github.com/Roms1383/red4ext-rs", branch = "chore/solo" }
 # red4ext-rs-bindings = { git = "https://github.com/jac3km4/red4ext-rs-bindings", rev = "v0.5.0" }
 serde = "1.0"
 snafu = "0.8"

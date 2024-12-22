@@ -1,3 +1,5 @@
+use std::num::NonZero;
+
 use crossbeam::channel::Sender;
 use kira::spatial::emitter::EmitterSettings;
 use red4ext_rs::types::{CName, EntityId};
@@ -14,12 +16,14 @@ pub use system::System;
 pub enum Lifecycle {
     RegisterEmitter {
         entity_id: EntityId,
+        tag_name: CName,
         emitter_name: Option<CName>,
-        emitter_settings: Option<EmitterSettings>,
+        emitter_settings: Option<(EmitterSettings, NonZero<u64>)>,
         sender: Sender<bool>,
     },
     UnregisterEmitter {
         entity_id: EntityId,
+        tag_name: CName,
         sender: Sender<bool>,
     },
     OnEmitterDies {
@@ -66,8 +70,8 @@ pub enum Lifecycle {
 impl std::fmt::Display for Lifecycle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Lifecycle::RegisterEmitter { entity_id, .. } => {
-                write!(f, "register emitter [{entity_id}]")
+            Lifecycle::RegisterEmitter { tag_name, .. } => {
+                write!(f, "register emitter [{}]", tag_name.as_str())
             }
             Lifecycle::UnregisterEmitter { entity_id, .. } => {
                 write!(f, "unregister emitter [{entity_id}]")
