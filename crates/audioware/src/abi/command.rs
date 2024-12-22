@@ -2,6 +2,8 @@ use audioware_manifest::{PlayerGender, ScnDialogLineType, Settings};
 use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId};
 
+use crate::{TagName, TargetId};
+
 /// Sound inner command.
 #[derive(Clone)]
 pub enum Command {
@@ -19,8 +21,8 @@ pub enum Command {
     },
     PlayOnEmitter {
         event_name: CName,
-        entity_id: EntityId,
-        tag_name: CName,
+        entity_id: TargetId,
+        tag_name: TagName,
         ext: Option<Settings>,
     },
     PlayOverThePhone {
@@ -30,8 +32,8 @@ pub enum Command {
     },
     StopOnEmitter {
         event_name: CName,
-        entity_id: EntityId,
-        tag_name: CName,
+        entity_id: TargetId,
+        tag_name: TagName,
         tween: Option<Tween>,
     },
     StopVanilla {

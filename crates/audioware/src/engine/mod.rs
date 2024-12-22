@@ -1,6 +1,5 @@
 use std::{
     fmt::Debug,
-    num::NonZero,
     ops::{Div, Not},
 };
 
@@ -12,7 +11,6 @@ use eq::{EqPass, Preset};
 use kira::{
     manager::{backend::Backend, AudioManager, AudioManagerSettings},
     sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError},
-    spatial::emitter::EmitterSettings,
     tween::Tween,
     OutputDestination,
 };
@@ -23,7 +21,7 @@ use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
 use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
-use crate::engine::scene::Store;
+use crate::{engine::scene::Store, TagName, TargetFootprint, TargetId};
 use crate::{
     error::{EngineError, Error},
     propagate_subtitles,
@@ -504,14 +502,19 @@ where
 
     pub fn register_emitter(
         &mut self,
-        entity_id: EntityId,
-        tag_name: CName,
+        entity_id: TargetId,
+        tag_name: TagName,
         emitter_name: Option<CName>,
-        emitter_settings: Option<(EmitterSettings, NonZero<u64>)>,
+        emitter_settings: Option<TargetFootprint>,
     ) -> bool {
         match self.scene {
             Some(ref mut scene) => scene
-                .add_emitter(entity_id, tag_name, emitter_name, emitter_settings)
+                .add_emitter(
+                    *entity_id,
+                    *tag_name,
+                    emitter_name,
+                    emitter_settings.as_deref(),
+                )
                 .inspect_err(|e| warns!("failed to register emitter: {e}"))
                 .is_ok(),
             None => {
@@ -521,7 +524,7 @@ where
         }
     }
 
-    pub fn unregister_emitter(&mut self, entity_id: EntityId, tag_name: CName) -> bool {
+    pub fn unregister_emitter(&mut self, entity_id: TargetId, tag_name: TagName) -> bool {
         match self.scene {
             Some(ref mut scene) => scene.unregister_emitter(&entity_id, &tag_name),
             None => {

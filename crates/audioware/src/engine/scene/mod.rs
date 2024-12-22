@@ -79,7 +79,7 @@ impl Scene {
         entity_id: EntityId,
         tag_name: CName,
         emitter_name: Option<CName>,
-        settings: Option<(EmitterSettings, NonZero<u64>)>,
+        settings: Option<&(EmitterSettings, NonZero<u64>)>,
     ) -> Result<(), Error> {
         if entity_id == self.v.id {
             return Err(Error::Scene {
@@ -100,7 +100,7 @@ impl Scene {
                 {
                     settings.distances(distances.unwrap_or_default())
                 }
-                Some((settings, _)) => settings,
+                Some((settings, _)) => *settings,
                 None => EmitterSettings::default().distances(distances.unwrap_or_default()),
             };
             lifecycle!("emitter settings after {:?} [{entity_id}]", mapped);
@@ -109,7 +109,7 @@ impl Scene {
                 entity_id,
                 tag_name,
                 emitter_name,
-                settings,
+                settings.cloned(),
                 handle,
                 dilation,
                 position,

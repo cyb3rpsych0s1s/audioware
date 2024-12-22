@@ -57,6 +57,15 @@ pub enum SceneError {
     MissingEmitter { entity_id: EntityId },
 }
 
+#[derive(Debug, Snafu)]
+#[allow(clippy::enum_variant_names)]
+pub enum ValidationError {
+    #[snafu(display("tag_name cannot be empty or n\"None\"."))]
+    InvalidTagName,
+    #[snafu(display("entity_id cannot be undefined or V."))]
+    InvalidTargetId,
+}
+
 impl From<InternalError> for Error {
     fn from(source: InternalError) -> Self {
         Self::Internal { source }

@@ -80,7 +80,7 @@ impl Emitters {
         entity_id: EntityId,
         tag_name: CName,
         emitter_name: Option<CName>,
-        settings: Option<(EmitterSettings, NonZero<u64>)>,
+        settings: Option<&(EmitterSettings, NonZero<u64>)>,
     ) -> Result<bool, Error> {
         // check whether the emitter has already been registered for this tag
         if self.exists_tag(&entity_id, &tag_name) {
@@ -94,7 +94,7 @@ impl Emitters {
 
         // check whether a previously registered emitter with same settings can be reused
         if let Some(entry) = self.0.get_mut(&entity_id) {
-            if let Some(entry) = entry.get(settings.map(|(_, x)| x)) {
+            if let Some(entry) = entry.get(settings.map(|(_, x)| *x)) {
                 entry.mods.insert(tag_name, EmitterMod::new(emitter_name));
                 EMITTERS.write().insert((entity_id, tag_name));
                 lifecycle!(

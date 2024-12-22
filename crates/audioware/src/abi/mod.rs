@@ -14,7 +14,8 @@ use crate::{
     engine::{eq::Preset, state, Engine},
     queue,
     utils::{fails, lifecycle, warns},
-    Audioware, EmitterSettings, LocalizationPackage, ToTween, Tween,
+    Audioware, EmitterSettings, LocalizationPackage, TagName, TargetFootprint, TargetId, ToTween,
+    Tween,
 };
 
 pub mod command;
@@ -288,12 +289,36 @@ impl SceneLifecycle for AudioSystemExt {
         emitter_settings: Ref<EmitterSettings>,
     ) -> bool {
         use crate::engine::ToDistances;
-        if tag_name.as_str() == "None" || tag_name.as_str().is_empty() {
-            warns!("invalid tag name: \"{tag_name}\"");
-            return false;
-        }
-        let (sender, receiver) = bounded(0);
+        let tag_name = match TagName::try_new(tag_name) {
+            Ok(tag_name) => tag_name,
+            Err(e) => {
+                warns!("{e}");
+                return false;
+            }
+        };
+        let entity_id = match TargetId::try_new(entity_id) {
+            Ok(entity_id) => entity_id,
+            Err(e) => {
+                warns!("{e}");
+                return false;
+            }
+        };
         let emitter_settings = emitter_settings.into_settings_ext(entity_id.to_distances());
+        let emitter_settings = match emitter_settings.map(TargetFootprint::try_new) {
+            Some(Ok(emitter_settings)) => Some(emitter_settings),
+            Some(Err(e)) => {
+                warns!(
+                    "{}",
+                    e.iter()
+                        .map(|e| format!("{e}"))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                );
+                return false;
+            }
+            None => None,
+        };
+        let (sender, receiver) = bounded(0);
         queue::notify(Lifecycle::RegisterEmitter {
             tag_name,
             entity_id,
@@ -308,10 +333,20 @@ impl SceneLifecycle for AudioSystemExt {
     }
 
     fn unregister_emitter(&self, entity_id: EntityId, tag_name: CName) -> bool {
-        if tag_name.as_str() == "None" || tag_name.as_str().is_empty() {
-            warns!("invalid tag name: \"{tag_name}\"");
-            return false;
-        }
+        let tag_name = match TagName::try_new(tag_name) {
+            Ok(tag_name) => tag_name,
+            Err(e) => {
+                warns!("{e}");
+                return false;
+            }
+        };
+        let entity_id = match TargetId::try_new(entity_id) {
+            Ok(entity_id) => entity_id,
+            Err(e) => {
+                warns!("{e}");
+                return false;
+            }
+        };
         let (sender, receiver) = bounded(0);
         queue::notify(Lifecycle::UnregisterEmitter {
             entity_id,
@@ -367,14 +402,14 @@ pub trait ExtCommand {
         &self,
         event_name: CName,
         entity_id: EntityId,
-        tag_name: Opt<CName>,
+        tag_name: CName,
         ext: Ref<AudioSettingsExt>,
     );
     fn stop_on_emitter(
         &self,
         event_name: CName,
         entity_id: EntityId,
-        tag_name: Opt<CName>,
+        tag_name: CName,
         tween: Ref<Tween>,
     );
     fn switch(
@@ -430,13 +465,23 @@ impl ExtCommand for AudioSystemExt {
         &self,
         event_name: CName,
         entity_id: EntityId,
-        tag_name: Opt<CName>,
+        tag_name: CName,
         ext: Ref<AudioSettingsExt>,
     ) {
         let ext = ext.into_settings();
-        let Some(tag_name) = tag_name.into_option() else {
-            warns!("invalid tag name: \"{tag_name}\"");
-            return;
+        let tag_name = match TagName::try_new(tag_name) {
+            Ok(tag_name) => tag_name,
+            Err(e) => {
+                warns!("{e}");
+                return;
+            }
+        };
+        let entity_id = match TargetId::try_new(entity_id) {
+            Ok(entity_id) => entity_id,
+            Err(e) => {
+                warns!("{e}");
+                return;
+            }
         };
         if let Some(Err(e)) = ext.as_ref().map(Validate::validate) {
             warns!("invalid audio settings: {:#?}", e);
@@ -454,12 +499,22 @@ impl ExtCommand for AudioSystemExt {
         &self,
         event_name: CName,
         entity_id: EntityId,
-        tag_name: Opt<CName>,
+        tag_name: CName,
         tween: Ref<Tween>,
     ) {
-        let Some(tag_name) = tag_name.into_option() else {
-            warns!("invalid tag name: \"{tag_name}\"");
-            return;
+        let tag_name = match TagName::try_new(tag_name) {
+            Ok(tag_name) => tag_name,
+            Err(e) => {
+                warns!("{e}");
+                return;
+            }
+        };
+        let entity_id = match TargetId::try_new(entity_id) {
+            Ok(entity_id) => entity_id,
+            Err(e) => {
+                warns!("{e}");
+                return;
+            }
         };
         queue::send(Command::StopOnEmitter {
             event_name,

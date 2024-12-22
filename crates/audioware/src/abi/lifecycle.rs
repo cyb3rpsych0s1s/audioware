@@ -1,7 +1,4 @@
-use std::num::NonZero;
-
 use crossbeam::channel::Sender;
-use kira::spatial::emitter::EmitterSettings;
 use red4ext_rs::types::{CName, EntityId};
 
 mod board;
@@ -11,19 +8,21 @@ pub use board::Board;
 pub use session::Session;
 pub use system::System;
 
+use crate::{TagName, TargetFootprint, TargetId};
+
 /// Engine inner lifecycle.
 #[derive(Debug)]
 pub enum Lifecycle {
     RegisterEmitter {
-        entity_id: EntityId,
-        tag_name: CName,
+        entity_id: TargetId,
+        tag_name: TagName,
         emitter_name: Option<CName>,
-        emitter_settings: Option<(EmitterSettings, NonZero<u64>)>,
+        emitter_settings: Option<TargetFootprint>,
         sender: Sender<bool>,
     },
     UnregisterEmitter {
-        entity_id: EntityId,
-        tag_name: CName,
+        entity_id: TargetId,
+        tag_name: TagName,
         sender: Sender<bool>,
     },
     OnEmitterDies {
