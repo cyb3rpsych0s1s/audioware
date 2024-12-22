@@ -8,7 +8,7 @@ pub use board::Board;
 pub use session::Session;
 pub use system::System;
 
-use crate::{TagName, TargetFootprint, TargetId};
+use super::{TagName, TargetFootprint, TargetId};
 
 /// Engine inner lifecycle.
 #[derive(Debug)]

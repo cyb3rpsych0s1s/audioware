@@ -14,8 +14,7 @@ use crate::{
     engine::{eq::Preset, state, Engine},
     queue,
     utils::{fails, lifecycle, warns},
-    Audioware, EmitterSettings, LocalizationPackage, TagName, TargetFootprint, TargetId, ToTween,
-    Tween,
+    Audioware, EmitterSettings, LocalizationPackage, ToTween, Tween,
 };
 
 pub mod command;
@@ -288,7 +287,6 @@ impl SceneLifecycle for AudioSystemExt {
         emitter_name: Opt<CName>,
         emitter_settings: Ref<EmitterSettings>,
     ) -> bool {
-        use crate::engine::ToDistances;
         let tag_name = match TagName::try_new(tag_name) {
             Ok(tag_name) => tag_name,
             Err(e) => {
@@ -303,10 +301,9 @@ impl SceneLifecycle for AudioSystemExt {
                 return false;
             }
         };
-        let emitter_settings = emitter_settings.into_settings_ext(entity_id.to_distances());
-        let emitter_settings = match emitter_settings.map(TargetFootprint::try_new) {
-            Some(Ok(emitter_settings)) => Some(emitter_settings),
-            Some(Err(e)) => {
+        let emitter_settings = match TargetFootprint::try_new(emitter_settings, *entity_id) {
+            Ok(emitter_settings) => Some(emitter_settings),
+            Err(e) => {
                 warns!(
                     "{}",
                     e.iter()
@@ -316,7 +313,6 @@ impl SceneLifecycle for AudioSystemExt {
                 );
                 return false;
             }
-            None => None,
         };
         let (sender, receiver) = bounded(0);
         queue::notify(Lifecycle::RegisterEmitter {

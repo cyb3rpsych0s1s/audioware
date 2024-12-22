@@ -1,6 +1,7 @@
 use std::{
     hash::{Hash, Hasher},
-    ops::Not,
+    num::NonZero,
+    ops::{Deref, Not},
     time::Duration,
 };
 
@@ -8,13 +9,13 @@ use audioware_manifest::{Interpolation, Locale, LocaleExt, PlayerGender, Region,
 use kira::{manager::backend::cpal::CpalBackend, tween::Easing};
 use red4ext_rs::{
     class_kind::{Native, Scripted},
-    types::{CName, IScriptable, Opt, Ref, StaticArray},
+    types::{CName, EntityId, GameInstance, IScriptable, Opt, Ref, StaticArray},
     ScriptClass,
 };
 
 use crate::{
-    abi::fails, engine::Engine, ElasticTween, EmitterDistances, EmitterSettings, LinearTween,
-    ToEasing, Tween, AUDIOWARE_VERSION,
+    abi::fails, engine::Engine, error::ValidationError, get_player, AsEntity, ElasticTween,
+    EmitterDistances, EmitterSettings, Entity, LinearTween, ToEasing, Tween, AUDIOWARE_VERSION,
 };
 
 /// Represents a region in time.
@@ -330,4 +331,84 @@ impl AudioSystemExt {
 unsafe impl ScriptClass for AudioSystemExt {
     type Kind = Native;
     const NAME: &'static str = "AudioSystemExt";
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct TagName(CName);
+
+impl TagName {
+    pub fn try_new(value: CName) -> Result<Self, ValidationError> {
+        match value.as_str() {
+            "" | "None" => Err(ValidationError::InvalidTagName),
+            _ => Ok(Self(value)),
+        }
+    }
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+impl Deref for TagName {
+    type Target = CName;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct TargetId(EntityId);
+
+impl TargetId {
+    pub fn try_new(value: EntityId) -> Result<Self, ValidationError> {
+        if !value.is_defined()
+            || get_player(GameInstance::new())
+                .cast::<Entity>()
+                .expect("PlayerPuppet inherits from Entity")
+                .get_entity_id()
+                == value
+        {
+            return Err(ValidationError::InvalidTargetId);
+        }
+        Ok(Self(value))
+    }
+}
+
+impl Deref for TargetId {
+    type Target = EntityId;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::fmt::Display for TargetId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+#[derive(Debug)]
+pub struct TargetFootprint((kira::spatial::emitter::EmitterSettings, NonZero<u64>));
+
+impl TargetFootprint {
+    pub fn try_new(
+        value: Ref<super::EmitterSettings>,
+        entity_id: EntityId,
+    ) -> Result<Self, Vec<ValidationError>> {
+        use crate::engine::ToDistances;
+        let value = value.into_settings_ext(entity_id.to_distances());
+        if value.is_none() {
+            return Err(vec![ValidationError::InvalidEmitterSettings]);
+        }
+        Ok(Self(value.unwrap()))
+    }
+}
+
+impl Deref for TargetFootprint {
+    type Target = (kira::spatial::emitter::EmitterSettings, NonZero<u64>);
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }

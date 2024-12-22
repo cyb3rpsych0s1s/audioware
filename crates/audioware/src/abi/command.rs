@@ -2,7 +2,7 @@ use audioware_manifest::{PlayerGender, ScnDialogLineType, Settings};
 use kira::tween::Tween;
 use red4ext_rs::types::{CName, EntityId};
 
-use crate::{TagName, TargetId};
+use super::{TagName, TargetId};
 
 /// Sound inner command.
 #[derive(Clone)]

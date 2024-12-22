@@ -150,10 +150,10 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     sender,
                 } => {
                     let registered = engine.register_emitter(
-                        entity_id,
-                        tag_name,
+                        *entity_id,
+                        *tag_name,
                         emitter_name,
-                        emitter_settings,
+                        emitter_settings.as_deref(),
                     );
                     let _ = sender.try_send(registered);
                 }
@@ -162,7 +162,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     tag_name,
                     sender,
                 } => {
-                    let unregistered = engine.unregister_emitter(entity_id, tag_name);
+                    let unregistered = engine.unregister_emitter(*entity_id, *tag_name);
                     let _ = sender.try_send(unregistered);
                 }
                 Lifecycle::OnEmitterDies { entity_id } => engine.on_emitter_dies(entity_id),

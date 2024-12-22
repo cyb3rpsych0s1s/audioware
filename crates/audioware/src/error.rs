@@ -64,6 +64,8 @@ pub enum ValidationError {
     InvalidTagName,
     #[snafu(display("entity_id cannot be undefined or V."))]
     InvalidTargetId,
+    #[snafu(display("invalid emitter_settings."))]
+    InvalidEmitterSettings,
 }
 
 impl From<InternalError> for Error {

@@ -1,5 +1,6 @@
 use std::{
     fmt::Debug,
+    num::NonZero,
     ops::{Div, Not},
 };
 
@@ -11,17 +12,18 @@ use eq::{EqPass, Preset};
 use kira::{
     manager::{backend::Backend, AudioManager, AudioManagerSettings},
     sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError},
+    spatial::emitter::EmitterSettings,
     tween::Tween,
     OutputDestination,
 };
 use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
+use scene::Store;
 pub use scene::{AffectedByTimeDilation, DilationUpdate, Scene};
 use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
 use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
-use crate::{engine::scene::Store, TagName, TargetFootprint, TargetId};
 use crate::{
     error::{EngineError, Error},
     propagate_subtitles,
@@ -502,19 +504,14 @@ where
 
     pub fn register_emitter(
         &mut self,
-        entity_id: TargetId,
-        tag_name: TagName,
+        entity_id: EntityId,
+        tag_name: CName,
         emitter_name: Option<CName>,
-        emitter_settings: Option<TargetFootprint>,
+        emitter_settings: Option<&(EmitterSettings, NonZero<u64>)>,
     ) -> bool {
         match self.scene {
             Some(ref mut scene) => scene
-                .add_emitter(
-                    *entity_id,
-                    *tag_name,
-                    emitter_name,
-                    emitter_settings.as_deref(),
-                )
+                .add_emitter(entity_id, tag_name, emitter_name, emitter_settings)
                 .inspect_err(|e| warns!("failed to register emitter: {e}"))
                 .is_ok(),
             None => {
@@ -524,7 +521,7 @@ where
         }
     }
 
-    pub fn unregister_emitter(&mut self, entity_id: TargetId, tag_name: TagName) -> bool {
+    pub fn unregister_emitter(&mut self, entity_id: EntityId, tag_name: CName) -> bool {
         match self.scene {
             Some(ref mut scene) => scene.unregister_emitter(&entity_id, &tag_name),
             None => {
