@@ -1,7 +1,5 @@
 //! Interop types used in audioware [.reds](https://github.com/cyb3rpsych0s1s/audioware/tree/main/audioware/reds).
 
-mod references;
-pub use references::*;
 mod easing;
 pub use easing::*;
 mod settings;
