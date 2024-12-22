@@ -140,7 +140,7 @@ unsafe impl ScriptClass for EmitterDistances {
 
 impl Hash for EmitterDistances {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        ((self.min_distance * 100.) as u64).hash(state);
-        ((self.max_distance * 100.) as u64).hash(state);
+        ((self.min_distance * 100.).clamp(0., u64::MAX as f32) as u64).hash(state);
+        ((self.max_distance * 100.).clamp(0., u64::MAX as f32) as u64).hash(state);
     }
 }

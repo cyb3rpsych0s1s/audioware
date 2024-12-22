@@ -1,5 +1,3 @@
-use std::num::NonZeroU64;
-
 use audioware_manifest::{Locale, PlayerGender, ScnDialogLineType, Validate};
 use command::Command;
 use crossbeam::channel::bounded;
@@ -289,38 +287,18 @@ impl SceneLifecycle for AudioSystemExt {
         emitter_name: Opt<CName>,
         emitter_settings: Ref<EmitterSettings>,
     ) -> bool {
+        use crate::engine::ToDistances;
         if tag_name.as_str() == "None" || tag_name.as_str().is_empty() {
             warns!("invalid tag name: \"{tag_name}\"");
             return false;
         }
         let (sender, receiver) = bounded(0);
-        let mut emitter_settings_hash = None;
-        if !emitter_settings.is_null() {
-            use std::hash::Hash;
-            use std::hash::Hasher;
-            let mut hasher = ahash::AHasher::default();
-            if let Some(x) = unsafe { emitter_settings.fields() }.cloned() {
-                x.hash(&mut hasher);
-                emitter_settings_hash = Some(hasher.finish());
-            } else {
-                fails!("emitter settings fields should be available when not null");
-            }
-        }
-        let emitter_settings = emitter_settings.into_settings();
+        let emitter_settings = emitter_settings.into_settings_ext(entity_id.to_distances());
         queue::notify(Lifecycle::RegisterEmitter {
             tag_name,
             entity_id,
             emitter_name: emitter_name.into_option(),
-            emitter_settings: emitter_settings_hash.map(|x| {
-                (
-                    // SAFETY: if emitter_settings_hash is Some, then emitter_settings is Some
-                    emitter_settings.unwrap(),
-                    unsafe {
-                        // SAFETY: Hash implementation already makes sure that the hash is non-zero
-                        NonZeroU64::new_unchecked(x)
-                    },
-                )
-            }),
+            emitter_settings,
             sender,
         });
         if let Ok(registered) = receiver.recv() {

@@ -31,6 +31,8 @@ use crate::{
     AsAudioSystem, AsGameInstance, AsGameObjectExt, GameObject,
 };
 
+pub use scene::ToDistances;
+
 pub mod eq;
 pub mod queue;
 pub mod state;

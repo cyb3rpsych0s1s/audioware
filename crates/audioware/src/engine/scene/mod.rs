@@ -288,6 +288,9 @@ pub trait AsEntityExt {
 
 impl AsEntityExt for Ref<Entity> {
     fn get_emitter_distances(&self) -> Option<EmitterDistances> {
+        if self.is_null() {
+            return None;
+        }
         if let Some(puppet) = self.clone().cast::<ScriptedPuppet>().as_ref() {
             let s = match puppet.get_npc_type() {
                 GamedataNpcType::Device | GamedataNpcType::Drone | GamedataNpcType::Spiderbot => {
@@ -348,5 +351,18 @@ impl AsEntityExt for Ref<Entity> {
             return Some(gender);
         }
         None
+    }
+}
+
+pub trait ToDistances {
+    fn to_distances(&self) -> Option<EmitterDistances>;
+}
+
+impl ToDistances for EntityId {
+    fn to_distances(&self) -> Option<EmitterDistances> {
+        use crate::types::AsGameInstance;
+        let game = GameInstance::new();
+        let entity = GameInstance::find_entity_by_id(game, *self);
+        entity.get_emitter_distances()
     }
 }

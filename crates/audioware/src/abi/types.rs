@@ -1,4 +1,8 @@
-use std::time::Duration;
+use std::{
+    hash::{Hash, Hasher},
+    ops::Not,
+    time::Duration,
+};
 
 use audioware_manifest::{Interpolation, Locale, LocaleExt, PlayerGender, Region, Settings};
 use kira::{manager::backend::cpal::CpalBackend, tween::Easing};
@@ -78,8 +82,61 @@ pub trait ToSettings {
     fn into_settings(self) -> Option<Self::Settings>;
 }
 
+impl<T> ToSettings for Ref<T>
+where
+    T: ScriptClass + Clone + ToSettings,
+    Ref<T>: Clone,
+{
+    type Settings = <T as ToSettings>::Settings;
+
+    fn into_settings(self) -> Option<Self::Settings> {
+        if self.is_null() {
+            return None;
+        }
+        unsafe { self.fields() }.cloned().unwrap().into_settings()
+    }
+}
+
+pub trait ToSettingsExt {
+    type Settings;
+    type Defaults;
+    fn into_settings_ext(self, defaults: Self::Defaults) -> Option<Self::Settings>;
+}
+
+impl<T> ToSettingsExt for Ref<T>
+where
+    T: ScriptClass + Clone + ToSettingsExt,
+    Ref<T>: Clone,
+{
+    type Settings = <T as ToSettingsExt>::Settings;
+    type Defaults = <T as ToSettingsExt>::Defaults;
+
+    fn into_settings_ext(self, defaults: Self::Defaults) -> Option<Self::Settings> {
+        if self.is_null() {
+            return None;
+        }
+        unsafe { self.fields() }
+            .cloned()
+            .unwrap()
+            .into_settings_ext(defaults)
+    }
+}
+
 pub trait ToRegion {
     fn into_region(self) -> Option<Region>;
+}
+
+impl<T> ToRegion for Ref<T>
+where
+    T: ScriptClass + Clone + ToRegion,
+    Ref<T>: Clone,
+{
+    fn into_region(self) -> Option<Region> {
+        if self.is_null() {
+            return None;
+        }
+        unsafe { self.fields() }.cloned().unwrap().into_region()
+    }
 }
 
 pub trait ToInterpolation {
@@ -125,91 +182,109 @@ impl ToInterpolation for Ref<Tween> {
     }
 }
 
-impl ToRegion for Ref<AudioRegion> {
+impl ToRegion for AudioRegion {
     fn into_region(self) -> Option<Region> {
-        if self.is_null() {
-            return None;
-        }
-        let AudioRegion { starts, ends } = unsafe { self.fields() }?.clone();
-        if starts == 0. && ends == 0. {
-            return None;
-        }
         Some(Region {
-            starts: starts.ne(&0.).then_some(Duration::from_secs_f32(starts)),
-            ends: ends.ne(&0.).then_some(Duration::from_secs_f32(ends)),
+            starts: self
+                .starts
+                .ne(&0.)
+                .then_some(Duration::from_secs_f32(self.starts)),
+            ends: self
+                .ends
+                .ne(&0.)
+                .then_some(Duration::from_secs_f32(self.ends)),
         })
     }
 }
 
-impl ToSettings for Ref<AudioSettingsExt> {
+impl ToSettings for AudioSettingsExt {
     type Settings = Settings;
     fn into_settings(self) -> Option<Self::Settings> {
-        if self.is_null() {
-            return None;
-        }
-        let AudioSettingsExt {
-            start_position,
-            region,
-            r#loop,
-            volume,
-            fade_in,
-            panning,
-            playback_rate,
-            affected_by_time_dilation,
-        } = unsafe { self.fields() }?.clone();
-        if let Err(e) = Duration::try_from_secs_f32(start_position) {
+        if let Err(e) = Duration::try_from_secs_f32(self.start_position) {
             fails!("invalid start position: {e}");
             return None;
         }
         Some(Settings {
             start_time: Default::default(),
-            start_position: Some(Duration::from_secs_f32(start_position)),
-            region: region.into_region(),
-            r#loop: Some(r#loop),
-            volume: Some(volume as f64),
-            fade_in_tween: fade_in.into_interpolation(),
-            panning: Some(panning as f64),
-            playback_rate: Some(kira::sound::PlaybackRate::Factor(playback_rate as f64)),
-            affected_by_time_dilation: Some(affected_by_time_dilation),
+            start_position: Some(Duration::from_secs_f32(self.start_position)),
+            region: self.region.into_region(),
+            r#loop: Some(self.r#loop),
+            volume: Some(self.volume as f64),
+            fade_in_tween: self.fade_in.into_interpolation(),
+            panning: Some(self.panning as f64),
+            playback_rate: Some(kira::sound::PlaybackRate::Factor(self.playback_rate as f64)),
+            affected_by_time_dilation: Some(self.affected_by_time_dilation),
         })
     }
 }
 
-impl ToSettings for Ref<EmitterSettings> {
-    type Settings = kira::spatial::emitter::EmitterSettings;
-    fn into_settings(self) -> Option<Self::Settings> {
-        if self.is_null() {
+impl ToSettingsExt for EmitterSettings {
+    type Settings = (
+        kira::spatial::emitter::EmitterSettings,
+        std::num::NonZero<u64>,
+    );
+    type Defaults = Option<kira::spatial::emitter::EmitterDistances>;
+    fn into_settings_ext(self, defaults: Self::Defaults) -> Option<Self::Settings> {
+        let mut state = ahash::AHasher::default();
+        let d = self
+            .distances
+            .is_null()
+            .not()
+            .then_some(unsafe { self.distances.fields() }.cloned())
+            .flatten();
+        d.hash(&mut state);
+        if !self.attenuation_function.is_null() {
+            if self.attenuation_function.is_a::<LinearTween>() {
+                let x = unsafe {
+                    std::mem::transmute::<&Ref<Tween>, &Ref<LinearTween>>(
+                        &self.attenuation_function,
+                    )
+                };
+                let ty = unsafe { x.fields() }.unwrap();
+                Some(ty).hash(&mut state);
+            } else if self.attenuation_function.is_a::<ElasticTween>() {
+                let x = unsafe {
+                    std::mem::transmute::<&Ref<Tween>, &Ref<ElasticTween>>(
+                        &self.attenuation_function,
+                    )
+                };
+                let ty = unsafe { x.fields() }.unwrap();
+                Some(ty).hash(&mut state);
+            } else {
+                fails!("invalid attenuation function");
+                None::<Tween>.hash(&mut state);
+            }
+        } else {
+            None::<Tween>.hash(&mut state);
+        }
+        let distances = self.distances.into_settings();
+        let attenuation_function = self.attenuation_function.into_easing();
+        self.enable_spatialization.hash(&mut state);
+        self.persist_until_sounds_finish.hash(&mut state);
+        let hash = state.finish();
+        if hash == 0 {
+            fails!("emitter settings hash should not be 0");
             return None;
         }
-        let EmitterSettings {
-            distances,
-            attenuation_function,
-            enable_spatialization,
-            persist_until_sounds_finish,
-            ..
-        } = unsafe { self.fields() }?.clone();
-        Some(kira::spatial::emitter::EmitterSettings {
-            distances: distances.into_settings().unwrap_or_default(),
-            attenuation_function: attenuation_function.into_easing(),
-            enable_spatialization,
-            persist_until_sounds_finish,
-        })
+        Some((
+            kira::spatial::emitter::EmitterSettings {
+                distances: distances.unwrap_or(defaults.unwrap_or_default()),
+                attenuation_function,
+                enable_spatialization: self.enable_spatialization,
+                persist_until_sounds_finish: self.persist_until_sounds_finish,
+            },
+            // SAFETY: checked above
+            unsafe { std::num::NonZeroU64::new_unchecked(hash) },
+        ))
     }
 }
 
-impl ToSettings for Ref<EmitterDistances> {
+impl ToSettings for EmitterDistances {
     type Settings = kira::spatial::emitter::EmitterDistances;
     fn into_settings(self) -> Option<Self::Settings> {
-        if self.is_null() {
-            return None;
-        }
-        let EmitterDistances {
-            min_distance,
-            max_distance,
-        } = unsafe { self.fields() }?.clone();
         Some(kira::spatial::emitter::EmitterDistances {
-            min_distance,
-            max_distance,
+            min_distance: self.min_distance,
+            max_distance: self.max_distance,
         })
     }
 }

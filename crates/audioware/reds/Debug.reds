@@ -177,10 +177,8 @@ public class AutoEmittersSystem extends ScriptableSystem {
         let emitterID: EntityID;
         let emitterCName: CName = evt.IsShiftDown() ? n"None" : n"DummyTest";
 
-        let tween = new LinearTween();
-        tween.duration = 0.0;
         let ext = new AudioSettingsExt();
-        ext.fadeIn = tween;
+        ext.fadeIn = LinearTween.Immediate(2.0);
 
         let settings = new EmitterSettings();
         settings.persistUntilSoundsFinish = true;
