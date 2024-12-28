@@ -32,6 +32,12 @@ As previously stated, audio will dynamically have its frequencies adjusted by [U
 
 This is currently not implemented for cars.
 
+## 🏊‍♂️ Dynamic time dilation
+
+Since `1.3.0`, audio will dynamically have its pitch adjusted whenever time dilation changes (e.g. when using Sandevistan).
+
+You can also opt-out on a per-sound basis.
+
 ## 🧹 Clean game sessions
 
 Spatial scene along with its emitters, every track and currently playing sounds will be completely stopped and reset on every save load.
