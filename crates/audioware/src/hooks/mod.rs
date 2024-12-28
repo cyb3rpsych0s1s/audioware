@@ -10,11 +10,13 @@ mod time_system;
 mod events;
 
 pub fn attach(env: &SdkEnv) {
-    save_handling_controller::attach_hook(env);
     audio_system::attach_hooks(env);
     entity::attach_hook(env);
     time_dilatable::attach_hooks(env);
     time_system::attach_hooks(env);
+
+    #[cfg(debug_assertions)]
+    save_handling_controller::attach_hook(env);
 
     #[cfg(feature = "research")]
     {

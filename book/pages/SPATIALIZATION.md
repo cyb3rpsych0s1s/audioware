@@ -5,11 +5,10 @@ Thanks to [kira][kira] Audioware supports audio spatialization, which means audi
 ## Registration
 
 Audio emitter(s) must be registered before you can emit audio from them, but they are automatically cleaned up whenever emitter despawns or dies.
+You must provide a `tag_name` which Audioware uses to track emitters internally.
 
 ```swift
-if !GameInstance.GetAudioSystemExt(game).IsRegisteredEmitter(emitterID) {
-    GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID);
-}
+GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID, n"MyMod");
 ```
 
 ```admonish warning title="Types"
@@ -21,34 +20,9 @@ You don't need to manually unregister your audio emitter(s), even if you can do 
 Audioware does it automatically whenever emitter despawns or dies. Dying emitter <span style="color: hotpink">still</span> emit.
 ~~~
 
-<details><summary>How to easily e.g. fade a sound out whenever an Entity is dying <span style="color: hotpink; font-size: 0.75em">click to open</span></summary>
-
-```swift
-/// for Humans
-@wrapMethod(NPCDeathListener)
-protected cb func OnStatPoolCustomLimitReached(value: Float) -> Bool {
-    let wasAlive = !this.npc.m_wasJustKilledOrDefeated;
-    let out = wrappedMethod(value);
-    if wasAlive && this.npc.m_wasJustKilledOrDefeated {
-        let id = this.npc.GetEntityID();
-        let name = this.npc.GetDisplayName(); // or whatever you named it
-        // fades for 2sec, with intensity 0.2
-        let fadeOut = LinearTween.ImmediateOut(2.0, 0.2);
-
-        GameInstance
-            .GetAudioSystemExt(this.npc.GetGame())
-            .Stop(n"my_custom_audio", id, name, fadeOut);
-    }
-    return out;
-}
-/// for Robots
-@wrapMethod(NPCDeathListener)
-protected cb func OnStatPoolMinValueReached(value: Float) -> Bool { ... }
-```
-
-> A courtesy of [Demon9ne](https://next.nexusmods.com/profile/Demon9ne), thanks for the snippet!
-
-</details>
+~~~admonish hint title="Dying emitter (1.3.0+)"
+You don't need to manually fade out or stop your audio on dying emitter(s), even if you can do so: Audioware does it automatically whenever emitter dies (stop) or gets incapacitated / defeated (fade-out).
+~~~
 
 ```admonish hint
 V cannot be an audio emitter because (s)he is the listener.
@@ -60,10 +34,10 @@ Then, simply use the `OnEmitter` variants of the methods:
 
 ```swift
 // ⚠️ emitterID and emitterCName must be both valid and non-default
-GameInstance.GetAudioSystemExt(game).PlayOnEmitter(n"my_custom_audio", emitterID, emitterCName);
+GameInstance.GetAudioSystemExt(game).PlayOnEmitter(n"my_custom_audio", emitterID, n"MyMod");
 
 // if should stop at some point...
-GameInstance.GetAudioSystemExt(game).StopOnEmitter(n"my_custom_audio", emitterID, emitterCName);
+GameInstance.GetAudioSystemExt(game).StopOnEmitter(n"my_custom_audio", emitterID, n"MyMod");
 ```
 
 ```admonish youtube title="YouTube demo"
@@ -103,17 +77,17 @@ public class AutoEmittersSystem extends ScriptableSystem {
         tween.startTime = RandRangeF(1.0, 3.0);
         tween.duration = RandRangeF(3.0, 4.5);
         let emitterID: EntityID;
-        let emitterCName: CName = n"DummyTest";
+        let tagName: CName = n"MyMod";
 
         let game = this.GetGameInstance();
         // get entity V currently looks at (crosshair)
         let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
         if !IsDefined(target) { return; }
         emitterID = target.GetEntityID();
-        if !GameInstance.GetAudioSystemExt(game).IsRegisteredEmitter(emitterID) {
-            GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID);
+        if !GameInstance.GetAudioSystemExt(game).IsRegisteredEmitter(emitterID, tagName) {
+            GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID, tagName);
         }
-        GameInstance.GetAudioSystemExt(game).PlayOnEmitter(eventName, emitterID, emitterCName);
+        GameInstance.GetAudioSystemExt(game).PlayOnEmitter(eventName, emitterID, tagName);
     }
 }
 ```

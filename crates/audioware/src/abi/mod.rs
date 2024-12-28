@@ -302,7 +302,7 @@ impl SceneLifecycle for AudioSystemExt {
             }
         };
         let emitter_settings = match TargetFootprint::try_new(emitter_settings, *entity_id) {
-            Ok(emitter_settings) => Some(emitter_settings),
+            Ok(emitter_settings) => emitter_settings,
             Err(e) => {
                 warns!(
                     "{}",
