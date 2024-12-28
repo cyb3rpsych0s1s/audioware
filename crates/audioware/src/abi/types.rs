@@ -395,13 +395,9 @@ impl TargetFootprint {
     pub fn try_new(
         value: Ref<super::EmitterSettings>,
         entity_id: EntityId,
-    ) -> Result<Self, Vec<ValidationError>> {
+    ) -> Result<Option<Self>, Vec<ValidationError>> {
         use crate::engine::ToDistances;
-        let value = value.into_settings_ext(entity_id.to_distances());
-        if value.is_none() {
-            return Err(vec![ValidationError::InvalidEmitterSettings]);
-        }
-        Ok(Self(value.unwrap()))
+        Ok(value.into_settings_ext(entity_id.to_distances()).map(Self))
     }
 }
 
