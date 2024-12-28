@@ -366,9 +366,7 @@ where
                                     GameInstance::find_entity_by_id(GameInstance::new(), entity_id)
                                         .cast::<GameObject>();
 
-                                go.and_then(|x| {
-                                    x.is_null().not().then_some(x.resolve_display_name())
-                                })
+                                go.and_then(|x| x.is_null().not().then(|| x.resolve_display_name()))
                             }
                         };
                         if let Some(emitter_name) = emitter_name {

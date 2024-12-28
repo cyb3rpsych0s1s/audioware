@@ -32,7 +32,7 @@ unsafe extern "C" fn detour(
         .class()
         .name()
         .eq(&CName::new(Entity::NAME))
-        .then_some(unsafe { std::mem::transmute::<&IScriptable, &Entity>(this) })
+        .then(|| unsafe { std::mem::transmute::<&IScriptable, &Entity>(this) })
         .map(|x| x.entity_id);
     crate::utils::lifecycle!(
         "intercepted {} on {id:?}:

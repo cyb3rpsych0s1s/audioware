@@ -157,7 +157,7 @@ impl ToInterpolation for Ref<Tween> {
                     start_time: x
                         .start_time()
                         .ne(&0.)
-                        .then_some(Duration::from_secs_f32(x.start_time())),
+                        .then(|| Duration::from_secs_f32(x.start_time())),
                     duration: Duration::from_secs_f32(x.duration()),
                     easing: Easing::Linear,
                 })
@@ -169,7 +169,7 @@ impl ToInterpolation for Ref<Tween> {
                     start_time: x
                         .start_time()
                         .ne(&0.)
-                        .then_some(Duration::from_secs_f32(x.start_time())),
+                        .then(|| Duration::from_secs_f32(x.start_time())),
                     duration: Duration::from_secs_f32(x.duration()),
                     easing: match x.easing {
                         crate::Easing::InPowf => Easing::InPowf(x.value as f64),
@@ -189,11 +189,11 @@ impl ToRegion for AudioRegion {
             starts: self
                 .starts
                 .ne(&0.)
-                .then_some(Duration::from_secs_f32(self.starts)),
+                .then(|| Duration::from_secs_f32(self.starts)),
             ends: self
                 .ends
                 .ne(&0.)
-                .then_some(Duration::from_secs_f32(self.ends)),
+                .then(|| Duration::from_secs_f32(self.ends)),
         })
     }
 }
@@ -231,7 +231,7 @@ impl ToSettingsExt for EmitterSettings {
             .distances
             .is_null()
             .not()
-            .then_some(unsafe { self.distances.fields() }.cloned())
+            .then(|| unsafe { self.distances.fields() }.cloned())
             .flatten();
         d.hash(&mut state);
         if !self.attenuation_function.is_null() {

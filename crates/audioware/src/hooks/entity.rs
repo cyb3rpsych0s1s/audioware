@@ -19,7 +19,7 @@ unsafe extern "C" fn detour(
     let x = i
         .is_null()
         .not()
-        .then_some(&*i)
+        .then(|| &*i)
         .map(|x| mem::transmute::<&IScriptable, &Entity>(x))
         .map(|x| x.entity_id);
     intercept!("called Entity::Dispose ({x:?})");

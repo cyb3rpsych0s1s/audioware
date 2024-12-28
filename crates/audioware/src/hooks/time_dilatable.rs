@@ -42,7 +42,7 @@ unsafe extern "C" fn detour_set(
     let x = i
         .is_null()
         .not()
-        .then_some(&*i)
+        .then(|| &*i)
         .map(|x| mem::transmute::<&IScriptable, &Entity>(x))
         .map(|x| x.entity_id);
 
@@ -89,7 +89,7 @@ unsafe extern "C" fn detour_unset(
     let x = i
         .is_null()
         .not()
-        .then_some(&*i)
+        .then(|| &*i)
         .map(|x| mem::transmute::<&IScriptable, &Entity>(x))
         .map(|x| x.entity_id);
 

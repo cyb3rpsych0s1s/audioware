@@ -38,13 +38,13 @@ impl Hash for EmitterSettings {
             .distances
             .is_null()
             .not()
-            .then_some(unsafe { self.distances.fields() }.unwrap().clone());
+            .then(|| unsafe { self.distances.fields() }.unwrap().clone());
         distance.hash(state);
         match self
             .attenuation_function
             .is_null()
             .not()
-            .then_some(self.attenuation_function.clone())
+            .then(|| self.attenuation_function.clone())
         {
             None => {
                 None::<crate::Tween>.hash(state);
@@ -82,14 +82,14 @@ impl PartialEq for EmitterSettings {
                 .clone()
                 .is_null()
                 .not()
-                .then_some(unsafe { self.distances.fields() })
+                .then(|| unsafe { self.distances.fields() })
                 .flatten(),
             other
                 .distances
                 .clone()
                 .is_null()
                 .not()
-                .then_some(unsafe { self.distances.fields() })
+                .then(|| unsafe { self.distances.fields() })
                 .flatten(),
         ) {
             (None, Some(_)) | (Some(_), None) => return false,
