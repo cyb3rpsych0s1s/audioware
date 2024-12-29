@@ -50,7 +50,10 @@ now:
 
 # 📦 build Rust RED4Ext plugin
 build PROFILE='debug' FEATURES='' TO=game_dir: (setup join(TO, red4ext_deploy_dir))
-  @if ('{{PROFILE}}' -eq "release") { cargo build --release } else { cargo build --features='{{FEATURES}}' }
+  @if    ('{{PROFILE}}' -eq "debug")   { cargo build --features='{{FEATURES}}' } \
+  elseif ('{{PROFILE}}' -eq "staging") { cargo build --profile staging --features='{{FEATURES}}' } \
+  elseif ('{{PROFILE}}' -eq "release") { cargo build --release --features='{{FEATURES}}' } \
+  else                                 { Write-Host "unknown profile: '{{PROFILE}}'"; exit 1 }
   @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just now
 
@@ -58,15 +61,12 @@ alias b := build
 
 dev FEATURES='hot-reload,research': (build 'debug' FEATURES) reload
 
-lldb TO=game_dir: (dev 'hot-reload')
-  @just copy '{{ join(red4ext_bin_dir, "debug", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
+lldb PROFILE='debug' FEATURES='hot-reload' TO=game_dir: (dev FEATURES)
+  @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
   @just now
 
-staging TO=game_dir: (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir))
+staging TO=game_dir: (lldb 'staging' '')
   @cargo build --profile staging
-  @just copy '{{ join(red4ext_bin_dir, "release", plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
-  @just copy '{{ join(red4ext_bin_dir, "release", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
-  @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{ join(TO, redscript_deploy_dir) }}'
   @just no-debug '{{TO}}'; Write-Host "Removed debug files";
   @just now
 
