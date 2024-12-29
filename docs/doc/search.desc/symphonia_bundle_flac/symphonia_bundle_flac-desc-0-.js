@@ -1,0 +1,1 @@
+searchState.loadedDescShard("symphonia_bundle_flac", 0, "Free Lossless Audio Codec (FLAC) decoder.\nFree Lossless Audio Codec (FLAC) native frame reader.\nReturns the argument unchanged.\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.\nCalls <code>U::from(self)</code>.")
