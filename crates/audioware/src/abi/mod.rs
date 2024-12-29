@@ -46,7 +46,7 @@ macro_rules! g {
 #[allow(clippy::transmute_ptr_to_ref)] // upstream lint
 #[rustfmt::skip]
 pub fn exports() -> impl Exportable {
-    let exp = exports![
+    exports![
         ClassExport::<AudioSystemExt>::builder()
                 .base(IScriptable::NAME)
                 .methods(methods![
@@ -88,14 +88,8 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.SetGameLocales",             Audioware::set_game_locales),
         g!(c"Audioware.DefineSubtitles",            Audioware::define_subtitles),
         g!(c"Audioware.SupportedLanguages",         Audioware::supported_languages),
-    ];
-    #[cfg(not(feature = "hot-reload"))]
-    {exp}
-    #[cfg(feature = "hot-reload")]
-    {
-        use crate::abi::debug::HotReload;
-        exports![exp, g!(c"HotReload", Audioware::hot_reload)]
-    }
+        g!(c"Audioware.HotReload",                  Audioware::hot_reload),
+    ]
 }
 
 /// On RTTI registration.
@@ -560,15 +554,15 @@ impl ExtCommand for AudioSystemExt {
     }
 }
 
-#[cfg(feature = "hot-reload")]
-mod debug {
-    pub trait HotReload {
-        fn hot_reload();
-    }
+pub trait HotReload {
+    fn hot_reload();
+}
 
-    impl HotReload for crate::Audioware {
-        fn hot_reload() {
-            crate::queue::notify(crate::abi::Lifecycle::HotReload);
-        }
+impl HotReload for Audioware {
+    fn hot_reload() {
+        #[cfg(feature = "hot-reload")]
+        crate::queue::notify(crate::abi::Lifecycle::HotReload);
+        #[cfg(not(feature = "hot-reload"))]
+        warns!("hot-reload feature is not enabled");
     }
 }

@@ -2,6 +2,12 @@ module Audioware
 
 import Codeware.Localization.PlayerGender
 
+/// import Audioware.HotReload
+/// HotReload();
+///
+/// (note: this function does nothing in release build)
+private static native func HotReload();
+
 private static native func OnGameSessionBeforeStart();
 private static native func OnGameSessionStart();
 private static native func OnGameSessionReady();

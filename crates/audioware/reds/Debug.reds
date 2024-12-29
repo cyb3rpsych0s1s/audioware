@@ -7,9 +7,6 @@ import Audioware.Preset
 import Audioware.Audioware_SettingsDef
 import Audioware.*
 
-/// HotReload();
-private native static func HotReload() -> Void;
-
 /// Game.TestPlay("as_if_I_didnt_know_already");
 public static exec func TestPlay(game: GameInstance, name: String) {
     GameInstance.GetAudioSystem(game).Play(StringToName(name), GetPlayer(game).GetEntityID(), n"V");
