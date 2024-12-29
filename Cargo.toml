@@ -14,8 +14,11 @@ codegen-units = 1
 
 [profile.staging]
 inherits = "release"
+lto = false
 debug = true
 strip = false
+opt-level = 0
+panic = "unwind"
 
 [workspace.dependencies]
 audioware-core = { path = "crates/core" }
