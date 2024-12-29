@@ -1,22 +1,26 @@
 use red4ext_rs::SdkEnv;
 
 mod audio_system;
-mod entity;
-mod save_handling_controller;
 mod time_dilatable;
 mod time_system;
+
+#[cfg(debug_assertions)]
+mod entity;
+#[cfg(debug_assertions)]
+mod save_handling_controller;
 
 #[cfg(feature = "research")]
 mod events;
 
 pub fn attach(env: &SdkEnv) {
     audio_system::attach_hooks(env);
-    entity::attach_hook(env);
     time_dilatable::attach_hooks(env);
     time_system::attach_hooks(env);
-
+    
     #[cfg(debug_assertions)]
     save_handling_controller::attach_hook(env);
+    #[cfg(debug_assertions)]
+    entity::attach_hook(env);
 
     #[cfg(feature = "research")]
     {
@@ -34,6 +38,7 @@ mod offsets {
     pub const AUDIOSYSTEM_PLAY: u32                             = 0xCDB11D0E;   // 0x140974F58 (2.12a)
     pub const AUDIOSYSTEM_STOP: u32                             = 0xD2781D1E;   // 0x1424503F8 (2.12a)
     pub const AUDIOSYSTEM_SWITCH: u32                           = 0x15081DEA;   // 0x140291688 (2.12a)
+    #[cfg(debug_assertions)]
     pub const ENTITY_DISPOSE: u32                               = 0x3221A80;    // 0x14232C744 (2.13)
     pub const TIMEDILATABLE_SETINDIVIDUALTIMEDILATION: u32      = 0x80102488;   // 0x1423AF554 (2.13)
     pub const TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION: u32    = 0xDA20256B;   // 0x14147B424 (2.13)
@@ -41,6 +46,7 @@ mod offsets {
     pub const TIMESYSTEM_UNSETTIMEDILATION: u32                 = 0xF0652075;   // 0x1409BAD34 (2.13)
     // gameuiSaveHandlingController
     // note: LoadSaveInGame and LoadModdedSave share same underlying address
+    #[cfg(debug_assertions)]
     pub const SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME: u32     = 0x9AB824D9;   // 0x14083FB6C (2.13)
 
     #[cfg(feature = "research")]

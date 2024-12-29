@@ -63,7 +63,7 @@ lldb TO=game_dir: (dev 'hot-reload')
   @just now
 
 staging TO=game_dir: (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir))
-  @cargo build --release --features='hot-reload'
+  @cargo build --profile staging --features='hot-reload'
   @just copy '{{ join(red4ext_bin_dir, "release", plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
   @just copy '{{ join(red4ext_bin_dir, "release", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
   @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{ join(TO, redscript_deploy_dir) }}'

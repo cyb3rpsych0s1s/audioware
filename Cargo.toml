@@ -12,6 +12,11 @@ lto = "thin"
 strip = true
 codegen-units = 1
 
+[profile.staging]
+inherits = "release"
+debug = true
+strip = false
+
 [workspace.dependencies]
 audioware-core = { path = "crates/core" }
 audioware-manifest = { path = "crates/manifest" }
