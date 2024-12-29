@@ -66,7 +66,6 @@ lldb PROFILE='debug' FEATURES='hot-reload' TO=game_dir: (dev FEATURES)
   @just now
 
 staging TO=game_dir: (lldb 'staging' '')
-  @cargo build --profile staging
   @just no-debug '{{TO}}'; Write-Host "Removed debug files";
   @just now
 
