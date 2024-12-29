@@ -94,7 +94,9 @@ where
         if self.is_null() {
             return None;
         }
-        unsafe { self.fields() }.cloned().unwrap().into_settings()
+        unsafe { self.fields() }
+            .cloned()
+            .and_then(ToSettings::into_settings)
     }
 }
 
@@ -118,8 +120,7 @@ where
         }
         unsafe { self.fields() }
             .cloned()
-            .unwrap()
-            .into_settings_ext(defaults)
+            .and_then(|x| x.into_settings_ext(defaults))
     }
 }
 
@@ -136,7 +137,9 @@ where
         if self.is_null() {
             return None;
         }
-        unsafe { self.fields() }.cloned().unwrap().into_region()
+        unsafe { self.fields() }
+            .cloned()
+            .and_then(ToRegion::into_region)
     }
 }
 
