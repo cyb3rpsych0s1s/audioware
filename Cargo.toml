@@ -8,7 +8,6 @@ edition = "2021"
 rust-version = "1.82.0"
 
 [profile.release]
-opt-level = 0
 codegen-units = 1
 
 [profile.staging]
