@@ -36,7 +36,7 @@ impl Ambience {
             high = builder.add_effect(
                 FilterBuilder::default()
                     .mode(FilterMode::HighPass)
-                    .mix(Mix::DRY),
+                    .mix(Mix::WET),
             );
             builder
         })?;
