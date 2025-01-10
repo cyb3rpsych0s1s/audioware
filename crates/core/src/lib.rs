@@ -1,19 +1,32 @@
 use std::time::Duration;
 
 use kira::{
-    sound::{IntoOptionalRegion, PlaybackPosition, PlaybackRate},
-    tween::{Tween, Value},
-    OutputDestination, StartTime, Volume,
+    sound::{IntoOptionalRegion, PlaybackPosition},
+    Decibels, Panning, PlaybackRate, StartTime, Tween, Value,
 };
 
 mod data;
 mod settings;
+
+pub use settings::SpatialTrackSettings;
 
 /// Consumes `T`, absorbing its data.
 pub trait With<T> {
     fn with(self, settings: T) -> Self
     where
         Self: Sized;
+}
+
+pub struct Amplitude(pub f32);
+
+impl Amplitude {
+    pub fn as_decibels(&self) -> Decibels {
+        match self.0 {
+            1.0 => Decibels::IDENTITY,
+            x if x <= 0.0 => Decibels::SILENCE,
+            x => Decibels(20.0 * x.log10()),
+        }
+    }
 }
 
 pub trait AudioDuration {
@@ -39,10 +52,9 @@ pub trait AudioSettings {
     fn start_position(&self) -> PlaybackPosition;
     fn region(&self) -> impl IntoOptionalRegion;
     fn r#loop(&self) -> bool;
-    fn volume(&self) -> Value<Volume>;
+    fn volume(&self) -> Value<Decibels>;
     fn playback_rate(&self) -> Value<PlaybackRate>;
-    fn panning(&self) -> Value<f64>;
-    fn output_destination(&self) -> OutputDestination;
+    fn panning(&self) -> Value<Panning>;
     fn fade_in_tween(&self) -> Option<Tween>;
 }
 

@@ -1,7 +1,7 @@
 use audioware_manifest::{Locale, PlayerGender, ScnDialogLineType, Validate};
 use command::Command;
 use crossbeam::channel::bounded;
-use kira::manager::backend::cpal::CpalBackend;
+use kira::backend::cpal::CpalBackend;
 use lifecycle::{Board, Lifecycle, Session, System};
 use red4ext_rs::{
     exports, methods,

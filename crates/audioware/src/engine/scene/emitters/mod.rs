@@ -1,13 +1,14 @@
 use std::{collections::HashSet, num::NonZero, sync::LazyLock};
 
+use audioware_core::SpatialTrackSettings;
 use dashmap::{
     mapref::{multiple::RefMutMulti, one::RefMut},
     DashMap,
 };
 use kira::{
     sound::{static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError},
-    spatial::emitter::{EmitterHandle, EmitterId, EmitterSettings},
-    tween::Tween,
+    track::SpatialTrackHandle,
+    Tween,
 };
 use mods::EmitterMod;
 use parking_lot::RwLock;
@@ -51,8 +52,8 @@ impl Emitters {
         entity_id: EntityId,
         tag_name: CName,
         emitter_name: Option<CName>,
-        settings: Option<(EmitterSettings, NonZero<u64>)>,
-        handle: EmitterHandle,
+        settings: Option<(SpatialTrackSettings, NonZero<u64>)>,
+        handle: SpatialTrackHandle,
         dilation: Option<f32>,
         last_known_position: Vector4,
         busy: bool,
@@ -80,7 +81,7 @@ impl Emitters {
         entity_id: EntityId,
         tag_name: CName,
         emitter_name: Option<CName>,
-        settings: Option<&(EmitterSettings, NonZero<u64>)>,
+        settings: Option<&(SpatialTrackSettings, NonZero<u64>)>,
     ) -> Result<bool, Error> {
         // check whether the emitter has already been registered for this tag
         if self.exists_tag(&entity_id, &tag_name) {
@@ -211,11 +212,12 @@ impl Emitters {
         &self,
         entity_id: &EntityId,
         tag_name: &CName,
-    ) -> Option<(EmitterId, Option<CName>)> {
-        self.0
-            .iter()
-            .find(|x| x.key() == entity_id)
-            .and_then(|x| x.emitter_destination(tag_name))
+    ) -> Option<(SpatialTrackHandle, Option<CName>)> {
+        // self.0
+        //     .iter()
+        //     .find(|x| x.key() == entity_id)
+        //     .and_then(|x| x.emitter_destination(tag_name))
+        todo!()
     }
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
@@ -239,7 +241,6 @@ pub trait Store<T> {
     fn store(
         &mut self,
         tag_name: CName,
-        emitter_id: EmitterId,
         event_name: CName,
         handle: T,
         affected_by_time_dilation: bool,
@@ -250,23 +251,23 @@ impl Store<StaticSoundHandle> for Emitters {
     fn store(
         &mut self,
         tag_name: CName,
-        emitter_id: EmitterId,
         event_name: CName,
         handle: StaticSoundHandle,
         affected_by_time_dilation: bool,
     ) {
-        'outer: for ref mut slots in self.0.iter_mut() {
-            for ref mut slot in slots.slots.iter_mut() {
-                if emitter_id == slot.handle.id() {
-                    if let Some(mut r#mod) = slot.value_mut().mods.get_mut(&tag_name) {
-                        r#mod
-                            .handles
-                            .store_static(event_name, handle, affected_by_time_dilation);
-                    }
-                    break 'outer;
-                }
-            }
-        }
+        // 'outer: for ref mut slots in self.0.iter_mut() {
+        //     for ref mut slot in slots.slots.iter_mut() {
+        //         if emitter_id == slot.handle.id() {
+        //             if let Some(mut r#mod) = slot.value_mut().mods.get_mut(&tag_name) {
+        //                 r#mod
+        //                     .handles
+        //                     .store_static(event_name, handle, affected_by_time_dilation);
+        //             }
+        //             break 'outer;
+        //         }
+        //     }
+        // }
+        todo!()
     }
 }
 
@@ -274,23 +275,23 @@ impl Store<StreamingSoundHandle<FromFileError>> for Emitters {
     fn store(
         &mut self,
         tag_name: CName,
-        emitter_id: EmitterId,
         event_name: CName,
         handle: StreamingSoundHandle<FromFileError>,
         affected_by_time_dilation: bool,
     ) {
-        'outer: for ref mut slots in self.0.iter_mut() {
-            for ref mut slot in slots.slots.iter_mut() {
-                if emitter_id == slot.handle.id() {
-                    if let Some(mut r#mod) = slot.value_mut().mods.get_mut(&tag_name) {
-                        r#mod
-                            .handles
-                            .store_stream(event_name, handle, affected_by_time_dilation);
-                    }
-                    break 'outer;
-                }
-            }
-        }
+        // 'outer: for ref mut slots in self.0.iter_mut() {
+        //     for ref mut slot in slots.slots.iter_mut() {
+        //         if emitter_id == slot.handle.id() {
+        //             if let Some(mut r#mod) = slot.value_mut().mods.get_mut(&tag_name) {
+        //                 r#mod
+        //                     .handles
+        //                     .store_stream(event_name, handle, affected_by_time_dilation);
+        //             }
+        //             break 'outer;
+        //         }
+        //     }
+        // }
+        todo!()
     }
 }
 

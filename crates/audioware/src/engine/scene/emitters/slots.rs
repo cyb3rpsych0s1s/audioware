@@ -1,10 +1,8 @@
 use std::num::NonZero;
 
+use audioware_core::SpatialTrackSettings;
 use dashmap::{mapref::multiple::RefMulti, DashMap};
-use kira::{
-    spatial::emitter::{EmitterHandle, EmitterId, EmitterSettings},
-    tween::Tween,
-};
+use kira::{track::SpatialTrackHandle, Tween};
 use red4ext_rs::types::{CName, EntityId};
 
 use crate::{
@@ -102,13 +100,17 @@ impl EmitterSlots {
             x.value_mut().mods.remove(tag_name);
         });
     }
-    pub fn emitter_destination(&self, tag_name: &CName) -> Option<(EmitterId, Option<CName>)> {
-        self.slots.iter().find_map(|x| {
-            x.value()
-                .mods
-                .get(tag_name)
-                .map(|y| (x.value().handle.id(), y.value().name))
-        })
+    pub fn emitter_destination<'a>(
+        &'a self,
+        tag_name: &CName,
+    ) -> Option<(&'a SpatialTrackHandle, Option<CName>)> {
+        // self.slots.iter().find_map(|x| {
+        //     x.value()
+        //         .mods
+        //         .get(tag_name)
+        //         .map(|y| (&x.value().handle, y.value().name))
+        // })
+        todo!()
     }
     pub fn sync_dilation(&mut self, rate: f64, tween: Tween) {
         self.slots.iter_mut().for_each(|mut x| {
@@ -125,12 +127,13 @@ pub struct EmitterFootprint {
 }
 
 impl EmitterFootprint {
-    pub fn new(settings: Option<(EmitterSettings, NonZero<u64>)>) -> Self {
+    pub fn new(settings: Option<(SpatialTrackSettings, NonZero<u64>)>) -> Self {
         Self {
-            settings_hash: settings.map(|(_, x)| x),
             persist_until_sounds_finish: settings
+                .as_ref()
                 .map(|(x, _)| x.persist_until_sounds_finish)
                 .unwrap_or(false),
+            settings_hash: settings.map(|(_, x)| x),
         }
     }
 }
@@ -146,7 +149,7 @@ impl std::hash::Hash for EmitterFootprint {
 /// and whether sound(s) should persist until they finish playing.
 #[derive(Debug)]
 pub struct EmitterSlot {
-    pub handle: EmitterHandle,
+    pub handle: SpatialTrackHandle,
     pub mods: DashMap<CName, EmitterMod, ahash::RandomState>,
 }
 
@@ -154,7 +157,7 @@ impl EmitterSlot {
     pub fn any_playing_handle(&self) -> bool {
         self.mods.iter().any(|x| x.value().any_playing_handle())
     }
-    pub fn new(handle: EmitterHandle, tag_name: CName, emitter_name: Option<CName>) -> Self {
+    pub fn new(handle: SpatialTrackHandle, tag_name: CName, emitter_name: Option<CName>) -> Self {
         let mods = DashMap::with_hasher(ahash::RandomState::new());
         mods.insert(tag_name, EmitterMod::new(emitter_name));
         Self { handle, mods }

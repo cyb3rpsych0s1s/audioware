@@ -1,7 +1,7 @@
+use audioware_core::Amplitude;
 use kira::{
-    manager::{backend::Backend, AudioManager},
-    track::{TrackBuilder, TrackHandle, TrackRoutes},
-    OutputDestination,
+    track::{TrackBuilder, TrackHandle},
+    {backend::Backend, AudioManager},
 };
 
 use crate::{
@@ -21,12 +21,9 @@ impl Sfx {
     ) -> Result<Self, Error> {
         let track = manager.add_sub_track(
             TrackBuilder::new()
-                .routes(
-                    // sum must be 1.0 otherwise sounds crackle
-                    TrackRoutes::empty()
-                        .with_route(ambience.environmental(), 0.5)
-                        .with_route(ambience.reverb(), 0.5),
-                )
+                // sum used to have to be 1.0 otherwise sounds crackled, what now?
+                .with_send(ambience.environmental(), Amplitude(0.5).as_decibels())
+                .with_send(ambience.reverb(), Amplitude(0.5).as_decibels())
                 .with_effect(modulators.sfx_volume.try_effect()?),
         )?;
         Ok(Self(track))
@@ -39,8 +36,8 @@ impl AsRef<TrackHandle> for Sfx {
     }
 }
 
-impl<'a> From<&'a Sfx> for OutputDestination {
+impl<'a> From<&'a Sfx> for &'a TrackHandle {
     fn from(value: &'a Sfx) -> Self {
-        (&value.0).into()
+        &value.0
     }
 }

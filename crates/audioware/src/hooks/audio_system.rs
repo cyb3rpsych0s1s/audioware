@@ -1,4 +1,4 @@
-use kira::manager::backend::cpal::CpalBackend;
+use kira::backend::cpal::CpalBackend;
 use red4ext_rs::{
     types::{CName, EntityId, IScriptable, StackFrame},
     SdkEnv, VoidPtr,

@@ -1,6 +1,7 @@
+use audioware_core::Amplitude;
 use kira::{
-    manager::{backend::Backend, AudioManager},
-    track::{TrackBuilder, TrackHandle, TrackRoutes},
+    track::{TrackBuilder, TrackHandle},
+    {backend::Backend, AudioManager},
 };
 
 use crate::{
@@ -25,12 +26,9 @@ impl V {
     ) -> Result<Self, Error> {
         let vocal = manager.add_sub_track(
             TrackBuilder::new()
-                .routes(
-                    // sum must be 1.0 otherwise sounds crackle
-                    TrackRoutes::empty()
-                        .with_route(ambience.environmental(), 0.75)
-                        .with_route(ambience.reverb(), 0.25),
-                )
+                // sum used to have to be 1.0 otherwise sounds crackled, what now?
+                .with_send(ambience.environmental(), Amplitude(0.75).as_decibels())
+                .with_send(ambience.reverb(), Amplitude(0.25).as_decibels())
                 .with_effect(modulators.dialogue_volume.try_effect()?),
         )?;
         let mental = manager.add_sub_track(
@@ -38,12 +36,9 @@ impl V {
         )?;
         let emissive = manager.add_sub_track(
             TrackBuilder::new()
-                .routes(
-                    // sum must be 1.0 otherwise sounds crackle
-                    TrackRoutes::empty()
-                        .with_route(ambience.environmental(), 0.75)
-                        .with_route(ambience.reverb(), 0.25),
-                )
+                // sum used to have to be 1.0 otherwise sounds crackled, what now?
+                .with_send(ambience.environmental(), Amplitude(0.75).as_decibels())
+                .with_send(ambience.reverb(), Amplitude(0.25).as_decibels())
                 .with_effect(modulators.sfx_volume.try_effect()?),
         )?;
 

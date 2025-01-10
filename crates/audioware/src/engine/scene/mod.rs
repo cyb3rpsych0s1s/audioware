@@ -1,24 +1,16 @@
 use std::num::NonZero;
 
+use audioware_core::SpatialTrackSettings;
 use audioware_manifest::PlayerGender;
 use dilation::Dilation;
-use emitters::{Emitter, Emitters, EMITTERS};
-use kira::{
-    manager::{backend::Backend, AudioManager},
-    spatial::{
-        emitter::{EmitterDistances, EmitterSettings},
-        listener::ListenerSettings,
-        scene::{SpatialSceneHandle, SpatialSceneSettings},
-    },
-    tween::Tween,
-};
+use emitters::{Emitters, EMITTERS};
+use kira::{backend::Backend, track::SpatialTrackDistances, AudioManager, Tween};
 use listener::Listener;
 use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 
 use crate::{
-    error::{Error, SceneError},
-    get_player, AsEntity, AsScriptedPuppet, AsScriptedPuppetExt, AsTimeDilatable, AvObject,
-    BikeObject, CarObject, Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject,
+    error::Error, get_player, AsEntity, AsScriptedPuppet, AsScriptedPuppetExt, AsTimeDilatable,
+    AvObject, BikeObject, CarObject, Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject,
     TimeDilatable, VehicleObject,
 };
 
@@ -35,7 +27,6 @@ pub use emitters::Store;
 pub struct Scene {
     pub emitters: Emitters,
     pub v: Listener,
-    pub scene: SpatialSceneHandle,
 }
 
 impl Scene {
@@ -43,9 +34,7 @@ impl Scene {
         manager: &mut AudioManager<B>,
         tracks: &Tracks,
     ) -> Result<Self, Error> {
-        let settings = SpatialSceneSettings::default();
-        let capacity = settings.emitter_capacity as usize;
-        let mut scene = manager.add_spatial_scene(settings)?;
+        let capacity = manager.sub_track_capacity();
         let (id, position, orientation, dilation) = {
             let v = get_player(GameInstance::new()).cast::<Entity>().unwrap();
             let d = get_player(GameInstance::new())
@@ -58,18 +47,13 @@ impl Scene {
                 d.get_time_dilation_value(),
             )
         };
-        let handle = scene.add_listener(
-            position,
-            orientation,
-            ListenerSettings::default().track(tracks.sfx.as_ref()),
-        )?;
+        let handle = manager.add_listener(position, orientation)?;
         Ok(Self {
             v: Listener {
                 id,
                 handle,
                 dilation: Dilation::new(dilation),
             },
-            scene,
             emitters: Emitters::with_capacity(capacity),
         })
     }
@@ -79,44 +63,45 @@ impl Scene {
         entity_id: EntityId,
         tag_name: CName,
         emitter_name: Option<CName>,
-        settings: Option<&(EmitterSettings, NonZero<u64>)>,
+        settings: Option<&(SpatialTrackSettings, NonZero<u64>)>,
     ) -> Result<(), Error> {
-        if entity_id == self.v.id {
-            return Err(Error::Scene {
-                source: SceneError::InvalidEmitter,
-            });
-        }
-        let paired = self
-            .emitters
-            .pair_emitter(entity_id, tag_name, emitter_name, settings)?;
-        if !paired {
-            let (position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
+        // if entity_id == self.v.id {
+        //     return Err(Error::Scene {
+        //         source: SceneError::InvalidEmitter,
+        //     });
+        // }
+        // let paired = self
+        //     .emitters
+        //     .pair_emitter(entity_id, tag_name, emitter_name, settings)?;
+        // if !paired {
+        //     let (position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
 
-            lifecycle!("emitter settings before {:?} [{entity_id}]", settings);
-            let mapped = match settings {
-                Some((settings, _))
-                    if settings.distances.min_distance == 0.
-                        && settings.distances.max_distance == 0. =>
-                {
-                    settings.distances(distances.unwrap_or_default())
-                }
-                Some((settings, _)) => *settings,
-                None => EmitterSettings::default().distances(distances.unwrap_or_default()),
-            };
-            lifecycle!("emitter settings after {:?} [{entity_id}]", mapped);
-            let handle = self.scene.add_emitter(position, mapped)?;
-            self.emitters.add_emitter(
-                entity_id,
-                tag_name,
-                emitter_name,
-                settings.cloned(),
-                handle,
-                dilation,
-                position,
-                busy,
-            )?;
-        }
-        Ok(())
+        //     lifecycle!("emitter settings before {:?} [{entity_id}]", settings);
+        //     let mapped = match settings {
+        //         Some((settings, _))
+        //             if settings.distances.min_distance == 0.
+        //                 && settings.distances.max_distance == 0. =>
+        //         {
+        //             settings.distances(distances.unwrap_or_default())
+        //         }
+        //         Some((settings, _)) => *settings,
+        //         None => SpatialTrackSettings::default().distances(distances.unwrap_or_default()),
+        //     };
+        //     lifecycle!("emitter settings after {:?} [{entity_id}]", mapped);
+        //     let handle = self.scene.add_emitter(position, mapped)?;
+        //     self.emitters.add_emitter(
+        //         entity_id,
+        //         tag_name,
+        //         emitter_name,
+        //         settings.cloned(),
+        //         handle,
+        //         dilation,
+        //         position,
+        //         busy,
+        //     )?;
+        // }
+        // Ok(())
+        todo!()
     }
 
     pub fn stop_on_emitter(
@@ -282,29 +267,29 @@ impl Scene {
 }
 
 pub trait AsEntityExt {
-    fn get_emitter_distances(&self) -> Option<EmitterDistances>;
+    fn get_emitter_distances(&self) -> Option<SpatialTrackDistances>;
     fn get_gender(&self) -> Option<PlayerGender>;
 }
 
 impl AsEntityExt for Ref<Entity> {
-    fn get_emitter_distances(&self) -> Option<EmitterDistances> {
+    fn get_emitter_distances(&self) -> Option<SpatialTrackDistances> {
         if self.is_null() {
             return None;
         }
         if let Some(puppet) = self.clone().cast::<ScriptedPuppet>().as_ref() {
             let s = match puppet.get_npc_type() {
                 GamedataNpcType::Device | GamedataNpcType::Drone | GamedataNpcType::Spiderbot => {
-                    EmitterDistances {
+                    SpatialTrackDistances {
                         min_distance: 3.,
                         max_distance: 30.,
                     }
                 }
-                GamedataNpcType::Android | GamedataNpcType::Human => EmitterDistances {
+                GamedataNpcType::Android | GamedataNpcType::Human => SpatialTrackDistances {
                     min_distance: 5.,
                     max_distance: 65.,
                 },
                 GamedataNpcType::Cerberus | GamedataNpcType::Chimera | GamedataNpcType::Mech => {
-                    EmitterDistances {
+                    SpatialTrackDistances {
                         min_distance: 10.,
                         max_distance: 130.,
                     }
@@ -317,26 +302,26 @@ impl AsEntityExt for Ref<Entity> {
         }
         if let Some(vehicle) = self.clone().cast::<VehicleObject>().as_ref() {
             if vehicle.is_a::<CarObject>() {
-                return Some(EmitterDistances {
+                return Some(SpatialTrackDistances {
                     min_distance: 8.,
                     max_distance: 100.,
                 });
             }
             if vehicle.is_a::<BikeObject>() {
-                return Some(EmitterDistances {
+                return Some(SpatialTrackDistances {
                     min_distance: 8.,
                     max_distance: 120.,
                 });
             }
             if vehicle.is_a::<TankObject>() || vehicle.is_a::<AvObject>() {
-                return Some(EmitterDistances {
+                return Some(SpatialTrackDistances {
                     min_distance: 20.,
                     max_distance: 200.,
                 });
             }
         }
         if self.clone().cast::<Device>().as_ref().is_some() {
-            return Some(EmitterDistances {
+            return Some(SpatialTrackDistances {
                 min_distance: 3.,
                 max_distance: 30.,
             });
@@ -355,11 +340,11 @@ impl AsEntityExt for Ref<Entity> {
 }
 
 pub trait ToDistances {
-    fn to_distances(&self) -> Option<EmitterDistances>;
+    fn to_distances(&self) -> Option<SpatialTrackDistances>;
 }
 
 impl ToDistances for EntityId {
-    fn to_distances(&self) -> Option<EmitterDistances> {
+    fn to_distances(&self) -> Option<SpatialTrackDistances> {
         use crate::types::AsGameInstance;
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, *self);

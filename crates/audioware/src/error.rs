@@ -1,7 +1,7 @@
 //! Plugin errors.
 
 use audioware_manifest::error::ConversionError;
-use kira::{manager::error::PlaySoundError, sound::FromFileError, ResourceLimitReached};
+use kira::{sound::FromFileError, PlaySoundError, ResourceLimitReached};
 use red4ext_rs::types::{CName, EntityId};
 use snafu::Snafu;
 

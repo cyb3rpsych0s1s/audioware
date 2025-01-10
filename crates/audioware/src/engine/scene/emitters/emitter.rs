@@ -1,4 +1,4 @@
-use kira::spatial::emitter::EmitterDistances;
+use kira::track::SpatialTrackDistances;
 use red4ext_rs::types::{EntityId, GameInstance};
 
 use crate::{
@@ -31,7 +31,7 @@ impl Emitter {
     #[allow(clippy::type_complexity)]
     pub fn full_infos(
         entity_id: EntityId,
-    ) -> Result<(Vector4, bool, Option<f32>, Option<EmitterDistances>), Error> {
+    ) -> Result<(Vector4, bool, Option<f32>, Option<SpatialTrackDistances>), Error> {
         let (position, busy) = Self::infos(entity_id)?;
         let game = GameInstance::new();
         let entity = GameInstance::find_entity_by_id(game, entity_id);

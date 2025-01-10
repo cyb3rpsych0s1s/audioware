@@ -1,4 +1,4 @@
-use kira::tween::Tween;
+use kira::Tween;
 use red4ext_rs::types::CName;
 
 use super::handles::Handles;

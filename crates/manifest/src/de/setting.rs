@@ -1,14 +1,13 @@
 use std::time::Duration;
 
-use audioware_core::With;
+use audioware_core::{Amplitude, With};
 use either::Either;
 use kira::{
     sound::{
         static_sound::StaticSoundData, streaming::StreamingSoundData, EndPosition, FromFileError,
-        IntoOptionalRegion, PlaybackPosition, PlaybackRate,
+        IntoOptionalRegion, PlaybackPosition,
     },
-    tween::Tween,
-    StartTime, Volume,
+    Decibels, PlaybackRate, Semitones, StartTime, Tween,
 };
 use serde::Deserialize;
 
@@ -31,8 +30,8 @@ pub struct Settings {
     pub start_time: Option<Duration>,
     #[serde(with = "humantime_serde", default)]
     pub start_position: Option<Duration>,
-    pub volume: Option<f64>,
-    pub panning: Option<f64>,
+    pub volume: Option<f32>,
+    pub panning: Option<f32>,
     #[serde(rename = "loop")]
     pub r#loop: Option<bool>,
     pub region: Option<self::Region>,
@@ -55,7 +54,7 @@ macro_rules! impl_with {
         {
             $self = $self.start_position(x);
         }
-        if let Some(x) = $settings.volume.map(Volume::Amplitude) {
+        if let Some(x) = $settings.volume {
             $self = $self.volume(x);
         }
         if let Some(x) = $settings.panning {
@@ -163,25 +162,31 @@ where
     if let Some(s) = s {
         let s = s.trim();
         if s.starts_with('x') || s.starts_with('X') {
-            return Ok(Some(PlaybackRate::Factor(
+            return Ok(Some(PlaybackRate(
                 s[1..].trim().parse().map_err(serde::de::Error::custom)?,
             )));
         }
         if s.ends_with('♯') {
-            return Ok(Some(PlaybackRate::Semitones(
-                s[..(s.len() - '♯'.len_utf8())]
-                    .trim()
-                    .parse()
-                    .map_err(serde::de::Error::custom)?,
-            )));
+            return Ok(Some(
+                Semitones(
+                    s[..(s.len() - '♯'.len_utf8())]
+                        .trim()
+                        .parse()
+                        .map_err(serde::de::Error::custom)?,
+                )
+                .into(),
+            ));
         }
         if s.ends_with('♭') {
-            return Ok(Some(PlaybackRate::Semitones(
-                -s[..(s.len() - '♭'.len_utf8())]
-                    .trim()
-                    .parse()
-                    .map_err(serde::de::Error::custom)?,
-            )));
+            return Ok(Some(
+                Semitones(
+                    -s[..(s.len() - '♭'.len_utf8())]
+                        .trim()
+                        .parse()
+                        .map_err(serde::de::Error::custom)?,
+                )
+                .into(),
+            ));
         }
         return Err(serde::de::Error::custom(format!(
             "invalid factor or semitone: {s}"
@@ -190,7 +195,7 @@ where
     Ok(None)
 }
 
-/// Deserialization type for [kira::tween::Tween].
+/// Deserialization type for [kira::Tween].
 #[derive(Debug, Deserialize, Clone)]
 pub struct Interpolation {
     #[serde(with = "humantime_serde", default)]
@@ -198,7 +203,7 @@ pub struct Interpolation {
     #[serde(with = "humantime_serde")]
     pub duration: Duration,
     #[serde(flatten)]
-    pub easing: kira::tween::Easing,
+    pub easing: kira::Easing,
 }
 
 impl From<Interpolation> for Tween {
@@ -232,11 +237,13 @@ macro_rules! impl_from_settings {
                         .unwrap_or_default(),
                     volume: value
                         .volume
-                        .map(|x| ::kira::tween::Value::<Volume>::Fixed(Volume::Amplitude(x)))
+                        .map(|x| {
+                            ::kira::Value::<::kira::Decibels>::Fixed(Amplitude(x).as_decibels())
+                        })
                         .unwrap_or_default(),
                     panning: value
                         .panning
-                        .map(f64::from)
+                        .map(|x| ::kira::Panning(x))
                         .map(Into::into)
                         .unwrap_or_default(),
                     fade_in_tween: value.fade_in_tween.map(Into::into),
@@ -270,7 +277,7 @@ impl Validate for Settings {
             }
         }
         if let Some(volume) = self.volume {
-            if Volume::Amplitude(volume).as_decibels() > 85.0 {
+            if Amplitude(volume).as_decibels() > Decibels(85.0) {
                 errors.push(ValidationError {
                     which: "volume",
                     why: "audio should not be louder than 85.0 dB",

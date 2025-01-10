@@ -1,7 +1,7 @@
+use audioware_core::Amplitude;
 use kira::{
-    manager::{backend::Backend, AudioManager},
-    track::{TrackBuilder, TrackHandle, TrackRoutes},
-    OutputDestination,
+    track::{TrackBuilder, TrackHandle},
+    {backend::Backend, AudioManager},
 };
 
 use crate::{
@@ -21,12 +21,9 @@ impl CarRadio {
     ) -> Result<Self, Error> {
         let track = manager.add_sub_track(
             TrackBuilder::new()
-                .routes(
-                    // sum must be 1.0 otherwise sounds crackle
-                    TrackRoutes::empty()
-                        .with_route(ambience.environmental(), 0.75)
-                        .with_route(ambience.reverb(), 0.25),
-                )
+                // sum used to have to be 1.0 otherwise sounds crackled, what now?
+                .with_send(ambience.environmental(), Amplitude(0.75).as_decibels())
+                .with_send(ambience.reverb(), Amplitude(0.25).as_decibels())
                 .with_effect(modulators.car_radio_volume.try_effect()?),
         )?;
         Ok(Self(track))
@@ -39,8 +36,8 @@ impl AsRef<TrackHandle> for CarRadio {
     }
 }
 
-impl<'a> From<&'a CarRadio> for OutputDestination {
+impl<'a> From<&'a CarRadio> for &'a TrackHandle {
     fn from(value: &'a CarRadio) -> Self {
-        (&value.0).into()
+        &value.0
     }
 }

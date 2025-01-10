@@ -5,16 +5,15 @@ use std::{
 };
 
 use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
-use audioware_core::With;
+use audioware_core::{Amplitude, SpatialTrackSettings, With};
 use audioware_manifest::{Locale, ScnDialogLineType, Source, ValidateFor};
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
-    manager::{backend::Backend, AudioManager, AudioManagerSettings},
     sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError},
-    spatial::emitter::EmitterSettings,
-    tween::Tween,
-    OutputDestination,
+    track::TrackHandle,
+    Tween,
+    {backend::Backend, AudioManager, AudioManagerSettings},
 };
 use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
@@ -157,7 +156,9 @@ where
                 match data {
                     Either::Left(data) => {
                         duration = data.duration().as_secs_f32();
-                        if let Ok(handle) = self.manager.play(data.output_destination(destination))
+                        if let Ok(handle) = self
+                            .manager
+                            .play(data /* .output_destination(destination) */)
                         {
                             self.tracks.store_static(
                                 handle,
@@ -170,7 +171,9 @@ where
                     }
                     Either::Right(data) => {
                         duration = data.duration().as_secs_f32();
-                        if let Ok(handle) = self.manager.play(data.output_destination(destination))
+                        if let Ok(handle) = self
+                            .manager
+                            .play(data /* .output_destination(destination) */)
                         {
                             self.tracks.store_stream(
                                 handle,
@@ -231,11 +234,11 @@ where
                     .scene
                     .as_ref()
                     .is_some_and(|x| Some(x.listener_id()) == entity_id);
-                let destination: OutputDestination = if is_v {
+                let destination: &TrackHandle = if is_v {
                     if key.is_vocal() {
-                        self.tracks.v.vocal.id().into()
+                        &self.tracks.v.vocal
                     } else {
-                        self.tracks.v.emissive.id().into()
+                        &self.tracks.v.emissive
                     }
                 } else {
                     key.to_output_destination(&self.tracks)
@@ -243,10 +246,10 @@ where
                 match data {
                     Either::Left(data) => {
                         duration = data.duration().as_secs_f32();
-                        if let Ok(handle) = self
-                            .manager
-                            .play(data.output_destination(destination).with(ext))
-                        {
+                        if let Ok(handle) = self.manager.play(
+                            data /* .output_destination(destination) */
+                                .with(ext),
+                        ) {
                             self.tracks.store_static(
                                 handle,
                                 event_name,
@@ -258,10 +261,10 @@ where
                     }
                     Either::Right(data) => {
                         duration = data.duration().as_secs_f32();
-                        if let Ok(handle) = self
-                            .manager
-                            .play(data.output_destination(destination).with(ext))
-                        {
+                        if let Ok(handle) = self.manager.play(
+                            data /* .output_destination(destination) */
+                                .with(ext),
+                        ) {
                             self.tracks.store_stream(
                                 handle,
                                 event_name,
@@ -328,10 +331,10 @@ where
                         match data {
                             Either::Left(data) => {
                                 duration = data.duration().as_secs_f32();
-                                if let Ok(handle) = self
-                                    .manager
-                                    .play(data.output_destination(emitter_id).with(ext))
-                                {
+                                if let Ok(handle) = self.manager.play(
+                                    data /* .output_destination(emitter_id) */
+                                        .with(ext),
+                                ) {
                                     lifecycle!(
                                         "playing static sound {} on {}",
                                         sound_name.as_str(),
@@ -339,15 +342,15 @@ where
                                     );
                                     scene
                                         .emitters
-                                        .store(tag_name, emitter_id, sound_name, handle, dilatable);
+                                        .store(tag_name, sound_name, handle, dilatable);
                                 }
                             }
                             Either::Right(data) => {
                                 duration = data.duration().as_secs_f32();
-                                if let Ok(handle) = self
-                                    .manager
-                                    .play(data.output_destination(emitter_id).with(ext))
-                                {
+                                if let Ok(handle) = self.manager.play(
+                                    data /* .output_destination(emitter_id) */
+                                        .with(ext),
+                                ) {
                                     lifecycle!(
                                         "playing stream sound {} on {}",
                                         sound_name.as_str(),
@@ -355,7 +358,7 @@ where
                                     );
                                     scene
                                         .emitters
-                                        .store(tag_name, emitter_id, sound_name, handle, dilatable);
+                                        .store(tag_name, sound_name, handle, dilatable);
                                 }
                             }
                         }
@@ -505,7 +508,7 @@ where
         entity_id: EntityId,
         tag_name: CName,
         emitter_name: Option<CName>,
-        emitter_settings: Option<&(EmitterSettings, NonZero<u64>)>,
+        emitter_settings: Option<&(SpatialTrackSettings, NonZero<u64>)>,
     ) -> bool {
         match self.scene {
             Some(ref mut scene) => scene
@@ -605,19 +608,20 @@ where
 
     pub fn set_volume(&mut self, setting: CName, value: f64) {
         lifecycle!("about to change {value} for {setting}");
+        let v = value.div(100.).clamp(0., 1.);
         match setting.as_str() {
             // kira uses amplitude for volume, default to 1.
             // while default volume expressed as game setting is 100.
             "MasterVolume" => self
                 .manager
                 .main_track()
-                .set_volume(value.div(100.).clamp(0., 1.), DEFAULT),
+                .set_volume(Amplitude(v as f32).as_decibels(), DEFAULT),
             // same for the other settings, except modulators already handles conversion internally
-            "SfxVolume" => self.modulators.sfx_volume.update(value, DEFAULT),
-            "DialogueVolume" => self.modulators.dialogue_volume.update(value, DEFAULT),
-            "MusicVolume" => self.modulators.music_volume.update(value, DEFAULT),
-            "CarRadioVolume" => self.modulators.car_radio_volume.update(value, DEFAULT),
-            "RadioportVolume" => self.modulators.radioport_volume.update(value, DEFAULT),
+            "SfxVolume" => self.modulators.sfx_volume.update(v, DEFAULT),
+            "DialogueVolume" => self.modulators.dialogue_volume.update(v, DEFAULT),
+            "MusicVolume" => self.modulators.music_volume.update(v, DEFAULT),
+            "CarRadioVolume" => self.modulators.car_radio_volume.update(v, DEFAULT),
+            "RadioportVolume" => self.modulators.radioport_volume.update(v, DEFAULT),
             _ => lifecycle!("unknown volume setting: {}", setting.as_str()),
         }
     }
@@ -681,12 +685,12 @@ where
 }
 
 pub trait ToOutputDestination {
-    fn to_output_destination(&self, tracks: &Tracks) -> OutputDestination;
+    fn to_output_destination<'b>(&self, tracks: &'b Tracks) -> &'b TrackHandle;
 }
 
 impl ToOutputDestination for Id {
     #[inline(always)]
-    fn to_output_destination(&self, tracks: &Tracks) -> OutputDestination {
+    fn to_output_destination<'b>(&self, tracks: &'b Tracks) -> &'b TrackHandle {
         match self {
             Id::OnDemand(_, source) | Id::InMemory(_, source) => match source {
                 Source::Sfx | Source::Ono => tracks.sfx.as_ref(),
@@ -694,9 +698,13 @@ impl ToOutputDestination for Id {
                 Source::Playlist => tracks.radioport.as_ref(),
                 Source::Music => tracks.music.as_ref(),
                 Source::Jingle => tracks.car_radio.as_ref(),
-            }
-            .id()
-            .into(),
+            },
         }
+    }
+}
+
+impl ToOutputDestination for StaticSoundData {
+    fn to_output_destination<'b>(&self, tracks: &'b Tracks) -> &'b TrackHandle {
+        todo!()
     }
 }

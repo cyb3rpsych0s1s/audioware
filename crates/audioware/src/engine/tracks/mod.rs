@@ -3,12 +3,12 @@ use car_radio::CarRadio;
 use dialogue::Dialogue;
 use holocall::Holocall;
 use kira::{
-    manager::{backend::Backend, AudioManager},
     sound::{
         static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError,
         PlaybackState,
     },
-    tween::Tween,
+    Tween,
+    {backend::Backend, AudioManager},
 };
 use music::Music;
 use radioport::Radioport;
