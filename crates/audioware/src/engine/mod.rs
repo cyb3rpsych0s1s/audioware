@@ -702,9 +702,3 @@ impl ToOutputDestination for Id {
         }
     }
 }
-
-impl ToOutputDestination for StaticSoundData {
-    fn to_output_destination<'b>(&self, tracks: &'b Tracks) -> &'b TrackHandle {
-        todo!()
-    }
-}

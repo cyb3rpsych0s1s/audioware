@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use kira::{
     sound::{IntoOptionalRegion, PlaybackPosition},
+    track::SpatialTrackHandle,
     Decibels, Panning, PlaybackRate, StartTime, Tween, Value,
 };
 

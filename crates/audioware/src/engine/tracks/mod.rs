@@ -27,6 +27,7 @@ mod holocall;
 mod music;
 mod radioport;
 mod sfx;
+mod spatial;
 mod v;
 
 pub struct Handle<T> {

@@ -4,6 +4,7 @@ use audioware_core::SpatialTrackSettings;
 use dashmap::{mapref::multiple::RefMulti, DashMap};
 use kira::{track::SpatialTrackHandle, Tween};
 use red4ext_rs::types::{CName, EntityId};
+use snowflake::ProcessUniqueId;
 
 use crate::{
     engine::{scene::dilation::Dilation, tweens::IMMEDIATELY},
@@ -150,6 +151,7 @@ impl std::hash::Hash for EmitterFootprint {
 #[derive(Debug)]
 pub struct EmitterSlot {
     pub handle: SpatialTrackHandle,
+    pub id: ProcessUniqueId,
     pub mods: DashMap<CName, EmitterMod, ahash::RandomState>,
 }
 
@@ -160,7 +162,11 @@ impl EmitterSlot {
     pub fn new(handle: SpatialTrackHandle, tag_name: CName, emitter_name: Option<CName>) -> Self {
         let mods = DashMap::with_hasher(ahash::RandomState::new());
         mods.insert(tag_name, EmitterMod::new(emitter_name));
-        Self { handle, mods }
+        Self {
+            handle,
+            mods,
+            id: ProcessUniqueId::new(),
+        }
     }
     pub fn stop_emitters(&mut self, tween: Tween) {
         self.mods.iter_mut().for_each(|mut x| {
