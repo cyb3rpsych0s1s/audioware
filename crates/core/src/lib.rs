@@ -2,12 +2,12 @@ use std::time::Duration;
 
 use kira::{
     sound::{IntoOptionalRegion, PlaybackPosition},
-    track::SpatialTrackHandle,
-    Decibels, Panning, PlaybackRate, StartTime, Tween, Value,
+    Decibels, PlaybackRate, StartTime, Tween, Value,
 };
 
 mod data;
 mod settings;
+mod types;
 
 pub use settings::SpatialTrackSettings;
 
@@ -55,7 +55,7 @@ pub trait AudioSettings {
     fn r#loop(&self) -> bool;
     fn volume(&self) -> Value<Decibels>;
     fn playback_rate(&self) -> Value<PlaybackRate>;
-    fn panning(&self) -> Value<Panning>;
+    fn panning(&self) -> Value<kira::Panning>;
     fn fade_in_tween(&self) -> Option<Tween>;
 }
 
