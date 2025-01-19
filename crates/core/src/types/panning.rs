@@ -5,6 +5,7 @@ use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
 pub enum PanningError {
+    #[snafu(display("panning must be between -1.0 and 1.0 (inclusive)"))]
     OutOfRange,
 }
 
