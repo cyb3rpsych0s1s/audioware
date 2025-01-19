@@ -105,6 +105,22 @@ where
     }
 }
 
+impl<T> With<Settings> for Either<StaticSoundData, StreamingSoundData<T>>
+where
+    T: Send + 'static,
+{
+    fn with(self, settings: Settings) -> Self
+    where
+        Self: Sized,
+    {
+        self.map_either_with(
+            settings,
+            |settings, x| x.with(settings),
+            |settings, x| x.with(settings),
+        )
+    }
+}
+
 /// Deserialization type
 /// for [kira::sound::Region].
 #[derive(Debug, Deserialize, Clone)]

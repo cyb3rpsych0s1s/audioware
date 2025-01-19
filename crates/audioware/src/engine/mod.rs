@@ -17,7 +17,6 @@ use kira::{
 };
 use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
-use scene::Store;
 pub use scene::{AffectedByTimeDilation, DilationUpdate, Scene};
 use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
@@ -240,10 +239,7 @@ where
                 match data {
                     Either::Left(data) => {
                         duration = data.duration().as_secs_f32();
-                        if let Ok(handle) = self.manager.play(
-                            data /* .output_destination(destination) */
-                                .with(ext),
-                        ) {
+                        if let Ok(handle) = destination.play(data.with(ext)) {
                             self.tracks.store_static(
                                 handle,
                                 event_name,
@@ -255,10 +251,7 @@ where
                     }
                     Either::Right(data) => {
                         duration = data.duration().as_secs_f32();
-                        if let Ok(handle) = self.manager.play(
-                            data /* .output_destination(destination) */
-                                .with(ext),
-                        ) {
+                        if let Ok(handle) = destination.play(data.with(ext)) {
                             self.tracks.store_stream(
                                 handle,
                                 event_name,
@@ -308,81 +301,45 @@ where
         if let Some(ref mut scene) = self.scene {
             match self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
                 Ok(key) => {
-                    if let Some((emitter_id, emitter_name)) =
-                        scene.emitters.emitter_destination(&entity_id, &tag_name)
-                    {
-                        let duration: f32;
-                        let data = self.banks.data(key);
+                    match scene.emitters.play_on_emitter(
+                        key,
+                        &self.banks,
+                        sound_name,
+                        entity_id,
+                        tag_name,
+                        ext,
+                    ) {
+                        Err(e) => {
+                            warns!("cannot play sound on emitter: {e}");
+                        }
+                        Ok((duration, emitter_name)) => {
+                            let emitter_name = match emitter_name {
+                                Some(emitter_name) => Some(emitter_name.as_str().to_string()),
+                                None => {
+                                    let go = GameInstance::find_entity_by_id(
+                                        GameInstance::new(),
+                                        entity_id,
+                                    )
+                                    .cast::<GameObject>();
 
-                        if let Some(Err(e)) = ext.as_ref().map(|x| x.validate_for(&data)) {
-                            warns!("invalid setting(s) for audio: {e:#?}");
-                            return;
-                        }
-                        let dilatable = ext
-                            .as_ref()
-                            .map(AffectedByTimeDilation::affected_by_time_dilation)
-                            .unwrap_or(true);
-                        match data {
-                            Either::Left(data) => {
-                                duration = data.duration().as_secs_f32();
-                                if let Ok(handle) = self.manager.play(
-                                    data /* .output_destination(emitter_id) */
-                                        .with(ext),
-                                ) {
-                                    lifecycle!(
-                                        "playing static sound {} on {}",
-                                        sound_name.as_str(),
-                                        entity_id
-                                    );
-                                    scene
-                                        .emitters
-                                        .store(tag_name, sound_name, handle, dilatable);
+                                    go.and_then(|x| {
+                                        x.is_null().not().then(|| x.resolve_display_name())
+                                    })
                                 }
-                            }
-                            Either::Right(data) => {
-                                duration = data.duration().as_secs_f32();
-                                if let Ok(handle) = self.manager.play(
-                                    data /* .output_destination(emitter_id) */
-                                        .with(ext),
-                                ) {
-                                    lifecycle!(
-                                        "playing stream sound {} on {}",
-                                        sound_name.as_str(),
-                                        entity_id
-                                    );
-                                    scene
-                                        .emitters
-                                        .store(tag_name, sound_name, handle, dilatable);
-                                }
+                            };
+                            if let Some(emitter_name) = emitter_name {
+                                propagate_subtitles(
+                                    sound_name,
+                                    entity_id,
+                                    CName::new(emitter_name.as_str()),
+                                    ScnDialogLineType::default(),
+                                    duration,
+                                );
+                            } else if *key.source() == Source::Voices {
+                                warns!("cannot propagate subtitles for voice, couldn't resolve emitter name: {sound_name} [{entity_id}]");
                             }
                         }
-                        let emitter_name = match emitter_name {
-                            Some(emitter_name) => Some(emitter_name.as_str().to_string()),
-                            None => {
-                                let go =
-                                    GameInstance::find_entity_by_id(GameInstance::new(), entity_id)
-                                        .cast::<GameObject>();
-
-                                go.and_then(|x| x.is_null().not().then(|| x.resolve_display_name()))
-                            }
-                        };
-                        if let Some(emitter_name) = emitter_name {
-                            propagate_subtitles(
-                                sound_name,
-                                entity_id,
-                                CName::new(emitter_name.as_str()),
-                                ScnDialogLineType::default(),
-                                duration,
-                            );
-                        } else if *key.source() == Source::Voices {
-                            warns!("cannot propagate subtitles for voice, couldn't resolve emitter name: {sound_name} [{entity_id}]");
-                        }
-                    } else {
-                        warns!(
-                            "failed to find emitter {entity_id:?} with tag {}",
-                            tag_name.as_str()
-                        );
-                    }
+                    };
                 }
                 Err(e) => {
                     warns!("cannot play sound: {e}");
