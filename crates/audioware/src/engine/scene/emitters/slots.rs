@@ -1,18 +1,12 @@
-use std::num::NonZero;
-
-use audioware_core::SpatialTrackSettings;
-use dashmap::{mapref::multiple::RefMulti, DashMap};
 use kira::{track::SpatialTrackHandle, Tween};
-use red4ext_rs::types::{CName, EntityId};
-use snowflake::ProcessUniqueId;
+use red4ext_rs::types::CName;
 
 use crate::{
     engine::{scene::dilation::Dilation, tweens::IMMEDIATELY},
-    utils::fails,
     Vector4,
 };
 
-use super::{mods::EmitterMod, slot::EmitterSlot};
+use super::slot::EmitterSlot;
 
 /// Identify active [EmitterHandle]s.
 /// These handles can be shared by multiple mods.

@@ -1,4 +1,4 @@
-use std::{collections::HashSet, num::NonZero, ops::DerefMut, sync::LazyLock};
+use std::{collections::HashSet, num::NonZero, sync::LazyLock};
 
 use audioware_bank::{BankData, Banks, Id};
 use audioware_core::{SpatialTrackSettings, With};
@@ -17,15 +17,13 @@ use kira::{
     track::SpatialTrackHandle,
     Tween,
 };
-use mods::EmitterMod;
 use parking_lot::RwLock;
 use red4ext_rs::types::{CName, EntityId};
-use slot::EmitterSlot;
 use slots::EmitterSlots;
 
 use crate::{
     engine::tweens::IMMEDIATELY,
-    error::{EngineError, Error, SceneError, ValidationError},
+    error::{EngineError, Error, SceneError},
     utils::{lifecycle, warns},
     Vector4,
 };

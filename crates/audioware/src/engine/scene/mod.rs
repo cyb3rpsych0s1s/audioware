@@ -21,7 +21,6 @@ mod emitters;
 mod listener;
 
 pub use dilation::{AffectedByTimeDilation, DilationUpdate};
-pub use emitters::Store;
 
 /// Audio spatial scene.
 pub struct Scene {

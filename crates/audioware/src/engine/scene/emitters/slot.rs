@@ -1,8 +1,6 @@
 use either::Either;
 use kira::{
-    sound::{
-        static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError, SoundData,
-    },
+    sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError},
     track::SpatialTrackHandle,
     PlaySoundError, Tween,
 };
@@ -51,14 +49,14 @@ impl EmitterSlot {
                 let handle = self.handle.play(data).map_err(Either::Left)?;
                 self.handles
                     .store_static(event_name, handle, affected_by_time_dilation);
-                Ok((duration, self.emitter_name.clone()))
+                Ok((duration, self.emitter_name))
             }
             Either::Right(data) => {
                 let duration = data.duration().as_secs_f32();
                 let handle = self.handle.play(data).map_err(Either::Right)?;
                 self.handles
                     .store_stream(event_name, handle, affected_by_time_dilation);
-                Ok((duration, self.emitter_name.clone()))
+                Ok((duration, self.emitter_name))
             }
         }
     }
