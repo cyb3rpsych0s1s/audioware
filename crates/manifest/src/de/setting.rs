@@ -333,8 +333,8 @@ impl ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>> for
         let mut errors = vec![];
         if let Some(ref region) = self.region {
             let total_duration = match audio {
-                Either::Left(x) => x.total_duration(),
-                Either::Right(x) => x.total_duration(),
+                Either::Left(x) => x.unsliced_duration(),
+                Either::Right(x) => x.unsliced_duration(),
             }
             .as_secs_f64();
             let start: f64 = match (region.starts(), audio) {
