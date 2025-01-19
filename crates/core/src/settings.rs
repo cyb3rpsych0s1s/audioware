@@ -1,13 +1,37 @@
 //! Audio settings.
 
-use kira::{track::SpatialTrackDistances, Easing, Mix};
+use kira::{
+    track::{SpatialTrackBuilder, SpatialTrackDistances},
+    Easing,
+};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SpatialTrackSettings {
     pub distances: SpatialTrackDistances,
     pub persist_until_sounds_finish: bool,
     pub attenuation_function: Option<Easing>,
-    pub spatialization_strength: Mix,
+    pub spatialization_strength: f32,
+}
+
+impl Default for SpatialTrackSettings {
+    fn default() -> Self {
+        Self {
+            distances: SpatialTrackDistances::default(),
+            persist_until_sounds_finish: false,
+            attenuation_function: None,
+            spatialization_strength: 0.75,
+        }
+    }
+}
+
+impl From<SpatialTrackSettings> for SpatialTrackBuilder {
+    fn from(value: SpatialTrackSettings) -> Self {
+        Self::new()
+            .distances(value.distances)
+            .persist_until_sounds_finish(value.persist_until_sounds_finish)
+            .spatialization_strength(value.spatialization_strength)
+            .attenuation_function(value.attenuation_function)
+    }
 }
 
 macro_rules! impl_audio_settings {

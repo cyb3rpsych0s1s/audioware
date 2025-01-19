@@ -1,4 +1,4 @@
-use kira::{track::SpatialTrackHandle, Tween};
+use kira::Tween;
 use red4ext_rs::types::CName;
 
 use crate::{
@@ -77,17 +77,6 @@ impl EmitterSlots {
 
     pub fn unregister_emitter(&mut self, tag_name: &CName) {
         self.slots.retain(|x| x.tag_name != Some(*tag_name));
-    }
-    pub fn emitter_destination(
-        &mut self,
-        tag_name: &CName,
-    ) -> Option<(&mut SpatialTrackHandle, Option<CName>)> {
-        for slot in self.slots.iter_mut() {
-            if slot.tag_name == Some(*tag_name) {
-                return Some((&mut slot.handle, slot.emitter_name));
-            }
-        }
-        None
     }
     pub fn get_mut<'a>(&'a mut self, tag_name: &CName) -> Option<&'a mut EmitterSlot> {
         self.slots

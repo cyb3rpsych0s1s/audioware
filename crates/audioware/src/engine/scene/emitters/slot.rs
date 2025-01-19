@@ -1,17 +1,18 @@
 use either::Either;
 use kira::{
     sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError},
-    track::SpatialTrackHandle,
     PlaySoundError, Tween,
 };
 use red4ext_rs::types::CName;
+
+use crate::engine::tracks::Spatial;
 
 use super::handles::Handles;
 
 /// Underlying handle to the emitter,
 /// and whether sound(s) should persist until they finish playing.
 pub struct EmitterSlot {
-    pub handle: SpatialTrackHandle,
+    pub handle: Spatial,
     pub tag_name: Option<CName>,
     pub emitter_name: Option<CName>,
     pub persist_until_sounds_finish: bool,
@@ -23,7 +24,7 @@ impl EmitterSlot {
         self.handles.any_playing_handle()
     }
     pub fn new(
-        handle: SpatialTrackHandle,
+        handle: Spatial,
         tag_name: CName,
         emitter_name: Option<CName>,
         persist_until_sounds_finish: bool,

@@ -7,7 +7,7 @@ use std::{
 
 use audioware_core::SpatialTrackSettings;
 use audioware_manifest::{Interpolation, Locale, LocaleExt, PlayerGender, Region, Settings};
-use kira::{backend::cpal::CpalBackend, track::SpatialTrackDistances, Easing, Mix};
+use kira::{backend::cpal::CpalBackend, track::SpatialTrackDistances, Easing};
 use red4ext_rs::{
     class_kind::{Native, Scripted},
     types::{CName, EntityId, GameInstance, IScriptable, Opt, Ref, StaticArray},
@@ -273,9 +273,9 @@ impl ToSettingsExt for EmitterSettings {
                 distances: distances.unwrap_or(defaults.unwrap_or_default()),
                 attenuation_function,
                 spatialization_strength: if self.enable_spatialization {
-                    Mix::WET
+                    0.75
                 } else {
-                    Mix::DRY
+                    0.0
                 },
                 persist_until_sounds_finish: self.persist_until_sounds_finish,
             },

@@ -33,7 +33,7 @@ impl Deref for Panning {
 
 impl From<&Panning> for kira::Value<kira::Panning> {
     fn from(value: &Panning) -> Self {
-        value.into()
+        value.0.into()
     }
 }
 

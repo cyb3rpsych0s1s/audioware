@@ -32,7 +32,7 @@ impl Spatial {
             position,
             SpatialTrackBuilder::new()
                 .distances(distances)
-                .spatialization_strength(spatialization_strength.0)
+                .spatialization_strength(spatialization_strength)
                 .persist_until_sounds_finish(persist_until_sounds_finish)
                 .attenuation_function(attenuation_function)
                 .with_effect(modulators.sfx_volume.try_effect()?),

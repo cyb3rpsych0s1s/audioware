@@ -463,7 +463,13 @@ where
     ) -> bool {
         match self.scene {
             Some(ref mut scene) => scene
-                .add_emitter(entity_id, tag_name, emitter_name, emitter_settings)
+                .add_emitter(
+                    &mut self.manager,
+                    entity_id,
+                    tag_name,
+                    emitter_name,
+                    emitter_settings,
+                )
                 .inspect_err(|e| warns!("failed to register emitter: {e}"))
                 .is_ok(),
             None => {

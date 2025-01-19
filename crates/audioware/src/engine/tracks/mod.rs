@@ -14,6 +14,7 @@ use music::Music;
 use radioport::Radioport;
 use red4ext_rs::types::{CName, EntityId};
 use sfx::Sfx;
+pub use spatial::Spatial;
 use v::V;
 
 use crate::error::Error;

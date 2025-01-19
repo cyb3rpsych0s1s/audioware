@@ -1,7 +1,7 @@
-use std::{collections::HashSet, num::NonZero, sync::LazyLock};
+use std::{collections::HashSet, sync::LazyLock};
 
 use audioware_bank::{BankData, Banks, Id};
-use audioware_core::{SpatialTrackSettings, With};
+use audioware_core::With;
 use audioware_manifest::ValidateFor;
 use dashmap::{
     mapref::{multiple::RefMutMulti, one::RefMut},
@@ -55,14 +55,14 @@ impl Emitters {
             .map(|x| x.exists_tag(tag_name))
             .unwrap_or(false)
     }
-    #[allow(clippy::too_many_arguments)]
+    pub fn pair_emitter(&mut self, entity_id: EntityId, tag_name: CName) -> Result<(), Error> {
+        todo!()
+    }
     pub fn add_emitter(
         &mut self,
+        handle: SpatialTrackHandle,
         entity_id: EntityId,
         tag_name: CName,
-        emitter_name: Option<CName>,
-        settings: Option<(SpatialTrackSettings, NonZero<u64>)>,
-        handle: SpatialTrackHandle,
         dilation: Option<f32>,
         last_known_position: Vector4,
         busy: bool,
@@ -74,6 +74,12 @@ impl Emitters {
             );
             return Ok(());
         }
+        if self.0.contains_key(&entity_id) {
+            todo!(
+                "here we must take into account existing slots and add emitter_name and tag_name"
+            );
+        }
+        todo!("here we must take into account existing slots and add emitter_name and tag_name");
         self.0.insert(
             entity_id,
             EmitterSlots::new(dilation, busy, last_known_position),

@@ -3,14 +3,15 @@ use std::num::NonZero;
 use audioware_core::SpatialTrackSettings;
 use audioware_manifest::PlayerGender;
 use dilation::Dilation;
-use emitters::{Emitters, EMITTERS};
+use emitters::{Emitter, Emitters, EMITTERS};
 use kira::{backend::Backend, track::SpatialTrackDistances, AudioManager, Tween};
 use listener::Listener;
 use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 
 use crate::{
-    error::Error, get_player, AsEntity, AsScriptedPuppet, AsScriptedPuppetExt, AsTimeDilatable,
-    AvObject, BikeObject, CarObject, Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject,
+    error::{Error, SceneError},
+    get_player, AsEntity, AsScriptedPuppet, AsScriptedPuppetExt, AsTimeDilatable, AvObject,
+    BikeObject, CarObject, Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject,
     TimeDilatable, VehicleObject,
 };
 
@@ -57,50 +58,42 @@ impl Scene {
         })
     }
 
-    pub fn add_emitter(
+    pub fn add_emitter<B: Backend>(
         &mut self,
+        manager: &mut AudioManager<B>,
         entity_id: EntityId,
         tag_name: CName,
         emitter_name: Option<CName>,
         settings: Option<&(SpatialTrackSettings, NonZero<u64>)>,
     ) -> Result<(), Error> {
-        // if entity_id == self.v.id {
-        //     return Err(Error::Scene {
-        //         source: SceneError::InvalidEmitter,
-        //     });
-        // }
-        // let paired = self
-        //     .emitters
-        //     .pair_emitter(entity_id, tag_name, emitter_name, settings)?;
-        // if !paired {
-        //     let (position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
+        if entity_id == self.v.id {
+            return Err(Error::Scene {
+                source: SceneError::InvalidEmitter,
+            });
+        }
+        let (position, busy, dilation, distances) = Emitter::full_infos(entity_id)?;
 
-        //     lifecycle!("emitter settings before {:?} [{entity_id}]", settings);
-        //     let mapped = match settings {
-        //         Some((settings, _))
-        //             if settings.distances.min_distance == 0.
-        //                 && settings.distances.max_distance == 0. =>
-        //         {
-        //             settings.distances(distances.unwrap_or_default())
-        //         }
-        //         Some((settings, _)) => *settings,
-        //         None => SpatialTrackSettings::default().distances(distances.unwrap_or_default()),
-        //     };
-        //     lifecycle!("emitter settings after {:?} [{entity_id}]", mapped);
-        //     let handle = self.scene.add_emitter(position, mapped)?;
-        //     self.emitters.add_emitter(
-        //         entity_id,
-        //         tag_name,
-        //         emitter_name,
-        //         settings.cloned(),
-        //         handle,
-        //         dilation,
-        //         position,
-        //         busy,
-        //     )?;
-        // }
-        // Ok(())
-        todo!()
+        lifecycle!("emitter settings before {:?} [{entity_id}]", settings);
+        let mapped = match settings {
+            Some((settings, _))
+                if settings.distances.min_distance == 0.
+                    && settings.distances.max_distance == 0. =>
+            {
+                let mut settings = settings.clone();
+                settings.distances = distances.unwrap_or_default();
+                settings
+            }
+            Some((settings, _)) => settings.clone(),
+            None => {
+                let mut settings = SpatialTrackSettings::default();
+                settings.distances = distances.unwrap_or_default();
+                settings
+            }
+        };
+        lifecycle!("emitter settings after {:?} [{entity_id}]", mapped);
+        let handle = manager.add_spatial_sub_track(self.v.handle.id(), position, mapped.into())?;
+        self.emitters
+            .add_emitter(handle, entity_id, tag_name, dilation, position, busy)
     }
 
     pub fn stop_on_emitter(
