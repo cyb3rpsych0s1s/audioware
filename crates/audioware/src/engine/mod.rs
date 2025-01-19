@@ -150,16 +150,13 @@ where
         match self.banks.try_get(&event_name, &spoken, Some(&gender)) {
             Ok(key) => {
                 let data = self.banks.data(key);
-                let destination = &self.tracks.holocall;
+                let destination = &mut self.tracks.holocall;
                 let dilatable = true;
                 let duration: f32;
                 match data {
                     Either::Left(data) => {
                         duration = data.duration().as_secs_f32();
-                        if let Ok(handle) = self
-                            .manager
-                            .play(data /* .output_destination(destination) */)
-                        {
+                        if let Ok(handle) = destination.play(data) {
                             self.tracks.store_static(
                                 handle,
                                 event_name,
@@ -171,10 +168,7 @@ where
                     }
                     Either::Right(data) => {
                         duration = data.duration().as_secs_f32();
-                        if let Ok(handle) = self
-                            .manager
-                            .play(data /* .output_destination(destination) */)
-                        {
+                        if let Ok(handle) = destination.play(data) {
                             self.tracks.store_stream(
                                 handle,
                                 event_name,
@@ -234,14 +228,14 @@ where
                     .scene
                     .as_ref()
                     .is_some_and(|x| Some(x.listener_id()) == entity_id);
-                let destination: &TrackHandle = if is_v {
+                let destination: &mut TrackHandle = if is_v {
                     if key.is_vocal() {
-                        &self.tracks.v.vocal
+                        &mut self.tracks.v.vocal
                     } else {
-                        &self.tracks.v.emissive
+                        &mut self.tracks.v.emissive
                     }
                 } else {
-                    key.to_output_destination(&self.tracks)
+                    key.to_output_destination(&mut self.tracks)
                 };
                 match data {
                     Either::Left(data) => {
@@ -685,19 +679,19 @@ where
 }
 
 pub trait ToOutputDestination {
-    fn to_output_destination<'b>(&self, tracks: &'b Tracks) -> &'b TrackHandle;
+    fn to_output_destination<'b>(&self, tracks: &'b mut Tracks) -> &'b mut TrackHandle;
 }
 
 impl ToOutputDestination for Id {
     #[inline(always)]
-    fn to_output_destination<'b>(&self, tracks: &'b Tracks) -> &'b TrackHandle {
+    fn to_output_destination<'b>(&self, tracks: &'b mut Tracks) -> &'b mut TrackHandle {
         match self {
             Id::OnDemand(_, source) | Id::InMemory(_, source) => match source {
-                Source::Sfx | Source::Ono => tracks.sfx.as_ref(),
-                Source::Voices => tracks.dialogue.as_ref(),
-                Source::Playlist => tracks.radioport.as_ref(),
-                Source::Music => tracks.music.as_ref(),
-                Source::Jingle => tracks.car_radio.as_ref(),
+                Source::Sfx | Source::Ono => &mut tracks.sfx,
+                Source::Voices => &mut tracks.dialogue,
+                Source::Playlist => &mut tracks.radioport,
+                Source::Music => &mut tracks.music,
+                Source::Jingle => &mut tracks.car_radio,
             },
         }
     }

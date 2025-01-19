@@ -30,6 +30,20 @@ impl Sfx {
     }
 }
 
+impl std::ops::Deref for Sfx {
+    type Target = TrackHandle;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for Sfx {
+    fn deref_mut(&mut self) -> &mut TrackHandle {
+        &mut self.0
+    }
+}
+
 impl AsRef<TrackHandle> for Sfx {
     fn as_ref(&self) -> &TrackHandle {
         &self.0

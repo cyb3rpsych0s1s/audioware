@@ -29,6 +29,20 @@ impl Radioport {
     }
 }
 
+impl std::ops::Deref for Radioport {
+    type Target = TrackHandle;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for Radioport {
+    fn deref_mut(&mut self) -> &mut TrackHandle {
+        &mut self.0
+    }
+}
+
 impl AsRef<TrackHandle> for Radioport {
     fn as_ref(&self) -> &TrackHandle {
         &self.0

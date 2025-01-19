@@ -40,3 +40,17 @@ impl Spatial {
         Ok(Self(track))
     }
 }
+
+impl std::ops::Deref for Spatial {
+    type Target = SpatialTrackHandle;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for Spatial {
+    fn deref_mut(&mut self) -> &mut SpatialTrackHandle {
+        &mut self.0
+    }
+}

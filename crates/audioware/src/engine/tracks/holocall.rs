@@ -44,6 +44,20 @@ impl Holocall {
     }
 }
 
+impl std::ops::Deref for Holocall {
+    type Target = TrackHandle;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for Holocall {
+    fn deref_mut(&mut self) -> &mut TrackHandle {
+        &mut self.0
+    }
+}
+
 impl AsRef<TrackHandle> for Holocall {
     fn as_ref(&self) -> &TrackHandle {
         &self.0
