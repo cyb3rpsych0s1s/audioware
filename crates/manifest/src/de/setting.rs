@@ -238,7 +238,9 @@ macro_rules! impl_from_settings {
                     volume: value
                         .volume
                         .map(|x| {
-                            ::kira::Value::<::kira::Decibels>::Fixed(Amplitude(x).as_decibels())
+                            ::kira::Value::<::kira::Decibels>::Fixed(
+                                Amplitude::try_from(x).unwrap().as_decibels(),
+                            )
                         })
                         .unwrap_or_default(),
                     panning: value
@@ -277,12 +279,22 @@ impl Validate for Settings {
             }
         }
         if let Some(volume) = self.volume {
-            if Amplitude(volume).as_decibels() > Decibels(85.0) {
-                errors.push(ValidationError {
-                    which: "volume",
-                    why: "audio should not be louder than 85.0 dB",
-                });
-            }
+            match Amplitude::try_from(volume) {
+                Ok(volume) => {
+                    if volume.as_decibels() > Decibels(85.0) {
+                        errors.push(ValidationError {
+                            which: "volume",
+                            why: "audio should not be louder than 85.0 dB",
+                        });
+                    }
+                }
+                Err(_) => {
+                    errors.push(ValidationError {
+                        which: "volume",
+                        why: "cannot be negative",
+                    });
+                }
+            };
         }
         if errors.is_empty() {
             return Ok(());

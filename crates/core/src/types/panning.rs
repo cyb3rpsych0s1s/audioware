@@ -15,7 +15,7 @@ impl TryFrom<f32> for Panning {
     type Error = PanningError;
 
     fn try_from(value: f32) -> Result<Self, Self::Error> {
-        if value >= -1.0 && value <= 1.0 {
+        if (-1.0..=1.0).contains(&value) {
             Ok(Panning(kira::Panning(value)))
         } else {
             Err(PanningError::OutOfRange)
@@ -44,7 +44,7 @@ impl<'de> Deserialize<'de> for Panning {
     {
         struct PanningVisitor;
 
-        impl<'de> serde::de::Visitor<'de> for PanningVisitor {
+        impl serde::de::Visitor<'_> for PanningVisitor {
             type Value = Panning;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

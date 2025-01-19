@@ -1,4 +1,4 @@
-use audioware_core::Amplitude;
+use audioware_core::{amplitude, Amplitude};
 use kira::{
     track::{TrackBuilder, TrackHandle},
     {backend::Backend, AudioManager},
@@ -27,8 +27,8 @@ impl V {
         let vocal = manager.add_sub_track(
             TrackBuilder::new()
                 // sum used to have to be 1.0 otherwise sounds crackled, what now?
-                .with_send(ambience.environmental(), Amplitude(0.75).as_decibels())
-                .with_send(ambience.reverb(), Amplitude(0.25).as_decibels())
+                .with_send(ambience.environmental(), amplitude!(0.75).as_decibels())
+                .with_send(ambience.reverb(), amplitude!(0.25).as_decibels())
                 .with_effect(modulators.dialogue_volume.try_effect()?),
         )?;
         let mental = manager.add_sub_track(
@@ -37,8 +37,8 @@ impl V {
         let emissive = manager.add_sub_track(
             TrackBuilder::new()
                 // sum used to have to be 1.0 otherwise sounds crackled, what now?
-                .with_send(ambience.environmental(), Amplitude(0.75).as_decibels())
-                .with_send(ambience.reverb(), Amplitude(0.25).as_decibels())
+                .with_send(ambience.environmental(), amplitude!(0.75).as_decibels())
+                .with_send(ambience.reverb(), amplitude!(0.25).as_decibels())
                 .with_effect(modulators.sfx_volume.try_effect()?),
         )?;
 

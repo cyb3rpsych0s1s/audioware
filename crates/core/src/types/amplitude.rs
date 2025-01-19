@@ -1,3 +1,6 @@
+use std::ops::Div;
+
+use kira::Decibels;
 use serde::Deserialize;
 use snafu::Snafu;
 
@@ -8,7 +11,24 @@ pub enum AmplitudeError {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Amplitude(pub f32);
+pub struct Amplitude(f32);
+
+#[macro_export]
+macro_rules! amplitude {
+    ($v:expr) => {{
+        Amplitude::try_from($v).unwrap()
+    }};
+}
+
+impl Amplitude {
+    pub fn as_decibels(&self) -> Decibels {
+        match self.0 {
+            1.0 => Decibels::IDENTITY,
+            x if x < 0.0 => unreachable!(),
+            x => x.into(),
+        }
+    }
+}
 
 impl TryFrom<f32> for Amplitude {
     type Error = AmplitudeError;
@@ -22,13 +42,21 @@ impl TryFrom<f32> for Amplitude {
     }
 }
 
-impl From<kira::Decibels> for Amplitude {    
-    fn from(value: kira::Decibels) -> Self {
+impl Div<f32> for Amplitude {
+    type Output = f32;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        self.0 / rhs
+    }
+}
+
+impl From<Decibels> for Amplitude {
+    fn from(value: Decibels) -> Self {
         Self(value.as_amplitude())
     }
 }
 
-impl From<Amplitude> for kira::Decibels {
+impl From<Amplitude> for Decibels {
     fn from(value: Amplitude) -> Self {
         Self(20. * value.0.log10())
     }
@@ -41,7 +69,7 @@ impl<'de> Deserialize<'de> for Amplitude {
     {
         struct AmplitudeVisitor;
 
-        impl<'de> serde::de::Visitor<'de> for AmplitudeVisitor {
+        impl serde::de::Visitor<'_> for AmplitudeVisitor {
             type Value = Amplitude;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -57,5 +85,11 @@ impl<'de> Deserialize<'de> for Amplitude {
         }
 
         deserializer.deserialize_any(AmplitudeVisitor)
+    }
+}
+
+impl std::fmt::Display for Amplitude {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }

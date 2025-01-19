@@ -606,16 +606,16 @@ where
         }
     }
 
-    pub fn set_volume(&mut self, setting: CName, value: f64) {
+    pub fn set_volume(&mut self, setting: CName, value: Amplitude) {
         lifecycle!("about to change {value} for {setting}");
-        let v = value.div(100.).clamp(0., 1.);
+        let v = value.div(100.).clamp(0., 1.) as f64;
         match setting.as_str() {
             // kira uses amplitude for volume, default to 1.
             // while default volume expressed as game setting is 100.
             "MasterVolume" => self
                 .manager
                 .main_track()
-                .set_volume(Amplitude(v as f32).as_decibels(), DEFAULT),
+                .set_volume(value.as_decibels(), DEFAULT),
             // same for the other settings, except modulators already handles conversion internally
             "SfxVolume" => self.modulators.sfx_volume.update(v, DEFAULT),
             "DialogueVolume" => self.modulators.dialogue_volume.update(v, DEFAULT),

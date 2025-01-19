@@ -1,3 +1,4 @@
+use audioware_core::Amplitude;
 use crossbeam::channel::Sender;
 use red4ext_rs::types::{CName, EntityId};
 
@@ -37,7 +38,7 @@ pub enum Lifecycle {
     Terminate,
     SetVolume {
         setting: CName,
-        value: f64,
+        value: Amplitude,
     },
     SetListenerDilation {
         value: f32,

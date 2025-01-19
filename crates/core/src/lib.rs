@@ -10,24 +10,13 @@ mod settings;
 mod types;
 
 pub use settings::SpatialTrackSettings;
+pub use types::{Amplitude, AmplitudeError, Panning, PanningError};
 
 /// Consumes `T`, absorbing its data.
 pub trait With<T> {
     fn with(self, settings: T) -> Self
     where
         Self: Sized;
-}
-
-pub struct Amplitude(pub f32);
-
-impl Amplitude {
-    pub fn as_decibels(&self) -> Decibels {
-        match self.0 {
-            1.0 => Decibels::IDENTITY,
-            x if x <= 0.0 => Decibels::SILENCE,
-            x => Decibels(20.0 * x.log10()),
-        }
-    }
 }
 
 pub trait AudioDuration {
