@@ -4,19 +4,19 @@ module Audioware
 public class VolumeSettingsListener extends ConfigVarListener {
     private let game: GameInstance;
 
-    private let master: Double    = 100.;
-    private let sfx: Double       = 100.;
-    private let dialogue: Double  = 100.;
-    private let music: Double     = 100.;
-    private let radio: Double     = 100.;
-    private let radioport: Double = 100.;
+    private let master: Float    = 100.;
+    private let sfx: Float       = 100.;
+    private let dialogue: Float  = 100.;
+    private let music: Float     = 100.;
+    private let radio: Float     = 100.;
+    private let radioport: Float = 100.;
 
     public func Initialize(game: GameInstance) {
         this.game = game;
 
         // update settings for Audioware, which loads way earlier
         let settings = GameInstance.GetSettingsSystem(this.game);
-        let setting: Double;
+        let setting: Float;
         for name in [
             n"MasterVolume",
             n"SfxVolume",
@@ -25,7 +25,7 @@ public class VolumeSettingsListener extends ConfigVarListener {
             n"CarRadioVolume",
             n"RadioportVolume"
         ] {
-            setting = Cast<Double>((settings.GetGroup(n"/audio/volume").GetVar(name) as ConfigVarInt).GetValue());
+            setting = Cast<Float>((settings.GetGroup(n"/audio/volume").GetVar(name) as ConfigVarInt).GetValue());
             this.UpdateVolume(name, setting);
         }
     }
@@ -44,7 +44,7 @@ public class VolumeSettingsListener extends ConfigVarListener {
                 case n"CarRadioVolume":
                 case n"RadioportVolume":
                     let settings = GameInstance.GetSettingsSystem(this.game);
-                    let setting: Double = Cast<Double>((settings.GetGroup(groupPath).GetVar(varName) as ConfigVarInt).GetValue());
+                    let setting: Float = Cast<Float>((settings.GetGroup(groupPath).GetVar(varName) as ConfigVarInt).GetValue());
                     this.UpdateVolume(varName, setting);
                     break;
                 default:
@@ -52,7 +52,7 @@ public class VolumeSettingsListener extends ConfigVarListener {
             }
         }
     }
-    private func UpdateVolume(name: CName, value: Double) {
+    private func UpdateVolume(name: CName, value: Float) {
         switch name {
             case n"MasterVolume":
                 if NotEquals(value, this.master) {

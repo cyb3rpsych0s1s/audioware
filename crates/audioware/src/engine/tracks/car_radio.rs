@@ -1,4 +1,4 @@
-use audioware_core::Amplitude;
+use audioware_core::{amplitude, Amplitude};
 use kira::{
     track::{TrackBuilder, TrackHandle},
     {backend::Backend, AudioManager},
@@ -22,8 +22,8 @@ impl CarRadio {
         let track = manager.add_sub_track(
             TrackBuilder::new()
                 // sum used to have to be 1.0 otherwise sounds crackled, what now?
-                .with_send(ambience.environmental(), Amplitude(0.75).as_decibels())
-                .with_send(ambience.reverb(), Amplitude(0.25).as_decibels())
+                .with_send(ambience.environmental(), amplitude!(0.75).as_decibels())
+                .with_send(ambience.reverb(), amplitude!(0.25).as_decibels())
                 .with_effect(modulators.car_radio_volume.try_effect()?),
         )?;
         Ok(Self(track))
