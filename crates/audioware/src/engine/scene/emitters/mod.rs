@@ -14,15 +14,15 @@ use kira::{
         streaming::{StreamingSoundData, StreamingSoundHandle},
         FromFileError,
     },
-    track::SpatialTrackHandle,
     Tween,
 };
 use parking_lot::RwLock;
 use red4ext_rs::types::{CName, EntityId};
+use slot::EmitterSlot;
 use slots::EmitterSlots;
 
 use crate::{
-    engine::tweens::IMMEDIATELY,
+    engine::{tracks::Spatial, tweens::IMMEDIATELY},
     error::{EngineError, Error, SceneError},
     utils::{lifecycle, warns},
     Vector4,
@@ -30,7 +30,6 @@ use crate::{
 
 mod emitter;
 mod handles;
-mod mods;
 mod slot;
 mod slots;
 
@@ -55,17 +54,17 @@ impl Emitters {
             .map(|x| x.exists_tag(tag_name))
             .unwrap_or(false)
     }
-    pub fn pair_emitter(&mut self, entity_id: EntityId, tag_name: CName) -> Result<(), Error> {
-        todo!()
-    }
+    #[allow(clippy::too_many_arguments)]
     pub fn add_emitter(
         &mut self,
-        handle: SpatialTrackHandle,
+        handle: Spatial,
         entity_id: EntityId,
         tag_name: CName,
+        emitter_name: Option<CName>,
         dilation: Option<f32>,
         last_known_position: Vector4,
         busy: bool,
+        persist_until_sounds_finish: bool,
     ) -> Result<(), Error> {
         if self.exists_tag(&entity_id, &tag_name) {
             warns!(
@@ -74,16 +73,15 @@ impl Emitters {
             );
             return Ok(());
         }
-        if self.0.contains_key(&entity_id) {
-            todo!(
-                "here we must take into account existing slots and add emitter_name and tag_name"
+        let slot = EmitterSlot::new(handle, tag_name, emitter_name, persist_until_sounds_finish);
+        if let Some(mut slots) = self.0.get_mut(&entity_id) {
+            slots.value_mut().insert(slot);
+        } else {
+            self.0.insert(
+                entity_id,
+                EmitterSlots::new(slot, dilation, busy, last_known_position),
             );
         }
-        todo!("here we must take into account existing slots and add emitter_name and tag_name");
-        self.0.insert(
-            entity_id,
-            EmitterSlots::new(dilation, busy, last_known_position),
-        );
         EMITTERS.write().insert((entity_id, tag_name));
         lifecycle!(
             "added emitter {entity_id} with tag name {}",

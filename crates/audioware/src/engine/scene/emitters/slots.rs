@@ -19,14 +19,22 @@ pub struct EmitterSlots {
 }
 
 impl EmitterSlots {
-    pub fn new(dilation: Option<f32>, busy: bool, last_known_position: Vector4) -> Self {
+    pub fn new(
+        slot: EmitterSlot,
+        dilation: Option<f32>,
+        busy: bool,
+        last_known_position: Vector4,
+    ) -> Self {
         Self {
-            slots: Vec::new(),
+            slots: vec![slot],
             marked_for_death: false,
             busy,
             last_known_position,
             dilation: Dilation::new(dilation.unwrap_or(1.0)),
         }
+    }
+    pub fn insert(&mut self, slot: EmitterSlot) {
+        self.slots.push(slot);
     }
     pub fn exists_tag(&self, tag_name: &CName) -> bool {
         self.slots.iter().any(|x| x.tag_name == Some(*tag_name))

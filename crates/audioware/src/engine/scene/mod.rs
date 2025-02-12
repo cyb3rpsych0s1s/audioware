@@ -9,13 +9,14 @@ use listener::Listener;
 use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 
 use crate::{
+    engine::tracks::Spatial,
     error::{Error, SceneError},
     get_player, AsEntity, AsScriptedPuppet, AsScriptedPuppetExt, AsTimeDilatable, AvObject,
     BikeObject, CarObject, Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject,
     TimeDilatable, VehicleObject,
 };
 
-use super::{lifecycle, tracks::Tracks, tweens::IMMEDIATELY};
+use super::{lifecycle, modulators::Modulators, tweens::IMMEDIATELY};
 
 mod dilation;
 mod emitters;
@@ -30,10 +31,7 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn try_new<B: Backend>(
-        manager: &mut AudioManager<B>,
-        tracks: &Tracks,
-    ) -> Result<Self, Error> {
+    pub fn try_new<B: Backend>(manager: &mut AudioManager<B>) -> Result<Self, Error> {
         let capacity = manager.sub_track_capacity();
         let (id, position, orientation, dilation) = {
             let v = get_player(GameInstance::new()).cast::<Entity>().unwrap();
@@ -65,6 +63,7 @@ impl Scene {
         tag_name: CName,
         emitter_name: Option<CName>,
         settings: Option<&(SpatialTrackSettings, NonZero<u64>)>,
+        modulators: &Modulators,
     ) -> Result<(), Error> {
         if entity_id == self.v.id {
             return Err(Error::Scene {
@@ -84,16 +83,25 @@ impl Scene {
                 settings
             }
             Some((settings, _)) => settings.clone(),
-            None => {
-                let mut settings = SpatialTrackSettings::default();
-                settings.distances = distances.unwrap_or_default();
-                settings
-            }
+            None => SpatialTrackSettings {
+                distances: distances.unwrap_or_default(),
+                ..Default::default()
+            },
         };
         lifecycle!("emitter settings after {:?} [{entity_id}]", mapped);
-        let handle = manager.add_spatial_sub_track(self.v.handle.id(), position, mapped.into())?;
-        self.emitters
-            .add_emitter(handle, entity_id, tag_name, dilation, position, busy)
+        let handle = Spatial::try_new(manager, self.v.handle.id(), position, mapped, modulators)?;
+        self.emitters.add_emitter(
+            handle,
+            entity_id,
+            tag_name,
+            emitter_name,
+            dilation,
+            position,
+            busy,
+            settings
+                .map(|x| x.0.persist_until_sounds_finish)
+                .unwrap_or(false),
+        )
     }
 
     pub fn stop_on_emitter(

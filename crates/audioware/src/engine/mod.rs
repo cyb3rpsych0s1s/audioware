@@ -129,7 +129,7 @@ where
     }
 
     pub fn try_new_scene(&mut self) -> Result<(), Error> {
-        self.scene = Some(Scene::try_new(&mut self.manager, &self.tracks)?);
+        self.scene = Some(Scene::try_new(&mut self.manager)?);
         Ok(())
     }
 
@@ -469,6 +469,7 @@ where
                     tag_name,
                     emitter_name,
                     emitter_settings,
+                    &self.modulators,
                 )
                 .inspect_err(|e| warns!("failed to register emitter: {e}"))
                 .is_ok(),

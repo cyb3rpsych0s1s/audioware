@@ -19,6 +19,9 @@ pub struct EmitterSlot {
     pub handles: Handles,
 }
 
+type PlayResult =
+    Result<(f32, Option<CName>), Either<PlaySoundError<()>, PlaySoundError<FromFileError>>>;
+
 impl EmitterSlot {
     pub fn any_playing_handle(&self) -> bool {
         self.handles.any_playing_handle()
@@ -42,8 +45,7 @@ impl EmitterSlot {
         event_name: CName,
         affected_by_time_dilation: bool,
         data: Either<StaticSoundData, StreamingSoundData<FromFileError>>,
-    ) -> Result<(f32, Option<CName>), Either<PlaySoundError<()>, PlaySoundError<FromFileError>>>
-    {
+    ) -> PlayResult {
         match data {
             Either::Left(data) => {
                 let duration = data.duration().as_secs_f32();

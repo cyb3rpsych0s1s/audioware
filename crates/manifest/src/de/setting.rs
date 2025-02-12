@@ -240,6 +240,7 @@ impl From<Interpolation> for Tween {
 
 macro_rules! impl_from_settings {
     ($into:path) => {
+        #[allow(clippy::needless_update)]
         impl From<self::Settings> for $into {
             fn from(value: self::Settings) -> Self {
                 Self {
