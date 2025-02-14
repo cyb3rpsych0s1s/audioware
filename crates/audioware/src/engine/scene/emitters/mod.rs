@@ -122,6 +122,11 @@ impl Emitters {
         if removed && last {
             self.0.remove(entity_id);
         }
+        if removed {
+            EMITTERS
+                .write()
+                .retain(|(id, name)| id != entity_id || name != tag_name);
+        }
         removed
     }
     pub fn on_emitter_dies(&mut self, entity_id: &EntityId) {
