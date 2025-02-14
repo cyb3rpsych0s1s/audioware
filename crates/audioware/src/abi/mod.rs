@@ -1,7 +1,8 @@
+use audioware_core::Amplitude;
 use audioware_manifest::{Locale, PlayerGender, ScnDialogLineType, Validate};
 use command::Command;
 use crossbeam::channel::bounded;
-use kira::manager::backend::cpal::CpalBackend;
+use kira::backend::cpal::CpalBackend;
 use lifecycle::{Board, Lifecycle, Session, System};
 use red4ext_rs::{
     exports, methods,
@@ -146,7 +147,7 @@ pub trait CodewareLifecycle {
 }
 
 pub trait ListenerLifecycle {
-    fn set_volume(setting: CName, value: f64);
+    fn set_volume(setting: CName, value: f32);
 }
 
 impl GameSessionLifecycle for Audioware {
@@ -212,7 +213,11 @@ impl BlackboardLifecycle for Audioware {
 }
 
 impl ListenerLifecycle for Audioware {
-    fn set_volume(setting: CName, value: f64) {
+    fn set_volume(setting: CName, value: f32) {
+        let Ok(value) = Amplitude::try_from(value) else {
+            warns!("volume must be greater or equal to 0.0 ({value})");
+            return;
+        };
         queue::notify(Lifecycle::SetVolume { setting, value });
     }
 }

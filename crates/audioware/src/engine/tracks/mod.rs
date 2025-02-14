@@ -3,17 +3,18 @@ use car_radio::CarRadio;
 use dialogue::Dialogue;
 use holocall::Holocall;
 use kira::{
-    manager::{backend::Backend, AudioManager},
     sound::{
         static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError,
         PlaybackState,
     },
-    tween::Tween,
+    Tween,
+    {backend::Backend, AudioManager},
 };
 use music::Music;
 use radioport::Radioport;
 use red4ext_rs::types::{CName, EntityId};
 use sfx::Sfx;
+pub use spatial::Spatial;
 use v::V;
 
 use crate::error::Error;
@@ -27,6 +28,7 @@ mod holocall;
 mod music;
 mod radioport;
 mod sfx;
+mod spatial;
 mod v;
 
 pub struct Handle<T> {

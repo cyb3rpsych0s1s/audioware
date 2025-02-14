@@ -1,6 +1,6 @@
 use kira::{
     sound::static_sound::{StaticSoundData, StaticSoundSettings},
-    tween::Tween,
+    Tween,
 };
 
 use crate::{AudioDuration, SampleRate, With};

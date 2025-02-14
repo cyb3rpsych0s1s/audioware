@@ -3,7 +3,7 @@ use kira::{
         static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError,
         PlaybackState,
     },
-    tween::Tween,
+    Tween,
 };
 use red4ext_rs::types::CName;
 

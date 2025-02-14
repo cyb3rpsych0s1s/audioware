@@ -1,7 +1,8 @@
 use kira::{
+    backend::Backend,
     effect::filter::{FilterBuilder, FilterHandle, FilterMode},
-    manager::{backend::Backend, AudioManager},
-    track::{TrackBuilder, TrackHandle},
+    track::{SendTrackBuilder, SendTrackHandle},
+    AudioManager, Mix,
 };
 
 use crate::{
@@ -15,8 +16,8 @@ use crate::{
 /// Sub-track to provide reverb and environmental effects.
 pub struct Ambience {
     eq: EQ,
-    reverb: TrackHandle,
-    environmental: TrackHandle,
+    reverb: SendTrackHandle,
+    environmental: SendTrackHandle,
 }
 
 impl Ambience {
@@ -26,12 +27,17 @@ impl Ambience {
     ) -> Result<Self, Error> {
         let low: FilterHandle;
         let high: FilterHandle;
-        let reverb = manager
-            .add_sub_track(TrackBuilder::new().with_effect(modulators.reverb_mix.try_effect()?))?;
-        let environmental = manager.add_sub_track({
-            let mut builder = TrackBuilder::new();
-            low = builder.add_effect(FilterBuilder::default().mix(0.));
-            high = builder.add_effect(FilterBuilder::default().mode(FilterMode::HighPass).mix(0.));
+        let reverb = manager.add_send_track(
+            SendTrackBuilder::new().with_effect(modulators.reverb_mix.try_effect()?),
+        )?;
+        let environmental = manager.add_send_track({
+            let mut builder = SendTrackBuilder::new();
+            low = builder.add_effect(FilterBuilder::default().mix(Mix::DRY));
+            high = builder.add_effect(
+                FilterBuilder::default()
+                    .mode(FilterMode::HighPass)
+                    .mix(Mix::WET),
+            );
             builder
         })?;
         Ok(Self {
@@ -43,10 +49,10 @@ impl Ambience {
             },
         })
     }
-    pub fn reverb(&self) -> &TrackHandle {
+    pub fn reverb(&self) -> &SendTrackHandle {
         &self.reverb
     }
-    pub fn environmental(&self) -> &TrackHandle {
+    pub fn environmental(&self) -> &SendTrackHandle {
         &self.environmental
     }
     pub fn equalizer(&mut self) -> &mut EQ {

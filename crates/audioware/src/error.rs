@@ -1,7 +1,7 @@
 //! Plugin errors.
 
 use audioware_manifest::error::ConversionError;
-use kira::{manager::error::PlaySoundError, sound::FromFileError, ResourceLimitReached};
+use kira::{sound::FromFileError, PlaySoundError, ResourceLimitReached};
 use red4ext_rs::types::{CName, EntityId};
 use snafu::Snafu;
 
@@ -18,6 +18,10 @@ pub enum Error {
     Engine { source: EngineError },
     #[snafu(display("Scene error: {source}"))]
     Scene { source: SceneError },
+    #[snafu(display("Validation error:\n{}", errors.iter().map(|e| format!("- {}", e)).collect::<Vec<_>>().join("\n")))]
+    Validation {
+        errors: Vec<audioware_manifest::error::ValidationError>,
+    },
 }
 
 #[derive(Debug, Snafu)]
@@ -119,5 +123,11 @@ impl From<std::io::Error> for Error {
         Self::Engine {
             source: EngineError::Thread { source },
         }
+    }
+}
+
+impl From<Vec<audioware_manifest::error::ValidationError>> for Error {
+    fn from(errors: Vec<audioware_manifest::error::ValidationError>) -> Self {
+        Self::Validation { errors }
     }
 }

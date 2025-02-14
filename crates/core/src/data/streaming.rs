@@ -1,6 +1,6 @@
 use kira::{
     sound::streaming::{StreamingSoundData, StreamingSoundSettings},
-    tween::Tween,
+    Tween,
 };
 
 use crate::{AudioDuration, With};

@@ -6,7 +6,7 @@ use crate::Audioware;
 
 use super::Easing;
 
-/// Intermediate representation for [kira::tween::Tween].
+/// Intermediate representation for [kira::Tween].
 #[derive(Debug, PartialEq, Clone, Default)]
 #[repr(C)]
 pub struct Tween {
@@ -26,7 +26,7 @@ impl Hash for Tween {
     }
 }
 
-/// Intermediate representation for [kira::tween::Tween]
+/// Intermediate representation for [kira::Tween]
 /// used in Redscript.
 #[derive(Debug, PartialEq)]
 #[repr(C)]
@@ -54,7 +54,7 @@ impl Hash for LinearTween {
     }
 }
 
-/// Intermediate representation for [kira::tween::Tween]
+/// Intermediate representation for [kira::Tween]
 /// used in Redscript.
 #[derive(Debug, PartialEq)]
 #[repr(C)]
@@ -87,13 +87,13 @@ impl ElasticTween {
     }
 }
 
-/// Any type that can converted into an optional [kira::tween::Tween].
+/// Any type that can converted into an optional [kira::Tween].
 pub trait ToTween {
-    fn into_tween(self) -> Option<kira::tween::Tween>;
+    fn into_tween(self) -> Option<kira::Tween>;
 }
 
-impl ToTween for kira::tween::Tween {
-    fn into_tween(self) -> Option<kira::tween::Tween> {
+impl ToTween for kira::Tween {
+    fn into_tween(self) -> Option<kira::Tween> {
         Some(self)
     }
 }
@@ -102,13 +102,13 @@ impl<T> ToTween for Option<T>
 where
     T: ToTween,
 {
-    fn into_tween(self) -> Option<kira::tween::Tween> {
+    fn into_tween(self) -> Option<kira::Tween> {
         self.and_then(ToTween::into_tween)
     }
 }
 
 impl ToTween for Ref<Tween> {
-    fn into_tween(self) -> Option<kira::tween::Tween> {
+    fn into_tween(self) -> Option<kira::Tween> {
         if self.is_null() {
             return None;
         }
@@ -123,7 +123,7 @@ impl ToTween for Ref<Tween> {
 }
 
 impl ToTween for Ref<LinearTween> {
-    fn into_tween(self) -> Option<kira::tween::Tween> {
+    fn into_tween(self) -> Option<kira::Tween> {
         if self.is_null() {
             return None;
         }
@@ -140,16 +140,16 @@ impl ToTween for Ref<LinearTween> {
             log::error!(Audioware::env(), "duration must be finite");
             0.
         };
-        Some(kira::tween::Tween {
+        Some(kira::Tween {
             start_time: kira::StartTime::Delayed(Duration::from_secs_f32(start_time)),
             duration: Duration::from_secs_f32(duration),
-            easing: kira::tween::Easing::Linear,
+            easing: kira::Easing::Linear,
         })
     }
 }
 
 impl ToTween for Ref<ElasticTween> {
-    fn into_tween(self) -> Option<kira::tween::Tween> {
+    fn into_tween(self) -> Option<kira::Tween> {
         if self.is_null() {
             return None;
         }
@@ -172,48 +172,48 @@ impl ToTween for Ref<ElasticTween> {
             log::error!(Audioware::env(), "easing value must be finite");
             0.
         };
-        Some(kira::tween::Tween {
+        Some(kira::Tween {
             start_time: kira::StartTime::Delayed(Duration::from_secs_f32(start_time)),
             duration: Duration::from_secs_f32(duration),
             easing: match fields.easing {
-                Easing::InPowf => kira::tween::Easing::InPowf(easing_value as f64),
-                Easing::OutPowf => kira::tween::Easing::OutPowf(easing_value as f64),
-                Easing::InOutPowf => kira::tween::Easing::InOutPowf(easing_value as f64),
+                Easing::InPowf => kira::Easing::InPowf(easing_value as f64),
+                Easing::OutPowf => kira::Easing::OutPowf(easing_value as f64),
+                Easing::InOutPowf => kira::Easing::InOutPowf(easing_value as f64),
             },
         })
     }
 }
 
-/// Any type that can be converted into an optional [kira::tween::Easing].
+/// Any type that can be converted into an optional [kira::Easing].
 pub trait ToEasing {
-    fn into_easing(self) -> Option<kira::tween::Easing>;
+    fn into_easing(self) -> Option<kira::Easing>;
 }
 
 impl ToEasing for Ref<LinearTween> {
-    fn into_easing(self) -> Option<kira::tween::Easing> {
+    fn into_easing(self) -> Option<kira::Easing> {
         if self.is_null() {
             return None;
         }
-        Some(kira::tween::Easing::Linear)
+        Some(kira::Easing::Linear)
     }
 }
 
 impl ToEasing for Ref<ElasticTween> {
-    fn into_easing(self) -> Option<kira::tween::Easing> {
+    fn into_easing(self) -> Option<kira::Easing> {
         if self.is_null() {
             return None;
         }
         let fields = unsafe { self.fields() }.unwrap();
         Some(match fields.easing {
-            Easing::InPowf => kira::tween::Easing::InPowf(fields.value as f64),
-            Easing::OutPowf => kira::tween::Easing::OutPowf(fields.value as f64),
-            Easing::InOutPowf => kira::tween::Easing::InOutPowf(fields.value as f64),
+            Easing::InPowf => kira::Easing::InPowf(fields.value as f64),
+            Easing::OutPowf => kira::Easing::OutPowf(fields.value as f64),
+            Easing::InOutPowf => kira::Easing::InOutPowf(fields.value as f64),
         })
     }
 }
 
 impl ToEasing for Ref<Tween> {
-    fn into_easing(self) -> Option<kira::tween::Easing> {
+    fn into_easing(self) -> Option<kira::Easing> {
         if self.is_null() {
             return None;
         }

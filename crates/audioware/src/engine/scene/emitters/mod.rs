@@ -1,32 +1,41 @@
-use std::{collections::HashSet, num::NonZero, sync::LazyLock};
+use std::{collections::HashSet, sync::LazyLock};
 
+use audioware_bank::{BankData, Banks, Id};
+use audioware_core::With;
+use audioware_manifest::ValidateFor;
 use dashmap::{
     mapref::{multiple::RefMutMulti, one::RefMut},
     DashMap,
 };
+use either::Either;
 use kira::{
-    sound::{static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError},
-    spatial::emitter::{EmitterHandle, EmitterId, EmitterSettings},
-    tween::Tween,
+    sound::{
+        static_sound::{StaticSoundData, StaticSoundHandle},
+        streaming::{StreamingSoundData, StreamingSoundHandle},
+        FromFileError,
+    },
+    Tween,
 };
-use mods::EmitterMod;
 use parking_lot::RwLock;
 use red4ext_rs::types::{CName, EntityId};
-use slots::{EmitterFootprint, EmitterSlot, EmitterSlots};
+use slot::EmitterSlot;
+use slots::EmitterSlots;
 
 use crate::{
-    engine::tweens::IMMEDIATELY,
-    error::{Error, SceneError},
-    utils::lifecycle,
+    engine::{tracks::Spatial, tweens::IMMEDIATELY},
+    error::{EngineError, Error, SceneError},
+    utils::{lifecycle, warns},
     Vector4,
 };
 
 mod emitter;
 mod handles;
-mod mods;
+mod slot;
 mod slots;
 
 pub use emitter::Emitter;
+
+use super::AffectedByTimeDilation;
 
 #[allow(clippy::type_complexity)]
 pub static EMITTERS: LazyLock<RwLock<HashSet<(EntityId, CName)>>> =
@@ -48,63 +57,37 @@ impl Emitters {
     #[allow(clippy::too_many_arguments)]
     pub fn add_emitter(
         &mut self,
+        handle: Spatial,
         entity_id: EntityId,
         tag_name: CName,
         emitter_name: Option<CName>,
-        settings: Option<(EmitterSettings, NonZero<u64>)>,
-        handle: EmitterHandle,
         dilation: Option<f32>,
         last_known_position: Vector4,
         busy: bool,
+        persist_until_sounds_finish: bool,
     ) -> Result<(), Error> {
-        self.0.insert(
-            entity_id,
-            EmitterSlots::new(dilation, busy, last_known_position),
-        );
-        self.0
-            .get_mut(&entity_id)
-            .expect("previously inserted")
-            .insert(
-                EmitterFootprint::new(settings),
-                EmitterSlot::new(handle, tag_name, emitter_name),
+        if self.exists_tag(&entity_id, &tag_name) {
+            warns!(
+                "emitter {entity_id} with tag name {} was already registered",
+                tag_name.as_str()
             );
+            return Ok(());
+        }
+        let slot = EmitterSlot::new(handle, tag_name, emitter_name, persist_until_sounds_finish);
+        if let Some(mut slots) = self.0.get_mut(&entity_id) {
+            slots.value_mut().insert(slot);
+        } else {
+            self.0.insert(
+                entity_id,
+                EmitterSlots::new(slot, dilation, busy, last_known_position),
+            );
+        }
         EMITTERS.write().insert((entity_id, tag_name));
         lifecycle!(
             "added emitter {entity_id} with tag name {}",
             tag_name.as_str()
         );
         Ok(())
-    }
-    pub fn pair_emitter(
-        &mut self,
-        entity_id: EntityId,
-        tag_name: CName,
-        emitter_name: Option<CName>,
-        settings: Option<&(EmitterSettings, NonZero<u64>)>,
-    ) -> Result<bool, Error> {
-        // check whether the emitter has already been registered for this tag
-        if self.exists_tag(&entity_id, &tag_name) {
-            return Err(Error::Scene {
-                source: SceneError::DuplicateEmitter {
-                    entity_id,
-                    tag_name,
-                },
-            });
-        }
-
-        // check whether a previously registered emitter with same settings can be reused
-        if let Some(entry) = self.0.get_mut(&entity_id) {
-            if let Some(entry) = entry.get(settings.map(|(_, x)| *x)) {
-                entry.mods.insert(tag_name, EmitterMod::new(emitter_name));
-                EMITTERS.write().insert((entity_id, tag_name));
-                lifecycle!(
-                    "emitter already exists, paired {} [{entity_id}]",
-                    tag_name.as_str()
-                );
-                return Ok(true);
-            }
-        }
-        Ok(false)
     }
     pub fn sync_emitters(&mut self) -> Result<(), Error> {
         if self.0.is_empty() {
@@ -132,12 +115,16 @@ impl Emitters {
         let mut last = false;
         let mut removed = false;
         if let Some(mut slots) = self.0.get_mut(entity_id) {
-            slots.value_mut().unregister_emitter(tag_name);
+            removed = slots.value_mut().unregister_emitter(tag_name);
             last = slots.is_empty();
-            removed = true;
         }
         if removed && last {
             self.0.remove(entity_id);
+        }
+        if removed {
+            EMITTERS
+                .write()
+                .retain(|(id, name)| id != entity_id || name != tag_name);
         }
         removed
     }
@@ -145,12 +132,12 @@ impl Emitters {
         self.0.retain(|k, v| {
             if k == entity_id {
                 let mut retain = false;
-                v.slots.retain(|ki, vi| {
-                    if ki.persist_until_sounds_finish {
+                v.slots.retain_mut(|x| {
+                    if x.persist_until_sounds_finish {
                         retain = true;
                         true
                     } else {
-                        vi.stop_emitters(IMMEDIATELY);
+                        x.stop(IMMEDIATELY);
                         false
                     }
                 });
@@ -165,10 +152,10 @@ impl Emitters {
         EMITTERS.write().retain(|(id, _)| id != entity_id);
     }
     pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId, tween: Tween) {
-        if let Some(slots) = self.0.get_mut(&entity_id) {
+        if let Some(mut slots) = self.0.get_mut(&entity_id) {
             for ref mut slot in slots.slots.iter_mut() {
-                if !slot.key().persist_until_sounds_finish {
-                    slot.value_mut().stop_emitters(tween);
+                if !slot.persist_until_sounds_finish {
+                    slot.stop(tween);
                 }
             }
         }
@@ -186,9 +173,48 @@ impl Emitters {
                 .stop_on_emitter(event_name, tag_name, tween);
         }
     }
+    pub fn play_on_emitter<T>(
+        &mut self,
+        key: &Id,
+        banks: &Banks,
+        event_name: CName,
+        entity_id: EntityId,
+        tag_name: CName,
+        ext: Option<T>,
+    ) -> Result<(f32, Option<CName>), Error>
+    where
+        StaticSoundData: With<Option<T>>,
+        StreamingSoundData<FromFileError>: With<Option<T>>,
+        T: AffectedByTimeDilation
+            + ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>>,
+    {
+        let Some(mut slots) = self.get_mut(&entity_id) else {
+            return Err(SceneError::MissingEmitter { entity_id }.into());
+        };
+        let Some(slot) = slots.get_mut(&tag_name) else {
+            return Err(SceneError::MissingEmitter { entity_id }.into());
+        };
+        let data = banks.data(key);
+        if let Some(Err(e)) = ext.as_ref().map(|x| x.validate_for(&data)) {
+            return Err(Error::Validation { errors: e });
+        }
+        let dilatable = ext
+            .as_ref()
+            .map(AffectedByTimeDilation::affected_by_time_dilation)
+            .unwrap_or(true);
+        slot.play_and_store(event_name, dilatable, data)
+            .map_err(|e| match e {
+                Either::Left(e) => Error::Engine {
+                    source: EngineError::Sound { source: e },
+                },
+                Either::Right(e) => Error::Engine {
+                    source: EngineError::FromFile { source: e },
+                },
+            })
+    }
     pub fn stop_emitters(&mut self, tween: Tween) {
         self.0.iter_mut().for_each(|mut x| {
-            x.value_mut().stop_emitters(tween);
+            x.value_mut().stop(tween);
         });
     }
     pub fn pause(&mut self, tween: Tween) {
@@ -206,16 +232,6 @@ impl Emitters {
     }
     pub fn iter_mut(&mut self) -> impl Iterator<Item = RefMutMulti<'_, EntityId, EmitterSlots>> {
         self.0.iter_mut()
-    }
-    pub fn emitter_destination(
-        &self,
-        entity_id: &EntityId,
-        tag_name: &CName,
-    ) -> Option<(EmitterId, Option<CName>)> {
-        self.0
-            .iter()
-            .find(|x| x.key() == entity_id)
-            .and_then(|x| x.emitter_destination(tag_name))
     }
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
@@ -239,30 +255,44 @@ pub trait Store<T> {
     fn store(
         &mut self,
         tag_name: CName,
-        emitter_id: EmitterId,
         event_name: CName,
         handle: T,
         affected_by_time_dilation: bool,
     );
 }
 
+impl Store<Either<StaticSoundHandle, StreamingSoundHandle<FromFileError>>> for Emitters {
+    fn store(
+        &mut self,
+        tag_name: CName,
+        event_name: CName,
+        handle: Either<StaticSoundHandle, StreamingSoundHandle<FromFileError>>,
+        affected_by_time_dilation: bool,
+    ) {
+        match handle {
+            Either::Left(handle) => {
+                self.store(tag_name, event_name, handle, affected_by_time_dilation)
+            }
+            Either::Right(handle) => {
+                self.store(tag_name, event_name, handle, affected_by_time_dilation)
+            }
+        }
+    }
+}
+
 impl Store<StaticSoundHandle> for Emitters {
     fn store(
         &mut self,
         tag_name: CName,
-        emitter_id: EmitterId,
         event_name: CName,
         handle: StaticSoundHandle,
         affected_by_time_dilation: bool,
     ) {
-        'outer: for ref mut slots in self.0.iter_mut() {
-            for ref mut slot in slots.slots.iter_mut() {
-                if emitter_id == slot.handle.id() {
-                    if let Some(mut r#mod) = slot.value_mut().mods.get_mut(&tag_name) {
-                        r#mod
-                            .handles
-                            .store_static(event_name, handle, affected_by_time_dilation);
-                    }
+        'outer: for mut slots in self.0.iter_mut() {
+            for slot in slots.slots.iter_mut() {
+                if slot.tag_name == Some(tag_name) {
+                    slot.handles
+                        .store_static(event_name, handle, affected_by_time_dilation);
                     break 'outer;
                 }
             }
@@ -274,19 +304,15 @@ impl Store<StreamingSoundHandle<FromFileError>> for Emitters {
     fn store(
         &mut self,
         tag_name: CName,
-        emitter_id: EmitterId,
         event_name: CName,
         handle: StreamingSoundHandle<FromFileError>,
         affected_by_time_dilation: bool,
     ) {
-        'outer: for ref mut slots in self.0.iter_mut() {
-            for ref mut slot in slots.slots.iter_mut() {
-                if emitter_id == slot.handle.id() {
-                    if let Some(mut r#mod) = slot.value_mut().mods.get_mut(&tag_name) {
-                        r#mod
-                            .handles
-                            .store_stream(event_name, handle, affected_by_time_dilation);
-                    }
+        'outer: for mut slots in self.0.iter_mut() {
+            for slot in slots.slots.iter_mut() {
+                if slot.tag_name == Some(tag_name) {
+                    slot.handles
+                        .store_stream(event_name, handle, affected_by_time_dilation);
                     break 'outer;
                 }
             }

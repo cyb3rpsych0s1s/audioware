@@ -1,7 +1,7 @@
 use kira::{
-    manager::{backend::Backend, AudioManager},
-    track::{TrackBuilder, TrackHandle, TrackRoutes},
-    OutputDestination,
+    backend::Backend,
+    track::{TrackBuilder, TrackHandle},
+    AudioManager, Decibels,
 };
 
 use crate::{
@@ -19,18 +19,27 @@ impl Radioport {
         ambience: &Ambience,
         modulators: &Modulators,
     ) -> Result<Self, Error> {
-        let main = manager.main_track().id();
         let track = manager.add_sub_track(
             TrackBuilder::new()
-                .routes(
-                    // sum must be 1.0 otherwise sounds crackle
-                    TrackRoutes::empty()
-                        .with_route(main, 1.)
-                        .with_route(ambience.reverb(), 0.),
-                )
+                // reverb used to require to be set otherwise sound switched to mono, what now?
+                .with_send(ambience.reverb(), Decibels::SILENCE)
                 .with_effect(modulators.radioport_volume.try_effect()?),
         )?;
         Ok(Self(track))
+    }
+}
+
+impl std::ops::Deref for Radioport {
+    type Target = TrackHandle;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for Radioport {
+    fn deref_mut(&mut self) -> &mut TrackHandle {
+        &mut self.0
     }
 }
 
@@ -40,8 +49,8 @@ impl AsRef<TrackHandle> for Radioport {
     }
 }
 
-impl<'a> From<&'a Radioport> for OutputDestination {
+impl<'a> From<&'a Radioport> for &'a TrackHandle {
     fn from(value: &'a Radioport) -> Self {
-        (&value.0).into()
+        &value.0
     }
 }

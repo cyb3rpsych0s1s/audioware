@@ -1,5 +1,5 @@
 use audioware_manifest::Settings;
-use kira::tween::Tween;
+use kira::Tween;
 use red4ext_rs::types::CName;
 
 use crate::engine::tweens::{DILATION_EASE_IN, DILATION_EASE_OUT, DILATION_LINEAR};

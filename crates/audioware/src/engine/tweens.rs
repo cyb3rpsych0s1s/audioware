@@ -1,8 +1,7 @@
 use std::time::Duration;
 
 use kira::{
-    tween::{Easing, Tween},
-    StartTime,
+    StartTime, {Easing, Tween},
 };
 use red4ext_rs::types::CName;
 

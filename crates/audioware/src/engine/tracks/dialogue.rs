@@ -1,7 +1,7 @@
+use audioware_core::{amplitude, Amplitude};
 use kira::{
-    manager::{backend::Backend, AudioManager},
-    track::{TrackBuilder, TrackHandle, TrackRoutes},
-    OutputDestination,
+    track::{TrackBuilder, TrackHandle},
+    {backend::Backend, AudioManager},
 };
 
 use crate::{
@@ -21,15 +21,26 @@ impl Dialogue {
     ) -> Result<Self, Error> {
         let track = manager.add_sub_track(
             TrackBuilder::new()
-                .routes(
-                    // sum must be 1.0 otherwise sounds crackle
-                    TrackRoutes::empty()
-                        .with_route(ambience.environmental(), 0.75)
-                        .with_route(ambience.reverb(), 0.25),
-                )
+                // sum used to have to be 1.0 otherwise sounds crackled, what now?
+                .with_send(ambience.environmental(), amplitude!(0.75).as_decibels())
+                .with_send(ambience.reverb(), amplitude!(0.25).as_decibels())
                 .with_effect(modulators.dialogue_volume.try_effect()?),
         )?;
         Ok(Self(track))
+    }
+}
+
+impl std::ops::Deref for Dialogue {
+    type Target = TrackHandle;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for Dialogue {
+    fn deref_mut(&mut self) -> &mut TrackHandle {
+        &mut self.0
     }
 }
 
@@ -39,8 +50,8 @@ impl AsRef<TrackHandle> for Dialogue {
     }
 }
 
-impl<'a> From<&'a Dialogue> for OutputDestination {
+impl<'a> From<&'a Dialogue> for &'a TrackHandle {
     fn from(value: &'a Dialogue) -> Self {
-        (&value.0).into()
+        &value.0
     }
 }

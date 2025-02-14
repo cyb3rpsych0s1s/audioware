@@ -9,7 +9,7 @@ use std::{
 
 use bitflags::bitflags;
 use crossbeam::channel::{bounded, tick, Receiver, Sender};
-use kira::manager::{
+use kira::{
     backend::cpal::{CpalBackend, CpalBackendSettings},
     AudioManagerSettings,
 };
@@ -58,7 +58,7 @@ fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
         backend_settings,
         ..Default::default()
     };
-    let capacity = manager_settings.capacities.command_capacity;
+    let capacity = manager_settings.capacities.sub_track_capacity;
     Ok((Engine::try_new(manager_settings)?, capacity))
 }
 
@@ -219,13 +219,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     event_name,
                     entity_id,
                     emitter_name,
-                } => engine.play::<kira::tween::Tween>(
-                    event_name,
-                    entity_id,
-                    emitter_name,
-                    None,
-                    None,
-                ),
+                } => engine.play::<kira::Tween>(event_name, entity_id, emitter_name, None, None),
                 Command::Play {
                     event_name: sound_name,
                     entity_id,
@@ -281,7 +275,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     switch_value,
                     entity_id,
                     emitter_name,
-                } => engine.switch::<kira::tween::Tween>(
+                } => engine.switch::<kira::Tween>(
                     switch_name,
                     switch_value,
                     entity_id,

@@ -1,5 +1,5 @@
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Settings};
-use kira::tween::Tween;
+use kira::Tween;
 use red4ext_rs::types::{CName, EntityId};
 
 use super::{TagName, TargetId};

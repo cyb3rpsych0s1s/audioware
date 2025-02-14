@@ -1,14 +1,13 @@
 use std::time::Duration;
 
-use audioware_core::With;
+use audioware_core::{Amplitude, With};
 use either::Either;
 use kira::{
     sound::{
         static_sound::StaticSoundData, streaming::StreamingSoundData, EndPosition, FromFileError,
-        IntoOptionalRegion, PlaybackPosition, PlaybackRate,
+        IntoOptionalRegion, PlaybackPosition,
     },
-    tween::Tween,
-    StartTime, Volume,
+    Decibels, PlaybackRate, Semitones, StartTime, Tween,
 };
 use serde::Deserialize;
 
@@ -31,8 +30,8 @@ pub struct Settings {
     pub start_time: Option<Duration>,
     #[serde(with = "humantime_serde", default)]
     pub start_position: Option<Duration>,
-    pub volume: Option<f64>,
-    pub panning: Option<f64>,
+    pub volume: Option<f32>,
+    pub panning: Option<f32>,
     #[serde(rename = "loop")]
     pub r#loop: Option<bool>,
     pub region: Option<self::Region>,
@@ -55,7 +54,7 @@ macro_rules! impl_with {
         {
             $self = $self.start_position(x);
         }
-        if let Some(x) = $settings.volume.map(Volume::Amplitude) {
+        if let Some(x) = $settings.volume {
             $self = $self.volume(x);
         }
         if let Some(x) = $settings.panning {
@@ -103,6 +102,22 @@ where
         Self: Sized,
     {
         impl_with!(self, settings)
+    }
+}
+
+impl<T> With<Settings> for Either<StaticSoundData, StreamingSoundData<T>>
+where
+    T: Send + 'static,
+{
+    fn with(self, settings: Settings) -> Self
+    where
+        Self: Sized,
+    {
+        self.map_either_with(
+            settings,
+            |settings, x| x.with(settings),
+            |settings, x| x.with(settings),
+        )
     }
 }
 
@@ -163,25 +178,31 @@ where
     if let Some(s) = s {
         let s = s.trim();
         if s.starts_with('x') || s.starts_with('X') {
-            return Ok(Some(PlaybackRate::Factor(
+            return Ok(Some(PlaybackRate(
                 s[1..].trim().parse().map_err(serde::de::Error::custom)?,
             )));
         }
         if s.ends_with('♯') {
-            return Ok(Some(PlaybackRate::Semitones(
-                s[..(s.len() - '♯'.len_utf8())]
-                    .trim()
-                    .parse()
-                    .map_err(serde::de::Error::custom)?,
-            )));
+            return Ok(Some(
+                Semitones(
+                    s[..(s.len() - '♯'.len_utf8())]
+                        .trim()
+                        .parse()
+                        .map_err(serde::de::Error::custom)?,
+                )
+                .into(),
+            ));
         }
         if s.ends_with('♭') {
-            return Ok(Some(PlaybackRate::Semitones(
-                -s[..(s.len() - '♭'.len_utf8())]
-                    .trim()
-                    .parse()
-                    .map_err(serde::de::Error::custom)?,
-            )));
+            return Ok(Some(
+                Semitones(
+                    -s[..(s.len() - '♭'.len_utf8())]
+                        .trim()
+                        .parse()
+                        .map_err(serde::de::Error::custom)?,
+                )
+                .into(),
+            ));
         }
         return Err(serde::de::Error::custom(format!(
             "invalid factor or semitone: {s}"
@@ -190,7 +211,7 @@ where
     Ok(None)
 }
 
-/// Deserialization type for [kira::tween::Tween].
+/// Deserialization type for [kira::Tween].
 #[derive(Debug, Deserialize, Clone)]
 pub struct Interpolation {
     #[serde(with = "humantime_serde", default)]
@@ -198,7 +219,7 @@ pub struct Interpolation {
     #[serde(with = "humantime_serde")]
     pub duration: Duration,
     #[serde(flatten)]
-    pub easing: kira::tween::Easing,
+    pub easing: kira::Easing,
 }
 
 impl From<Interpolation> for Tween {
@@ -219,6 +240,7 @@ impl From<Interpolation> for Tween {
 
 macro_rules! impl_from_settings {
     ($into:path) => {
+        #[allow(clippy::needless_update)]
         impl From<self::Settings> for $into {
             fn from(value: self::Settings) -> Self {
                 Self {
@@ -232,11 +254,15 @@ macro_rules! impl_from_settings {
                         .unwrap_or_default(),
                     volume: value
                         .volume
-                        .map(|x| ::kira::tween::Value::<Volume>::Fixed(Volume::Amplitude(x)))
+                        .map(|x| {
+                            ::kira::Value::<::kira::Decibels>::Fixed(
+                                Amplitude::try_from(x).unwrap().as_decibels(),
+                            )
+                        })
                         .unwrap_or_default(),
                     panning: value
                         .panning
-                        .map(f64::from)
+                        .map(|x| ::kira::Panning(x))
                         .map(Into::into)
                         .unwrap_or_default(),
                     fade_in_tween: value.fade_in_tween.map(Into::into),
@@ -270,12 +296,22 @@ impl Validate for Settings {
             }
         }
         if let Some(volume) = self.volume {
-            if Volume::Amplitude(volume).as_decibels() > 85.0 {
-                errors.push(ValidationError {
-                    which: "volume",
-                    why: "audio should not be louder than 85.0 dB",
-                });
-            }
+            match Amplitude::try_from(volume) {
+                Ok(volume) => {
+                    if volume.as_decibels() > Decibels(85.0) {
+                        errors.push(ValidationError {
+                            which: "volume",
+                            why: "audio should not be louder than 85.0 dB",
+                        });
+                    }
+                }
+                Err(_) => {
+                    errors.push(ValidationError {
+                        which: "volume",
+                        why: "cannot be negative",
+                    });
+                }
+            };
         }
         if errors.is_empty() {
             return Ok(());
@@ -298,8 +334,8 @@ impl ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>> for
         let mut errors = vec![];
         if let Some(ref region) = self.region {
             let total_duration = match audio {
-                Either::Left(x) => x.total_duration(),
-                Either::Right(x) => x.total_duration(),
+                Either::Left(x) => x.unsliced_duration(),
+                Either::Right(x) => x.unsliced_duration(),
             }
             .as_secs_f64();
             let start: f64 = match (region.starts(), audio) {

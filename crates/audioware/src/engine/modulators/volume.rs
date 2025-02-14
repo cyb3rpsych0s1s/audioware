@@ -14,8 +14,8 @@ macro_rules! impl_volume {
         pub struct $struct(::kira::modulator::tweener::TweenerHandle);
         impl $crate::engine::modulators::Parameter for $struct {
             type Value = f64;
-            fn try_new<B: ::kira::manager::backend::Backend>(
-                manager: &mut ::kira::manager::AudioManager<B>,
+            fn try_new<B: ::kira::backend::Backend>(
+                manager: &mut ::kira::AudioManager<B>,
             ) -> Result<Self, $crate::error::Error> {
                 let handle = manager.add_modulator(kira::modulator::tweener::TweenerBuilder {
                     initial_value: 100., // here, RTTI hasn't loaded yet
@@ -26,21 +26,17 @@ macro_rules! impl_volume {
                 &self,
             ) -> Result<impl ::kira::effect::EffectBuilder, $crate::error::Error> {
                 Ok(kira::effect::volume_control::VolumeControlBuilder::new(
-                    kira::tween::Value::<kira::Volume>::from_modulator(
+                    kira::Value::<kira::Decibels>::from_modulator(
                         &self.0,
-                        kira::tween::ModulatorMapping {
+                        kira::Mapping {
                             input_range: (0.0, 100.0),
-                            output_range: (
-                                kira::Volume::Amplitude(0.0),
-                                kira::Volume::Amplitude(1.0),
-                            ),
-                            clamp_bottom: true,
-                            clamp_top: true,
+                            output_range: (kira::Decibels::SILENCE, kira::Decibels::IDENTITY),
+                            easing: kira::Easing::Linear,
                         },
                     ),
                 ))
             }
-            fn update(&mut self, value: Self::Value, tween: ::kira::tween::Tween) {
+            fn update(&mut self, value: Self::Value, tween: ::kira::Tween) {
                 self.0.set(value, tween);
             }
         }

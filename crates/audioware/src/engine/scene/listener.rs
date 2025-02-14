@@ -1,4 +1,4 @@
-use kira::spatial::listener::ListenerHandle;
+use kira::listener::ListenerHandle;
 use red4ext_rs::types::EntityId;
 
 use super::dilation::Dilation;

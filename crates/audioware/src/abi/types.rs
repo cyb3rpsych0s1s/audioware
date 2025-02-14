@@ -5,8 +5,9 @@ use std::{
     time::Duration,
 };
 
+use audioware_core::SpatialTrackSettings;
 use audioware_manifest::{Interpolation, Locale, LocaleExt, PlayerGender, Region, Settings};
-use kira::{manager::backend::cpal::CpalBackend, tween::Easing};
+use kira::{backend::cpal::CpalBackend, track::SpatialTrackDistances, Easing};
 use red4ext_rs::{
     class_kind::{Native, Scripted},
     types::{CName, EntityId, GameInstance, IScriptable, Opt, Ref, StaticArray},
@@ -213,21 +214,18 @@ impl ToSettings for AudioSettingsExt {
             start_position: Some(Duration::from_secs_f32(self.start_position)),
             region: self.region.into_region(),
             r#loop: Some(self.r#loop),
-            volume: Some(self.volume as f64),
+            volume: Some(self.volume),
             fade_in_tween: self.fade_in.into_interpolation(),
-            panning: Some(self.panning as f64),
-            playback_rate: Some(kira::sound::PlaybackRate::Factor(self.playback_rate as f64)),
+            panning: Some(self.panning),
+            playback_rate: Some(kira::PlaybackRate(self.playback_rate as f64)),
             affected_by_time_dilation: Some(self.affected_by_time_dilation),
         })
     }
 }
 
 impl ToSettingsExt for EmitterSettings {
-    type Settings = (
-        kira::spatial::emitter::EmitterSettings,
-        std::num::NonZero<u64>,
-    );
-    type Defaults = Option<kira::spatial::emitter::EmitterDistances>;
+    type Settings = (SpatialTrackSettings, std::num::NonZero<u64>);
+    type Defaults = Option<kira::track::SpatialTrackDistances>;
     fn into_settings_ext(self, defaults: Self::Defaults) -> Option<Self::Settings> {
         let mut state = ahash::AHasher::default();
         let d = self
@@ -271,10 +269,14 @@ impl ToSettingsExt for EmitterSettings {
             return None;
         }
         Some((
-            kira::spatial::emitter::EmitterSettings {
+            SpatialTrackSettings {
                 distances: distances.unwrap_or(defaults.unwrap_or_default()),
                 attenuation_function,
-                enable_spatialization: self.enable_spatialization,
+                spatialization_strength: if self.enable_spatialization {
+                    0.75
+                } else {
+                    0.0
+                },
                 persist_until_sounds_finish: self.persist_until_sounds_finish,
             },
             // SAFETY: checked above
@@ -284,9 +286,9 @@ impl ToSettingsExt for EmitterSettings {
 }
 
 impl ToSettings for EmitterDistances {
-    type Settings = kira::spatial::emitter::EmitterDistances;
+    type Settings = SpatialTrackDistances;
     fn into_settings(self) -> Option<Self::Settings> {
-        Some(kira::spatial::emitter::EmitterDistances {
+        Some(SpatialTrackDistances {
             min_distance: self.min_distance,
             max_distance: self.max_distance,
         })
@@ -392,7 +394,7 @@ impl std::fmt::Display for TargetId {
 }
 
 #[derive(Debug)]
-pub struct TargetFootprint((kira::spatial::emitter::EmitterSettings, NonZero<u64>));
+pub struct TargetFootprint((SpatialTrackSettings, NonZero<u64>));
 
 impl TargetFootprint {
     pub fn try_new(
@@ -405,7 +407,7 @@ impl TargetFootprint {
 }
 
 impl Deref for TargetFootprint {
-    type Target = (kira::spatial::emitter::EmitterSettings, NonZero<u64>);
+    type Target = (SpatialTrackSettings, NonZero<u64>);
 
     fn deref(&self) -> &Self::Target {
         &self.0
