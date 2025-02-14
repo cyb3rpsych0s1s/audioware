@@ -115,9 +115,8 @@ impl Emitters {
         let mut last = false;
         let mut removed = false;
         if let Some(mut slots) = self.0.get_mut(entity_id) {
-            slots.value_mut().unregister_emitter(tag_name);
+            removed = slots.value_mut().unregister_emitter(tag_name);
             last = slots.is_empty();
-            removed = true;
         }
         if removed && last {
             self.0.remove(entity_id);

@@ -83,8 +83,10 @@ impl EmitterSlots {
         });
     }
 
-    pub fn unregister_emitter(&mut self, tag_name: &CName) {
+    pub fn unregister_emitter(&mut self, tag_name: &CName) -> bool {
+        let before = self.slots.len();
         self.slots.retain(|x| x.tag_name != Some(*tag_name));
+        before != self.slots.len()
     }
     pub fn get_mut<'a>(&'a mut self, tag_name: &CName) -> Option<&'a mut EmitterSlot> {
         self.slots
