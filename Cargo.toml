@@ -25,7 +25,6 @@ rayon = "1.10"
 red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "v0.10.0" }
 serde = "1.0"
 snafu = "0.8"
-snowflake = "1.3"
 
 [profile.dev.package.kira]
 opt-level = 3
