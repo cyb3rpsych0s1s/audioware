@@ -1,0 +1,1 @@
+searchState.loadedDescShard("fixed_map_derive", 0, "  \nSee https://docs.rs/fixed-map.")
