@@ -16,7 +16,7 @@ use crate::{
     TimeDilatable, VehicleObject,
 };
 
-use super::{lifecycle, modulators::Modulators, tweens::IMMEDIATELY};
+use super::{lifecycle, modulators::Modulators, tracks::ambience::Ambience, tweens::IMMEDIATELY};
 
 mod dilation;
 mod emitters;
@@ -56,6 +56,7 @@ impl Scene {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn add_emitter<B: Backend>(
         &mut self,
         manager: &mut AudioManager<B>,
@@ -64,6 +65,7 @@ impl Scene {
         emitter_name: Option<CName>,
         settings: Option<&(SpatialTrackSettings, NonZero<u64>)>,
         modulators: &Modulators,
+        ambience: &Ambience,
     ) -> Result<(), Error> {
         if entity_id == self.v.id {
             return Err(Error::Scene {
@@ -89,7 +91,14 @@ impl Scene {
             },
         };
         lifecycle!("emitter settings after {:?} [{entity_id}]", mapped);
-        let handle = Spatial::try_new(manager, self.v.handle.id(), position, mapped, modulators)?;
+        let handle = Spatial::try_new(
+            manager,
+            self.v.handle.id(),
+            position,
+            mapped,
+            modulators,
+            ambience,
+        )?;
         self.emitters.add_emitter(
             handle,
             entity_id,

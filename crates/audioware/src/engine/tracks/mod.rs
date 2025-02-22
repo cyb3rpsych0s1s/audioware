@@ -21,7 +21,7 @@ use crate::error::Error;
 
 use super::{modulators::Modulators, tweens::IMMEDIATELY, DilationUpdate};
 
-mod ambience;
+pub mod ambience;
 mod car_radio;
 mod dialogue;
 mod holocall;
