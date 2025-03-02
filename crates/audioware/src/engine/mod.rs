@@ -470,6 +470,7 @@ where
                     emitter_name,
                     emitter_settings,
                     &self.modulators,
+                    &self.tracks.ambience,
                 )
                 .inspect_err(|e| warns!("failed to register emitter: {e}"))
                 .is_ok(),
