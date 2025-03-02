@@ -20,6 +20,7 @@ red4ext_logs_dir      := join("red4ext", "logs")
 
 # cli
 zoltan_exe            := env_var_or_default("ZOLTAN_EXE", "")
+wwiser_exe            := env_var_or_default("WWISER_EXE", "")
 
 [private]
 setup path:
@@ -180,3 +181,6 @@ smash FROM=game_dir:
 # 📕 assemble book (for release in CI)
 @assemble: style
     cd book; mdbook build; cd ..
+
+@wwiser BNK OPTIONS='-v':
+  python {{wwiser_exe}} "{{BNK}}" {{OPTIONS}}
