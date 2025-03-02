@@ -101,4 +101,21 @@ and unregistration happens seamlessly (including during simultaneous kills).
 <iframe width="100%" height="420" src="https://www.youtube.com/embed/cngYFyFaapo?si=q1I_8g7t5A0d6uGs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 ```
 
+## Integration
+
+Since version `1.4.1+` audio emitters are now affected by [reverb mix](./PARAMETERS.md#reverb-mix),
+and optionally by [environmental preset](./PARAMETERS.md#preset).
+
+These can be opted-in/out by defining on `EmitterSettings`:
+
+```swift
+let settings = new EmitterSettings();
+settings.affectedByReverbMix = false;
+settings.affectedByEnvironmentalPreset = false;
+```
+
+```admonish gear title="Youtube demo"
+<iframe width="100%" height="420" src="https://youtu.be/EDbfk1vfur8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+```
+
 [kira]: https://docs.rs/kira/latest/kira/spatial/index.html "kira spatial scene"
