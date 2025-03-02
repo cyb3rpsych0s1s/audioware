@@ -1,0 +1,1 @@
+searchState.loadedDescShard("windows", 0, "Learn more about Rust for Windows here: …")

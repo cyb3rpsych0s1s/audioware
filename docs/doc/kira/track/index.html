@@ -1,0 +1,169 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Organizes and applies effects to audio."><title>kira::track - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="kira" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0 (4d91de4e4 2025-02-17)" data-channel="1.85.0" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../kira/index.html">kira</a><span class="version">0.10.4</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module track</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#creating-and-using-tracks" title="Creating and using tracks">Creating and using tracks</a></li><li><a href="#effects" title="Effects">Effects</a></li><li><a href="#send-tracks" title="Send tracks">Send tracks</a></li><li><a href="#spatial-tracks" title="Spatial tracks">Spatial tracks</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate kira</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><span class="rustdoc-breadcrumbs"><a href="../index.html">kira</a></span><h1>Module <span>track</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/kira/track.rs.html#1-364">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Organizes and applies effects to audio.</p>
+<p>Kira has an internal mixer which works like a real-life mixing console. Sounds
+can be played on “tracks”, which are individual streams of audio that can
+optionally have effects that modify the audio.</p>
+<p>Tracks can also be spatialized, which gives them a position in a 3D space
+relative to a <a href="../listener/index.html" title="mod kira::listener">listener</a>. The distance from the listener
+can be used to drive settings on effects on that track.</p>
+<h3 id="creating-and-using-tracks"><a class="doc-anchor" href="#creating-and-using-tracks">§</a>Creating and using tracks</h3>
+<p>The mixer has a “main” track by default, and you can add any number of
+sub-tracks. To add a sub-track, use
+<a href="../struct.AudioManager.html#method.add_sub_track" title="method kira::AudioManager::add_sub_track"><code>AudioManager::add_sub_track</code></a>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	track::TrackBuilder,
+};
+
+<span class="kw">let </span><span class="kw-2">mut </span>manager = AudioManager::&lt;DefaultBackend&gt;::new(AudioManagerSettings::default())<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>track = manager.add_sub_track(TrackBuilder::default())<span class="question-mark">?</span>;</code></pre></div>
+<p>To play a sound on the track, use <a href="struct.TrackHandle.html#method.play" title="method kira::track::TrackHandle::play"><code>TrackHandle::play</code></a>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::sound::static_sound::StaticSoundData;
+
+track.play(StaticSoundData::from_file(<span class="string">"sound.ogg"</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>;</code></pre></div>
+<p>Tracks can themselves have sub-tracks. You can create them using <a href="struct.TrackHandle.html#method.add_sub_track" title="method kira::track::TrackHandle::add_sub_track"><code>TrackHandle::add_sub_track</code></a>.</p>
+<p>You can set the volume of a track using <a href="struct.TrackHandle.html#method.set_volume" title="method kira::track::TrackHandle::set_volume"><code>TrackHandle::set_volume</code></a>. The volume
+setting will affect all sounds being played on the track as well as all child tracks.</p>
+<p>You can pause all sounds (and child tracks) of a track using <a href="struct.TrackHandle.html#method.pause" title="method kira::track::TrackHandle::pause"><code>TrackHandle::pause</code></a>
+and resume them using <a href="struct.TrackHandle.html#method.resume" title="method kira::track::TrackHandle::resume"><code>TrackHandle::resume</code></a> or <a href="struct.TrackHandle.html#method.resume_at" title="method kira::track::TrackHandle::resume_at"><code>TrackHandle::resume_at</code></a>.</p>
+<h3 id="effects"><a class="doc-anchor" href="#effects">§</a>Effects</h3>
+<p>You can add effects to the track when creating it using
+<a href="struct.TrackBuilder.html#method.with_effect" title="method kira::track::TrackBuilder::with_effect"><code>TrackBuilder::with_effect</code></a>. All sounds that are played on that track will have
+the effects applied sequentially.</p>
+<p>In this example, we’ll use the <a href="../effect/filter/index.html" title="mod kira::effect::filter">filter</a> effect, which in the
+low pass mode will remove high frequencies from sounds, making them sound muffled.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	track::TrackBuilder,
+	effect::filter::FilterBuilder,
+};
+
+<span class="kw">let </span><span class="kw-2">mut </span>manager = AudioManager::&lt;DefaultBackend&gt;::new(AudioManagerSettings::default())<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>track = manager.add_sub_track(
+	TrackBuilder::new()
+		.with_effect(FilterBuilder::new().cutoff(<span class="number">1000.0</span>))
+)<span class="question-mark">?</span>;
+track.play(StaticSoundData::from_file(<span class="string">"sound.ogg"</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>;</code></pre></div>
+<p><a href="struct.TrackBuilder.html#method.add_effect" title="method kira::track::TrackBuilder::add_effect"><code>TrackBuilder::add_effect</code></a> returns a handle that can be used to modify the effect
+after the track has been created.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span><span class="kw-2">mut </span>filter;
+<span class="kw">let </span>track = manager.add_sub_track({
+	<span class="kw">let </span><span class="kw-2">mut </span>builder = TrackBuilder::new();
+	filter = builder.add_effect(FilterBuilder::new().cutoff(<span class="number">1000.0</span>));
+	builder
+})<span class="question-mark">?</span>;
+filter.set_cutoff(<span class="number">4000.0</span>, Tween::default());</code></pre></div>
+<h3 id="send-tracks"><a class="doc-anchor" href="#send-tracks">§</a>Send tracks</h3>
+<p>Sometimes, you may want to share effects across multiple tracks. For example, let’s say
+we have a game with a player and an enemy that both make sounds, so we have a “player”
+track and an “enemy” track. We want sounds for both of these tracks to have reverb
+applied. We could add a separate reverb effect to both the player and enemy track,
+but there’s a couple reasons this isn’t an optimal solution:</p>
+<ul>
+<li>Since the player and enemy are in the same space, they should be using the same
+reverb settings. But if we have two reverb effects, we’re duplicating the settings.</li>
+<li>Having more effects takes more CPU time, and it’s wasteful in this case because
+both reverb effects are doing the same thing.</li>
+</ul>
+<p>This is where send tracks come in handy. Send tracks are non-hierarchical mixer tracks
+which you can’t play sounds on directly - instead, regular mixer tracks can have their
+output sent to the input of one or more send tracks. The output of the send tracks
+is then sent to the main mixer track.</p>
+<p>In the following example, we’ll set up mixer tracks to have the following flow of audio:</p>
+<div class="example-wrap"><pre class="language-text"><code>┌──────┐         ┌──────────┐
+│      ├─────────►          │
+│Player├───────┐ │Main track│
+│      │ ┌─────┼─►          │
+└──────┘ │     │ └─────▲────┘
+┌──────┐ │ ┌───▼──┐    │
+│      ├─┘ │      │    │
+│Enemy ├───►Reverb├────┘
+│      │   │(send)│
+└──────┘   └──────┘</code></pre></div>
+<p>To start, we’ll create the reverb send with
+<a href="../struct.AudioManager.html#method.add_send_track" title="method kira::AudioManager::add_send_track"><code>AudioManager::add_send_track</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{
+	effect::reverb::ReverbBuilder,
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	track::SendTrackBuilder,
+};
+
+<span class="kw">let </span><span class="kw-2">mut </span>manager = AudioManager::&lt;DefaultBackend&gt;::new(AudioManagerSettings::default())<span class="question-mark">?</span>;
+<span class="kw">let </span>reverb_send = manager
+	.add_send_track(SendTrackBuilder::new().with_effect(ReverbBuilder::new().mix(<span class="number">1.0</span>)))<span class="question-mark">?</span>;</code></pre></div>
+<p>Note that we set the mix of the reverb to <code>1.0</code>, meaning only the reverberations will be output,
+not the dry signal. This is important because the player and enemy tracks will already
+be outputting the dry signal. If the reverb effect was also outputting the dry signal, the
+overall volume of the sound would be louder than we want.</p>
+<p>Next, we’ll create the player and enemy tracks and route them to the reverb send using
+<a href="struct.TrackBuilder.html#method.with_send" title="method kira::track::TrackBuilder::with_send"><code>TrackBuilder::with_send</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::track::TrackBuilder;
+
+<span class="kw">let </span>player_track = manager.add_sub_track(TrackBuilder::new().with_send(<span class="kw-2">&amp;</span>reverb_send, -<span class="number">6.0</span>))<span class="question-mark">?</span>;
+<span class="kw">let </span>enemy_track = manager.add_sub_track(TrackBuilder::new().with_send(<span class="kw-2">&amp;</span>reverb_send, -<span class="number">12.0</span>))<span class="question-mark">?</span>;</code></pre></div>
+<p>We can use the second argument of <code>with_send</code> to change the volume of the track before sending
+it to the send track. This allows the player and enemy to have different amounts of reverb
+without having to instantiate two separate effects.</p>
+<h3 id="spatial-tracks"><a class="doc-anchor" href="#spatial-tracks">§</a>Spatial tracks</h3>
+<p>Oftentimes, it’s useful to give sounds a location in a 3D (or 2D) space and play back those sounds
+from the perspective of a character’s ears located somewhere else in that space. For example, as a
+player character gets closer to a waterfall, you may want the sound of the waterfall to get louder.</p>
+<p>We can use <strong>spatial tracks</strong> as the sound source and <a href="../listener/index.html" title="mod kira::listener">listener</a>s for the
+character’s ears.</p>
+<p>First, let’s create a listener using
+<a href="../struct.AudioManager.html#method.add_listener" title="method kira::AudioManager::add_listener"><code>AudioManager::add_listener</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{AudioManager, AudioManagerSettings, DefaultBackend};
+
+<span class="kw">let </span><span class="kw-2">mut </span>manager = AudioManager::&lt;DefaultBackend&gt;::new(AudioManagerSettings::default())<span class="question-mark">?</span>;
+<span class="kw">let </span>listener = manager.add_listener(glam::Vec3::ZERO, glam::Quat::IDENTITY)<span class="question-mark">?</span>;</code></pre></div>
+<p>This example uses <code>glam</code>, but you can use any math library that has interoperability
+with <code>mint</code>.</p>
+<p>Next, we’ll create a spatial track that’s linked to the listener using
+<a href="../struct.AudioManager.html#method.add_spatial_sub_track" title="method kira::AudioManager::add_spatial_sub_track"><code>AudioManager::add_spatial_sub_track</code></a>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::track::SpatialTrackBuilder;
+
+<span class="kw">let </span>spatial_track = manager.add_spatial_sub_track(
+	<span class="kw-2">&amp;</span>listener,
+	glam::vec3(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">10.0</span>), <span class="comment">// track position
+	</span>SpatialTrackBuilder::new(),
+)<span class="question-mark">?</span>;</code></pre></div>
+<p>Now any sounds played on the spatial track will automatically have the following behaviors:</p>
+<ul>
+<li>Attenuation: sounds will get quieter the farther away they are from the listener</li>
+<li>Spatialization: sounds will be panned left or right depending on their direction from
+the listener</li>
+</ul>
+<p>We can customize or disable these behaviors using the methods on <a href="struct.SpatialTrackBuilder.html" title="struct kira::track::SpatialTrackBuilder"><code>SpatialTrackBuilder</code></a>.</p>
+<p>We can also map any effect setting that uses <code>Value</code> to the distance between the spatial
+track and the listener using <code>Value::FromListenerDistance</code>. One common use for this is to
+change the amount of reverb a sound has based on distance:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{
+	effect::reverb::ReverbBuilder,
+	Easing, Mapping, Value,
+	Mix,
+};
+
+manager.add_spatial_sub_track(
+	<span class="kw-2">&amp;</span>listener,
+	glam::vec3(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">10.0</span>),
+	SpatialTrackBuilder::new().with_effect(ReverbBuilder::new().mix(
+		Value::FromListenerDistance(
+			Mapping {
+				input_range: (<span class="number">0.0</span>, <span class="number">100.0</span>),
+				output_range: (Mix::DRY, Mix::WET),
+				easing: Easing::Linear,
+			},
+		),
+	)),
+)<span class="question-mark">?</span>;</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.MainTrackBuilder.html" title="struct kira::track::MainTrackBuilder">Main<wbr>Track<wbr>Builder</a></div><div class="desc docblock-short">Configures the main mixer track.</div></li><li><div class="item-name"><a class="struct" href="struct.MainTrackHandle.html" title="struct kira::track::MainTrackHandle">Main<wbr>Track<wbr>Handle</a></div><div class="desc docblock-short">Controls the main mixer track.</div></li><li><div class="item-name"><a class="struct" href="struct.NonexistentRoute.html" title="struct kira::track::NonexistentRoute">Nonexistent<wbr>Route</a></div><div class="desc docblock-short">An error that’s returned when trying to change the volume of a track route
+that did not exist originally.</div></li><li><div class="item-name"><a class="struct" href="struct.SendTrackBuilder.html" title="struct kira::track::SendTrackBuilder">Send<wbr>Track<wbr>Builder</a></div><div class="desc docblock-short">Configures a mixer track.</div></li><li><div class="item-name"><a class="struct" href="struct.SendTrackHandle.html" title="struct kira::track::SendTrackHandle">Send<wbr>Track<wbr>Handle</a></div><div class="desc docblock-short">Controls a mixer track.</div></li><li><div class="item-name"><a class="struct" href="struct.SendTrackId.html" title="struct kira::track::SendTrackId">Send<wbr>Track<wbr>Id</a></div><div class="desc docblock-short">A unique identifier for a mixer send track.</div></li><li><div class="item-name"><a class="struct" href="struct.SpatialTrackBuilder.html" title="struct kira::track::SpatialTrackBuilder">Spatial<wbr>Track<wbr>Builder</a></div><div class="desc docblock-short">Configures a spatial mixer track.</div></li><li><div class="item-name"><a class="struct" href="struct.SpatialTrackDistances.html" title="struct kira::track::SpatialTrackDistances">Spatial<wbr>Track<wbr>Distances</a></div><div class="desc docblock-short">The distances from a listener at which an emitter is loudest and quietest.</div></li><li><div class="item-name"><a class="struct" href="struct.SpatialTrackHandle.html" title="struct kira::track::SpatialTrackHandle">Spatial<wbr>Track<wbr>Handle</a></div><div class="desc docblock-short">Controls a mixer track.</div></li><li><div class="item-name"><a class="struct" href="struct.TrackBuilder.html" title="struct kira::track::TrackBuilder">Track<wbr>Builder</a></div><div class="desc docblock-short">Configures a mixer track.</div></li><li><div class="item-name"><a class="struct" href="struct.TrackHandle.html" title="struct kira::track::TrackHandle">Track<wbr>Handle</a></div><div class="desc docblock-short">Controls a mixer track.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.TrackPlaybackState.html" title="enum kira::track::TrackPlaybackState">Track<wbr>Playback<wbr>State</a></div><div class="desc docblock-short">The playback state of a mixer sub-track.</div></li></ul></section></div></main></body></html>
