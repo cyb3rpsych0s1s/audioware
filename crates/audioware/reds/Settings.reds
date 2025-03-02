@@ -26,4 +26,6 @@ public class EmitterSettings {
     public let attenuationFunction: ref<Tween>;
     public let enableSpatialization: Bool = true;
     public let persistUntilSoundsFinish: Bool = false;
+    public let affectedByReverbMix: Bool = true;
+    public let affectedByEnvironmentalPreset: Bool = false;
 }

@@ -278,6 +278,8 @@ impl ToSettingsExt for EmitterSettings {
                     0.0
                 },
                 persist_until_sounds_finish: self.persist_until_sounds_finish,
+                affected_by_reverb_mix: self.affected_by_reverb_mix,
+                affected_by_environmental_preset: self.affected_by_environmental_preset,
             },
             // SAFETY: checked above
             unsafe { std::num::NonZeroU64::new_unchecked(hash) },

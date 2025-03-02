@@ -11,6 +11,8 @@ pub struct SpatialTrackSettings {
     pub persist_until_sounds_finish: bool,
     pub attenuation_function: Option<Easing>,
     pub spatialization_strength: f32,
+    pub affected_by_reverb_mix: bool,
+    pub affected_by_environmental_preset: bool,
 }
 
 impl Default for SpatialTrackSettings {
@@ -20,6 +22,8 @@ impl Default for SpatialTrackSettings {
             persist_until_sounds_finish: false,
             attenuation_function: None,
             spatialization_strength: 0.75,
+            affected_by_reverb_mix: true,
+            affected_by_environmental_preset: false,
         }
     }
 }

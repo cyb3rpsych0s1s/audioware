@@ -14,6 +14,8 @@ pub struct EmitterSettings {
     pub attenuation_function: Ref<Tween>,
     pub enable_spatialization: bool,
     pub persist_until_sounds_finish: bool,
+    pub affected_by_reverb_mix: bool,
+    pub affected_by_environmental_preset: bool,
 }
 
 impl Default for EmitterSettings {
@@ -23,6 +25,8 @@ impl Default for EmitterSettings {
             attenuation_function: Default::default(),
             distances: Default::default(),
             persist_until_sounds_finish: false,
+            affected_by_reverb_mix: true,
+            affected_by_environmental_preset: false,
         }
     }
 }
@@ -107,6 +111,8 @@ impl Clone for EmitterSettings {
             attenuation_function: self.attenuation_function.clone(),
             enable_spatialization: self.enable_spatialization,
             persist_until_sounds_finish: self.persist_until_sounds_finish,
+            affected_by_reverb_mix: self.affected_by_reverb_mix,
+            affected_by_environmental_preset: self.affected_by_environmental_preset,
         }
     }
 }
@@ -120,6 +126,11 @@ impl fmt::Debug for EmitterSettings {
             .field(
                 "persist_until_sounds_finish",
                 &self.persist_until_sounds_finish,
+            )
+            .field("affected_by_reverb_mix", &self.affected_by_reverb_mix)
+            .field(
+                "affected_by_environmental_preset",
+                &self.affected_by_environmental_preset,
             )
             .finish()
     }
