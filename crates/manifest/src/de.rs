@@ -270,6 +270,12 @@ pub struct DialogLine {
     pub line: ScnDialogLineType,
 }
 
+impl std::fmt::Display for DialogLine {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} ({})", self.msg, self.line)
+    }
+}
+
 /// Manifest sources.
 ///
 /// Also called ["sections" in the book](https://cyb3rpsych0s1s.github.io/audioware/SECTIONS.html).

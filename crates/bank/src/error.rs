@@ -34,6 +34,7 @@ pub mod registry {
 
 pub mod validation {
 
+    use audioware_manifest::DialogLine;
     use snafu::Snafu;
 
     use crate::{Id, Key};
@@ -71,12 +72,12 @@ pub mod validation {
             which: String,
             why: Vec<audioware_manifest::error::ValidationError>,
         },
-        #[snafu(display("invalid audio caption"), visibility(pub(crate)))]
+        #[snafu(display("invalid audio caption: {which} ({why})"), visibility(pub(crate)))]
         InvalidAudioCaption { which: String, why: String },
-        #[snafu(display("cannot store data: {key}"), visibility(pub(crate)))]
+        #[snafu(display("cannot store data: {key} ({path})"), visibility(pub(crate)))]
         CannotStoreData { key: Key, path: String },
-        #[snafu(display("cannot store subtitle"), visibility(pub(crate)))]
-        CannotStoreSubtitle,
+        #[snafu(display("cannot store subtitle: {key} ({value})"), visibility(pub(crate)))]
+        CannotStoreSubtitle { key: Key, value: DialogLine },
         #[snafu(display("cannot store audio settings"), visibility(pub(crate)))]
         CannotStoreSettings,
         #[snafu(display("cannot store id: {id}"), visibility(pub(crate)))]

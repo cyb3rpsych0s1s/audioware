@@ -55,6 +55,12 @@ impl ScnDialogLineType {
     }
 }
 
+impl std::fmt::Display for ScnDialogLineType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 #[cfg(not(test))]
 unsafe impl red4ext_rs::NativeRepr for ScnDialogLineType {
     const NAME: &'static str = "scnDialogLineType";
