@@ -10,7 +10,7 @@ use std::{
 use audioware_core::With;
 use audioware_manifest::*;
 use either::Either;
-use kira::{info, sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError}};
+use kira::sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError};
 use red4ext_rs::types::{CName, CNamePool};
 use snafu::ensure;
 
@@ -311,7 +311,10 @@ pub fn ensure_store_subtitle<T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     value: DialogLine,
     store: &mut HashMap<T, DialogLine>,
 ) -> Result<(), Error> {
-    ensure!(store.insert(key.clone(), value.clone()).is_none(), CannotStoreSubtitleSnafu { key, value });
+    ensure!(
+        store.insert(key.clone(), value.clone()).is_none(),
+        CannotStoreSubtitleSnafu { key, value }
+    );
     Ok(())
 }
 
