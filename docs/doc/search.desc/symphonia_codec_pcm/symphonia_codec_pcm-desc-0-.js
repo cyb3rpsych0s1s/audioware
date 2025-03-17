@@ -1,0 +1,1 @@
+searchState.loadedDescShard("symphonia_codec_pcm", 0, "A generic audio buffer. TODO: Move to core library with a …\nPulse Code Modulation (PCM) decoder for all raw PCM, and …\nReturns the argument unchanged.\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.\nCalls <code>U::from(self)</code>.")

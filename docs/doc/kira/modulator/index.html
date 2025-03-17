@@ -1,0 +1,84 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Global values that parameters (like volume and playback rate) can be linked to."><title>kira::modulator - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="kira" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0 (4d91de4e4 2025-02-17)" data-channel="1.85.0" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../kira/index.html">kira</a><span class="version">0.10.4</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module modulator</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#why-modulators" title="Why modulators?">Why modulators?</a></li><li><a href="#tweener-example" title="Tweener example">Tweener example</a></li></ul><h3><a href="#modules">Module Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate kira</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><span class="rustdoc-breadcrumbs"><a href="../index.html">kira</a></span><h1>Module <span>modulator</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/kira/modulator.rs.html#1-205">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Global values that parameters (like volume and playback rate) can be linked to.</p>
+<p>Any type that implements <a href="trait.ModulatorBuilder.html" title="trait kira::modulator::ModulatorBuilder"><code>ModulatorBuilder</code></a> can be added to an audio manager by
+using <a href="../struct.AudioManager.html#method.add_modulator" title="method kira::AudioManager::add_modulator"><code>AudioManager::add_modulator</code></a>.</p>
+<p>If needed, you can create custom modulators by implementing the <a href="trait.ModulatorBuilder.html" title="trait kira::modulator::ModulatorBuilder"><code>ModulatorBuilder</code></a>
+and <a href="trait.Modulator.html" title="trait kira::modulator::Modulator"><code>Modulator</code></a> traits.</p>
+<h2 id="why-modulators"><a class="doc-anchor" href="#why-modulators">§</a>Why modulators?</h2>
+<p>Many properties of things in Kira, like the volumes of sounds, can be smoothly
+transitioned from one value to another without the use of modulators. Modulators
+become handy when:</p>
+<ul>
+<li>You want to control multiple properties of objects in lockstep</li>
+<li>You need to change a property in a way that’s more complicated than a simple
+transition</li>
+</ul>
+<h2 id="tweener-example"><a class="doc-anchor" href="#tweener-example">§</a>Tweener example</h2>
+<p>Let’s say we have a music track with two layers that play simultaneously:
+drums and piano. When the player character enters water, we want the music
+to sound “underwater”, so we’ll fade out the drums and make the piano sound
+more muffled using a low-pass filter.</p>
+<p>For this situation, a <a href="tweener/index.html" title="mod kira::modulator::tweener"><code>tweener</code></a> is appropriate. Tweeners hold a value
+that doesn’t change until we tell it to, and the value can be smoothly
+transitioned.</p>
+<p>The tweener is an input value that will generate multiple output values:
+the drums volume and piano filter frequency. When the tweener is set to
+<code>0.0</code>, that represents that the player is not underwater, and when it’s
+<code>1.0</code>, the player is submerged. (These are arbitrary values.)</p>
+<div><table><thead><tr><th>Tweener value</th><th>Drums volume</th><th>Piano filter frequency</th></tr></thead><tbody>
+<tr><td>0.0</td><td>1.0</td><td>20,000 Hz</td></tr>
+<tr><td>1.0</td><td>0.0</td><td>500 Hz</td></tr>
+</tbody></table>
+</div>
+<p>First, let’s create the tweener:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	modulator::tweener::TweenerBuilder,
+};
+
+<span class="kw">let </span><span class="kw-2">mut </span>manager = AudioManager::&lt;DefaultBackend&gt;::new(AudioManagerSettings::default())<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>tweener = manager.add_modulator(TweenerBuilder { initial_value: <span class="number">0.0 </span>})<span class="question-mark">?</span>;</code></pre></div>
+<p>Next, we’ll create a mixer track with a low-pass filter effect. The piano will play
+on this track so we can make it sound more or less muffled.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{
+	effect::filter::FilterBuilder,
+	Mapping, Value, Easing,
+	track::TrackBuilder,
+};
+
+<span class="kw">let </span>filter_builder = FilterBuilder::new()
+	.cutoff(Value::from_modulator(<span class="kw-2">&amp;</span>tweener, Mapping {
+		input_range: (<span class="number">0.0</span>, <span class="number">1.0</span>),
+		output_range: (<span class="number">20_000.0</span>, <span class="number">500.0</span>),
+		easing: Easing::Linear,
+	}));
+<span class="kw">let </span><span class="kw-2">mut </span>piano_track = manager.add_sub_track(TrackBuilder::new().with_effect(filter_builder))<span class="question-mark">?</span>;</code></pre></div>
+<p>We use a <code>Mapping</code> to map the input values of the tweener to the output values
+of the filter cutoff frequency.</p>
+<p>Finally, we’ll play the sounds:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::sound::static_sound::StaticSoundData;
+
+piano_track.play(StaticSoundData::from_file(<span class="string">"piano.ogg"</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+manager.play(
+	StaticSoundData::from_file(<span class="string">"drums.ogg"</span>)<span class="question-mark">?
+		</span>.volume(Value::from_modulator(<span class="kw-2">&amp;</span>tweener, Mapping {
+			input_range: (<span class="number">0.0</span>, <span class="number">1.0</span>),
+			output_range: (Decibels::IDENTITY, Decibels::SILENCE),
+			easing: Easing::Linear,
+		}))
+)<span class="question-mark">?</span>;</code></pre></div>
+<p>Notice how we also use a <code>Mapping</code> to map the input range of the tweener to the
+output values of the sound volume.</p>
+<p>Once the player goes underwater, we can smoothly transition the tweener’s value from
+<code>0.0</code> to <code>1.0</code>, which will automatically change the drum volume and piano filter frequency.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::Tween;
+<span class="kw">use </span>std::time::Duration;
+
+tweener.set(<span class="number">1.0</span>, Tween {
+	duration: Duration::from_secs(<span class="number">3</span>),
+	..Default::default()
+});</code></pre></div>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="lfo/index.html" title="mod kira::modulator::lfo">lfo</a></div><div class="desc docblock-short">Oscillates back and forth.</div></li><li><div class="item-name"><a class="mod" href="tweener/index.html" title="mod kira::modulator::tweener">tweener</a></div><div class="desc docblock-short">Smoothly transitions values to other values.</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.ModulatorId.html" title="struct kira::modulator::ModulatorId">Modulator<wbr>Id</a></div><div class="desc docblock-short">A unique identifier for a modulator.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.Modulator.html" title="trait kira::modulator::Modulator">Modulator</a></div><div class="desc docblock-short">Produces a stream of values that a parameter can be linked to.</div></li><li><div class="item-name"><a class="trait" href="trait.ModulatorBuilder.html" title="trait kira::modulator::ModulatorBuilder">Modulator<wbr>Builder</a></div><div class="desc docblock-short">Configures a modulator.</div></li></ul></section></div></main></body></html>

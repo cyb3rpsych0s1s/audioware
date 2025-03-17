@@ -1,0 +1,147 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Writing and reading multiple items at once into and from a `RingBuffer`."><title>rtrb::chunks - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="rtrb" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0 (4d91de4e4 2025-02-17)" data-channel="1.85.0" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../rtrb/index.html">rtrb</a><span class="version">0.3.2</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module chunks</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a><ul><li><a href="#common-access-patterns" title="Common Access Patterns">Common Access Patterns</a></li></ul></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate rtrb</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><span class="rustdoc-breadcrumbs"><a href="../index.html">rtrb</a></span><h1>Module <span>chunks</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/rtrb/chunks.rs.html#1-908">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Writing and reading multiple items at once into and from a <a href="../struct.RingBuffer.html" title="struct rtrb::RingBuffer"><code>RingBuffer</code></a>.</p>
+<p>Multiple items at once can be moved from an iterator into the ring buffer by using
+<a href="../struct.Producer.html#method.write_chunk_uninit" title="method rtrb::Producer::write_chunk_uninit"><code>Producer::write_chunk_uninit()</code></a> followed by <a href="struct.WriteChunkUninit.html#method.fill_from_iter" title="method rtrb::chunks::WriteChunkUninit::fill_from_iter"><code>WriteChunkUninit::fill_from_iter()</code></a>.
+Alternatively, mutable access to the (uninitialized) slots of the chunk can be obtained with
+<a href="struct.WriteChunkUninit.html#method.as_mut_slices" title="method rtrb::chunks::WriteChunkUninit::as_mut_slices"><code>WriteChunkUninit::as_mut_slices()</code></a>, which requires writing some <code>unsafe</code> code.
+To avoid that, <a href="../struct.Producer.html#method.write_chunk" title="method rtrb::Producer::write_chunk"><code>Producer::write_chunk()</code></a> can be used,
+which initializes all slots with their <a href="https://doc.rust-lang.org/1.85.0/core/default/trait.Default.html" title="trait core::default::Default"><code>Default</code></a> value
+and provides mutable access by means of <a href="struct.WriteChunk.html#method.as_mut_slices" title="method rtrb::chunks::WriteChunk::as_mut_slices"><code>WriteChunk::as_mut_slices()</code></a>.</p>
+<p>Multiple items at once can be moved out of the ring buffer by using
+<a href="../struct.Consumer.html#method.read_chunk" title="method rtrb::Consumer::read_chunk"><code>Consumer::read_chunk()</code></a> and iterating over the returned <a href="struct.ReadChunk.html" title="struct rtrb::chunks::ReadChunk"><code>ReadChunk</code></a>
+(or by explicitly calling <a href="struct.ReadChunk.html#method.into_iter" title="method rtrb::chunks::ReadChunk::into_iter"><code>ReadChunk::into_iter()</code></a>).
+Immutable access to the slots of the chunk can be obtained with <a href="struct.ReadChunk.html#method.as_slices" title="method rtrb::chunks::ReadChunk::as_slices"><code>ReadChunk::as_slices()</code></a>.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>This example uses a single thread for simplicity, but in a real application,
+<code>producer</code> and <code>consumer</code> would of course live on different threads:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>rtrb::RingBuffer;
+
+<span class="kw">let </span>(<span class="kw-2">mut </span>producer, <span class="kw-2">mut </span>consumer) = RingBuffer::new(<span class="number">5</span>);
+
+<span class="kw">if let </span><span class="prelude-val">Ok</span>(chunk) = producer.write_chunk_uninit(<span class="number">4</span>) {
+    chunk.fill_from_iter([<span class="number">10</span>, <span class="number">11</span>, <span class="number">12</span>]);
+    <span class="comment">// Note that we requested 4 slots but we've only written to 3 of them!
+</span>} <span class="kw">else </span>{
+    <span class="macro">unreachable!</span>();
+}
+
+<span class="macro">assert_eq!</span>(producer.slots(), <span class="number">2</span>);
+<span class="macro">assert_eq!</span>(consumer.slots(), <span class="number">3</span>);
+
+<span class="kw">if let </span><span class="prelude-val">Ok</span>(chunk) = consumer.read_chunk(<span class="number">2</span>) {
+    <span class="macro">assert_eq!</span>(chunk.into_iter().collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(), [<span class="number">10</span>, <span class="number">11</span>]);
+} <span class="kw">else </span>{
+    <span class="macro">unreachable!</span>();
+}
+
+<span class="comment">// One element is still in the queue:
+</span><span class="macro">assert_eq!</span>(consumer.peek(), <span class="prelude-val">Ok</span>(<span class="kw-2">&amp;</span><span class="number">12</span>));
+
+<span class="kw">let </span>data = <span class="macro">vec!</span>[<span class="number">20</span>, <span class="number">21</span>, <span class="number">22</span>, <span class="number">23</span>];
+<span class="comment">// NB: write_chunk_uninit() could be used for possibly better performance:
+</span><span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="kw-2">mut </span>chunk) = producer.write_chunk(<span class="number">4</span>) {
+    <span class="kw">let </span>(first, second) = chunk.as_mut_slices();
+    <span class="kw">let </span>mid = first.len();
+    first.copy_from_slice(<span class="kw-2">&amp;</span>data[..mid]);
+    second.copy_from_slice(<span class="kw-2">&amp;</span>data[mid..]);
+    chunk.commit_all();
+} <span class="kw">else </span>{
+    <span class="macro">unreachable!</span>();
+}
+
+<span class="macro">assert!</span>(producer.is_full());
+<span class="macro">assert_eq!</span>(consumer.slots(), <span class="number">5</span>);
+
+<span class="kw">let </span><span class="kw-2">mut </span>v = Vec::&lt;i32&gt;::with_capacity(<span class="number">5</span>);
+<span class="kw">if let </span><span class="prelude-val">Ok</span>(chunk) = consumer.read_chunk(<span class="number">5</span>) {
+    <span class="kw">let </span>(first, second) = chunk.as_slices();
+    v.extend(first);
+    v.extend(second);
+    chunk.commit_all();
+} <span class="kw">else </span>{
+    <span class="macro">unreachable!</span>();
+}
+<span class="macro">assert_eq!</span>(v, [<span class="number">12</span>, <span class="number">20</span>, <span class="number">21</span>, <span class="number">22</span>, <span class="number">23</span>]);
+<span class="macro">assert!</span>(consumer.is_empty());</code></pre></div>
+<p>The iterator API can be used to move items from one ring buffer to another:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>rtrb::{Consumer, Producer};
+
+<span class="kw">fn </span>move_items&lt;T&gt;(src: <span class="kw-2">&amp;mut </span>Consumer&lt;T&gt;, dst: <span class="kw-2">&amp;mut </span>Producer&lt;T&gt;) -&gt; usize {
+    <span class="kw">let </span>n = src.slots().min(dst.slots());
+    dst.write_chunk_uninit(n).unwrap().fill_from_iter(src.read_chunk(n).unwrap())
+}</code></pre></div>
+<h3 id="common-access-patterns"><a class="doc-anchor" href="#common-access-patterns">§</a>Common Access Patterns</h3>
+<p>The following examples show the <a href="../struct.Producer.html" title="struct rtrb::Producer"><code>Producer</code></a> side;
+similar patterns can of course be used with <a href="../struct.Consumer.html#method.read_chunk" title="method rtrb::Consumer::read_chunk"><code>Consumer::read_chunk()</code></a> as well.
+Furthermore, the examples use <a href="../struct.Producer.html#method.write_chunk_uninit" title="method rtrb::Producer::write_chunk_uninit"><code>Producer::write_chunk_uninit()</code></a>,
+along with a bit of <code>unsafe</code> code.
+To avoid this, you can use <a href="../struct.Producer.html#method.write_chunk" title="method rtrb::Producer::write_chunk"><code>Producer::write_chunk()</code></a> instead,
+which requires the trait bound <code>T: Default</code> and will lead to a small runtime overhead.</p>
+<p>Copy a whole slice of items into the ring buffer, but only if space permits
+(if not, the entire input slice is returned as an error):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>rtrb::{Producer, CopyToUninit};
+
+<span class="kw">fn </span>push_entire_slice&lt;<span class="lifetime">'a</span>, T&gt;(queue: <span class="kw-2">&amp;mut </span>Producer&lt;T&gt;, slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[T]) -&gt; <span class="prelude-ty">Result</span>&lt;(), <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[T]&gt;
+<span class="kw">where
+    </span>T: Copy,
+{
+    <span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="kw-2">mut </span>chunk) = queue.write_chunk_uninit(slice.len()) {
+        <span class="kw">let </span>(first, second) = chunk.as_mut_slices();
+        <span class="kw">let </span>mid = first.len();
+        slice[..mid].copy_to_uninit(first);
+        slice[mid..].copy_to_uninit(second);
+        <span class="comment">// SAFETY: All slots have been initialized
+        </span><span class="kw">unsafe </span>{ chunk.commit_all() };
+        <span class="prelude-val">Ok</span>(())
+    } <span class="kw">else </span>{
+        <span class="prelude-val">Err</span>(slice)
+    }
+}</code></pre></div>
+<p>Copy as many items as possible from a given slice, returning the number of copied items:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>rtrb::{Producer, CopyToUninit, chunks::ChunkError::TooFewSlots};
+
+<span class="kw">fn </span>push_partial_slice&lt;T&gt;(queue: <span class="kw-2">&amp;mut </span>Producer&lt;T&gt;, slice: <span class="kw-2">&amp;</span>[T]) -&gt; usize
+<span class="kw">where
+    </span>T: Copy,
+{
+    <span class="kw">let </span><span class="kw-2">mut </span>chunk = <span class="kw">match </span>queue.write_chunk_uninit(slice.len()) {
+        <span class="prelude-val">Ok</span>(chunk) =&gt; chunk,
+        <span class="comment">// Remaining slots are returned, this will always succeed:
+        </span><span class="prelude-val">Err</span>(TooFewSlots(n)) =&gt; queue.write_chunk_uninit(n).unwrap(),
+    };
+    <span class="kw">let </span>end = chunk.len();
+    <span class="kw">let </span>(first, second) = chunk.as_mut_slices();
+    <span class="kw">let </span>mid = first.len();
+    slice[..mid].copy_to_uninit(first);
+    slice[mid..end].copy_to_uninit(second);
+    <span class="comment">// SAFETY: All slots have been initialized
+    </span><span class="kw">unsafe </span>{ chunk.commit_all() };
+    end
+}</code></pre></div>
+<p>Write as many slots as possible, given an iterator
+(and return the number of written slots):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>rtrb::{Producer, chunks::ChunkError::TooFewSlots};
+
+<span class="kw">fn </span>push_from_iter&lt;T, I&gt;(queue: <span class="kw-2">&amp;mut </span>Producer&lt;T&gt;, iter: I) -&gt; usize
+<span class="kw">where
+    </span>T: Default,
+    I: IntoIterator&lt;Item = T&gt;,
+{
+    <span class="kw">let </span>iter = iter.into_iter();
+    <span class="kw">let </span>n = <span class="kw">match </span>iter.size_hint() {
+        (<span class="kw">_</span>, <span class="prelude-val">None</span>) =&gt; queue.slots(),
+        (<span class="kw">_</span>, <span class="prelude-val">Some</span>(n)) =&gt; n,
+    };
+    <span class="kw">let </span>chunk = <span class="kw">match </span>queue.write_chunk_uninit(n) {
+        <span class="prelude-val">Ok</span>(chunk) =&gt; chunk,
+        <span class="comment">// Remaining slots are returned, this will always succeed:
+        </span><span class="prelude-val">Err</span>(TooFewSlots(n)) =&gt; queue.write_chunk_uninit(n).unwrap(),
+    };
+    chunk.fill_from_iter(iter)
+}</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.ReadChunk.html" title="struct rtrb::chunks::ReadChunk">Read<wbr>Chunk</a></div><div class="desc docblock-short">Structure for reading from multiple slots in one go.</div></li><li><div class="item-name"><a class="struct" href="struct.ReadChunkIntoIter.html" title="struct rtrb::chunks::ReadChunkIntoIter">Read<wbr>Chunk<wbr>Into<wbr>Iter</a></div><div class="desc docblock-short">An iterator that moves out of a <a href="struct.ReadChunk.html" title="struct rtrb::chunks::ReadChunk"><code>ReadChunk</code></a>.</div></li><li><div class="item-name"><a class="struct" href="struct.WriteChunk.html" title="struct rtrb::chunks::WriteChunk">Write<wbr>Chunk</a></div><div class="desc docblock-short">Structure for writing into multiple (<a href="https://doc.rust-lang.org/1.85.0/core/default/trait.Default.html" title="trait core::default::Default"><code>Default</code></a>-initialized) slots in one go.</div></li><li><div class="item-name"><a class="struct" href="struct.WriteChunkUninit.html" title="struct rtrb::chunks::WriteChunkUninit">Write<wbr>Chunk<wbr>Uninit</a></div><div class="desc docblock-short">Structure for writing into multiple (uninitialized) slots in one go.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.ChunkError.html" title="enum rtrb::chunks::ChunkError">Chunk<wbr>Error</a></div><div class="desc docblock-short">Error type for <a href="../struct.Consumer.html#method.read_chunk" title="method rtrb::Consumer::read_chunk"><code>Consumer::read_chunk()</code></a>, <a href="../struct.Producer.html#method.write_chunk" title="method rtrb::Producer::write_chunk"><code>Producer::write_chunk()</code></a>
+and <a href="../struct.Producer.html#method.write_chunk_uninit" title="method rtrb::Producer::write_chunk_uninit"><code>Producer::write_chunk_uninit()</code></a>.</div></li></ul></section></div></main></body></html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Kira"><title>kira - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="kira" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0 (4d91de4e4 2025-02-17)" data-channel="1.85.0" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../static.files/storage-59e33391.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../kira/index.html">kira</a><span class="version">0.10.4</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#kira" title="Kira">Kira</a><ul><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#features" title="Features">Features</a></li><li><a href="#loading-other-audio-file-formats" title="Loading other audio file formats">Loading other audio file formats</a></li><li><a href="#performance-using-the-dev-profile" title="Performance using the `dev` profile">Performance using the <code>dev</code> profile</a></li></ul></li></ul><h3><a href="#reexports">Crate Items</a></h3><ul class="block"><li><a href="#reexports" title="Re-exports">Re-exports</a></li><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#macros" title="Macros">Macros</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>kira</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/kira/lib.rs.html#1-272">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="kira"><a class="doc-anchor" href="#kira">§</a>Kira</h2>
+<p>Kira is a backend-agnostic library to create expressive audio for games. It provides
+tweens for smoothly adjusting properties of sounds, a flexible <a href="track/index.html" title="mod kira::track">mixer</a>
+for applying <a href="effect/index.html" title="mod kira::effect">effects</a> to audio, a <a href="clock/index.html" title="mod kira::clock">clock</a> system for precisely timing audio events,
+and <a href="track/index.html#spatial-tracks" title="mod kira::track">spatial audio</a> support.</p>
+<p>To get started, create an <a href="struct.AudioManager.html" title="struct kira::AudioManager"><code>AudioManager</code></a> and use it to <a href="struct.AudioManager.html#method.play" title="method kira::AudioManager::play">play</a> a
+<a href="sound/static_sound/struct.StaticSoundData.html" title="struct kira::sound::static_sound::StaticSoundData"><code>StaticSoundData</code></a> or
+<a href="sound/streaming/struct.StreamingSoundData.html" title="struct kira::sound::streaming::StreamingSoundData"><code>StreamingSoundData</code></a>.</p>
+<h3 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h3>
+<p>Playing a sound multiple times simultaneously:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+};
+
+<span class="comment">// Create an audio manager. This plays sounds and manages resources.
+</span><span class="kw">let </span><span class="kw-2">mut </span>manager = AudioManager::&lt;DefaultBackend&gt;::new(AudioManagerSettings::default())<span class="question-mark">?</span>;
+<span class="kw">let </span>sound_data = StaticSoundData::from_file(<span class="string">"sound.ogg"</span>)<span class="question-mark">?</span>;
+manager.play(sound_data.clone())<span class="question-mark">?</span>;
+<span class="comment">// After a couple seconds...
+</span>manager.play(sound_data.clone())<span class="question-mark">?</span>;
+<span class="comment">// Cloning the sound data will not use any extra memory.</span></code></pre></div>
+<p>Gradually speeding up a sound over time:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::time::Duration;
+
+<span class="kw">use </span>kira::{
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	Tween,
+};
+
+<span class="kw">let </span><span class="kw-2">mut </span>manager = AudioManager::&lt;DefaultBackend&gt;::new(AudioManagerSettings::default())<span class="question-mark">?</span>;
+<span class="kw">let </span>sound_data = StaticSoundData::from_file(<span class="string">"sound.ogg"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>sound = manager.play(sound_data)<span class="question-mark">?</span>;
+<span class="comment">// Start smoothly adjusting the playback rate parameter.
+</span>sound.set_playback_rate(
+	<span class="number">2.0</span>,
+	Tween {
+		duration: Duration::from_secs(<span class="number">3</span>),
+		..Default::default()
+	},
+);</code></pre></div>
+<p>Playing a sound with a low-pass filter applied (this makes the
+audio sound muffled):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	track::TrackBuilder,
+	effect::filter::FilterBuilder,
+};
+
+<span class="kw">let </span><span class="kw-2">mut </span>manager = AudioManager::&lt;DefaultBackend&gt;::new(AudioManagerSettings::default())<span class="question-mark">?</span>;
+<span class="comment">// Create a mixer sub-track with a filter.
+</span><span class="kw">let </span><span class="kw-2">mut </span>track = manager.add_sub_track({
+	<span class="kw">let </span><span class="kw-2">mut </span>builder = TrackBuilder::new();
+	builder.add_effect(FilterBuilder::new().cutoff(<span class="number">1000.0</span>));
+	builder
+})<span class="question-mark">?</span>;
+<span class="comment">// Play the sound on the track.
+</span><span class="kw">let </span>sound_data = StaticSoundData::from_file(<span class="string">"sound.ogg"</span>)<span class="question-mark">?</span>;
+track.play(sound_data)<span class="question-mark">?</span>;</code></pre></div>
+<p>Playing sounds in time with a musical beat:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	clock::ClockSpeed,
+};
+
+<span class="kw">const </span>TEMPO: f64 = <span class="number">120.0</span>;
+
+<span class="kw">let </span><span class="kw-2">mut </span>manager = AudioManager::&lt;DefaultBackend&gt;::new(AudioManagerSettings::default())<span class="question-mark">?</span>;
+<span class="comment">// Create a clock that ticks 120 times per second. In this case,
+// each tick is one musical beat. We can use a tick to represent any
+// arbitrary amount of time.
+</span><span class="kw">let </span><span class="kw-2">mut </span>clock = manager.add_clock(ClockSpeed::TicksPerMinute(TEMPO))<span class="question-mark">?</span>;
+<span class="comment">// Play a sound 2 ticks (beats) from now.
+</span><span class="kw">let </span>sound_data_1 = StaticSoundData::from_file(<span class="string">"sound1.ogg"</span>)<span class="question-mark">?
+	</span>.start_time(clock.time() + <span class="number">2</span>);
+manager.play(sound_data_1)<span class="question-mark">?</span>;
+<span class="comment">// Play a different sound 4 ticks (beats) from now.
+</span><span class="kw">let </span>sound_data_2 = StaticSoundData::from_file(<span class="string">"sound2.ogg"</span>)<span class="question-mark">?
+	</span>.start_time(clock.time() + <span class="number">4</span>);
+manager.play(sound_data_2)<span class="question-mark">?</span>;
+<span class="comment">// Start the clock.
+</span>clock.start();</code></pre></div>
+<h3 id="features"><a class="doc-anchor" href="#features">§</a>Features</h3>
+<p>The Kira crate has the following feature flags:</p>
+<ul>
+<li><code>cpal</code> (enabled by default) - enables the cpal backend and makes it the default for
+audio managers. This allows Kira to talk to the operating system to output audio. Most
+users should leave this enabled.</li>
+<li><code>symphonia</code> (enabled by default) - allows loading and streaming audio from common
+audio formats, like MP3 and WAV.
+<ul>
+<li><code>mp3</code> (enabled by default) - enables support for loading and streaming MP3 audio (enables
+the <code>symphonia</code> feature automatically)</li>
+<li><code>ogg</code> (enabled by default) - enables support for loading and streaming OGG audio (enables
+the <code>symphonia</code> feature automatically)</li>
+<li><code>flac</code> (enabled by default) - enables support for loading and streaming FLAC audio (enables
+the <code>symphonia</code> feature automatically)</li>
+<li><code>wav</code> (enabled by default) - enables support for loading and streaming WAV audio (enables
+the <code>symphonia</code> feature automatically)</li>
+</ul>
+</li>
+<li><code>serde</code> - adds <code>Serialize</code> and <code>Deserialize</code> implementations for the following types:
+<ul>
+<li><a href="struct.Capacities.html" title="struct kira::Capacities"><code>Capacities</code></a></li>
+<li><a href="clock/enum.ClockSpeed.html" title="enum kira::clock::ClockSpeed"><code>ClockSpeed</code></a></li>
+<li><a href="effect/distortion/enum.DistortionKind.html" title="enum kira::effect::distortion::DistortionKind"><code>DistortionKind</code></a></li>
+<li><a href="enum.Easing.html" title="enum kira::Easing"><code>Easing</code></a></li>
+<li><a href="sound/enum.EndPosition.html" title="enum kira::sound::EndPosition"><code>EndPosition</code></a></li>
+<li><a href="effect/eq_filter/enum.EqFilterKind.html" title="enum kira::effect::eq_filter::EqFilterKind"><code>EqFilterKind</code></a></li>
+<li><a href="effect/filter/enum.FilterMode.html" title="enum kira::effect::filter::FilterMode"><code>FilterMode</code></a></li>
+<li><a href="struct.Frame.html" title="struct kira::Frame"><code>Frame</code></a></li>
+<li><a href="struct.Mapping.html" title="struct kira::Mapping"><code>Mapping</code></a></li>
+<li><a href="sound/enum.PlaybackPosition.html" title="enum kira::sound::PlaybackPosition"><code>PlaybackPosition</code></a></li>
+<li><a href="struct.PlaybackRate.html" title="struct kira::PlaybackRate"><code>PlaybackRate</code></a></li>
+<li><a href="sound/enum.PlaybackState.html" title="enum kira::sound::PlaybackState"><code>PlaybackState</code></a></li>
+<li><a href="sound/struct.Region.html" title="struct kira::sound::Region"><code>Region</code></a></li>
+<li><a href="struct.Decibels.html" title="struct kira::Decibels"><code>Decibels</code></a></li>
+<li><a href="modulator/lfo/enum.Waveform.html" title="enum kira::modulator::lfo::Waveform"><code>Waveform</code></a></li>
+</ul>
+</li>
+<li><code>assert_no_alloc</code> - uses the <a href="https://crates.io/crates/assert_no_alloc"><code>assert_no_alloc</code></a> crate
+to cause panics if memory is allocated or deallocated on the audio thread. This is mainly useful
+for people developing Kira itself.</li>
+<li><code>android_shared_stdcxx</code> - enables cpal’s <code>oboe-shared-stdcxx</code> feature, which can be helpful
+for Android compilation.</li>
+</ul>
+<h3 id="loading-other-audio-file-formats"><a class="doc-anchor" href="#loading-other-audio-file-formats">§</a>Loading other audio file formats</h3>
+<p>Kira will be able to load any audio format that Symphonia supports with its
+current enabled features. For example, to add support for AAC files, you can
+add <code>symphonia</code> to your Cargo.toml with the <code>aac</code> feature:</p>
+<div class="example-wrap"><pre class="language-toml"><code>symphonia = { version = &quot;0.5.2&quot;, features = [&quot;aac&quot;] }</code></pre></div>
+<p>Kira’s <code>mp3</code>, <code>ogg</code>, <code>flac</code>, and <code>wav</code> feature flags are provided for convenience.</p>
+<p>See the <a href="https://github.com/pdeljanov/Symphonia#formats-demuxers">symphonia documentation</a>
+for a list of supported container formats and codecs.</p>
+<h3 id="performance-using-the-dev-profile"><a class="doc-anchor" href="#performance-using-the-dev-profile">§</a>Performance using the <code>dev</code> profile</h3>
+<p>By default, Rust programs run with the <code>dev</code> profile are not optimized. This can
+lead to poor performance of audio playback and long loading times for audio
+files. You can alleviate this by building Kira and its audio-related
+dependencies with a higher optimization level. Add the following to your
+Cargo.toml:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[profile.dev.package.kira]
+opt-level = 3
+
+[profile.dev.package.cpal]
+opt-level = 3
+
+[profile.dev.package.symphonia]
+opt-level = 3
+
+[profile.dev.package.symphonia-bundle-mp3]
+opt-level = 3
+
+[profile.dev.package.symphonia-format-ogg]
+opt-level = 3
+
+[profile.dev.package.symphonia-codec-vorbis]
+opt-level = 3
+
+[profile.dev.package.symphonia-bundle-flac]
+opt-level = 3
+
+[profile.dev.package.symphonia-format-wav]
+opt-level = 3
+
+[profile.dev.package.symphonia-codec-pcm]
+opt-level = 3</code></pre></div>
+<p>You can also build all of your projects with a higher optimization level by
+using this snippet instead:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[profile.dev.package.&quot;*&quot;]
+opt-level = 3</code></pre></div>
+<p>Building dependencies with a higher optimization level does increase compile
+times, but only when compiling your project from scratch. If you only make
+changes to your crate, you’re not recompiling the dependencies, so you don’t
+suffer from the longer compilation step in that case. Building dependencies
+optimized and the main crate unoptimized can be a good balance of performance
+and compile times for games.</p>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name" id="reexport.DefaultBackend"><code>pub use backend::<a class="type" href="backend/type.DefaultBackend.html" title="type kira::backend::DefaultBackend">DefaultBackend</a>;</code></div></li></ul><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="backend/index.html" title="mod kira::backend">backend</a></div><div class="desc docblock-short">Communication between Kira and a low-level audio API.</div></li><li><div class="item-name"><a class="mod" href="clock/index.html" title="mod kira::clock">clock</a></div><div class="desc docblock-short">Precise timing for audio events.</div></li><li><div class="item-name"><a class="mod" href="command/index.html" title="mod kira::command">command</a></div><div class="desc docblock-short">Helpers for sending commands from the gameplay thread to the audio thread.
+You’ll only need to use this if you’re making your own implementation of
+<a href="sound/trait.Sound.html" title="trait kira::sound::Sound"><code>Sound</code></a>, <a href="effect/trait.Effect.html" title="trait kira::effect::Effect"><code>Effect</code></a>,
+or <a href="modulator/trait.Modulator.html" title="trait kira::modulator::Modulator"><code>Modulator</code></a>.</div></li><li><div class="item-name"><a class="mod" href="effect/index.html" title="mod kira::effect">effect</a></div><div class="desc docblock-short">Modifies audio signals.</div></li><li><div class="item-name"><a class="mod" href="info/index.html" title="mod kira::info">info</a></div><div class="desc docblock-short">Types for providing info about resources to trait implementors.</div></li><li><div class="item-name"><a class="mod" href="listener/index.html" title="mod kira::listener">listener</a></div><div class="desc docblock-short">Types related to spatial listeners.</div></li><li><div class="item-name"><a class="mod" href="modulator/index.html" title="mod kira::modulator">modulator</a></div><div class="desc docblock-short">Global values that parameters (like volume and playback rate) can be linked to.</div></li><li><div class="item-name"><a class="mod" href="sound/index.html" title="mod kira::sound">sound</a></div><div class="desc docblock-short">Sources of audio.</div></li><li><div class="item-name"><a class="mod" href="track/index.html" title="mod kira::track">track</a></div><div class="desc docblock-short">Organizes and applies effects to audio.</div></li></ul><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.command_writers_and_readers.html" title="macro kira::command_writers_and_readers">command_<wbr>writers_<wbr>and_<wbr>readers</a></div><div class="desc docblock-short">Creates a set of command writers and readers and a constructor for them.
+You’ll only need to use this if you’re making your own implementation of
+<a href="sound/trait.Sound.html" title="trait kira::sound::Sound"><code>Sound</code></a>, <a href="effect/trait.Effect.html" title="trait kira::effect::Effect"><code>Effect</code></a>,
+or <a href="modulator/trait.Modulator.html" title="trait kira::modulator::Modulator"><code>Modulator</code></a>.</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.AudioManager.html" title="struct kira::AudioManager">Audio<wbr>Manager</a></div><div class="desc docblock-short">Controls audio from gameplay code.</div></li><li><div class="item-name"><a class="struct" href="struct.AudioManagerSettings.html" title="struct kira::AudioManagerSettings">Audio<wbr>Manager<wbr>Settings</a></div><div class="desc docblock-short">Settings for an <a href="struct.AudioManager.html" title="struct kira::AudioManager"><code>AudioManager</code></a>.</div></li><li><div class="item-name"><a class="struct" href="struct.Capacities.html" title="struct kira::Capacities">Capacities</a></div><div class="desc docblock-short">Specifies how many of each resource type an audio context
+can have.</div></li><li><div class="item-name"><a class="struct" href="struct.Decibels.html" title="struct kira::Decibels">Decibels</a></div><div class="desc docblock-short">Represents a change in volume.</div></li><li><div class="item-name"><a class="struct" href="struct.Frame.html" title="struct kira::Frame">Frame</a></div><div class="desc docblock-short">A stereo audio sample.</div></li><li><div class="item-name"><a class="struct" href="struct.Mapping.html" title="struct kira::Mapping">Mapping</a></div><div class="desc docblock-short">A transformation from a modulator’s value to a parameter value.</div></li><li><div class="item-name"><a class="struct" href="struct.Mix.html" title="struct kira::Mix">Mix</a></div><div class="desc docblock-short">An amount to blend the “dry” and “wet” outputs from an effect.</div></li><li><div class="item-name"><a class="struct" href="struct.Panning.html" title="struct kira::Panning">Panning</a></div><div class="desc docblock-short">The stereo positioning of a sound.</div></li><li><div class="item-name"><a class="struct" href="struct.Parameter.html" title="struct kira::Parameter">Parameter</a></div><div class="desc docblock-short">Manages and updates a value that can be smoothly transitioned
+and linked to modulators.</div></li><li><div class="item-name"><a class="struct" href="struct.PlaybackRate.html" title="struct kira::PlaybackRate">Playback<wbr>Rate</a></div><div class="desc docblock-short">How quickly a sound should be played, where <code>1.0</code> is the default
+playback rate.</div></li><li><div class="item-name"><a class="struct" href="struct.ResourceLimitReached.html" title="struct kira::ResourceLimitReached">Resource<wbr>Limit<wbr>Reached</a></div><div class="desc docblock-short">An error that is returned when a resource cannot be added because the
+maximum capacity for that resource has been reached.</div></li><li><div class="item-name"><a class="struct" href="struct.Semitones.html" title="struct kira::Semitones">Semitones</a></div><div class="desc docblock-short">A change in pitch in semitones.</div></li><li><div class="item-name"><a class="struct" href="struct.Tween.html" title="struct kira::Tween">Tween</a></div><div class="desc docblock-short">Describes a smooth transition between values.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.Easing.html" title="enum kira::Easing">Easing</a></div><div class="desc docblock-short">Curves the motion of a <a href="struct.Tween.html" title="struct kira::Tween"><code>Tween</code></a>.</div></li><li><div class="item-name"><a class="enum" href="enum.PlaySoundError.html" title="enum kira::PlaySoundError">Play<wbr>Sound<wbr>Error</a></div><div class="desc docblock-short">Errors that can occur when playing a sound.</div></li><li><div class="item-name"><a class="enum" href="enum.StartTime.html" title="enum kira::StartTime">Start<wbr>Time</a></div><div class="desc docblock-short">Describes when an action should occur.</div></li><li><div class="item-name"><a class="enum" href="enum.Value.html" title="enum kira::Value">Value</a></div><div class="desc docblock-short">A value that a parameter can be linked to.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.Tweenable.html" title="trait kira::Tweenable">Tweenable</a></div><div class="desc docblock-short">A trait for types that can be smoothly interpolated.</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.interpolate_frame.html" title="fn kira::interpolate_frame">interpolate_<wbr>frame</a></div><div class="desc docblock-short">Given a previous frame, a current frame, the two next frames,
+and a position <code>x</code> from 0.0 to 1.0 between the current frame
+and next frame, get an approximated frame.</div></li></ul></section></div></main></body></html>

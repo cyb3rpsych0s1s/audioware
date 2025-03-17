@@ -1,0 +1,92 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Precise timing for audio events."><title>kira::clock - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="kira" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0 (4d91de4e4 2025-02-17)" data-channel="1.85.0" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../kira/index.html">kira</a><span class="version">0.10.4</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module clock</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#starting-sounds-on-clock-ticks" title="Starting sounds on clock ticks">Starting sounds on clock ticks</a></li><li><a href="#starting-tweens-on-clock-ticks" title="Starting tweens on clock ticks">Starting tweens on clock ticks</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate kira</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><span class="rustdoc-breadcrumbs"><a href="../index.html">kira</a></span><h1>Module <span>clock</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/kira/clock.rs.html#1-355">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Precise timing for audio events.</p>
+<p>Clocks can be used to set the start times of sounds and tweens. To create a
+clock, use <a href="../struct.AudioManager.html#method.add_clock" title="method kira::AudioManager::add_clock"><code>AudioManager::add_clock</code></a>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	clock::ClockSpeed,
+};
+
+<span class="kw">let </span><span class="kw-2">mut </span>manager = AudioManager::&lt;DefaultBackend&gt;::new(AudioManagerSettings::default())<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>clock = manager.add_clock(ClockSpeed::SecondsPerTick(<span class="number">1.0</span>))<span class="question-mark">?</span>;
+clock.start();</code></pre></div>
+<p>You can specify the speed of the clock as seconds per tick, ticks per second, or
+ticks per minute.</p>
+<p>Clocks are stopped when you first create them, so be sure to explicitly call
+<a href="struct.ClockHandle.html#method.start" title="method kira::clock::ClockHandle::start"><code>ClockHandle::start</code></a> when you want the clock to start ticking.</p>
+<h3 id="starting-sounds-on-clock-ticks"><a class="doc-anchor" href="#starting-sounds-on-clock-ticks">§</a>Starting sounds on clock ticks</h3>
+<p>Sounds can be set to only start playing when a clock has ticked a certain
+number of times. You can configure this using
+<a href="../sound/static_sound/struct.StaticSoundData.html#method.start_time" title="method kira::sound::static_sound::StaticSoundData::start_time"><code>StaticSoundData::start_time</code></a>
+or <a href="../sound/streaming/struct.StreamingSoundData.html#method.start_time" title="method kira::sound::streaming::StreamingSoundData::start_time"><code>StreamingSoundData::start_time</code></a>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{
+	clock::{ClockTime, ClockSpeed},
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	StartTime,
+};
+
+<span class="kw">let </span><span class="kw-2">mut </span>manager = AudioManager::&lt;DefaultBackend&gt;::new(AudioManagerSettings::default())<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>clock = manager.add_clock(ClockSpeed::SecondsPerTick(<span class="number">1.0</span>))<span class="question-mark">?</span>;
+manager.play(
+	StaticSoundData::from_file(<span class="string">"sound.ogg"</span>)<span class="question-mark">?
+		</span>.start_time(StartTime::ClockTime(ClockTime {
+			clock: clock.id(),
+			ticks: <span class="number">4</span>,
+			fraction: <span class="number">0.0</span>,
+		}))
+)<span class="question-mark">?</span>;
+clock.start();</code></pre></div>
+<p>As a shorthand, you can pass the <a href="struct.ClockTime.html" title="struct kira::clock::ClockTime"><code>ClockTime</code></a> directly into
+the <code>start_time</code> function.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>manager.play(
+	StaticSoundData::from_file(<span class="string">"sound.ogg"</span>)<span class="question-mark">?
+		</span>.start_time(ClockTime {
+			clock: clock.id(),
+			ticks: <span class="number">4</span>,
+			fraction: <span class="number">0.0</span>,
+		})
+)<span class="question-mark">?</span>;</code></pre></div>
+<p>As an even shorter hand, you can use <a href="struct.ClockHandle.html#method.time" title="method kira::clock::ClockHandle::time"><code>ClockHandle::time</code></a> to get the clock’s
+current <a href="struct.ClockTime.html" title="struct kira::clock::ClockTime"><code>ClockTime</code></a>, and then add to it to get a time in the future:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>kira::{
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	clock::ClockSpeed,
+};
+
+manager.play(
+	StaticSoundData::from_file(<span class="string">"sound.ogg"</span>)<span class="question-mark">?
+		</span>.start_time(clock.time() + <span class="number">4</span>)
+)<span class="question-mark">?</span>;</code></pre></div>
+<h3 id="starting-tweens-on-clock-ticks"><a class="doc-anchor" href="#starting-tweens-on-clock-ticks">§</a>Starting tweens on clock ticks</h3>
+<p>You can also use clocks to set the start time of tweens. In this example, we set
+the playback rate of a sound to start tweening when a clock reaches its third
+tick.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::time::Duration;
+
+<span class="kw">use </span>kira::{
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	Tween,
+	clock::ClockSpeed,
+	StartTime,
+};
+
+<span class="kw">let </span><span class="kw-2">mut </span>manager = AudioManager::&lt;DefaultBackend&gt;::new(AudioManagerSettings::default())<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>clock = manager.add_clock(ClockSpeed::SecondsPerTick(<span class="number">1.0</span>))<span class="question-mark">?</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>sound = manager.play(StaticSoundData::from_file(<span class="string">"sound.ogg"</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+sound.set_playback_rate(
+	<span class="number">0.5</span>,
+	Tween {
+		start_time: StartTime::ClockTime(clock.time() + <span class="number">3</span>),
+		duration: Duration::from_secs(<span class="number">2</span>),
+		..Default::default()
+	},
+);
+clock.start();</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.ClockHandle.html" title="struct kira::clock::ClockHandle">Clock<wbr>Handle</a></div><div class="desc docblock-short">Controls a clock.</div></li><li><div class="item-name"><a class="struct" href="struct.ClockId.html" title="struct kira::clock::ClockId">ClockId</a></div><div class="desc docblock-short">A unique identifier for a clock.</div></li><li><div class="item-name"><a class="struct" href="struct.ClockTime.html" title="struct kira::clock::ClockTime">Clock<wbr>Time</a></div><div class="desc docblock-short">An instant in time associated with a clock.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.ClockSpeed.html" title="enum kira::clock::ClockSpeed">Clock<wbr>Speed</a></div><div class="desc docblock-short">The rate that a <a href="index.html" title="mod kira::clock">clock</a> ticks at.</div></li></ul></section></div></main></body></html>
