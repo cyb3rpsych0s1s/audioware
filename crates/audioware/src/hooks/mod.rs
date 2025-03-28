@@ -29,6 +29,7 @@ pub fn attach(env: &SdkEnv) {
         events::dialog_line_end::attach_hook(env);
         events::dialog_line::attach_hook(env);
         events::weapon::attach_hook(env);
+        events::trigger::attach_hooks(env);
     }
 }
 
@@ -58,6 +59,8 @@ mod offsets {
         pub const WEAPON_PRE_FIRE_EVENT: u32                        = 0x7BC51906;   // 0x140652AB4 (2.13)
         // note: gameaudioeventsStopWeaponFire and gameweaponeventsStopFiringEvent share same underlying address
         pub const WEAPON_STOP_FIRING_EVENT: u32                     = 0xA83C1996;   // 0x140652AF8 (2.13)
+        pub const AREA_ENTERED_EVENT: u32                           = 0x252517CB;   // 0x142863744 (2.21)
+        pub const AREA_EXITED_EVENT: u32                            = 0xF3E11703;   // 0x142863818 (2.21)
     }
     #[cfg(feature = "research")]
     pub use events::*;

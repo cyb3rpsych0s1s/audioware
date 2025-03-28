@@ -2,7 +2,7 @@ use glam::{Quat, Vec3};
 use red4ext_rs::{
     class_kind::Native,
     types::{CName, EntityId, IScriptable, Method, NativeGameInstance, RedArray, Ref, ResRef},
-    RttiSystem, ScriptClass, VoidPtr,
+    NativeRepr, RttiSystem, ScriptClass, VoidPtr,
 };
 
 use super::{
@@ -13,6 +13,18 @@ use super::{
 const EVENT_MANAGER_PADDING: usize = 0x138 - 0xD8;
 const PADDING_UNK148: usize = 0x154 - 0x148;
 const PADDING_UNK157: usize = 0x15B - 0x157;
+
+const PADDING_UNK00: usize = 0x10;
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct EntityGameInterface {
+    unk00: [u8; PADDING_UNK00], // 0
+}
+
+unsafe impl NativeRepr for EntityGameInterface {
+    const NAME: &'static str = "entEntityGameInterface";
+}
 
 #[repr(C)]
 pub struct Entity {
