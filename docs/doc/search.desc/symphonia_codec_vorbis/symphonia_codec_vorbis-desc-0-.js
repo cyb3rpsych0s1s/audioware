@@ -1,0 +1,1 @@
+searchState.loadedDescShard("symphonia_codec_vorbis", 0, "Vorbis decoder.\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.\nMap a Vorbis channel index to an audio buffer channel …")
