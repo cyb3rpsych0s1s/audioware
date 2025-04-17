@@ -1,4 +1,5 @@
 mod car_radio;
+
 pub use car_radio::*;
 mod dialogue;
 pub use dialogue::*;
@@ -9,6 +10,12 @@ pub use radioport::*;
 mod sfx;
 pub use sfx::*;
 
+pub const VOLUME_MAPPING: kira::Mapping<kira::Decibels> = kira::Mapping {
+    input_range: (0.0, 1.0),
+    output_range: (kira::Decibels::SILENCE, kira::Decibels::IDENTITY),
+    easing: kira::Easing::OutPowf(3.0), // more realistic volume scaling
+};
+
 macro_rules! impl_volume {
     ($struct:ident) => {
         pub struct $struct(::kira::modulator::tweener::TweenerHandle);
@@ -18,7 +25,7 @@ macro_rules! impl_volume {
                 manager: &mut ::kira::AudioManager<B>,
             ) -> Result<Self, $crate::error::Error> {
                 let handle = manager.add_modulator(kira::modulator::tweener::TweenerBuilder {
-                    initial_value: 100., // here, RTTI hasn't loaded yet
+                    initial_value: 1., // here, RTTI hasn't loaded yet
                 })?;
                 Ok(Self(handle))
             }
@@ -28,11 +35,7 @@ macro_rules! impl_volume {
                 Ok(kira::effect::volume_control::VolumeControlBuilder::new(
                     kira::Value::<kira::Decibels>::from_modulator(
                         &self.0,
-                        kira::Mapping {
-                            input_range: (0.0, 100.0),
-                            output_range: (kira::Decibels::SILENCE, kira::Decibels::IDENTITY),
-                            easing: kira::Easing::Linear,
-                        },
+                        crate::engine::modulators::VOLUME_MAPPING,
                     ),
                 ))
             }

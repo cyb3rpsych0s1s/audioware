@@ -10,10 +10,10 @@ use audioware_manifest::{Locale, ScnDialogLineType, Source, ValidateFor};
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
+    backend::Backend,
     sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError},
     track::TrackHandle,
-    Tween,
-    {backend::Backend, AudioManager, AudioManagerSettings},
+    AudioManager, AudioManagerSettings, Tween,
 };
 use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
@@ -574,7 +574,7 @@ where
             "MasterVolume" => self
                 .manager
                 .main_track()
-                .set_volume(value.as_decibels(), DEFAULT),
+                .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
             // same for the other settings, except modulators already handles conversion internally
             "SfxVolume" => self.modulators.sfx_volume.update(v, DEFAULT),
             "DialogueVolume" => self.modulators.dialogue_volume.update(v, DEFAULT),
