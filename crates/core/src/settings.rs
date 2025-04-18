@@ -58,7 +58,7 @@ macro_rules! impl_audio_settings {
 
             #[inline]
             fn volume(&self) -> ::kira::Value<::kira::Decibels> {
-                self.volume.clone()
+                self.volume
             }
 
             #[inline]

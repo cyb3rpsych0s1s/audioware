@@ -226,3 +226,18 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
     .Get(GetAllBlackboardDefs().Audioware_Settings)
     .SetInt(GetAllBlackboardDefs().Audioware_Settings.AudioPreset, value, true);
 }
+
+public static exec func TestHalfVolume(game: GameInstance) = TestSpecificVolume(game, 0.5);
+public static exec func TestDoubleVolume(game: GameInstance) = TestSpecificVolume(game, 2.0);
+public static exec func TestNormalVolume(game: GameInstance) = TestSpecificVolume(game, 1.0);
+
+public static exec func TestSpecificVolume(game: GameInstance, amplitude: Float) {
+    let none: EntityID;
+    let ext = new AudioSettingsExt();
+    ext.volume = amplitude;
+    GameInstance.GetAudioSystemExt(game).Play(n"straight_outta_compton", none, n"None", scnDialogLineType.None, ext);
+}
+
+public static exec func StopTestVolume(game: GameInstance) {
+    GameInstance.GetAudioSystemExt(game).Stop(n"straight_outta_compton");
+}
