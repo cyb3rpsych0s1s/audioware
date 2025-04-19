@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use audioware_core::SpatialTrackSettings;
+use audioware_core::{Amplitude, SpatialTrackSettings};
 use audioware_manifest::{Interpolation, Locale, LocaleExt, PlayerGender, Region, Settings};
 use kira::{backend::cpal::CpalBackend, track::SpatialTrackDistances, Easing};
 use red4ext_rs::{
@@ -209,12 +209,16 @@ impl ToSettings for AudioSettingsExt {
             fails!("invalid start position: {e}");
             return None;
         }
+        let Ok(volume) = Amplitude::try_from(self.volume) else {
+            fails!("invalid volume ({})", self.volume);
+            return None;
+        };
         Some(Settings {
             start_time: Default::default(),
             start_position: Some(Duration::from_secs_f32(self.start_position)),
             region: self.region.into_region(),
             r#loop: Some(self.r#loop),
-            volume: Some(self.volume),
+            volume: Some(volume),
             fade_in_tween: self.fade_in.into_interpolation(),
             panning: Some(self.panning),
             playback_rate: Some(kira::PlaybackRate(self.playback_rate as f64)),
