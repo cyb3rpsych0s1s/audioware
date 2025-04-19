@@ -227,9 +227,9 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
     .SetInt(GetAllBlackboardDefs().Audioware_Settings.AudioPreset, value, true);
 }
 
-public static exec func TestHalfVolume(game: GameInstance) = TestSpecificVolume(game, 0.5);
-public static exec func TestDoubleVolume(game: GameInstance) = TestSpecificVolume(game, 2.0);
-public static exec func TestNormalVolume(game: GameInstance) = TestSpecificVolume(game, 1.0);
+public static exec func TestHalfVolume(game: GameInstance)   { TestSpecificVolume(game, 0.5); }
+public static exec func TestDoubleVolume(game: GameInstance) { TestSpecificVolume(game, 2.0); }
+public static exec func TestNormalVolume(game: GameInstance) { TestSpecificVolume(game, 1.0); }
 
 public static exec func TestSpecificVolume(game: GameInstance, amplitude: Float) {
     let none: EntityID;
