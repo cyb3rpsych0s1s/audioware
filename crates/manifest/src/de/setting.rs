@@ -30,7 +30,7 @@ pub struct Settings {
     pub start_time: Option<Duration>,
     #[serde(with = "humantime_serde", default)]
     pub start_position: Option<Duration>,
-    pub volume: Option<f32>,
+    pub volume: Option<Amplitude>,
     pub panning: Option<f32>,
     #[serde(rename = "loop")]
     pub r#loop: Option<bool>,
@@ -55,7 +55,7 @@ macro_rules! impl_with {
             $self = $self.start_position(x);
         }
         if let Some(x) = $settings.volume {
-            $self = $self.volume(x);
+            $self = $self.volume(x.as_decibels());
         }
         if let Some(x) = $settings.panning {
             $self = $self.panning(x);
@@ -254,11 +254,7 @@ macro_rules! impl_from_settings {
                         .unwrap_or_default(),
                     volume: value
                         .volume
-                        .map(|x| {
-                            ::kira::Value::<::kira::Decibels>::Fixed(
-                                Amplitude::try_from(x).unwrap().as_decibels(),
-                            )
-                        })
+                        .map(|x| ::kira::Value::Fixed(x.as_decibels()))
                         .unwrap_or_default(),
                     panning: value
                         .panning
@@ -296,22 +292,12 @@ impl Validate for Settings {
             }
         }
         if let Some(volume) = self.volume {
-            match Amplitude::try_from(volume) {
-                Ok(volume) => {
-                    if volume.as_decibels() > Decibels(85.0) {
-                        errors.push(ValidationError {
-                            which: "volume",
-                            why: "audio should not be louder than 85.0 dB",
-                        });
-                    }
-                }
-                Err(_) => {
-                    errors.push(ValidationError {
-                        which: "volume",
-                        why: "cannot be negative",
-                    });
-                }
-            };
+            if volume.as_decibels() > Decibels(85.0) {
+                errors.push(ValidationError {
+                    which: "volume",
+                    why: "audio should not be louder than 85.0 dB",
+                });
+            }
         }
         if errors.is_empty() {
             return Ok(());

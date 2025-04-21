@@ -4,6 +4,11 @@ use kira::Decibels;
 use serde::Deserialize;
 use snafu::Snafu;
 
+#[inline]
+fn amplitude_to_decibels(amplitude: f32) -> Decibels {
+    Decibels(20. * amplitude.log10())
+}
+
 #[derive(Debug, Snafu)]
 pub enum AmplitudeError {
     #[snafu(display("amplitude must be greater or equal to 0.0"))]
@@ -24,8 +29,9 @@ impl Amplitude {
     pub fn as_decibels(&self) -> Decibels {
         match self.0 {
             1.0 => Decibels::IDENTITY,
+            0.0 => Decibels::SILENCE,
             x if x < 0.0 => unreachable!(),
-            x => x.into(),
+            x => amplitude_to_decibels(x),
         }
     }
 }
@@ -58,7 +64,7 @@ impl From<Decibels> for Amplitude {
 
 impl From<Amplitude> for Decibels {
     fn from(value: Amplitude) -> Self {
-        Self(20. * value.0.log10())
+        amplitude_to_decibels(value.0)
     }
 }
 
@@ -82,6 +88,13 @@ impl<'de> Deserialize<'de> for Amplitude {
             {
                 Amplitude::try_from(value as f32).map_err(E::custom)
             }
+
+            fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Amplitude::try_from(value as f32).map_err(E::custom)
+            }
         }
 
         deserializer.deserialize_any(AmplitudeVisitor)
@@ -91,5 +104,23 @@ impl<'de> Deserialize<'de> for Amplitude {
 impl std::fmt::Display for Amplitude {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use kira::Decibels;
+    use test_case::test_case;
+
+    use crate::Amplitude;
+
+    #[test_case(0.0, Decibels::SILENCE ; "silence")]
+    #[test_case(0.25118864, Decibels(-12.) ; "minus 12dB")]
+    #[test_case(0.70794576, Decibels(-3.) ; "minus 3dB")]
+    #[test_case(1.0, Decibels::IDENTITY ; "identity")]
+    #[test_case(1.4125376, Decibels(3.0) ; "plus 3dB")]
+    #[test_case(3.9810717, Decibels(12.0) ; "plus 12dB")]
+    fn amplitude_as_decibels(given: f32, expected: Decibels) {
+        assert_eq!(amplitude!(given).as_decibels(), expected);
     }
 }
