@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Error"],"struct":["AudioOutsideDepotSnafu","CannotStoreAgnosticIdSnafu","CannotStoreDataSnafu","CannotStoreSettingsSnafu","CannotStoreSubtitleSnafu","ConflictingKeySnafu","DuplicateAcrossDepotsSnafu","IOSnafu","InvalidAudioCaptionSnafu","InvalidAudioID","InvalidAudioSettingsSnafu","InvalidAudioSnafu","NonUniqueKeySnafu"]};
