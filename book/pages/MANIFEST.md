@@ -141,10 +141,10 @@ Of course if you delete audio file(s) while your game is running, Audioware will
 <span style="font-size: 0.85em">Let's be pragmatic 1sec: if you do so, you probably *deserve* your game to crash anyway 😂</span>
 ```
 
-```admonish warning title="NO hot-reloading"
-Since everything is loaded at-most **once** on startup, Audioware does **not** currently provide any way to hot-reload your audio assets in-game.
+```admonish warning title="Hot-reloading"
+Since `1.3.0`, there's a [secret `DEV_ONLY` build](https://github.com/cyb3rpsych0s1s/audioware/releases/latest) available on Github which allows to hot-reload while developping your mod. It's a "best effort" attempt and will work for most replacement(s), but it does not handle all possible edge-cases, so accept that it might crash every once in a while if you make really wide change(s). Also, be prepared to be spammed with logs.
 
-> 💡 To get you going fast during mod development, you can rely on [AudioSettingsExt](./AUDIO_SETTINGS_EXT.md) instead to adjust audio effects until you get them to your liking, then write them down in your [Manifest](./MANIFEST.md).
+> 💡 To get you going fast during mod development, you can also rely on [AudioSettingsExt](./AUDIO_SETTINGS_EXT.md) instead to adjust audio effects until you get them to your liking, then write them down in your [Manifest](./MANIFEST.md).
 ```
 
 [^YAML]: YAML is a file format, see [how to write your own](https://circleci.com/blog/what-is-yaml-a-beginner-s-guide/).
