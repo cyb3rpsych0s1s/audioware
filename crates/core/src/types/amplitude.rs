@@ -20,9 +20,7 @@ pub struct Amplitude(f32);
 
 #[macro_export]
 macro_rules! amplitude {
-    ($v:expr) => {{
-        Amplitude::try_from($v).unwrap()
-    }};
+    ($v:expr) => {{ Amplitude::try_from($v).unwrap() }};
 }
 
 impl Amplitude {

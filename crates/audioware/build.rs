@@ -19,7 +19,10 @@ fn main() {
             .parse()
             .expect("unable to read plugin build version");
     }
-    let red = format!("/// auto-generated plugin version\npub const AUDIOWARE_VERSION: ::red4ext_rs::SemVer = ::red4ext_rs::SemVer::exact({}, {}, {}, {}, {});", version.major, version.minor, version.patch, pre, build);
+    let red = format!(
+        "/// auto-generated plugin version\npub const AUDIOWARE_VERSION: ::red4ext_rs::SemVer = ::red4ext_rs::SemVer::exact({}, {}, {}, {}, {});",
+        version.major, version.minor, version.patch, pre, build
+    );
     let out = std::env::var("OUT_DIR").expect("out dir");
     let out = std::path::PathBuf::from(out).join("version.rs");
     std::fs::write(&out, red).expect("write version.rs to out dir");

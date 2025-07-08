@@ -1,7 +1,7 @@
 use red4ext_rs::{
+    RttiSystem, ScriptClass,
     class_kind::Scripted,
     types::{CName, IScriptable, Ref},
-    RttiSystem, ScriptClass,
 };
 
 use super::GameObject;

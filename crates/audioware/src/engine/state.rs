@@ -1,9 +1,9 @@
-use std::sync::atomic::{AtomicU32, AtomicU8};
+use std::sync::atomic::{AtomicU8, AtomicU32};
 
 use audioware_manifest::{Locale, LocaleExt};
 use red4ext_rs::types::{EntityId, GameInstance};
 
-use crate::{utils::warns, AsGameInstance, PlayerPuppet};
+use crate::{AsGameInstance, PlayerPuppet, utils::warns};
 
 use super::scene::AsEntityExt;
 

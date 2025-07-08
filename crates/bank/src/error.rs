@@ -41,7 +41,12 @@ pub mod validation {
 
     #[derive(Debug, Snafu)]
     pub enum Error {
-        #[snafu(display("duplicate folder across 'r6\\audioware' and 'mods' folders, skipping folder in 'r6\\audioware' ({folder})"), visibility(pub(crate)))]
+        #[snafu(
+            display(
+                "duplicate folder across 'r6\\audioware' and 'mods' folders, skipping folder in 'r6\\audioware' ({folder})"
+            ),
+            visibility(pub(crate))
+        )]
         DuplicateAcrossDepots { folder: String },
         #[snafu(display("CName already exists: {cname}"), visibility(pub(crate)))]
         NonUniqueKey { cname: String },

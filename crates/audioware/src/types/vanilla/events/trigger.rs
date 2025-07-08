@@ -1,7 +1,7 @@
 use red4ext_rs::{
+    ScriptClass,
     class_kind::Native,
     types::{CName, EntityId, IScriptable},
-    ScriptClass,
 };
 
 use crate::{EntityGameInterface, Vector4};

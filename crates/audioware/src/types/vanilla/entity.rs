@@ -1,8 +1,8 @@
 use glam::{Quat, Vec3};
 use red4ext_rs::{
+    NativeRepr, RttiSystem, ScriptClass, VoidPtr,
     class_kind::Native,
     types::{CName, EntityId, IScriptable, Method, NativeGameInstance, RedArray, Ref, ResRef},
-    NativeRepr, RttiSystem, ScriptClass, VoidPtr,
 };
 
 use super::{

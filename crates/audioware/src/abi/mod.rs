@@ -5,17 +5,16 @@ use crossbeam::channel::bounded;
 use kira::backend::cpal::CpalBackend;
 use lifecycle::{Board, Lifecycle, Session, System};
 use red4ext_rs::{
-    exports, methods,
-    types::{CName, EntityId, IScriptable, Opt, Ref},
     ClassExport, Exportable, GameApp, RttiRegistrator, ScriptClass, SdkEnv, StateListener,
-    StateType,
+    StateType, exports, methods,
+    types::{CName, EntityId, IScriptable, Opt, Ref},
 };
 
 use crate::{
-    engine::{eq::Preset, state, Engine},
+    Audioware, EmitterSettings, LocalizationPackage, ToTween, Tween,
+    engine::{Engine, eq::Preset, state},
     queue,
     utils::{fails, lifecycle, warns},
-    Audioware, EmitterSettings, LocalizationPackage, ToTween, Tween,
 };
 
 pub mod command;

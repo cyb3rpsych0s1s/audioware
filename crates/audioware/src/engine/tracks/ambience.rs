@@ -1,13 +1,13 @@
 use kira::{
+    AudioManager, Mix,
     backend::Backend,
     effect::filter::{FilterBuilder, FilterHandle, FilterMode},
     track::{SendTrackBuilder, SendTrackHandle},
-    AudioManager, Mix,
 };
 
 use crate::{
     engine::{
-        eq::{HighPass, LowPass, EQ},
+        eq::{EQ, HighPass, LowPass},
         modulators::{Modulators, Parameter},
     },
     error::Error,

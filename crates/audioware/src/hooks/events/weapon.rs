@@ -4,7 +4,7 @@ pub fn attach_hook(env: &red4ext_rs::SdkEnv) {
 }
 
 mod pre_fire {
-    use crate::{attach_native_event, PreFireEvent};
+    use crate::{PreFireEvent, attach_native_event};
     use red4ext_rs::types::IScriptable;
 
     use red4ext_rs::ScriptClass;
@@ -19,18 +19,20 @@ mod pre_fire {
         a2: *mut PreFireEvent,
         cb: unsafe extern "C" fn(a1: *mut IScriptable, a2: *mut PreFireEvent),
     ) {
-        let event = &*a2;
-        let PreFireEvent { .. } = event;
-        crate::utils::lifecycle!("intercepted {}", PreFireEvent::NAME);
-        cb(a1, a2);
+        unsafe {
+            let event = &*a2;
+            let PreFireEvent { .. } = event;
+            crate::utils::lifecycle!("intercepted {}", PreFireEvent::NAME);
+            cb(a1, a2);
+        }
     }
 }
 
 mod stop_firing {
-    use crate::{attach_native_event, Event, StopFiringEvent, StopWeaponFire};
+    use crate::{Event, StopFiringEvent, StopWeaponFire, attach_native_event};
+    use red4ext_rs::ScriptClass;
     use red4ext_rs::types::CName;
     use red4ext_rs::types::IScriptable;
-    use red4ext_rs::ScriptClass;
 
     attach_native_event!(
         super::super::super::offsets::WEAPON_STOP_FIRING_EVENT,
@@ -42,22 +44,24 @@ mod stop_firing {
         a2: *mut Event,
         cb: unsafe extern "C" fn(a1: *mut IScriptable, a2: *mut Event),
     ) {
-        let event = &*a2;
-        if event
-            .as_ref()
-            .class()
-            .name()
-            .eq(&CName::new(StopFiringEvent::NAME))
-        {
-            crate::utils::lifecycle!("intercepted {}", StopFiringEvent::NAME);
-        } else if event
-            .as_ref()
-            .class()
-            .name()
-            .eq(&CName::new(StopWeaponFire::NAME))
-        {
-            crate::utils::lifecycle!("intercepted {}", StopWeaponFire::NAME);
+        unsafe {
+            let event = &*a2;
+            if event
+                .as_ref()
+                .class()
+                .name()
+                .eq(&CName::new(StopFiringEvent::NAME))
+            {
+                crate::utils::lifecycle!("intercepted {}", StopFiringEvent::NAME);
+            } else if event
+                .as_ref()
+                .class()
+                .name()
+                .eq(&CName::new(StopWeaponFire::NAME))
+            {
+                crate::utils::lifecycle!("intercepted {}", StopWeaponFire::NAME);
+            }
+            cb(a1, a2);
         }
-        cb(a1, a2);
     }
 }

@@ -1,6 +1,6 @@
 use red4ext_rs::{
-    types::{IScriptable, ISerializable, Ref},
     NativeRepr,
+    types::{IScriptable, ISerializable, Ref},
 };
 
 const PADDING_45: usize = 0x48 - 0x45;

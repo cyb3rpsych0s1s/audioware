@@ -78,11 +78,11 @@ impl AsRef<CName> for Key {
 impl std::fmt::Display for Key {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Key::Unique(key) => write!(f, "unique :{}", key),
-            Key::Gender(key) => write!(f, "gender :{}", key),
-            Key::Locale(key) => write!(f, "locale :{}", key),
+            Key::Unique(key) => write!(f, "unique :{key}"),
+            Key::Gender(key) => write!(f, "gender :{key}"),
+            Key::Locale(key) => write!(f, "locale :{key}"),
             #[rustfmt::skip]
-            Key::Both(key) =>     write!(f, "both   :{}", key),
+            Key::Both(key) =>     write!(f, "both   :{key}"),
         }
     }
 }

@@ -1,6 +1,6 @@
 use std::{hash::Hash, time::Duration};
 
-use red4ext_rs::{class_kind::Scripted, log, types::Ref, PluginOps, ScriptClass};
+use red4ext_rs::{PluginOps, ScriptClass, class_kind::Scripted, log, types::Ref};
 
 use crate::Audioware;
 

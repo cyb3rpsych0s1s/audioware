@@ -59,8 +59,8 @@ impl Hash for Id {
 impl std::fmt::Display for Id {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Id::OnDemand(usage, ..) => write!(f, "|on-demand| {}", usage),
-            Id::InMemory(key, ..) => write!(f, "|in-memory| {}", key),
+            Id::OnDemand(usage, ..) => write!(f, "|on-demand| {usage}"),
+            Id::InMemory(key, ..) => write!(f, "|in-memory| {key}"),
         }
     }
 }

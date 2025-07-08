@@ -1,8 +1,8 @@
 //! Audio settings.
 
 use kira::{
-    track::{SpatialTrackBuilder, SpatialTrackDistances},
     Easing,
+    track::{SpatialTrackBuilder, SpatialTrackDistances},
 };
 
 #[derive(Debug, Clone)]

@@ -3,7 +3,7 @@
 use core::fmt;
 use std::{hash::Hash, ops::Not};
 
-use red4ext_rs::{class_kind::Scripted, types::Ref, ScriptClass};
+use red4ext_rs::{ScriptClass, class_kind::Scripted, types::Ref};
 
 use super::{ElasticTween, LinearTween, ToEasing, Tween};
 

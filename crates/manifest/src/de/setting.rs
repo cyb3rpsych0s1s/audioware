@@ -3,11 +3,11 @@ use std::time::Duration;
 use audioware_core::{Amplitude, With};
 use either::Either;
 use kira::{
-    sound::{
-        static_sound::StaticSoundData, streaming::StreamingSoundData, EndPosition, FromFileError,
-        IntoOptionalRegion, PlaybackPosition,
-    },
     Decibels, PlaybackRate, Semitones, StartTime, Tween,
+    sound::{
+        EndPosition, FromFileError, IntoOptionalRegion, PlaybackPosition,
+        static_sound::StaticSoundData, streaming::StreamingSoundData,
+    },
 };
 use serde::Deserialize;
 

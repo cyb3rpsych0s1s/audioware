@@ -1,4 +1,4 @@
-use red4ext_rs::{class_kind::Native, types::IScriptable, ScriptClass};
+use red4ext_rs::{ScriptClass, class_kind::Native, types::IScriptable};
 
 use super::Event;
 

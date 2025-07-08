@@ -6,9 +6,9 @@ pub fn attach_hooks(env: &SdkEnv) {
 }
 
 mod area_entered {
-    use crate::{attach_native_event, AreaEnteredEvent, TriggerEvent};
-    use red4ext_rs::types::IScriptable;
+    use crate::{AreaEnteredEvent, TriggerEvent, attach_native_event};
     use red4ext_rs::ScriptClass;
+    use red4ext_rs::types::IScriptable;
 
     attach_native_event!(
         super::super::super::offsets::AREA_ENTERED_EVENT,
@@ -20,26 +20,28 @@ mod area_entered {
         a2: *mut AreaEnteredEvent,
         cb: unsafe extern "C" fn(a1: *mut IScriptable, a2: *mut AreaEnteredEvent),
     ) {
-        let event = &*a2;
-        let TriggerEvent {
-            trigger_id,
-            component_name,
-            ..
-        } = event.as_ref();
-        crate::utils::lifecycle!(
-            "intercepted {}:
+        unsafe {
+            let event = &*a2;
+            let TriggerEvent {
+                trigger_id,
+                component_name,
+                ..
+            } = event.as_ref();
+            crate::utils::lifecycle!(
+                "intercepted {}:
     - trigger_id: {trigger_id}
     - component_name: {component_name}",
-            AreaEnteredEvent::NAME
-        );
-        cb(a1, a2);
+                AreaEnteredEvent::NAME
+            );
+            cb(a1, a2);
+        }
     }
 }
 
 mod area_exited {
-    use crate::{attach_native_event, AreaExitedEvent, TriggerEvent};
-    use red4ext_rs::types::IScriptable;
+    use crate::{AreaExitedEvent, TriggerEvent, attach_native_event};
     use red4ext_rs::ScriptClass;
+    use red4ext_rs::types::IScriptable;
 
     attach_native_event!(
         super::super::super::offsets::AREA_EXITED_EVENT,
@@ -51,18 +53,20 @@ mod area_exited {
         a2: *mut AreaExitedEvent,
         cb: unsafe extern "C" fn(a1: *mut IScriptable, a2: *mut AreaExitedEvent),
     ) {
-        let event = &*a2;
-        let TriggerEvent {
-            trigger_id,
-            component_name,
-            ..
-        } = event.as_ref();
-        crate::utils::lifecycle!(
-            "intercepted {}:
+        unsafe {
+            let event = &*a2;
+            let TriggerEvent {
+                trigger_id,
+                component_name,
+                ..
+            } = event.as_ref();
+            crate::utils::lifecycle!(
+                "intercepted {}:
     - trigger_id: {trigger_id}
     - component_name: {component_name}",
-            AreaExitedEvent::NAME
-        );
-        cb(a1, a2);
+                AreaExitedEvent::NAME
+            );
+            cb(a1, a2);
+        }
     }
 }

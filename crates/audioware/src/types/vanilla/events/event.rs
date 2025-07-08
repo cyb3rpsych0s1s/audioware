@@ -1,9 +1,9 @@
 use std::fmt;
 
 use red4ext_rs::{
+    NativeRepr, ScriptClass,
     class_kind::Native,
     types::{CName, IScriptable, RedArray},
-    NativeRepr, ScriptClass,
 };
 
 #[derive(Debug)]

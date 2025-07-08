@@ -7,16 +7,16 @@ use std::{
 
 use audioware_core::{Amplitude, SpatialTrackSettings};
 use audioware_manifest::{Interpolation, Locale, LocaleExt, PlayerGender, Region, Settings};
-use kira::{backend::cpal::CpalBackend, track::SpatialTrackDistances, Easing};
+use kira::{Easing, backend::cpal::CpalBackend, track::SpatialTrackDistances};
 use red4ext_rs::{
+    ScriptClass,
     class_kind::{Native, Scripted},
     types::{CName, EntityId, GameInstance, IScriptable, Opt, Ref, StaticArray},
-    ScriptClass,
 };
 
 use crate::{
-    abi::fails, engine::Engine, error::ValidationError, get_player, AsEntity, ElasticTween,
-    EmitterDistances, EmitterSettings, Entity, LinearTween, ToEasing, Tween, AUDIOWARE_VERSION,
+    AUDIOWARE_VERSION, AsEntity, ElasticTween, EmitterDistances, EmitterSettings, Entity,
+    LinearTween, ToEasing, Tween, abi::fails, engine::Engine, error::ValidationError, get_player,
 };
 
 /// Represents a region in time.

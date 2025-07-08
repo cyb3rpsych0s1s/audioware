@@ -1,9 +1,9 @@
 use core::fmt;
 
 use red4ext_rs::{
+    NativeRepr, ScriptClass,
     class_kind::Native,
     types::{CName, EntityId, IScriptable},
-    NativeRepr, ScriptClass,
 };
 
 use super::Event;

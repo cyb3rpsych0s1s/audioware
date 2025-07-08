@@ -1,7 +1,7 @@
 use red4ext_rs::{
+    RttiSystem, ScriptClass,
     class_kind::Native,
     types::{CName, IScriptable, LocalizationString, Ref},
-    RttiSystem, ScriptClass,
 };
 
 use super::{Entity, GamePlayerSocket, RedTagList};

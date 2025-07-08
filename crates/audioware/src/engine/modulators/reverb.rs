@@ -1,8 +1,8 @@
 use kira::{
-    backend::Backend,
-    effect::{reverb::ReverbBuilder, EffectBuilder},
-    modulator::tweener::{TweenerBuilder, TweenerHandle},
     Mapping, Mix, Tween, Value,
+    backend::Backend,
+    effect::{EffectBuilder, reverb::ReverbBuilder},
+    modulator::tweener::{TweenerBuilder, TweenerHandle},
 };
 
 use super::Parameter;

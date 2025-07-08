@@ -1,9 +1,9 @@
 use kira::{
-    sound::{
-        static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError,
-        PlaybackState,
-    },
     Tween,
+    sound::{
+        FromFileError, PlaybackState, static_sound::StaticSoundHandle,
+        streaming::StreamingSoundHandle,
+    },
 };
 use red4ext_rs::types::CName;
 

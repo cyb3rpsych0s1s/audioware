@@ -1,9 +1,9 @@
 use core::fmt;
 
 use red4ext_rs::{
+    NativeRepr, ScriptClass,
     class_kind::Native,
     types::{CName, IScriptable, RedArray, RedString, TweakDbId, Variant, WeakRef},
-    NativeRepr, ScriptClass,
 };
 
 use crate::types::{GameObject, Vector3};

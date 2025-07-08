@@ -1,4 +1,4 @@
-use red4ext_rs::{log, types::CName, RttiSystem};
+use red4ext_rs::{RttiSystem, log, types::CName};
 
 use crate::Audioware;
 

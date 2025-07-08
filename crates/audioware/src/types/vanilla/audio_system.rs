@@ -1,7 +1,7 @@
 use red4ext_rs::{
+    RttiSystem, ScriptClass,
     class_kind::Native,
     types::{CName, EntityId, IScriptable, Method, Opt, Ref},
-    RttiSystem, ScriptClass,
 };
 
 #[repr(C)]

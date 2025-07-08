@@ -1,13 +1,13 @@
 //! Bank storage for data and settings.
 
 use std::{
-    collections::{hash_map::Keys, HashMap},
+    collections::{HashMap, hash_map::Keys},
     hash::Hash,
     sync::OnceLock,
 };
 
 use either::Either;
-use kira::sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError};
+use kira::sound::{FromFileError, static_sound::StaticSoundData, streaming::StreamingSoundData};
 
 use audioware_manifest::{
     DialogLine, Locale, PlayerGender, Settings as ManifestSettings, WrittenLocale,
@@ -187,13 +187,13 @@ impl BankSubtitles for Banks {
         [
             self.single_subs
                 .iter()
-                .filter(|x| x.0 .1 == locale)
-                .map(|x| (x.0 .0, (x.1.msg.clone(), x.1.msg.clone())))
+                .filter(|x| x.0.1 == locale)
+                .map(|x| (x.0.0, (x.1.msg.clone(), x.1.msg.clone())))
                 .collect::<Vec<_>>(),
             self.dual_subs
                 .iter()
-                .filter(|x| x.0 .1 == locale)
-                .map(|x| (x.0 .0, (x.1.msg.clone(), x.1.msg.clone())))
+                .filter(|x| x.0.1 == locale)
+                .map(|x| (x.0.0, (x.1.msg.clone(), x.1.msg.clone())))
                 .collect::<Vec<_>>(),
         ]
         .concat()

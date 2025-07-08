@@ -2,9 +2,8 @@
 #![allow(dead_code)]
 
 use red4ext_rs::{
-    log,
+    IntoRepr, RttiSystem, log,
     types::{CName, ScriptRef},
-    IntoRepr, RttiSystem,
 };
 
 use crate::Audioware;

@@ -2,8 +2,8 @@ use kira::track::SpatialTrackDistances;
 use red4ext_rs::types::{EntityId, GameInstance};
 
 use crate::{
-    error::{Error, SceneError},
     AIActionHelper, AsEntity, AsGameInstance, AsTimeDilatable, GameObject, TimeDilatable, Vector4,
+    error::{Error, SceneError},
 };
 
 use super::super::AsEntityExt;

@@ -3,12 +3,12 @@ use car_radio::CarRadio;
 use dialogue::Dialogue;
 use holocall::Holocall;
 use kira::{
-    sound::{
-        static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError,
-        PlaybackState,
-    },
     Tween,
-    {backend::Backend, AudioManager},
+    sound::{
+        FromFileError, PlaybackState, static_sound::StaticSoundHandle,
+        streaming::StreamingSoundHandle,
+    },
+    {AudioManager, backend::Backend},
 };
 use music::Music;
 use radioport::Radioport;
@@ -19,7 +19,7 @@ use v::V;
 
 use crate::error::Error;
 
-use super::{modulators::Modulators, tweens::IMMEDIATELY, DilationUpdate};
+use super::{DilationUpdate, modulators::Modulators, tweens::IMMEDIATELY};
 
 pub mod ambience;
 mod car_radio;

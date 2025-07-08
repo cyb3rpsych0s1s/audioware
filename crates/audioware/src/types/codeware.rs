@@ -1,11 +1,10 @@
 //! Interop types for [Codeware](https://github.com/psiberx/cp2077-codeware/wiki).
 
 use red4ext_rs::{
-    call,
+    PluginOps, ScriptClass, call,
     class_kind::{Native, Scripted},
     log,
     types::{CName, Class, EntityId, IScriptable, Ref, ResRef, TweakDbId},
-    PluginOps, ScriptClass,
 };
 
 use crate::Audioware;
