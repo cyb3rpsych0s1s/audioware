@@ -4,17 +4,17 @@ use audioware_bank::{BankData, Banks, Id};
 use audioware_core::With;
 use audioware_manifest::ValidateFor;
 use dashmap::{
-    mapref::{multiple::RefMutMulti, one::RefMut},
     DashMap,
+    mapref::{multiple::RefMutMulti, one::RefMut},
 };
 use either::Either;
 use kira::{
+    Tween,
     sound::{
+        FromFileError,
         static_sound::{StaticSoundData, StaticSoundHandle},
         streaming::{StreamingSoundData, StreamingSoundHandle},
-        FromFileError,
     },
-    Tween,
 };
 use parking_lot::RwLock;
 use red4ext_rs::types::{CName, EntityId};
@@ -22,10 +22,10 @@ use slot::EmitterSlot;
 use slots::EmitterSlots;
 
 use crate::{
+    Vector4,
     engine::{tracks::Spatial, tweens::IMMEDIATELY},
     error::{EngineError, Error, SceneError},
     utils::{lifecycle, warns},
-    Vector4,
 };
 
 mod emitter;

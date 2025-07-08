@@ -10,18 +10,18 @@ use std::{
 use audioware_core::With;
 use audioware_manifest::*;
 use either::Either;
-use kira::sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError};
+use kira::sound::{FromFileError, static_sound::StaticSoundData, streaming::StreamingSoundData};
 use red4ext_rs::types::{CName, CNamePool};
 use snafu::ensure;
 
 use crate::{
-    error::validation::{self, *},
     Id,
+    error::validation::{self, *},
 };
 
 use super::{
-    conflict::{Conflict, Conflictual},
     BothKey, Error, GenderKey, Key, LocaleKey, UniqueKey,
+    conflict::{Conflict, Conflictual},
 };
 
 /// Ensure no duplicate mod folder name across depots: `r6\audioware` and `mods`.

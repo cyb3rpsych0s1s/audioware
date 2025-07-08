@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use kira::{
-    sound::{IntoOptionalRegion, PlaybackPosition},
     Decibels, PlaybackRate, StartTime, Tween, Value,
+    sound::{IntoOptionalRegion, PlaybackPosition},
 };
 
 mod data;

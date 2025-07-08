@@ -7,9 +7,9 @@ use std::{
 
 use audioware_core::{AudioDuration, With};
 use audioware_manifest::{
-    error::{CannotParseManifest, CannotReadManifest},
     Depot, DialogLine, Locale, Manifest, Mod, PlayerGender, R6Audioware, REDmod, Settings,
     SpokenLocale,
+    error::{CannotParseManifest, CannotReadManifest},
 };
 use either::Either;
 use ensure::*;

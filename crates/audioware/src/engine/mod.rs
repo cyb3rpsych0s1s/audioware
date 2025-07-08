@@ -10,10 +10,10 @@ use audioware_manifest::{Locale, ScnDialogLineType, Source, ValidateFor};
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
-    backend::Backend,
-    sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError},
-    track::TrackHandle,
     AudioManager, AudioManagerSettings, Tween,
+    backend::Backend,
+    sound::{FromFileError, static_sound::StaticSoundData, streaming::StreamingSoundData},
+    track::TrackHandle,
 };
 use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
@@ -23,10 +23,10 @@ use tracks::Tracks;
 use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
 use crate::{
+    AsAudioSystem, AsGameInstance, AsGameObjectExt, GameObject,
     error::{EngineError, Error},
     propagate_subtitles,
     utils::{fails, lifecycle, success, warns},
-    AsAudioSystem, AsGameInstance, AsGameObjectExt, GameObject,
 };
 
 pub use scene::ToDistances;
@@ -187,7 +187,9 @@ where
                         duration,
                     );
                 } else if *key.source() == Source::Voices {
-                    warns!("cannot propagate subtitles for voice, emitterName must be defined: {event_name}");
+                    warns!(
+                        "cannot propagate subtitles for voice, emitterName must be defined: {event_name}"
+                    );
                 }
             }
             Err(e) => {
@@ -271,7 +273,9 @@ where
                         duration,
                     )
                 } else if *key.source() == Source::Voices {
-                    warns!("cannot propagate subtitles for voice, both entityID and emitterName must be defined: {event_name}");
+                    warns!(
+                        "cannot propagate subtitles for voice, both entityID and emitterName must be defined: {event_name}"
+                    );
                 }
             }
             Err(e) => {
@@ -336,7 +340,9 @@ where
                                     duration,
                                 );
                             } else if *key.source() == Source::Voices {
-                                warns!("cannot propagate subtitles for voice, couldn't resolve emitter name: {sound_name} [{entity_id}]");
+                                warns!(
+                                    "cannot propagate subtitles for voice, couldn't resolve emitter name: {sound_name} [{entity_id}]"
+                                );
                             }
                         }
                     };
@@ -637,8 +643,8 @@ where
         BANKS.get()
     }
     #[cfg(feature = "hot-reload")]
-    pub fn banks<'a>(
-    ) -> parking_lot::lock_api::RwLockReadGuard<'a, parking_lot::RawRwLock, Option<Banks>> {
+    pub fn banks<'a>()
+    -> parking_lot::lock_api::RwLockReadGuard<'a, parking_lot::RawRwLock, Option<Banks>> {
         BANKS.read()
     }
 }

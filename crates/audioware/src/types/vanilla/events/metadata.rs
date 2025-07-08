@@ -1,6 +1,6 @@
 use red4ext_rs::{
-    types::{CName, ISerializable, RedArray},
     NativeRepr,
+    types::{CName, ISerializable, RedArray},
 };
 
 use crate::types::Vector3;

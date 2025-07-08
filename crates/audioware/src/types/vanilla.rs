@@ -3,8 +3,8 @@
 #![allow(dead_code)]
 
 use red4ext_rs::{
-    types::{CName, EntityId, GameEngine, GameInstance, Ref},
     NativeRepr, RttiSystem, ScriptClass,
+    types::{CName, EntityId, GameEngine, GameInstance, Ref},
 };
 
 mod audio_system;

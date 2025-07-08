@@ -92,18 +92,40 @@ impl std::fmt::Display for Lifecycle {
             Lifecycle::SetVolume { setting, value } => {
                 write!(f, "set volume {} {value}", setting.as_str())
             }
-            Lifecycle::SetListenerDilation { value: dilation, reason, ease_in_curve } => {
-                write!(f, "set listener dilation {dilation}, reason: {reason}, curve: {ease_in_curve}")
+            Lifecycle::SetListenerDilation {
+                value: dilation,
+                reason,
+                ease_in_curve,
+            } => {
+                write!(
+                    f,
+                    "set listener dilation {dilation}, reason: {reason}, curve: {ease_in_curve}"
+                )
             }
-            Lifecycle::UnsetListenerDilation { reason, ease_out_curve } => write!(f, "unset listener dilation, reason: {reason}, curve: {ease_out_curve}"),
+            Lifecycle::UnsetListenerDilation {
+                reason,
+                ease_out_curve,
+            } => write!(
+                f,
+                "unset listener dilation, reason: {reason}, curve: {ease_out_curve}"
+            ),
             Lifecycle::SetEmitterDilation {
                 reason,
                 entity_id,
                 value: dilation,
                 ease_in_curve,
-            } => write!(f, "set emitter dilation {dilation}, reason: {reason}, curve: {ease_in_curve} [{entity_id}]"),
-            Lifecycle::UnsetEmitterDilation { entity_id,  ease_out_curve } => {
-                write!(f, "unset emitter dilation, curve: {ease_out_curve} [{entity_id}]")
+            } => write!(
+                f,
+                "set emitter dilation {dilation}, reason: {reason}, curve: {ease_in_curve} [{entity_id}]"
+            ),
+            Lifecycle::UnsetEmitterDilation {
+                entity_id,
+                ease_out_curve,
+            } => {
+                write!(
+                    f,
+                    "unset emitter dilation, curve: {ease_out_curve} [{entity_id}]"
+                )
             }
             Lifecycle::ReportInitialization => write!(f, "report initialization"),
             #[cfg(feature = "hot-reload")]

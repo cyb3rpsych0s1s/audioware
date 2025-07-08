@@ -1,9 +1,9 @@
 use red4ext_rs::{
+    NativeRepr, RttiSystem, ScriptClass,
     class_kind::{Native, Scripted},
     types::{
         CName, Cruid, EngineTime, EntityId, IScriptable, ItemId, RedArray, Ref, TweakDbId, WeakRef,
     },
-    NativeRepr, RttiSystem, ScriptClass,
 };
 
 use super::{AsGameObjectExt, Entity, GameObject};

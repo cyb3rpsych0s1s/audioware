@@ -1,7 +1,7 @@
-use audioware_core::{amplitude, Amplitude};
+use audioware_core::{Amplitude, amplitude};
 use kira::{
     track::{TrackBuilder, TrackHandle},
-    {backend::Backend, AudioManager},
+    {AudioManager, backend::Backend},
 };
 
 use crate::{

@@ -1,9 +1,9 @@
 use core::fmt;
 
 use red4ext_rs::{
+    ScriptClass,
     class_kind::Native,
     types::{CName, IScriptable, RedArray, WeakRef},
-    ScriptClass,
 };
 
 use super::Event;

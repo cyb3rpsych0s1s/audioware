@@ -7,7 +7,7 @@ use serde::Deserialize;
 
 use crate::{Locale, ScnDialogLineType};
 
-use super::{paths_into_audios, Audio, DialogLine, GenderBased, Settings, Usage};
+use super::{Audio, DialogLine, GenderBased, Settings, Usage, paths_into_audios};
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]

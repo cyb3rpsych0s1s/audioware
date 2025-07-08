@@ -1,8 +1,8 @@
 use kira::{
+    AudioManager, Decibels,
     backend::Backend,
     effect::filter::{FilterBuilder, FilterMode},
     track::{TrackBuilder, TrackHandle},
-    AudioManager, Decibels,
 };
 
 use crate::{

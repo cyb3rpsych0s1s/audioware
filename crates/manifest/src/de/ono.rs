@@ -2,7 +2,7 @@
 
 use serde::Deserialize;
 
-use super::{any_audios_into_audios, AnyAudio, Audio, GenderBased, Settings, Usage};
+use super::{AnyAudio, Audio, GenderBased, Settings, Usage, any_audios_into_audios};
 
 #[derive(Debug, Deserialize)]
 pub struct Ono {

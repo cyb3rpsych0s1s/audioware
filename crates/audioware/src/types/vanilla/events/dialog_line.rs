@@ -1,7 +1,7 @@
 use red4ext_rs::{
+    NativeRepr, ScriptClass,
     class_kind::Native,
     types::{CName, Cruid, IScriptable},
-    NativeRepr, ScriptClass,
 };
 
 use super::{Event, VoiceoverContext, VoiceoverExpression};

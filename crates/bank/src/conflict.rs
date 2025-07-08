@@ -36,12 +36,12 @@ impl Conflict<GenderKey> for HashSet<Id> {
                 | Key::Unique(UniqueKey(cname))
                     if cname == &other.0 =>
                 {
-                    return true
+                    return true;
                 }
                 Key::Gender(GenderKey(cname, gender))
                     if cname == &other.0 && gender == &other.1 =>
                 {
-                    return true
+                    return true;
                 }
                 _ => continue,
             }
@@ -60,10 +60,10 @@ impl Conflict<LocaleKey> for HashSet<Id> {
                 | Key::Both(BothKey(key, ..))
                     if key == &other.0 =>
                 {
-                    return true
+                    return true;
                 }
                 Key::Locale(LocaleKey(key, locale)) if key == &other.0 && locale == &other.1 => {
-                    return true
+                    return true;
                 }
                 _ => continue,
             }
@@ -82,12 +82,12 @@ impl Conflict<BothKey> for HashSet<Id> {
                 | Key::Locale(LocaleKey(key, _))
                     if key == &other.0 =>
                 {
-                    return true
+                    return true;
                 }
                 Key::Both(BothKey(key, locale, gender))
                     if key == &other.0 && locale == &other.1 && gender == &other.2 =>
                 {
-                    return true
+                    return true;
                 }
                 _ => continue,
             }

@@ -2,7 +2,7 @@ use std::{mem, ops::Not};
 
 use red4ext_rs::types::{CName, IScriptable, StackFrame};
 
-use crate::{attach_native_func, engine::queue::notify, utils::intercept, Entity};
+use crate::{Entity, attach_native_func, engine::queue::notify, utils::intercept};
 
 use red4ext_rs::{SdkEnv, VoidPtr};
 
@@ -36,27 +36,28 @@ unsafe extern "C" fn detour_set(
     a4: VoidPtr,
     cb: unsafe extern "C" fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr),
 ) {
-    let frame = &mut *f;
-    let state = frame.args_state();
+    unsafe {
+        let frame = &mut *f;
+        let state = frame.args_state();
 
-    let x = i
-        .is_null()
-        .not()
-        .then(|| &*i)
-        .map(|x| mem::transmute::<&IScriptable, &Entity>(x))
-        .map(|x| x.entity_id);
+        let x = i
+            .is_null()
+            .not()
+            .then(|| &*i)
+            .map(|x| mem::transmute::<&IScriptable, &Entity>(x))
+            .map(|x| x.entity_id);
 
-    let reason: CName = unsafe { StackFrame::get_arg(frame) };
-    let dilation: f32 = unsafe { StackFrame::get_arg(frame) };
-    let duration: f32 = unsafe { StackFrame::get_arg(frame) };
-    let ease_in_curve: CName = unsafe { StackFrame::get_arg(frame) };
-    let ease_out_curve: CName = unsafe { StackFrame::get_arg(frame) };
-    let ignore_global_dilation: bool = unsafe { StackFrame::get_arg(frame) };
-    let use_real_time: bool = unsafe { StackFrame::get_arg(frame) };
-    frame.restore_args(state);
+        let reason: CName = StackFrame::get_arg(frame);
+        let dilation: f32 = StackFrame::get_arg(frame);
+        let duration: f32 = StackFrame::get_arg(frame);
+        let ease_in_curve: CName = StackFrame::get_arg(frame);
+        let ease_out_curve: CName = StackFrame::get_arg(frame);
+        let ignore_global_dilation: bool = StackFrame::get_arg(frame);
+        let use_real_time: bool = StackFrame::get_arg(frame);
+        frame.restore_args(state);
 
-    intercept!(
-        "TimeDilatable::SetIndividualTimeDilation {x:?}:
+        intercept!(
+            "TimeDilatable::SetIndividualTimeDilation {x:?}:
 - reason: {reason}
 - dilation: {dilation}
 - duration: {duration}
@@ -64,16 +65,17 @@ unsafe extern "C" fn detour_set(
 - ease_out_curve: {ease_out_curve}
 - ignore_global_dilation: {ignore_global_dilation}
 - use_real_time: {use_real_time}",
-    );
-    if let Some(entity_id) = x {
-        notify(crate::abi::lifecycle::Lifecycle::SetEmitterDilation {
-            reason,
-            entity_id,
-            value: dilation,
-            ease_in_curve,
-        });
+        );
+        if let Some(entity_id) = x {
+            notify(crate::abi::lifecycle::Lifecycle::SetEmitterDilation {
+                reason,
+                entity_id,
+                value: dilation,
+                ease_in_curve,
+            });
+        }
+        cb(i, f, a3, a4);
     }
-    cb(i, f, a3, a4);
 }
 
 unsafe extern "C" fn detour_unset(
@@ -83,28 +85,30 @@ unsafe extern "C" fn detour_unset(
     a4: VoidPtr,
     cb: unsafe extern "C" fn(i: *mut IScriptable, f: *mut StackFrame, a3: VoidPtr, a4: VoidPtr),
 ) {
-    let frame = &mut *f;
-    let state = frame.args_state();
+    unsafe {
+        let frame = &mut *f;
+        let state = frame.args_state();
 
-    let x = i
-        .is_null()
-        .not()
-        .then(|| &*i)
-        .map(|x| mem::transmute::<&IScriptable, &Entity>(x))
-        .map(|x| x.entity_id);
+        let x = i
+            .is_null()
+            .not()
+            .then(|| &*i)
+            .map(|x| mem::transmute::<&IScriptable, &Entity>(x))
+            .map(|x| x.entity_id);
 
-    let ease_out_curve: CName = unsafe { StackFrame::get_arg(frame) };
-    frame.restore_args(state);
+        let ease_out_curve: CName = StackFrame::get_arg(frame);
+        frame.restore_args(state);
 
-    intercept!(
-        "TimeDilatable::UnsetIndividualTimeDilation {x:?}:
+        intercept!(
+            "TimeDilatable::UnsetIndividualTimeDilation {x:?}:
 - ease_out_curve: {ease_out_curve}",
-    );
-    if let Some(entity_id) = x {
-        notify(crate::abi::lifecycle::Lifecycle::UnsetEmitterDilation {
-            entity_id,
-            ease_out_curve,
-        });
+        );
+        if let Some(entity_id) = x {
+            notify(crate::abi::lifecycle::Lifecycle::UnsetEmitterDilation {
+                entity_id,
+                ease_out_curve,
+            });
+        }
+        cb(i, f, a3, a4);
     }
-    cb(i, f, a3, a4);
 }

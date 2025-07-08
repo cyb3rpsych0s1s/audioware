@@ -1,9 +1,9 @@
 use std::{fmt, ops::Not};
 
 use red4ext_rs::{
+    ScriptClass,
     class_kind::Native,
     types::{CName, Cruid, IScriptable, Ref},
-    ScriptClass,
 };
 
 use super::Event;

@@ -1,7 +1,7 @@
 use red4ext_rs::{
+    RttiSystem, ScriptClass,
     class_kind::Native,
     types::{CName, Cruid, IScriptable, Ref, WeakRef},
-    RttiSystem, ScriptClass,
 };
 use std::mem;
 

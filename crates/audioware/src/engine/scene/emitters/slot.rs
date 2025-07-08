@@ -1,7 +1,7 @@
 use either::Either;
 use kira::{
-    sound::{static_sound::StaticSoundData, streaming::StreamingSoundData, FromFileError},
     PlaySoundError, Tween,
+    sound::{FromFileError, static_sound::StaticSoundData, streaming::StreamingSoundData},
 };
 use red4ext_rs::types::CName;
 

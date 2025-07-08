@@ -1,7 +1,7 @@
 use audioware_manifest::ScnDialogLineType;
 use red4ext_rs::{
-    types::{CName, EntityId},
     RttiSystem,
+    types::{CName, EntityId},
 };
 
 /// Trigger subtitles display in Redscript from Rust.

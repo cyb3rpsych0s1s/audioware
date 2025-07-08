@@ -1,22 +1,22 @@
 use std::{
     sync::{
-        atomic::{AtomicU32, Ordering},
         LazyLock, OnceLock,
+        atomic::{AtomicU32, Ordering},
     },
     thread::JoinHandle,
     time::Duration,
 };
 
 use bitflags::bitflags;
-use crossbeam::channel::{bounded, tick, Receiver, Sender};
+use crossbeam::channel::{Receiver, Sender, bounded, tick};
 use kira::{
-    backend::cpal::{CpalBackend, CpalBackendSettings},
     AudioManagerSettings,
+    backend::cpal::{CpalBackend, CpalBackendSettings},
 };
 use red4ext_rs::{
+    SdkEnv,
     log::{self},
     types::CName,
-    SdkEnv,
 };
 use std::sync::{Mutex, RwLock};
 

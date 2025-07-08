@@ -1,7 +1,7 @@
 use kira::{
+    AudioManager, Decibels,
     backend::Backend,
     track::{TrackBuilder, TrackHandle},
-    AudioManager, Decibels,
 };
 
 use crate::{

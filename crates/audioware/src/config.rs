@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use audioware_manifest::{error::ConversionError, try_get_folder};
 use ini::Ini;
-use red4ext_rs::{log, PluginOps};
+use red4ext_rs::{PluginOps, log};
 
 use crate::Audioware;
 
@@ -64,7 +64,7 @@ impl TryFrom<Ini> for BufferSize {
                     _ => {
                         return Err(ConversionError::InvalidBufferSize {
                             value: value.to_string(),
-                        })
+                        });
                     }
                 }
             }

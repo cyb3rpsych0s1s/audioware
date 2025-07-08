@@ -4,7 +4,7 @@
 include!(concat!(env!("OUT_DIR"), "/version.rs"));
 
 use red4ext_rs::{
-    export_plugin_symbols, log::error, wcstr, Exportable, Plugin, SdkEnv, SemVer, U16CStr,
+    Exportable, Plugin, SdkEnv, SemVer, U16CStr, export_plugin_symbols, log::error, wcstr,
 };
 pub use types::*;
 

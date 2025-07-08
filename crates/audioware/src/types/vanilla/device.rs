@@ -1,10 +1,10 @@
 use red4ext_rs::{
+    NativeRepr, RttiSystem, ScriptClass,
     class_kind::{Native, Scripted},
     types::{
         CName, Cruid, EntityId, IScriptable, ISerializable, NodeRef, RaRef, RedArray, RedString,
         Ref, TweakDbId, WeakRef,
     },
-    NativeRepr, RttiSystem, ScriptClass,
 };
 
 use super::{AsGameObjectExt, CallbackHandle, DelayId, GameObject, InteractionChoice, Vector4};

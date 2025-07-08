@@ -1,7 +1,7 @@
 use kira::{
-    effect::EffectBuilder,
     Tween,
-    {backend::Backend, AudioManager},
+    effect::EffectBuilder,
+    {AudioManager, backend::Backend},
 };
 
 use crate::error::Error;

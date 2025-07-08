@@ -1,9 +1,9 @@
-use audioware_core::{amplitude, Amplitude, SpatialTrackSettings};
+use audioware_core::{Amplitude, SpatialTrackSettings, amplitude};
 use kira::{
+    AudioManager, Value,
     backend::Backend,
     listener::ListenerId,
     track::{SpatialTrackBuilder, SpatialTrackHandle},
-    AudioManager, Value,
 };
 
 use crate::{

@@ -1,6 +1,6 @@
 use red4ext_rs::{
-    types::{CName, GameInstance, RedArray, Ref},
     NativeRepr, RttiSystem,
+    types::{CName, GameInstance, RedArray, Ref},
 };
 
 use super::PlayerPuppet;

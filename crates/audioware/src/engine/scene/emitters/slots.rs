@@ -2,8 +2,8 @@ use kira::Tween;
 use red4ext_rs::types::CName;
 
 use crate::{
-    engine::{scene::dilation::Dilation, tweens::IMMEDIATELY},
     Vector4,
+    engine::{scene::dilation::Dilation, tweens::IMMEDIATELY},
 };
 
 use super::slot::EmitterSlot;

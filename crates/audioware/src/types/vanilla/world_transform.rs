@@ -1,6 +1,6 @@
 use std::fmt;
 
-use red4ext_rs::{types::CName, NativeRepr, RttiSystem};
+use red4ext_rs::{NativeRepr, RttiSystem, types::CName};
 
 use super::{Quaternion, WorldPosition};
 

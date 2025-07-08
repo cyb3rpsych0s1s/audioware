@@ -72,32 +72,62 @@ impl std::fmt::Debug for Command {
                 emitter_name,
                 line_type,
                 ..
-            } => write!(f, "Command::Play {{ sound_name: {sound_name}, entity_id: {}, emitter_name: {}, line_type: {:?}, .. }}", entity_id.map(|x| format!("Some({x})")).unwrap_or("None".into()), emitter_name.map(|x| x.as_str()).unwrap_or("None"), line_type),
+            } => write!(
+                f,
+                "Command::Play {{ sound_name: {sound_name}, entity_id: {}, emitter_name: {}, line_type: {:?}, .. }}",
+                entity_id
+                    .map(|x| format!("Some({x})"))
+                    .unwrap_or("None".into()),
+                emitter_name.map(|x| x.as_str()).unwrap_or("None"),
+                line_type
+            ),
             Command::PlayOnEmitter {
                 event_name,
                 entity_id,
                 tag_name,
                 ..
-            } => write!(f, "Command::PlayOnEmitter {{ event_name: {event_name}, entity_id: {entity_id}, emitter_name: {}, .. }}", tag_name.as_str()),
+            } => write!(
+                f,
+                "Command::PlayOnEmitter {{ event_name: {event_name}, entity_id: {entity_id}, emitter_name: {}, .. }}",
+                tag_name.as_str()
+            ),
             Command::StopOnEmitter {
                 event_name,
                 entity_id,
                 tag_name,
                 ..
-            } => write!(f, "Command::StopOnEmitter {{ event_name: {event_name}, entity_id: {entity_id}, emitter_name: {}, .. }}", tag_name.as_str()),
+            } => write!(
+                f,
+                "Command::StopOnEmitter {{ event_name: {event_name}, entity_id: {entity_id}, emitter_name: {}, .. }}",
+                tag_name.as_str()
+            ),
             Command::Stop {
                 event_name,
                 entity_id,
                 emitter_name,
                 ..
-            } => write!(f, "Command::Stop {{ event_name: {event_name}, entity_id: {}, emitter_name: {}, .. }}", entity_id.map(|x| format!("Some({x})")).unwrap_or("None".into()), emitter_name.map(|x| x.as_str()).unwrap_or("None")),
+            } => write!(
+                f,
+                "Command::Stop {{ event_name: {event_name}, entity_id: {}, emitter_name: {}, .. }}",
+                entity_id
+                    .map(|x| format!("Some({x})"))
+                    .unwrap_or("None".into()),
+                emitter_name.map(|x| x.as_str()).unwrap_or("None")
+            ),
             Command::Switch {
                 switch_name,
                 switch_value,
                 entity_id,
                 emitter_name,
                 ..
-            } => write!(f, "Command::Switch {{ switch_name: {switch_name}, switch_value: {switch_value}, entity_id: {}, emitter_name: {}, .. }}", entity_id.map(|x| format!("Some({x})")).unwrap_or("None".into()), emitter_name.map(|x| x.as_str()).unwrap_or("None")),
+            } => write!(
+                f,
+                "Command::Switch {{ switch_name: {switch_name}, switch_value: {switch_value}, entity_id: {}, emitter_name: {}, .. }}",
+                entity_id
+                    .map(|x| format!("Some({x})"))
+                    .unwrap_or("None".into()),
+                emitter_name.map(|x| x.as_str()).unwrap_or("None")
+            ),
             x => write!(f, "{x:?}"),
         }
     }

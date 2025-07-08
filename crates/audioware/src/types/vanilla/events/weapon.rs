@@ -1,6 +1,6 @@
 use std::fmt;
 
-use red4ext_rs::{class_kind::Native, types::IScriptable, NativeRepr, ScriptClass};
+use red4ext_rs::{NativeRepr, ScriptClass, class_kind::Native, types::IScriptable};
 
 use super::Event;
 
