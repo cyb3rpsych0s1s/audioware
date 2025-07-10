@@ -8,7 +8,7 @@ use crate::{
 
 use super::slot::EmitterSlot;
 
-/// Identify active [EmitterHandle]s.
+/// Identify active [EmitterSlot] handles.
 /// These handles can be shared by multiple mods.
 pub struct EmitterSlots {
     pub slots: Vec<EmitterSlot>,

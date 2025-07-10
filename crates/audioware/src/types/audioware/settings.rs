@@ -7,7 +7,7 @@ use red4ext_rs::{ScriptClass, class_kind::Scripted, types::Ref};
 
 use super::{ElasticTween, LinearTween, ToEasing, Tween};
 
-/// Interop type for [kira::spatial::emitter::EmitterSettings].
+/// Interop type for [SpatialTrackSettings](audioware_core::settings::SpatialTrackSettings).
 #[repr(C)]
 pub struct EmitterSettings {
     pub distances: Ref<EmitterDistances>,
@@ -136,7 +136,7 @@ impl fmt::Debug for EmitterSettings {
     }
 }
 
-/// Interop type for [kira::spatial::emitter::EmitterDistances].
+/// Interop type for [SpatialTrackDistances](kira::track::SpatialTrackDistances).
 #[derive(Debug, Default, Clone, PartialEq)]
 #[repr(C)]
 pub struct EmitterDistances {

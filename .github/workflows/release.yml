@@ -30,7 +30,7 @@ jobs:
       release: false
   release:
     if: ${{ startsWith(github.event.ref, 'refs/tags') }}
-    runs-on: windows-2022
+    runs-on: windows-2025
     needs: [gaming, modding]
     steps:
       - name: Download artifact
