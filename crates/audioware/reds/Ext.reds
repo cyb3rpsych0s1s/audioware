@@ -10,38 +10,22 @@ public static func GetAudioSystemExt(game: GameInstance) -> ref<AudioSystemExt> 
 
 public native class AudioSystemExt {
     // enhanced SDK
-    public final native func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt ext: ref<AudioSettingsExt>) -> Void;
-    public final native func Stop(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt tween: ref<Tween>) -> Void;
-    public final native func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueSettings: ref<AudioSettingsExt>) -> Void;
+    public final native func Play(eventName: CName, entityID: EntityID, emitterName: CName, line: scnDialogLineType, ext: ref<AudioSettingsExt>) -> Void;
+    public final native func Stop(eventName: CName, entityID: EntityID, emitterName: CName, tween: ref<Tween>) -> Void;
+    public final native func Switch(switchName: CName, switchValue: CName, entityID: EntityID, emitterName: CName, switchNameTween: ref<Tween>, switchValueSettings: ref<AudioSettingsExt>) -> Void;
     public final native func PlayOverThePhone(eventName: CName, emitterName: CName, gender: CName) -> Void;
-    // enhanced SDK variants
-    public final func Play(eventName: CName, opt entityID: EntityID, opt emitterName: CName, opt line: scnDialogLineType, opt tween: ref<Tween>) -> Void {
-        let settings = new AudioSettingsExt();
-        settings.fadeIn = tween;
-        this.Play(eventName, entityID, emitterName, line, settings);
-    }
-    public final func Switch(switchName: CName, switchValue: CName, opt entityID: EntityID, opt emitterName: CName, opt switchNameTween: ref<Tween>, opt switchValueTween: ref<Tween>) -> Void {
-        let settings = new AudioSettingsExt();
-        settings.fadeIn = switchValueTween;
-        this.Switch(switchName, switchValue, entityID, emitterName, switchNameTween, settings); 
-    }
 
     // spatial scene
     public final native func RegisterEmitter(entityID: EntityID, tagName: CName, opt emitterName: CName, opt emitterSettings: ref<EmitterSettings>) -> Bool;
     public final native func UnregisterEmitter(entityID: EntityID, tagName: CName) -> Bool;
     public final native func IsRegisteredEmitter(entityID: EntityID, opt tagName: CName) -> Bool;
     public final native func EmittersCount() -> Int32;
-    public final native func PlayOnEmitter(eventName: CName, entityID: EntityID, tagName: CName, opt ext: ref<AudioSettingsExt>) -> Void;
-    public final native func StopOnEmitter(eventName: CName, entityID: EntityID, tagName: CName, opt tween: ref<Tween>) -> Void;
+    public final native func PlayOnEmitter(eventName: CName, entityID: EntityID, tagName: CName, ext: ref<AudioSettingsExt>) -> Void;
+    public final native func StopOnEmitter(eventName: CName, entityID: EntityID, tagName: CName, tween: ref<Tween>) -> Void;
     public final native func OnEmitterDies(entityID: EntityID) -> Void;
     public final native func OnEmitterIncapacitated(entityID: EntityID) -> Void;
     public final native func OnEmitterDefeated(entityID: EntityID) -> Void;
     public final func IsValidEmitter(className: CName) -> Bool = NotEquals(className, n"PlayerPuppet") && Reflection.GetClass(className).IsA(n"gameObject");
-    public final func PlayOnEmitter(eventName: CName, entityID: EntityID, tagName: CName, opt tween: ref<Tween>) -> Void {
-        let settings = new AudioSettingsExt();
-        settings.fadeIn = tween;
-        this.PlayOnEmitter(eventName, entityID, tagName, settings);
-    }
     
     // misc
     /// debug or release build ?
@@ -59,13 +43,13 @@ public native class AudioSystemExt {
         let patch = v[2];
         let type: String;
         switch v[3] {
-            case 0:
+            case Cast<Uint16>(0):
                 type = "alpha";
                 break;
-            case 1:
+            case Cast<Uint16>(1):
                 type = "beta";
                 break;
-            case 2:
+            case Cast<Uint16>(2):
                 type = "rc";
                 break;
             default:
@@ -80,5 +64,75 @@ public native class AudioSystemExt {
         if Equals(build, Cast<Uint16>(0)) { return s"\(triple)-\(type)"; }
         // e.g. "1.0.0-rc.3"
         return s"\(triple)-\(type).\(ToString(build))";
+    }
+    
+    // SDK overloading
+    public final func Play(eventName: CName) -> Void {
+        let entityID: EntityID;
+        let emitterName: CName;
+        let line: scnDialogLineType;
+        let ext: ref<AudioSettingsExt>;
+        this.Play(eventName, entityID, emitterName, line, ext);
+    }
+    public final func Play(eventName: CName, entityID: EntityID, emitterName: CName) -> Void {
+        let line: scnDialogLineType;
+        let ext: ref<AudioSettingsExt>;
+        this.Play(eventName, entityID, emitterName, line, ext);
+    }
+    public final func Play(eventName: CName, entityID: EntityID, emitterName: CName, line: scnDialogLineType) -> Void {
+        let ext: ref<AudioSettingsExt>;
+        this.Play(eventName, entityID, emitterName, line, ext);
+    }
+    public final func Play(eventName: CName, entityID: EntityID, emitterName: CName, line: scnDialogLineType, tween: ref<Tween>) -> Void {
+        let settings = new AudioSettingsExt();
+        settings.fadeIn = tween;
+        this.Play(eventName, entityID, emitterName, line, settings);
+    }
+
+    public final func Stop(eventName: CName) -> Void {
+        let entityID: EntityID;
+        let emitterName: CName;
+        let tween: ref<Tween>;
+        this.Stop(eventName, entityID, emitterName, tween);
+    }
+    public final func Stop(eventName: CName, entityID: EntityID, emitterName: CName) -> Void {
+        let tween: ref<Tween>;
+        this.Stop(eventName, entityID, emitterName, tween);
+    }
+
+    public final func Switch(switchName: CName, switchValue: CName) -> Void {
+        let entityID: EntityID;
+        let emitterName: CName;
+        let switchNameTween: ref<Tween>;
+        let settings: ref<AudioSettingsExt>;
+        this.Switch(switchName, switchValue, entityID, emitterName, switchNameTween, settings); 
+    }
+    public final func Switch(switchName: CName, switchValue: CName, entityID: EntityID, emitterName: CName) -> Void {
+        let switchNameTween: ref<Tween>;
+        let settings: ref<AudioSettingsExt>;
+        this.Switch(switchName, switchValue, entityID, emitterName, switchNameTween, settings); 
+    }
+    public final func Switch(switchName: CName, switchValue: CName, entityID: EntityID, emitterName: CName, switchNameTween: ref<Tween>) -> Void {
+        let settings: ref<AudioSettingsExt>;
+        this.Switch(switchName, switchValue, entityID, emitterName, switchNameTween, settings); 
+    }
+    public final func Switch(switchName: CName, switchValue: CName, entityID: EntityID, emitterName: CName, switchNameTween: ref<Tween>, switchValueTween: ref<Tween>) -> Void {
+        let settings = new AudioSettingsExt();
+        settings.fadeIn = switchValueTween;
+        this.Switch(switchName, switchValue, entityID, emitterName, switchNameTween, settings); 
+    }
+
+    public final func PlayOnEmitter(eventName: CName, entityID: EntityID, tagName: CName) -> Void {
+        let settings: ref<AudioSettingsExt>;
+        this.PlayOnEmitter(eventName, entityID, tagName, settings);
+    }
+    public final func PlayOnEmitter(eventName: CName, entityID: EntityID, tagName: CName, tween: ref<Tween>) -> Void {
+        let settings = new AudioSettingsExt();
+        settings.fadeIn = tween;
+        this.PlayOnEmitter(eventName, entityID, tagName, settings);
+    }
+
+    public final func StopOnEmitter(eventName: CName, entityID: EntityID, tagName: CName) -> Void {
+        this.StopOnEmitter(eventName, entityID, tagName);
     }
 }

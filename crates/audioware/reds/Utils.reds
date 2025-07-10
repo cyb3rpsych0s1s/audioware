@@ -2,7 +2,7 @@ module Audioware
 
 import Codeware.Localization.PlayerGender
 
-public static final func IntoPlayerGender(gender: CName) -> PlayerGender {
+public func IntoPlayerGender(gender: CName) -> PlayerGender {
     switch gender {
         case n"Female":
         case n"female":
@@ -17,7 +17,7 @@ public static final func IntoPlayerGender(gender: CName) -> PlayerGender {
     return PlayerGender.Default;
 }
 
-public static final func IntoLocaleExt(locale: CName) -> LocaleExt {
+public func IntoLocaleExt(locale: CName) -> LocaleExt {
     switch locale {
         case n"ht-ht":
         case n"Creole":

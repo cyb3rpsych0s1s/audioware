@@ -6,29 +6,29 @@ import Codeware.Localization.PlayerGender
 /// HotReload();
 ///
 /// (note: this function does nothing in release build)
-private static native func HotReload();
+private native func HotReload();
 
-private static native func OnGameSessionBeforeStart();
-private static native func OnGameSessionStart();
-private static native func OnGameSessionReady();
-private static native func OnGameSessionPause();
-private static native func OnGameSessionResume();
-private static native func OnGameSessionBeforeEnd();
-private static native func OnGameSessionEnd();
+private native func OnGameSessionBeforeStart();
+private native func OnGameSessionStart();
+private native func OnGameSessionReady();
+private native func OnGameSessionPause();
+private native func OnGameSessionResume();
+private native func OnGameSessionBeforeEnd();
+private native func OnGameSessionEnd();
 
-private static native func OnGameSystemAttach();
-private static native func OnGameSystemPlayerAttach();
-private static native func OnGameSystemPlayerDetach();
-private static native func OnGameSystemDetach();
+private native func OnGameSystemAttach();
+private native func OnGameSystemPlayerAttach();
+private native func OnGameSystemPlayerDetach();
+private native func OnGameSystemDetach();
 
-private static native func OnUIMenu(value: Bool);
+private native func OnUIMenu(value: Bool);
 
-private static native func SetVolume(setting: CName, value: Float);
-private static native func SetReverbMix(value: Float) -> Void;
-private static native func SetPreset(value: Preset) -> Void;
-private static native func SetPlayerGender(value: PlayerGender) -> Void;
-private static native func UnsetPlayerGender() -> Void;
-private static native func SetGameLocales(spoken: CName, written: CName) -> Void;
+private native func SetVolume(setting: CName, value: Float);
+private native func SetReverbMix(value: Float) -> Void;
+private native func SetPreset(value: Preset) -> Void;
+private native func SetPlayerGender(value: PlayerGender) -> Void;
+private native func UnsetPlayerGender() -> Void;
+private native func SetGameLocales(spoken: CName, written: CName) -> Void;
 
 enum LocaleExt {
     English = 0,
