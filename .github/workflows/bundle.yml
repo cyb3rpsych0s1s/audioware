@@ -1,3 +1,4 @@
+name: Bundle
 on:
   workflow_call:
     inputs:
