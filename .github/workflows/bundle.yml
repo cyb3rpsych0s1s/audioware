@@ -8,6 +8,17 @@ on:
       release:
         description: "Cargo build profile"
         type: boolean
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Binary name suffix"
+        required: true
+        type: string
+      release:
+        description: "Release build ? (otherwise DEV_ONLY)"
+        required: true
+        default: true
+        type: boolean
 
 env:
   CARGO_TERM_COLOR: always
