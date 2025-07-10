@@ -3,11 +3,10 @@ on: push
 
 env:
   CARGO_NET_GIT_FETCH_WITH_CLI: true
-  LLVM-CLANG-VERSION: 20.1.4
 
 jobs:
   quality:
-    runs-on: windows-2022
+    runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,10 +16,6 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
           components: clippy, rustfmt
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: ${{ env.LLVM-CLANG-VERSION }}
       - name: Additional tools
         uses: taiki-e/install-action@v2
         with:

@@ -30,11 +30,10 @@ env:
   BUILD-PROFILE: ${{ !inputs.release && 'debug' || 'release' }}
   BUILD-FEATURES: ${{ !inputs.release && 'hot-reload' || '' }}
   ARTIFACT-NAME: windows-latest-${{ inputs.tag }}${{ !inputs.release && '-dev-only' || '' }}-artifact
-  LLVM-CLANG-VERSION: 20.1.4
 
 jobs:
   bundle:
-    runs-on: windows-2022
+    runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,10 +42,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: ${{ env.LLVM-CLANG-VERSION }}
       - uses: Swatinem/rust-cache@v2
         with:
           key: release
