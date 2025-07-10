@@ -8,26 +8,26 @@ import Audioware.Audioware_SettingsDef
 import Audioware.*
 
 /// Game.TestPlay("as_if_I_didnt_know_already");
-public static exec func TestPlay(game: GameInstance, name: String) {
+public exec func TestPlay(game: GameInstance, name: String) {
     GameInstance.GetAudioSystem(game).Play(StringToName(name), GetPlayer(game).GetEntityID(), n"V");
 }
 /// Game.TestPlayExt("straight_outta_compton");
-public static exec func TestPlayExt(game: GameInstance, name: String) {
+public exec func TestPlayExt(game: GameInstance, name: String) {
     GameInstance.GetAudioSystemExt(game).Play(StringToName(name));
 }
 /// Game.TestPlayExtWithTween("straight_outta_compton");
-public static exec func TestPlayExtWithTween(game: GameInstance, name: String) {
+public exec func TestPlayExtWithTween(game: GameInstance, name: String) {
     let ext = new AudioSettingsExt();
     ext.fadeIn = LinearTween.Immediate(5.);
     let noId: EntityID;
     GameInstance.GetAudioSystemExt(game).Play(StringToName(name), noId, n"None", scnDialogLineType.Regular, ext);
 }
 /// Game.TestStop("straight_outta_compton");
-public static exec func TestStop(game: GameInstance, name: String) {
+public exec func TestStop(game: GameInstance, name: String) {
     GameInstance.GetAudioSystemExt(game).Stop(StringToName(name));
 }
 /// Game.TestRegisterEmitter();
-public static exec func TestRegisterEmitter(game: GameInstance) {
+public exec func TestRegisterEmitter(game: GameInstance) {
     let emitterID: EntityID;
     let emitterName: CName;
 
@@ -38,7 +38,7 @@ public static exec func TestRegisterEmitter(game: GameInstance) {
     FTLog(s"registered? \(added)");
 }
 /// Game.TestUnregisterEmitter();
-public static exec func TestUnregisterEmitter(game: GameInstance) {
+public exec func TestUnregisterEmitter(game: GameInstance) {
     let emitterID: EntityID;
     let emitterName: CName;
 
@@ -50,7 +50,7 @@ public static exec func TestUnregisterEmitter(game: GameInstance) {
 }
 
 /// Game.TestPlayOnEmitter("straight_outta_compton", "Eazy-E");
-public static exec func TestPlayOnEmitter(game: GameInstance, soundName: String, opt emitterName: String) {
+public exec func TestPlayOnEmitter(game: GameInstance, soundName: String, opt emitterName: String) {
     let soundCName = StringToName(soundName);
     let emitterID: EntityID;
     let emitterCName: CName = StringToName(emitterName);
@@ -65,14 +65,14 @@ public static exec func TestPlayOnEmitter(game: GameInstance, soundName: String,
 }
 
 /// Game.TestPlayOverThePhone("as_if_I_didnt_know_already");
-public static exec func TestPlayOverThePhone(game: GameInstance, name: String) {
+public exec func TestPlayOverThePhone(game: GameInstance, name: String) {
     let cname = StringToName(name);
     GameInstance.GetAudioSystemExt(game).PlayOverThePhone(cname, n"Vik", n"Male");
 }
 
 /// Game.TestReverb(1.0);
 /// Game.TestReverb(0.0);
-public static exec func TestReverb(game: GameInstance, reverb: Float) {
+public exec func TestReverb(game: GameInstance, reverb: Float) {
     GameInstance.GetBlackboardSystem(game)
     .Get(GetAllBlackboardDefs().Audioware_Settings)
     .SetFloat(GetAllBlackboardDefs().Audioware_Settings.ReverbMix, reverb, true);
@@ -81,7 +81,7 @@ public static exec func TestReverb(game: GameInstance, reverb: Float) {
 /// Game.TestPreset("None");
 /// Game.TestPreset("Underwater");
 /// Game.TestPreset("OnThePhone");
-public static exec func TestPreset(game: GameInstance, preset: String) {
+public exec func TestPreset(game: GameInstance, preset: String) {
     let value: Int32;
     switch preset {
         case "OnThePhone":
@@ -100,7 +100,7 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
 }
 
 /// Game.TestSupportedLanguages();
-public static exec func TestSupportedLanguages(game: GameInstance) {
+public exec func TestSupportedLanguages(game: GameInstance) {
     let languages = SupportedLanguages();
     if ArraySize(languages) == 0 { FTLog(s"banks do not contain entries for any language"); }
     else {
@@ -111,7 +111,7 @@ public static exec func TestSupportedLanguages(game: GameInstance) {
 }
 
 /// Game.TestVersion();
-public static exec func TestVersion(game: GameInstance) {
+public exec func TestVersion(game: GameInstance) {
     let semver = GameInstance.GetAudioSystemExt(game).Version();
     FTLog(semver);
 }
@@ -209,7 +209,7 @@ public class AutoEmittersSystem extends ScriptableSystem {
 /// Game.TestPreset("None");
 /// Game.TestPreset("Underwater");
 /// Game.TestPreset("OnThePhone");
-public static exec func TestPreset(game: GameInstance, preset: String) {
+public exec func TestPreset(game: GameInstance, preset: String) {
     let value: Int32;
     switch preset {
         case "OnThePhone":
@@ -227,17 +227,17 @@ public static exec func TestPreset(game: GameInstance, preset: String) {
     .SetInt(GetAllBlackboardDefs().Audioware_Settings.AudioPreset, value, true);
 }
 
-public static exec func TestHalfVolume(game: GameInstance)   { TestSpecificVolume(game, 0.5); }
-public static exec func TestDoubleVolume(game: GameInstance) { TestSpecificVolume(game, 2.0); }
-public static exec func TestNormalVolume(game: GameInstance) { TestSpecificVolume(game, 1.0); }
+public exec func TestHalfVolume(game: GameInstance)   { TestSpecificVolume(game, 0.5); }
+public exec func TestDoubleVolume(game: GameInstance) { TestSpecificVolume(game, 2.0); }
+public exec func TestNormalVolume(game: GameInstance) { TestSpecificVolume(game, 1.0); }
 
-public static exec func TestSpecificVolume(game: GameInstance, amplitude: Float) {
+public exec func TestSpecificVolume(game: GameInstance, amplitude: Float) {
     let none: EntityID;
     let ext = new AudioSettingsExt();
     ext.volume = amplitude;
     GameInstance.GetAudioSystemExt(game).Play(n"straight_outta_compton", none, n"None", scnDialogLineType.None, ext);
 }
 
-public static exec func StopTestVolume(game: GameInstance) {
+public exec func StopTestVolume(game: GameInstance) {
     GameInstance.GetAudioSystemExt(game).Stop(n"straight_outta_compton");
 }
