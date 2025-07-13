@@ -4,7 +4,7 @@ public class AudiowareConfig {
     @runtimeProperty("ModSettings.mod", "Audioware")
     @runtimeProperty("ModSettings.displayName", "Audio buffer size (optional)")
     @runtimeProperty("ModSettings.description", "Adjust audio buffer size (plays smoothlier, but adds latency): requires game restart")
-    /// NOTE: ModSettings does not seem to support RestartRequired
+    // NOTE: ModSettings does not seem to support RestartRequired
     @runtimeProperty("ModSettings.updatePolicy", "RestartRequired") // ConfigVarUpdatePolicy.RestartRequired = 3
     @runtimeProperty("ModSettings.displayValues.Auto", "Auto")
     @runtimeProperty("ModSettings.displayValues.Option64", "64 Samples")
