@@ -265,7 +265,11 @@ macro_rules! impl_from_settings {
                     loop_region: if value.r#loop.unwrap_or_default() {
                         value
                             .region
-                            .and_then(IntoOptionalRegion::into_optional_region)
+                            .map(IntoOptionalRegion::into_optional_region)
+                            .unwrap_or(Some(kira::sound::Region {
+                                start: PlaybackPosition::Seconds(0.),
+                                end: EndPosition::EndOfAudio,
+                            }))
                     } else {
                         None
                     },
