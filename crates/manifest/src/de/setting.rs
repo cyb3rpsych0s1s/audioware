@@ -68,10 +68,7 @@ macro_rules! impl_with {
                     $self = $self.slice(x);
                 }
             } else {
-                $self = $self.loop_region(kira::sound::Region {
-                    start: PlaybackPosition::Seconds(0.),
-                    end: EndPosition::EndOfAudio,
-                });
+                $self = $self.loop_region(..);
             }
         }
         if let Some(x) = $settings.playback_rate {
@@ -266,10 +263,7 @@ macro_rules! impl_from_settings {
                         value
                             .region
                             .map(IntoOptionalRegion::into_optional_region)
-                            .unwrap_or(Some(kira::sound::Region {
-                                start: PlaybackPosition::Seconds(0.),
-                                end: EndPosition::EndOfAudio,
-                            }))
+                            .unwrap_or(Some((..).into()))
                     } else {
                         None
                     },
