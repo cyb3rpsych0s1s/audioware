@@ -26,7 +26,7 @@ use crate::{
         lifecycle::{Board, Lifecycle, Session, System},
     },
     config::BufferSize,
-    engine::DilationUpdate,
+    engine::{tweens::DILATION_EASE_OUT, DilationUpdate},
     error::Error,
     utils::{fails, lifecycle},
 };
@@ -91,6 +91,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
     let synchronization = tick(ms(15));
     let mut should_sync = false;
     let mut in_game = false;
+    let mut loading = false;
     'game: loop {
         for l in rl.try_iter() {
             lifecycle!("> {l}");
@@ -176,7 +177,10 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::Session(Session::BeforeStart) => engine.reset(),
                 Lifecycle::Session(Session::Start)
                 | Lifecycle::Session(Session::End)
-                | Lifecycle::Session(Session::Ready) => {}
+                | Lifecycle::Session(Session::Ready) => {
+                    loading = false;
+                    in_game = true;
+                }
                 Lifecycle::Session(Session::Pause) => {
                     should_sync = false;
                 }
@@ -186,13 +190,17 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::Session(Session::BeforeEnd) => {
                     should_sync = false;
                     engine.scene = None;
-                    engine.tracks.clear();
+                    if loading {
+                        engine.tracks.stop(DILATION_EASE_OUT);
+                    } else {
+                        engine.tracks.clear();
+                    }
                 }
                 Lifecycle::EngagementScreen => {
                     in_game = false;
                 }
                 Lifecycle::LoadSave => {
-                    in_game = true;
+                    loading = true;
                 }
                 Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
                 Lifecycle::System(System::PlayerAttach) => match engine.try_new_scene() {
