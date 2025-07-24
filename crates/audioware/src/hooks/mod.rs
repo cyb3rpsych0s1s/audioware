@@ -6,7 +6,6 @@ mod time_system;
 
 #[cfg(debug_assertions)]
 mod entity;
-#[cfg(debug_assertions)]
 mod save_handling_controller;
 
 #[cfg(feature = "research")]
@@ -46,7 +45,6 @@ mod offsets {
     pub const TIMESYSTEM_UNSETTIMEDILATION: u32                 = 0xF0652075;   // 0x1409BAD34 (2.13)
     // gameuiSaveHandlingController
     // note: LoadSaveInGame and LoadModdedSave share same underlying address
-    #[cfg(debug_assertions)]
     pub const SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME: u32     = 0x9AB824D9;   // 0x14083FB6C (2.13)
 
     #[cfg(feature = "research")]
