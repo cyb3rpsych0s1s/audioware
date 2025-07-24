@@ -17,7 +17,6 @@ pub fn attach(env: &SdkEnv) {
     time_dilatable::attach_hooks(env);
     time_system::attach_hooks(env);
 
-    #[cfg(debug_assertions)]
     save_handling_controller::attach_hook(env);
     #[cfg(debug_assertions)]
     entity::attach_hook(env);

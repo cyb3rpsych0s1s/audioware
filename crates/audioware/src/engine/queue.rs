@@ -90,11 +90,13 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
     let synchronization = tick(ms(15));
     let mut should_sync = false;
+    let mut in_game = false;
     'game: loop {
         for l in rl.try_iter() {
             lifecycle!("> {l}");
             match l {
                 Lifecycle::Terminate => {
+                    engine.tracks.clear();
                     break 'game;
                 }
                 Lifecycle::ReportInitialization => engine.report_initialization(false),
@@ -186,6 +188,12 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     engine.scene = None;
                     engine.tracks.clear();
                 }
+                Lifecycle::EngagementScreen => {
+                    in_game = false;
+                }
+                Lifecycle::LoadSave => {
+                    in_game = true;
+                }
                 Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
                 Lifecycle::System(System::PlayerAttach) => match engine.try_new_scene() {
                     Ok(_) => {
@@ -196,11 +204,15 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters(),
                 Lifecycle::Board(Board::UIMenu(true)) => {
                     should_sync = false;
-                    engine.pause()
+                    if in_game {
+                        engine.pause();
+                    }
                 }
                 Lifecycle::Board(Board::UIMenu(false)) => {
                     should_sync = engine.scene.is_some();
-                    engine.resume()
+                    if in_game {
+                        engine.resume();
+                    }
                 }
                 Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
