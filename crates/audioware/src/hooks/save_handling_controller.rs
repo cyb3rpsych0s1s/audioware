@@ -24,7 +24,7 @@ unsafe extern "C" fn detour(
         let save_id: i32 = StackFrame::get_arg(frame);
         frame.restore_args(state);
         intercept!("gameuiSaveHandlingController::LoadSaveInGame/LoadModdedSave: {save_id}");
-        queue::notify(Lifecycle::LoadSave);
         cb(i, frame as *mut _, a3, a4);
+        queue::notify(Lifecycle::LoadSave);
     }
 }
