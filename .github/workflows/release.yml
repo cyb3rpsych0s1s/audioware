@@ -41,7 +41,7 @@ jobs:
       - name: Create release ${{ github.ref_name }}
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "release/${{ env.BIN-NAME }}.zip,release/${{ env.BIN-NAME }}-DEV_ONLY.zip,release/checksum.txt,release/checksum-DEV_ONLY.txt"
+          artifacts: "release/${{ env.BIN-NAME }}.zip,release/${{ env.BIN-NAME }}-DEV_ONLY.zip"
           draft: ${{ env.IS_DRAFT }}
           prerelease: ${{ env.IS_PRERELEASE }}
           token: ${{ secrets.GITHUB_TOKEN }}
