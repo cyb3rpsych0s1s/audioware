@@ -3,7 +3,7 @@ use red4ext_rs::{
     types::{IScriptable, StackFrame},
 };
 
-use crate::{attach_native_func, utils::intercept};
+use crate::{abi::lifecycle::Lifecycle, attach_native_func, engine::queue, utils::intercept};
 
 attach_native_func!(
     "gameuiSaveHandlingController::LoadSaveInGame/LoadModdedSave",
@@ -25,5 +25,6 @@ unsafe extern "C" fn detour(
         frame.restore_args(state);
         intercept!("gameuiSaveHandlingController::LoadSaveInGame/LoadModdedSave: {save_id}");
         cb(i, frame as *mut _, a3, a4);
+        queue::notify(Lifecycle::LoadSave);
     }
 }

@@ -79,6 +79,7 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.OnGameSystemDetach",         Audioware::on_game_system_detach),
         g!(c"Audioware.OnGameSystemPlayerAttach",   Audioware::on_game_system_player_attach),
         g!(c"Audioware.OnGameSystemPlayerDetach",   Audioware::on_game_system_player_detach),
+        g!(c"Audioware.OnEngagementScreen",         Audioware::on_engagement_screen),
         g!(c"Audioware.OnUIMenu",                   Audioware::on_ui_menu),
         g!(c"Audioware.SetReverbMix",               Audioware::on_reverb_mix),
         g!(c"Audioware.SetPreset",                  Audioware::on_preset),
@@ -122,6 +123,7 @@ pub trait GameSessionLifecycle {
     fn on_game_session_resume();
     fn on_game_session_before_end();
     fn on_game_session_end();
+    fn on_engagement_screen();
 }
 
 pub trait GameSystemLifecycle {
@@ -176,6 +178,10 @@ impl GameSessionLifecycle for Audioware {
 
     fn on_game_session_end() {
         queue::notify(Lifecycle::Session(Session::End));
+    }
+
+    fn on_engagement_screen() {
+        queue::notify(Lifecycle::EngagementScreen);
     }
 }
 

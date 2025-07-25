@@ -26,7 +26,7 @@ use crate::{
         lifecycle::{Board, Lifecycle, Session, System},
     },
     config::BufferSize,
-    engine::DilationUpdate,
+    engine::{DilationUpdate, tweens::DILATION_EASE_OUT},
     error::Error,
     utils::{fails, lifecycle},
 };
@@ -90,11 +90,14 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
     let synchronization = tick(ms(15));
     let mut should_sync = false;
+    let mut in_game = false;
+    let mut loading = false;
     'game: loop {
         for l in rl.try_iter() {
             lifecycle!("> {l}");
             match l {
                 Lifecycle::Terminate => {
+                    engine.tracks.clear();
                     break 'game;
                 }
                 Lifecycle::ReportInitialization => engine.report_initialization(false),
@@ -174,7 +177,10 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::Session(Session::BeforeStart) => engine.reset(),
                 Lifecycle::Session(Session::Start)
                 | Lifecycle::Session(Session::End)
-                | Lifecycle::Session(Session::Ready) => {}
+                | Lifecycle::Session(Session::Ready) => {
+                    loading = false;
+                    in_game = true;
+                }
                 Lifecycle::Session(Session::Pause) => {
                     should_sync = false;
                 }
@@ -184,7 +190,17 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::Session(Session::BeforeEnd) => {
                     should_sync = false;
                     engine.scene = None;
-                    engine.tracks.clear();
+                    if loading {
+                        engine.tracks.stop(DILATION_EASE_OUT);
+                    } else {
+                        engine.tracks.clear();
+                    }
+                }
+                Lifecycle::EngagementScreen => {
+                    in_game = false;
+                }
+                Lifecycle::LoadSave => {
+                    loading = true;
                 }
                 Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
                 Lifecycle::System(System::PlayerAttach) => match engine.try_new_scene() {
@@ -196,11 +212,15 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters(),
                 Lifecycle::Board(Board::UIMenu(true)) => {
                     should_sync = false;
-                    engine.pause()
+                    if in_game {
+                        engine.pause();
+                    }
                 }
                 Lifecycle::Board(Board::UIMenu(false)) => {
                     should_sync = engine.scene.is_some();
-                    engine.resume()
+                    if in_game {
+                        engine.resume();
+                    }
                 }
                 Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),

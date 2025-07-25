@@ -60,6 +60,8 @@ pub enum Lifecycle {
         ease_out_curve: CName,
     },
     Session(Session),
+    EngagementScreen,
+    LoadSave,
     System(System),
     Board(Board),
     ReportInitialization,
@@ -87,6 +89,8 @@ impl std::fmt::Display for Lifecycle {
             }
             Lifecycle::Terminate => write!(f, "terminate"),
             Lifecycle::Session(x) => write!(f, "{x}"),
+            Lifecycle::EngagementScreen => write!(f, "on switch to engagement screen"),
+            Lifecycle::LoadSave => write!(f, "on load save"),
             Lifecycle::System(x) => write!(f, "{x}"),
             Lifecycle::Board(x) => write!(f, "{x}"),
             Lifecycle::SetVolume { setting, value } => {

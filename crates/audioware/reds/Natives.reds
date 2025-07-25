@@ -22,6 +22,7 @@ private native func OnGameSystemPlayerDetach();
 private native func OnGameSystemDetach();
 
 private native func OnUIMenu(value: Bool);
+private native func OnEngagementScreen();
 
 private native func SetVolume(setting: CName, value: Float);
 private native func SetReverbMix(value: Float) -> Void;
