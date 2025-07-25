@@ -26,7 +26,7 @@ use crate::{
         lifecycle::{Board, Lifecycle, Session, System},
     },
     config::BufferSize,
-    engine::{tweens::DILATION_EASE_OUT, DilationUpdate},
+    engine::{DilationUpdate, tweens::DILATION_EASE_OUT},
     error::Error,
     utils::{fails, lifecycle},
 };
