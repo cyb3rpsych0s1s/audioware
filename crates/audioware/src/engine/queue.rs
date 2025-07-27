@@ -35,10 +35,12 @@ use super::Engine;
 
 bitflags! {
     struct Flags: u32 {
-        const INITIALIZING = 1 << 0;
-        const LOADING = 1 << 1;
-        const IN_MENU = 1 << 2;
-        const IN_GAME = 1 << 3;
+        const LOADING = 1 << 0;
+        const IN_MENU = 1 << 1;
+        const IN_GAME = 1 << 2;
+        const PAUSED  = 1 << 3;
+
+        const SHOULD_SYNC = !Self::LOADING.bits() | !Self::IN_MENU.bits();
     }
 }
 
@@ -89,9 +91,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
     let ms = |x| Duration::from_millis(x);
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
     let synchronization = tick(ms(15));
-    let mut should_sync = false;
-    let mut in_game = false;
-    let mut loading = false;
+    let mut state = Flags::LOADING;
     'game: loop {
         for l in rl.try_iter() {
             lifecycle!("> {l}");
@@ -175,50 +175,54 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::OnEmitterDefeated { .. } => {}
                 Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
                 Lifecycle::Session(Session::BeforeStart) => engine.reset(),
-                Lifecycle::Session(Session::Start)
-                | Lifecycle::Session(Session::End)
-                | Lifecycle::Session(Session::Ready) => {
-                    loading = false;
-                    in_game = true;
-                }
-                Lifecycle::Session(Session::Pause) => {
-                    should_sync = false;
-                }
-                Lifecycle::Session(Session::Resume) => {
-                    should_sync = true;
-                }
+                Lifecycle::Session(Session::Start) | Lifecycle::Session(Session::End) => {}
                 Lifecycle::Session(Session::BeforeEnd) => {
-                    should_sync = false;
-                    engine.scene = None;
-                    if loading {
-                        engine.tracks.stop(DILATION_EASE_OUT);
-                    } else {
+                    if state.contains(Flags::IN_GAME) {
+                        state.set(Flags::IN_GAME, false);
+                        engine.scene = None;
                         engine.tracks.clear();
                     }
                 }
+                Lifecycle::UIInGameNotificationRemove => {
+                    if state.contains(Flags::LOADING) {
+                        engine.tracks.stop(DILATION_EASE_OUT);
+                    }
+                }
+                Lifecycle::Session(Session::Ready) => {
+                    state.set(Flags::IN_GAME, true);
+                }
+                Lifecycle::Session(Session::Pause) => {
+                    state.set(Flags::PAUSED, true);
+                }
+                Lifecycle::Session(Session::Resume) => {
+                    state.set(Flags::PAUSED, false);
+                }
+                Lifecycle::SwitchToScenario(name) => {
+                    if name == CName::new("MenuScenario_PauseMenu") {
+                        engine.pause();
+                    }
+                    state.set(Flags::IN_MENU, true);
+                }
                 Lifecycle::EngagementScreen => {
-                    in_game = false;
+                    state.set(Flags::IN_GAME, false);
                 }
                 Lifecycle::LoadSave => {
-                    loading = true;
+                    state.set(Flags::LOADING, true);
                 }
                 Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
-                Lifecycle::System(System::PlayerAttach) => match engine.try_new_scene() {
-                    Ok(_) => {
-                        should_sync = true;
+                Lifecycle::System(System::PlayerAttach) => {
+                    if let Err(e) = engine.try_new_scene() {
+                        lifecycle!("failed to create new scene: {e}");
                     }
-                    Err(e) => lifecycle!("failed to create new scene: {e}"),
-                },
+                }
                 Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters(),
                 Lifecycle::Board(Board::UIMenu(true)) => {
-                    should_sync = false;
-                    if in_game {
+                    if state.contains(Flags::IN_GAME) {
                         engine.pause();
                     }
                 }
                 Lifecycle::Board(Board::UIMenu(false)) => {
-                    should_sync = engine.scene.is_some();
-                    if in_game {
+                    if state.contains(Flags::IN_GAME) {
                         engine.resume();
                     }
                 }
@@ -226,7 +230,11 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
             }
         }
-        if should_sync && engine.any_emitter() && synchronization.try_recv().is_ok() {
+        if state.contains(Flags::SHOULD_SYNC)
+            && engine.scene.is_some()
+            && engine.any_emitter()
+            && synchronization.try_recv().is_ok()
+        {
             engine.sync_scene();
         }
         if engine.any_handle() && reclamation.try_recv().is_ok() {
