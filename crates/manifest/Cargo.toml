@@ -17,8 +17,8 @@ semver = { version = "1", features = ["serde"] }
 serde.workspace = true
 serde_yaml = "0.9"
 snafu.workspace = true
-strum = "0.26"
-strum_macros = "0.26"
+strum = "0.27.2"
+strum_macros = "0.27.2"
 
 [dev-dependencies]
 test-case = "3.3"
