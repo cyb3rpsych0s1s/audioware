@@ -6,6 +6,7 @@ mod time_system;
 
 #[cfg(debug_assertions)]
 mod entity;
+mod ink_menu_scenario;
 mod save_handling_controller;
 
 #[cfg(feature = "research")]
@@ -15,6 +16,7 @@ pub fn attach(env: &SdkEnv) {
     audio_system::attach_hooks(env);
     time_dilatable::attach_hooks(env);
     time_system::attach_hooks(env);
+    ink_menu_scenario::attach_hooks(env);
 
     save_handling_controller::attach_hook(env);
     #[cfg(debug_assertions)]
@@ -46,6 +48,8 @@ mod offsets {
     // gameuiSaveHandlingController
     // note: LoadSaveInGame and LoadModdedSave share same underlying address
     pub const SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME: u32     = 0x9AB824D9;   // 0x14083FB6C (2.13)
+    pub const INKMENUSCENARIO_SWITCH_TO_SCENARIO: u32           = 0xE9B92059;   // 0x1409CF068 (2.3)
+    pub const INKMENUSCENARIO_QUEUE_EVENT: u32                  = 0x56A9218A;   // 0x14130F6B8 (2.3)
 
     #[cfg(feature = "research")]
     mod events {
