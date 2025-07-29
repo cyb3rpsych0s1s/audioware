@@ -32,7 +32,8 @@ impl Spatial {
             .distances(distances)
             .spatialization_strength(spatialization_strength)
             .persist_until_sounds_finish(persist_until_sounds_finish)
-            .attenuation_function(attenuation_function);
+            // None: disable volume attenuation based on distance
+            .attenuation_function(attenuation_function.unwrap_or(kira::Easing::Linear));
         // sum used to have to be 1.0 otherwise sounds crackled, what now?
         if affected_by_reverb_mix {
             builder = builder.with_send(ambience.reverb(), amplitude!(0.15).as_decibels());
