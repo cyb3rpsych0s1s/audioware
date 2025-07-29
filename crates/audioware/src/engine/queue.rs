@@ -1,11 +1,4 @@
-use std::{
-    sync::{
-        LazyLock, OnceLock,
-        atomic::{AtomicU32, Ordering},
-    },
-    thread::JoinHandle,
-    time::Duration,
-};
+use std::{sync::OnceLock, thread::JoinHandle, time::Duration};
 
 use bitflags::bitflags;
 use crossbeam::channel::{Receiver, Sender, bounded, tick};
@@ -34,20 +27,53 @@ use crate::{
 use super::Engine;
 
 bitflags! {
-    struct Flags: u32 {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    struct Flags: u8 {
         const LOADING = 1 << 0;
         const IN_MENU = 1 << 1;
         const IN_GAME = 1 << 2;
         const PAUSED  = 1 << 3;
+    }
+}
 
-        const SHOULD_SYNC = !Self::LOADING.bits() | !Self::IN_MENU.bits();
+impl Flags {
+    fn should_sync(&self) -> bool {
+        self.contains(Flags::IN_GAME)
+            && !self.intersects(Flags::LOADING | Flags::IN_MENU | Flags::PAUSED)
+    }
+}
+
+impl std::fmt::Display for Flags {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let yes = "+";
+        let no = "-";
+        write!(
+            f,
+            "[LOADING: {}, IN_MENU: {}, IN_GAME: {}, PAUSED: {}, SHOULD_SYNC: {}]",
+            if self.contains(Self::LOADING) {
+                yes
+            } else {
+                no
+            },
+            if self.contains(Self::IN_MENU) {
+                yes
+            } else {
+                no
+            },
+            if self.contains(Self::IN_GAME) {
+                yes
+            } else {
+                no
+            },
+            if self.contains(Self::PAUSED) { yes } else { no },
+            if self.should_sync() { yes } else { no },
+        )
     }
 }
 
 static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
 static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
-static STATE: LazyLock<AtomicU32> = LazyLock::new(|| AtomicU32::new(Flags::empty().bits()));
 
 fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
@@ -66,7 +92,6 @@ fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
 
 pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
     lifecycle!("spawn plugin thread");
-    STATE.store(Flags::LOADING.bits(), Ordering::Release);
     let (engine, capacity) = load(env)?;
     let _ = THREAD.set(Mutex::new(Some(
         std::thread::Builder::new()
@@ -189,6 +214,8 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     }
                 }
                 Lifecycle::Session(Session::Ready) => {
+                    state.set(Flags::LOADING, false);
+                    state.set(Flags::IN_MENU, false);
                     state.set(Flags::IN_GAME, true);
                 }
                 Lifecycle::Session(Session::Pause) => {
@@ -216,25 +243,21 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     }
                 }
                 Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters(),
-                Lifecycle::Board(Board::UIMenu(true)) => {
+                Lifecycle::Board(Board::UIMenu(opened)) => {
+                    state.set(Flags::IN_MENU, opened);
                     if state.contains(Flags::IN_GAME) {
-                        engine.pause();
-                    }
-                }
-                Lifecycle::Board(Board::UIMenu(false)) => {
-                    if state.contains(Flags::IN_GAME) {
-                        engine.resume();
+                        if opened {
+                            engine.pause();
+                        } else {
+                            engine.resume();
+                        }
                     }
                 }
                 Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
             }
         }
-        if state.contains(Flags::SHOULD_SYNC)
-            && engine.scene.is_some()
-            && engine.any_emitter()
-            && synchronization.try_recv().is_ok()
-        {
+        if state.should_sync() && engine.any_emitter() && synchronization.try_recv().is_ok() {
             engine.sync_scene();
         }
         if engine.any_handle() && reclamation.try_recv().is_ok() {

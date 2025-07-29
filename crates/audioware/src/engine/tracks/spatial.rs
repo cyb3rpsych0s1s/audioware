@@ -6,10 +6,7 @@ use kira::{
     track::{SpatialTrackBuilder, SpatialTrackHandle},
 };
 
-use crate::{
-    engine::modulators::{Modulators, Parameter},
-    error::Error,
-};
+use crate::error::Error;
 
 use super::ambience::Ambience;
 
@@ -21,7 +18,6 @@ impl Spatial {
         listener: impl Into<ListenerId>,
         position: impl Into<Value<mint::Vector3<f32>>>,
         settings: SpatialTrackSettings,
-        modulators: &Modulators,
         ambience: &Ambience,
     ) -> Result<Self, Error> {
         let SpatialTrackSettings {
@@ -36,8 +32,7 @@ impl Spatial {
             .distances(distances)
             .spatialization_strength(spatialization_strength)
             .persist_until_sounds_finish(persist_until_sounds_finish)
-            .attenuation_function(attenuation_function)
-            .with_effect(modulators.sfx_volume.try_effect()?);
+            .attenuation_function(attenuation_function);
         // sum used to have to be 1.0 otherwise sounds crackled, what now?
         if affected_by_reverb_mix {
             builder = builder.with_send(ambience.reverb(), amplitude!(0.15).as_decibels());

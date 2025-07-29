@@ -6,10 +6,7 @@ use kira::{
 };
 
 use crate::{
-    engine::{
-        eq::{EQ_HIGH_PASS_PHONE_CUTOFF, EQ_LOW_PASS_PHONE_CUTOFF, EQ_RESONANCE},
-        modulators::{Modulators, Parameter},
-    },
+    engine::eq::{EQ_HIGH_PASS_PHONE_CUTOFF, EQ_LOW_PASS_PHONE_CUTOFF, EQ_RESONANCE},
     error::Error,
 };
 
@@ -21,7 +18,6 @@ impl Holocall {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
         ambience: &Ambience,
-        modulators: &Modulators,
     ) -> Result<Self, Error> {
         let track = manager.add_sub_track({
             let mut builder = TrackBuilder::new()
@@ -38,7 +34,7 @@ impl Holocall {
                     .cutoff(EQ_HIGH_PASS_PHONE_CUTOFF)
                     .resonance(EQ_RESONANCE),
             );
-            builder.with_effect(modulators.dialogue_volume.try_effect()?)
+            builder
         })?;
         Ok(Self(track))
     }

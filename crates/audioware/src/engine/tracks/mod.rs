@@ -75,13 +75,13 @@ impl Tracks {
         modulators: &Modulators,
     ) -> Result<Self, Error> {
         let ambience = Ambience::try_new(manager, modulators)?;
-        let v = V::try_new(manager, &ambience, modulators)?;
-        let holocall = Holocall::try_new(manager, &ambience, modulators)?;
-        let sfx = Sfx::try_new(manager, &ambience, modulators)?;
-        let radioport = Radioport::try_new(manager, &ambience, modulators)?;
-        let music = Music::try_new(manager, &ambience, modulators)?;
-        let dialogue = Dialogue::try_new(manager, &ambience, modulators)?;
-        let car_radio = CarRadio::try_new(manager, &ambience, modulators)?;
+        let v = V::try_new(manager, &ambience)?;
+        let holocall = Holocall::try_new(manager, &ambience)?;
+        let sfx = Sfx::try_new(manager, &ambience)?;
+        let radioport = Radioport::try_new(manager, &ambience)?;
+        let music = Music::try_new(manager, &ambience)?;
+        let dialogue = Dialogue::try_new(manager, &ambience)?;
+        let car_radio = CarRadio::try_new(manager, &ambience)?;
         Ok(Self {
             ambience,
             v,
