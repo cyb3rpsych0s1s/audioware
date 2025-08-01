@@ -40,11 +40,9 @@ public exec func TestRegisterEmitter(game: GameInstance) {
 /// Game.TestUnregisterEmitter();
 public exec func TestUnregisterEmitter(game: GameInstance) {
     let emitterID: EntityID;
-    let emitterName: CName;
 
     let target = GameInstance.GetTargetingSystem(game).GetLookAtObject(GetPlayer(game));
     emitterID = target.GetEntityID();
-    emitterName = n"Jean-Guy";
     let added = GameInstance.GetAudioSystemExt(game).UnregisterEmitter(emitterID, n"Audioware");
     FTLog(s"unregistered? \(added)");
 }
