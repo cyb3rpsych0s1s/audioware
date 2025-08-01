@@ -475,7 +475,6 @@ where
                     tag_name,
                     emitter_name,
                     emitter_settings,
-                    &self.modulators,
                     &self.tracks.ambience,
                 )
                 .inspect_err(|e| warns!("failed to register emitter: {e}"))
@@ -573,20 +572,34 @@ where
 
     pub fn set_volume(&mut self, setting: CName, value: Amplitude) {
         lifecycle!("about to change {value} for {setting}");
+        // kira uses amplitude for volume, default to 1.
+        // while default volume expressed as game setting is 100.
         let v = value.div(100.).clamp(0., 1.) as f64;
         match setting.as_str() {
-            // kira uses amplitude for volume, default to 1.
-            // while default volume expressed as game setting is 100.
             "MasterVolume" => self
                 .manager
                 .main_track()
                 .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
-            // same for the other settings, except modulators already handles conversion internally
-            "SfxVolume" => self.modulators.sfx_volume.update(v, DEFAULT),
-            "DialogueVolume" => self.modulators.dialogue_volume.update(v, DEFAULT),
-            "MusicVolume" => self.modulators.music_volume.update(v, DEFAULT),
-            "CarRadioVolume" => self.modulators.car_radio_volume.update(v, DEFAULT),
-            "RadioportVolume" => self.modulators.radioport_volume.update(v, DEFAULT),
+            "SfxVolume" => self
+                .tracks
+                .sfx
+                .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
+            "DialogueVolume" => self
+                .tracks
+                .dialogue
+                .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
+            "MusicVolume" => self
+                .tracks
+                .music
+                .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
+            "CarRadioVolume" => self
+                .tracks
+                .car_radio
+                .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
+            "RadioportVolume" => self
+                .tracks
+                .radioport
+                .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
             _ => lifecycle!("unknown volume setting: {}", setting.as_str()),
         }
     }

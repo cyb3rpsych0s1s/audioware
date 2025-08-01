@@ -1,11 +1,4 @@
-use std::{
-    sync::{
-        LazyLock, OnceLock,
-        atomic::{AtomicU32, Ordering},
-    },
-    thread::JoinHandle,
-    time::Duration,
-};
+use std::{sync::OnceLock, thread::JoinHandle, time::Duration};
 
 use bitflags::bitflags;
 use crossbeam::channel::{Receiver, Sender, bounded, tick};
@@ -34,18 +27,53 @@ use crate::{
 use super::Engine;
 
 bitflags! {
-    struct Flags: u32 {
-        const INITIALIZING = 1 << 0;
-        const LOADING = 1 << 1;
-        const IN_MENU = 1 << 2;
-        const IN_GAME = 1 << 3;
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    struct Flags: u8 {
+        const LOADING = 1 << 0;
+        const IN_MENU = 1 << 1;
+        const IN_GAME = 1 << 2;
+        const PAUSED  = 1 << 3;
+    }
+}
+
+impl Flags {
+    fn should_sync(&self) -> bool {
+        self.contains(Flags::IN_GAME)
+            && !self.intersects(Flags::LOADING | Flags::IN_MENU | Flags::PAUSED)
+    }
+}
+
+impl std::fmt::Display for Flags {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let yes = "+";
+        let no = "-";
+        write!(
+            f,
+            "[LOADING: {}, IN_MENU: {}, IN_GAME: {}, PAUSED: {}, SHOULD_SYNC: {}]",
+            if self.contains(Self::LOADING) {
+                yes
+            } else {
+                no
+            },
+            if self.contains(Self::IN_MENU) {
+                yes
+            } else {
+                no
+            },
+            if self.contains(Self::IN_GAME) {
+                yes
+            } else {
+                no
+            },
+            if self.contains(Self::PAUSED) { yes } else { no },
+            if self.should_sync() { yes } else { no },
+        )
     }
 }
 
 static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
 static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
-static STATE: LazyLock<AtomicU32> = LazyLock::new(|| AtomicU32::new(Flags::empty().bits()));
 
 fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
@@ -64,7 +92,6 @@ fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
 
 pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
     lifecycle!("spawn plugin thread");
-    STATE.store(Flags::LOADING.bits(), Ordering::Release);
     let (engine, capacity) = load(env)?;
     let _ = THREAD.set(Mutex::new(Some(
         std::thread::Builder::new()
@@ -89,9 +116,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
     let ms = |x| Duration::from_millis(x);
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
     let synchronization = tick(ms(15));
-    let mut should_sync = false;
-    let mut in_game = false;
-    let mut loading = false;
+    let mut state = Flags::LOADING;
     'game: loop {
         for l in rl.try_iter() {
             lifecycle!("> {l}");
@@ -175,58 +200,64 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::OnEmitterDefeated { .. } => {}
                 Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
                 Lifecycle::Session(Session::BeforeStart) => engine.reset(),
-                Lifecycle::Session(Session::Start)
-                | Lifecycle::Session(Session::End)
-                | Lifecycle::Session(Session::Ready) => {
-                    loading = false;
-                    in_game = true;
-                }
-                Lifecycle::Session(Session::Pause) => {
-                    should_sync = false;
-                }
-                Lifecycle::Session(Session::Resume) => {
-                    should_sync = true;
-                }
+                Lifecycle::Session(Session::Start) | Lifecycle::Session(Session::End) => {}
                 Lifecycle::Session(Session::BeforeEnd) => {
-                    should_sync = false;
-                    engine.scene = None;
-                    if loading {
-                        engine.tracks.stop(DILATION_EASE_OUT);
-                    } else {
+                    if state.contains(Flags::IN_GAME) {
+                        state.set(Flags::IN_GAME, false);
+                        engine.scene = None;
                         engine.tracks.clear();
                     }
                 }
-                Lifecycle::EngagementScreen => {
-                    in_game = false;
-                }
-                Lifecycle::LoadSave => {
-                    loading = true;
-                }
-                Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
-                Lifecycle::System(System::PlayerAttach) => match engine.try_new_scene() {
-                    Ok(_) => {
-                        should_sync = true;
+                Lifecycle::UIInGameNotificationRemove => {
+                    if state.contains(Flags::LOADING) {
+                        engine.tracks.stop(DILATION_EASE_OUT);
                     }
-                    Err(e) => lifecycle!("failed to create new scene: {e}"),
-                },
-                Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters(),
-                Lifecycle::Board(Board::UIMenu(true)) => {
-                    should_sync = false;
-                    if in_game {
+                }
+                Lifecycle::Session(Session::Ready) => {
+                    state.set(Flags::LOADING, false);
+                    state.set(Flags::IN_MENU, false);
+                    state.set(Flags::IN_GAME, true);
+                }
+                Lifecycle::Session(Session::Pause) => {
+                    state.set(Flags::PAUSED, true);
+                }
+                Lifecycle::Session(Session::Resume) => {
+                    state.set(Flags::PAUSED, false);
+                }
+                Lifecycle::SwitchToScenario(name) => {
+                    if name == CName::new("MenuScenario_PauseMenu") {
                         engine.pause();
                     }
+                    state.set(Flags::IN_MENU, true);
                 }
-                Lifecycle::Board(Board::UIMenu(false)) => {
-                    should_sync = engine.scene.is_some();
-                    if in_game {
-                        engine.resume();
+                Lifecycle::EngagementScreen => {
+                    state.set(Flags::IN_GAME, false);
+                }
+                Lifecycle::LoadSave => {
+                    state.set(Flags::LOADING, true);
+                }
+                Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
+                Lifecycle::System(System::PlayerAttach) => {
+                    if let Err(e) = engine.try_new_scene() {
+                        lifecycle!("failed to create new scene: {e}");
+                    }
+                }
+                Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters(),
+                Lifecycle::Board(Board::UIMenu(opened)) => {
+                    state.set(Flags::IN_MENU, opened);
+                    if state.contains(Flags::IN_GAME) {
+                        if opened {
+                            engine.pause();
+                        } else {
+                            engine.resume();
+                        }
                     }
                 }
                 Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
             }
         }
-        if should_sync && engine.any_emitter() && synchronization.try_recv().is_ok() {
+        if state.should_sync() && engine.any_emitter() && synchronization.try_recv().is_ok() {
             engine.sync_scene();
         }
         if engine.any_handle() && reclamation.try_recv().is_ok() {

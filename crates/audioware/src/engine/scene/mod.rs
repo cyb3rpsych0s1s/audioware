@@ -17,7 +17,7 @@ use crate::{
     get_player,
 };
 
-use super::{lifecycle, modulators::Modulators, tracks::ambience::Ambience, tweens::IMMEDIATELY};
+use super::{lifecycle, tracks::ambience::Ambience, tweens::IMMEDIATELY};
 
 mod dilation;
 mod emitters;
@@ -65,7 +65,6 @@ impl Scene {
         tag_name: CName,
         emitter_name: Option<CName>,
         settings: Option<&(SpatialTrackSettings, NonZero<u64>)>,
-        modulators: &Modulators,
         ambience: &Ambience,
     ) -> Result<(), Error> {
         if entity_id == self.v.id {
@@ -92,14 +91,7 @@ impl Scene {
             },
         };
         lifecycle!("emitter settings after {:?} [{entity_id}]", mapped);
-        let handle = Spatial::try_new(
-            manager,
-            self.v.handle.id(),
-            position,
-            mapped,
-            modulators,
-            ambience,
-        )?;
+        let handle = Spatial::try_new(manager, self.v.handle.id(), position, mapped, ambience)?;
         self.emitters.add_emitter(
             handle,
             entity_id,

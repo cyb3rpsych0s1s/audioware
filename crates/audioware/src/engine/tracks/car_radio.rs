@@ -4,10 +4,7 @@ use kira::{
     {AudioManager, backend::Backend},
 };
 
-use crate::{
-    engine::modulators::{Modulators, Parameter},
-    error::Error,
-};
+use crate::error::Error;
 
 use super::ambience::Ambience;
 
@@ -17,14 +14,12 @@ impl CarRadio {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
         ambience: &Ambience,
-        modulators: &Modulators,
     ) -> Result<Self, Error> {
         let track = manager.add_sub_track(
             TrackBuilder::new()
                 // sum used to have to be 1.0 otherwise sounds crackled, what now?
                 .with_send(ambience.environmental(), amplitude!(0.75).as_decibels())
-                .with_send(ambience.reverb(), amplitude!(0.25).as_decibels())
-                .with_effect(modulators.car_radio_volume.try_effect()?),
+                .with_send(ambience.reverb(), amplitude!(0.25).as_decibels()),
         )?;
         Ok(Self(track))
     }
