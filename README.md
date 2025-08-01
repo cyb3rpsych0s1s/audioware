@@ -32,6 +32,8 @@ This initial release would never have been possible without the following person
 - [@jekky](https://github.com/jac3km4): for the very same reasons as above, but also for being the author of [red4ext-rs](https://github.com/jac3km4/red4ext-rs) on which this plugin is built upon, and for accepting my comments, reviewing my Pull Requests, providing me explanations and so on.
 - [@DevNullx64](https://github.com/DevNullx64): for helping in my first steps in assembly and understanding basic C++, and simply for being a formidable friend.
 - [@Demon9ne](https://next.nexusmods.com/profile/Demon9ne): for being the first modder to believe in Audioware before anybody else.
+- [@misterchedda](https://next.nexusmods.com/profile/MisterChedda): for using Audioware extensively, coming up with new ideas and providing assistance in testing.
+- [@DBK](https://next.nexusmods.com/profile/DBK01): for thorough testing sessions, and finally exploring Audioware pre-game capabilities.
 - [@WopsS](https://github.com/WopsS): for being the author of [RED4ext.SDK](https://github.com/WopsS/RED4ext.SDK) on which all Cyberpunk modding tools are based.
 - [@Nibana](https://linktr.ee/nibanamusic): for providing extensive explanations about audio in games in general, and testing out sound effects.
 - [@bespokecomponents](https://github.com/bespokecomponents): for educating me about audio fundamentals.
