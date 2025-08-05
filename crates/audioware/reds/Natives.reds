@@ -31,7 +31,7 @@ private native func SetPlayerGender(value: PlayerGender) -> Void;
 private native func UnsetPlayerGender() -> Void;
 private native func SetGameLocales(spoken: CName, written: CName) -> Void;
 
-enum LocaleExt {
+public enum LocaleExt {
     English = 0,
     Creole = 1,
     Japanese = 2,

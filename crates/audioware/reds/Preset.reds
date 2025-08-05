@@ -1,6 +1,6 @@
 module Audioware
 
-enum Preset {
+public enum Preset {
     None = 0,
     Underwater = 1,
     OnThePhone = 2,

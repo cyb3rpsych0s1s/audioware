@@ -165,5 +165,13 @@ class SubtitleSubSystem extends ScriptableSystem {
         }
     }
 
+    public final func CancelDelay() -> Void {
+        if NotEquals(this.subtitleDelayID, GetInvalidDelayID()) {
+            GameInstance
+            .GetDelaySystem(this.GetGameInstance())
+            .CancelCallback(this.subtitleDelayID);
+        }
+    }
+
     public final static func GetInstance(game: GameInstance) -> ref<SubtitleSubSystem> = GameInstance.GetScriptableSystemsContainer(game).Get(n"Audioware.SubtitleSubSystem") as SubtitleSubSystem;
 }
