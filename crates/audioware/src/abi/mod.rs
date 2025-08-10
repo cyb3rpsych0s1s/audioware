@@ -9,6 +9,10 @@ use red4ext_rs::{
     StateType, exports, methods,
     types::{CName, EntityId, IScriptable, Opt, Ref},
 };
+use windows::Win32::{
+    Foundation::HWND,
+    UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId},
+};
 
 use crate::{
     Audioware, EmitterSettings, LocalizationPackage, ToTween, Tween,
@@ -40,6 +44,18 @@ macro_rules! g {
     ($reds:literal, $rust:path) => {
         ::red4ext_rs::GlobalExport(::red4ext_rs::global!($reds, $rust))
     };
+}
+
+pub fn is_in_foreground() -> bool {
+    unsafe {
+        let hwnd: HWND = GetForegroundWindow();
+        if hwnd.0.is_null() {
+            return false;
+        }
+        let mut pid = 0;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        pid == std::process::id()
+    }
 }
 
 /// Register types in [RTTI][red4ext_rs::RttiSystem].

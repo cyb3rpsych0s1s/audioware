@@ -16,6 +16,7 @@ use std::sync::{Mutex, RwLock};
 use crate::{
     abi::{
         command::Command,
+        is_in_foreground,
         lifecycle::{Board, Lifecycle, Session, System},
     },
     config::BufferSize,
@@ -33,6 +34,7 @@ bitflags! {
         const IN_MENU = 1 << 1;
         const IN_GAME = 1 << 2;
         const PAUSED  = 1 << 3;
+        const FOCUSED = 1 << 4;
     }
 }
 
@@ -118,6 +120,17 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
     let synchronization = tick(ms(15));
     let mut state = Flags::LOADING;
     'game: loop {
+        if !is_in_foreground() {
+            if state.contains(Flags::FOCUSED) {
+                crate::utils::lifecycle!("switched to background");
+                state.set(Flags::FOCUSED, false);
+                engine.pause();
+            }
+        } else if !state.contains(Flags::FOCUSED) {
+            crate::utils::lifecycle!("switched to foreground");
+            state.set(Flags::FOCUSED, true);
+            engine.resume();
+        }
         for l in rl.try_iter() {
             lifecycle!("> {l}");
             match l {

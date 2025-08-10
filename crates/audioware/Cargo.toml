@@ -28,6 +28,7 @@ parking_lot = "0.12.4"
 red4ext-rs.workspace = true
 rust-ini = "0.21.2"
 snafu.workspace = true
+windows = {version = "0.61.3", features = ["Win32_UI_WindowsAndMessaging"]}
 
 [build-dependencies]
 semver = "1.0"
