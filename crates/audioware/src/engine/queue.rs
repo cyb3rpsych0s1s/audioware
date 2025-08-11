@@ -350,10 +350,10 @@ pub fn notify(lifecycle: Lifecycle) {
     lifecycle!("{lifecycle}");
     if let Some(x) = LIFECYCLE.get() {
         if let Ok(x) = x.try_read() {
-            if let Some(x) = x.as_ref() {
-                if let Err(e) = x.try_send(lifecycle) {
-                    fails!("failed to notify plugin lifecycle: {e}");
-                }
+            if let Some(x) = x.as_ref()
+                && let Err(e) = x.try_send(lifecycle)
+            {
+                fails!("failed to notify plugin lifecycle: {e}");
             }
         } else {
             fails!("plugin game channel is not initialized");
@@ -367,10 +367,10 @@ pub fn send(command: Command) {
     lifecycle!("{command}");
     if let Some(x) = COMMAND.get() {
         if let Ok(x) = x.try_read() {
-            if let Some(x) = x.as_ref() {
-                if let Err(e) = x.try_send(command) {
-                    fails!("failed to send plugin command: {e}");
-                }
+            if let Some(x) = x.as_ref()
+                && let Err(e) = x.try_send(command)
+            {
+                fails!("failed to send plugin command: {e}");
             }
         } else {
             fails!("plugin command channel is not initialized");

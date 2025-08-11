@@ -27,20 +27,20 @@ pub enum BufferSize {
 impl BufferSize {
     /// Read ModSettings .ini file.
     pub fn read_ini() -> BufferSize {
-        if let Ok(ini_filepath) = try_get_ini() {
-            if let Ok(conf) = Ini::load_from_file(ini_filepath) {
-                match conf.try_into() {
-                    Ok(x) => return x,
-                    Err(ConversionError::InvalidBufferSize { value }) => {
-                        log::error!(
-                            Audioware::env(),
-                            "Error reading ModSettings .ini: {}",
-                            ConversionError::InvalidBufferSize { value }
-                        );
-                    }
-                    _ => {}
-                };
-            }
+        if let Ok(ini_filepath) = try_get_ini()
+            && let Ok(conf) = Ini::load_from_file(ini_filepath)
+        {
+            match conf.try_into() {
+                Ok(x) => return x,
+                Err(ConversionError::InvalidBufferSize { value }) => {
+                    log::error!(
+                        Audioware::env(),
+                        "Error reading ModSettings .ini: {}",
+                        ConversionError::InvalidBufferSize { value }
+                    );
+                }
+                _ => {}
+            };
         }
         BufferSize::Auto
     }
@@ -51,21 +51,21 @@ impl TryFrom<Ini> for BufferSize {
 
     fn try_from(conf: Ini) -> Result<Self, Self::Error> {
         // section and value must match Redscript config naming
-        if let Some(section) = conf.section(Some("Audioware.AudiowareConfig")) {
-            if let Some(value) = section.get("bufferSize") {
-                match value {
-                    "Auto" => return Ok(Self::Auto),
-                    "Option64" => return Ok(Self::Option64),
-                    "Option128" => return Ok(Self::Option128),
-                    "Option256" => return Ok(Self::Option256),
-                    "Option512" => return Ok(Self::Option512),
-                    "Option1024" => return Ok(Self::Option1024),
-                    "Option2048" => return Ok(Self::Option2048),
-                    _ => {
-                        return Err(ConversionError::InvalidBufferSize {
-                            value: value.to_string(),
-                        });
-                    }
+        if let Some(section) = conf.section(Some("Audioware.AudiowareConfig"))
+            && let Some(value) = section.get("bufferSize")
+        {
+            match value {
+                "Auto" => return Ok(Self::Auto),
+                "Option64" => return Ok(Self::Option64),
+                "Option128" => return Ok(Self::Option128),
+                "Option256" => return Ok(Self::Option256),
+                "Option512" => return Ok(Self::Option512),
+                "Option1024" => return Ok(Self::Option1024),
+                "Option2048" => return Ok(Self::Option2048),
+                _ => {
+                    return Err(ConversionError::InvalidBufferSize {
+                        value: value.to_string(),
+                    });
                 }
             }
         }
