@@ -126,12 +126,12 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 if state.contains(Flags::FOCUSED) {
                     crate::utils::lifecycle!("switched to background");
                     state.set(Flags::FOCUSED, false);
-                    engine.pause();
+                    engine.mute(true);
                 }
             } else if !state.contains(Flags::FOCUSED) {
                 crate::utils::lifecycle!("switched to foreground");
                 state.set(Flags::FOCUSED, true);
-                engine.resume();
+                engine.mute(false);
             }
         }
         for l in rl.try_iter() {
