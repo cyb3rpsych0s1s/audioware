@@ -10,11 +10,7 @@ use dashmap::{
 use either::Either;
 use kira::{
     Tween,
-    sound::{
-        FromFileError,
-        static_sound::{StaticSoundData, StaticSoundHandle},
-        streaming::{StreamingSoundData, StreamingSoundHandle},
-    },
+    sound::{FromFileError, static_sound::StaticSoundData, streaming::StreamingSoundData},
 };
 use parking_lot::RwLock;
 use red4ext_rs::types::{CName, EntityId};
@@ -248,76 +244,6 @@ impl Emitters {
 impl Drop for Emitters {
     fn drop(&mut self) {
         EMITTERS.write().clear();
-    }
-}
-
-#[allow(dead_code)]
-pub trait Store<T> {
-    fn store(
-        &mut self,
-        tag_name: CName,
-        event_name: CName,
-        handle: T,
-        affected_by_time_dilation: bool,
-    );
-}
-
-impl Store<Either<StaticSoundHandle, StreamingSoundHandle<FromFileError>>> for Emitters {
-    fn store(
-        &mut self,
-        tag_name: CName,
-        event_name: CName,
-        handle: Either<StaticSoundHandle, StreamingSoundHandle<FromFileError>>,
-        affected_by_time_dilation: bool,
-    ) {
-        match handle {
-            Either::Left(handle) => {
-                self.store(tag_name, event_name, handle, affected_by_time_dilation)
-            }
-            Either::Right(handle) => {
-                self.store(tag_name, event_name, handle, affected_by_time_dilation)
-            }
-        }
-    }
-}
-
-impl Store<StaticSoundHandle> for Emitters {
-    fn store(
-        &mut self,
-        tag_name: CName,
-        event_name: CName,
-        handle: StaticSoundHandle,
-        affected_by_time_dilation: bool,
-    ) {
-        'outer: for mut slots in self.0.iter_mut() {
-            for slot in slots.slots.iter_mut() {
-                if slot.tag_name == Some(tag_name) {
-                    slot.handles
-                        .store_static(event_name, handle, affected_by_time_dilation);
-                    break 'outer;
-                }
-            }
-        }
-    }
-}
-
-impl Store<StreamingSoundHandle<FromFileError>> for Emitters {
-    fn store(
-        &mut self,
-        tag_name: CName,
-        event_name: CName,
-        handle: StreamingSoundHandle<FromFileError>,
-        affected_by_time_dilation: bool,
-    ) {
-        'outer: for mut slots in self.0.iter_mut() {
-            for slot in slots.slots.iter_mut() {
-                if slot.tag_name == Some(tag_name) {
-                    slot.handles
-                        .store_stream(event_name, handle, affected_by_time_dilation);
-                    break 'outer;
-                }
-            }
-        }
     }
 }
 
