@@ -43,6 +43,9 @@ pub enum Lifecycle {
     SetMuteInBackground {
         value: bool,
     },
+    SetInBenchmark {
+        value: bool,
+    },
     SetListenerDilation {
         value: f32,
         reason: CName,
@@ -109,6 +112,9 @@ impl std::fmt::Display for Lifecycle {
             }
             Lifecycle::SetMuteInBackground { value } => {
                 write!(f, "set mute in background {value}")
+            }
+            Lifecycle::SetInBenchmark { value } => {
+                write!(f, "set in benchmark {value}")
             }
             Lifecycle::SetListenerDilation {
                 value: dilation,

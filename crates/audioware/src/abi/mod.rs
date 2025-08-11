@@ -101,6 +101,7 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.SetPreset",                  Audioware::on_preset),
         g!(c"Audioware.SetVolume",                  Audioware::set_volume),
         g!(c"Audioware.SetMuteInBackground",        Audioware::set_mute_in_background),
+        g!(c"Audioware.SetInBenchmark",             Audioware::set_in_benchmark),
         g!(c"Audioware.SetPlayerGender",            Audioware::set_player_gender),
         g!(c"Audioware.UnsetPlayerGender",          Audioware::unset_player_gender),
         g!(c"Audioware.SetGameLocales",             Audioware::set_game_locales),
@@ -167,6 +168,7 @@ pub trait CodewareLifecycle {
 pub trait ListenerLifecycle {
     fn set_volume(setting: CName, value: f32);
     fn set_mute_in_background(value: bool);
+    fn set_in_benchmark(value: bool);
 }
 
 impl GameSessionLifecycle for Audioware {
@@ -246,6 +248,10 @@ impl ListenerLifecycle for Audioware {
 
     fn set_mute_in_background(value: bool) {
         queue::notify(Lifecycle::SetMuteInBackground { value });
+    }
+
+    fn set_in_benchmark(value: bool) {
+        queue::notify(Lifecycle::SetInBenchmark { value });
     }
 }
 

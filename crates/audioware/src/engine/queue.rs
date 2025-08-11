@@ -36,13 +36,18 @@ bitflags! {
         const PAUSED  = 1 << 3;
         const FOCUSED = 1 << 4;
         const MUTE_IN_BACKGROUND = 1 << 5;
+        const IN_BENCHMARK = 1 << 6;
     }
 }
 
 impl Flags {
     fn should_sync(&self) -> bool {
         self.contains(Flags::IN_GAME)
-            && !self.intersects(Flags::LOADING | Flags::IN_MENU | Flags::PAUSED)
+            && !self
+                .intersects(Flags::LOADING | Flags::IN_MENU | Flags::PAUSED | Flags::IN_BENCHMARK)
+    }
+    fn should_reclaim(&self) -> bool {
+        !self.contains(Flags::IN_BENCHMARK)
     }
 }
 
@@ -52,7 +57,7 @@ impl std::fmt::Display for Flags {
         let no = "-";
         write!(
             f,
-            "[LOADING: {}, IN_MENU: {}, IN_GAME: {}, PAUSED: {}, SHOULD_SYNC: {}]",
+            "[LOADING: {}, IN_MENU: {}, IN_GAME: {}, PAUSED: {}, SHOULD_SYNC: {}, SHOULD_RECLAIM: {}]",
             if self.contains(Self::LOADING) {
                 yes
             } else {
@@ -70,6 +75,7 @@ impl std::fmt::Display for Flags {
             },
             if self.contains(Self::PAUSED) { yes } else { no },
             if self.should_sync() { yes } else { no },
+            if self.should_reclaim() { yes } else { no },
         )
     }
 }
@@ -140,6 +146,14 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::Terminate => {
                     engine.tracks.clear();
                     break 'game;
+                }
+                Lifecycle::SetInBenchmark { value } => {
+                    state.set(Flags::IN_BENCHMARK, value);
+                    if value {
+                        engine.pause();
+                    } else {
+                        engine.resume();
+                    }
                 }
                 Lifecycle::ReportInitialization => engine.report_initialization(false),
                 #[cfg(feature = "hot-reload")]
@@ -282,7 +296,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
         if state.should_sync() && engine.any_emitter() && synchronization.try_recv().is_ok() {
             engine.sync_scene();
         }
-        if engine.any_handle() && reclamation.try_recv().is_ok() {
+        if state.should_reclaim() && engine.any_handle() && reclamation.try_recv().is_ok() {
             engine.reclaim();
         }
         for c in rc.try_iter().take(8) {
