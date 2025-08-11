@@ -95,3 +95,39 @@ public class VolumeSettingsListener extends ConfigVarListener {
         }
     }
 }
+
+/// whenever game misc audio settings change
+public class MiscSettingsListener extends ConfigVarListener {
+    private let game: GameInstance;
+    private let muteInBackground: Bool = true;
+
+    public func Initialize(game: GameInstance) {
+        this.game = game;
+
+        // update settings for Audioware, which loads way earlier
+        let settings = GameInstance.GetSettingsSystem(this.game);
+        let setting: Bool = (settings.GetGroup(n"/audio/misc").GetVar(n"MuteInBackground") as ConfigVarBool).GetValue();
+        this.UpdateMuteInBackground(setting);
+    }
+
+    public func Start() {
+        this.Register(n"/audio/misc");
+    }
+
+    protected cb func OnVarModified(groupPath: CName, varName: CName, varType: ConfigVarType, reason: ConfigChangeReason) {
+        if Equals(groupPath, n"/audio/misc")
+        && Equals(varName, n"MuteInBackground")
+        && Equals(reason, ConfigChangeReason.Accepted) {
+            let settings = GameInstance.GetSettingsSystem(this.game);
+            let setting: Bool = (settings.GetGroup(groupPath).GetVar(varName) as ConfigVarBool).GetValue();
+            this.UpdateMuteInBackground(setting);
+        }
+    }
+
+    private func UpdateMuteInBackground(value: Bool) {
+        if NotEquals(this.muteInBackground, value) {
+            this.muteInBackground = value;
+            SetMuteInBackground(value);
+        }
+    }
+}

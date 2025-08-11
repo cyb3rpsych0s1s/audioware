@@ -25,6 +25,7 @@ private native func OnUIMenu(value: Bool);
 private native func OnEngagementScreen();
 
 private native func SetVolume(setting: CName, value: Float);
+private native func SetMuteInBackground(value: Bool);
 private native func SetReverbMix(value: Float) -> Void;
 private native func SetPreset(value: Preset) -> Void;
 private native func SetPlayerGender(value: PlayerGender) -> Void;

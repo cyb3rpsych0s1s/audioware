@@ -35,6 +35,7 @@ bitflags! {
         const IN_GAME = 1 << 2;
         const PAUSED  = 1 << 3;
         const FOCUSED = 1 << 4;
+        const MUTE_IN_BACKGROUND = 1 << 5;
     }
 }
 
@@ -118,18 +119,20 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
     let ms = |x| Duration::from_millis(x);
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
     let synchronization = tick(ms(15));
-    let mut state = Flags::LOADING;
+    let mut state = Flags::LOADING | Flags::MUTE_IN_BACKGROUND;
     'game: loop {
-        if !is_in_foreground() {
-            if state.contains(Flags::FOCUSED) {
-                crate::utils::lifecycle!("switched to background");
-                state.set(Flags::FOCUSED, false);
-                engine.pause();
+        if state.contains(Flags::MUTE_IN_BACKGROUND) {
+            if !is_in_foreground() {
+                if state.contains(Flags::FOCUSED) {
+                    crate::utils::lifecycle!("switched to background");
+                    state.set(Flags::FOCUSED, false);
+                    engine.pause();
+                }
+            } else if !state.contains(Flags::FOCUSED) {
+                crate::utils::lifecycle!("switched to foreground");
+                state.set(Flags::FOCUSED, true);
+                engine.resume();
             }
-        } else if !state.contains(Flags::FOCUSED) {
-            crate::utils::lifecycle!("switched to foreground");
-            state.set(Flags::FOCUSED, true);
-            engine.resume();
         }
         for l in rl.try_iter() {
             lifecycle!("> {l}");
@@ -212,6 +215,12 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 }
                 Lifecycle::OnEmitterDefeated { .. } => {}
                 Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
+                Lifecycle::SetMuteInBackground { value } => {
+                    if value != state.contains(Flags::MUTE_IN_BACKGROUND) {
+                        lifecycle!("about to set {value} for MuteInBackground");
+                        state.set(Flags::MUTE_IN_BACKGROUND, value);
+                    }
+                }
                 Lifecycle::Session(Session::BeforeStart) => engine.reset(),
                 Lifecycle::Session(Session::Start) | Lifecycle::Session(Session::End) => {}
                 Lifecycle::Session(Session::BeforeEnd) => {
