@@ -32,13 +32,19 @@ class LifecycleSubSystem extends ScriptableSystem {
 
 class VolumeSubSystem extends ScriptableSystem {
     private let settingsListener: ref<VolumeSettingsListener>;
+    private let miscListener: ref<MiscSettingsListener>;
     private func OnAttach() -> Void {
         this.settingsListener = new VolumeSettingsListener();
         this.settingsListener.Initialize(this.GetGameInstance());
         this.settingsListener.Start();
+
+        this.miscListener = new MiscSettingsListener();
+        this.miscListener.Initialize(this.GetGameInstance());
+        this.miscListener.Start();
     }
     private func OnDetach() -> Void {
         this.settingsListener = null;
+        this.miscListener = null;
     }
 }
 
