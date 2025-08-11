@@ -641,10 +641,10 @@ where
     }
 
     pub fn supported_languages() -> Vec<CName> {
-        if let Some(banks) = Self::banks().as_ref() {
-            if cfg!(not(test)) {
-                return banks.languages().iter().cloned().map(CName::from).collect();
-            }
+        if let Some(banks) = Self::banks().as_ref()
+            && cfg!(not(test))
+        {
+            return banks.languages().iter().cloned().map(CName::from).collect();
         }
         vec![]
     }

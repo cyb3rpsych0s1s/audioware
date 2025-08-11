@@ -281,21 +281,21 @@ impl_from_settings!(::kira::sound::streaming::StreamingSoundSettings);
 impl Validate for Settings {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<_> = vec![];
-        if let Some(panning) = self.panning {
-            if !(0.0..=1.0).contains(&panning) {
-                errors.push(ValidationError {
-                    which: "panning",
-                    why: "must be a value between 0.0 and 1.0 (inclusive)",
-                });
-            }
+        if let Some(panning) = self.panning
+            && !(0.0..=1.0).contains(&panning)
+        {
+            errors.push(ValidationError {
+                which: "panning",
+                why: "must be a value between 0.0 and 1.0 (inclusive)",
+            });
         }
-        if let Some(volume) = self.volume {
-            if volume.as_decibels() > Decibels(85.0) {
-                errors.push(ValidationError {
-                    which: "volume",
-                    why: "audio should not be louder than 85.0 dB",
-                });
-            }
+        if let Some(volume) = self.volume
+            && volume.as_decibels() > Decibels(85.0)
+        {
+            errors.push(ValidationError {
+                which: "volume",
+                why: "audio should not be louder than 85.0 dB",
+            });
         }
         if errors.is_empty() {
             return Ok(());
@@ -365,13 +365,13 @@ impl ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>> for
                     why: "must be within audio duration and starts before it ends",
                 });
             }
-            if let Some(start_position) = self.start_position.map(|x| x.as_secs_f64()) {
-                if start_position >= end {
-                    errors.push(ValidationError {
-                        which: "start_position",
-                        why: "greater than audio duration",
-                    });
-                }
+            if let Some(start_position) = self.start_position.map(|x| x.as_secs_f64())
+                && start_position >= end
+            {
+                errors.push(ValidationError {
+                    which: "start_position",
+                    why: "greater than audio duration",
+                });
             }
         } else if let Some(start_position) = self.start_position.map(|x| x.as_secs_f64()) {
             let duration = match audio {

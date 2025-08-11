@@ -206,11 +206,11 @@ impl Scene {
 
     pub fn set_emitter_dilation(&mut self, entity_id: EntityId, dilation: &DilationUpdate) -> bool {
         let mut updated = false;
-        if let Some(mut slots) = self.emitters.get_mut(&entity_id) {
-            if slots.value().dilation.last.as_ref() != Some(dilation) {
-                slots.value_mut().dilation.last = Some(dilation.clone());
-                updated = true;
-            }
+        if let Some(mut slots) = self.emitters.get_mut(&entity_id)
+            && slots.value().dilation.last.as_ref() != Some(dilation)
+        {
+            slots.value_mut().dilation.last = Some(dilation.clone());
+            updated = true;
         }
         if updated {
             self.sync_dilation();
@@ -224,11 +224,11 @@ impl Scene {
         dilation: &DilationUpdate,
     ) -> bool {
         let mut updated = false;
-        if let Some(mut slots) = self.emitters.get_mut(&entity_id) {
-            if slots.value().dilation.last.as_ref() != Some(dilation) {
-                slots.value_mut().dilation.last = Some(dilation.clone());
-                updated = true;
-            }
+        if let Some(mut slots) = self.emitters.get_mut(&entity_id)
+            && slots.value().dilation.last.as_ref() != Some(dilation)
+        {
+            slots.value_mut().dilation.last = Some(dilation.clone());
+            updated = true;
         }
         if updated {
             self.sync_dilation();

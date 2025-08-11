@@ -116,39 +116,39 @@ impl Banks {
         let mut key: &Key;
         for id in self.ids.iter() {
             key = id.as_ref();
-            if let Some(key) = key.as_unique() {
-                if key.as_ref() == name {
+            if let Some(key) = key.as_unique()
+                && key.as_ref() == name
+            {
+                return Ok(id);
+            }
+            if let Some(GenderKey(k, g)) = key.as_gender()
+                && k == name
+            {
+                if gender.is_none() {
+                    return Err(RegistryError::RequireGender { cname: *name }.into());
+                }
+                if Some(g) == gender {
                     return Ok(id);
                 }
             }
-            if let Some(GenderKey(k, g)) = key.as_gender() {
-                if k == name {
+            if let Some(LocaleKey(k, l)) = key.as_locale()
+                && k == name
+            {
+                maybe_missing_locale = true;
+                if l == spoken {
+                    return Ok(id);
+                }
+            }
+            if let Some(BothKey(k, l, g)) = key.as_both()
+                && k == name
+            {
+                maybe_missing_locale = true;
+                if l == spoken {
                     if gender.is_none() {
                         return Err(RegistryError::RequireGender { cname: *name }.into());
                     }
-                    if Some(g) == gender {
+                    if gender == Some(g) {
                         return Ok(id);
-                    }
-                }
-            }
-            if let Some(LocaleKey(k, l)) = key.as_locale() {
-                if k == name {
-                    maybe_missing_locale = true;
-                    if l == spoken {
-                        return Ok(id);
-                    }
-                }
-            }
-            if let Some(BothKey(k, l, g)) = key.as_both() {
-                if k == name {
-                    maybe_missing_locale = true;
-                    if l == spoken {
-                        if gender.is_none() {
-                            return Err(RegistryError::RequireGender { cname: *name }.into());
-                        }
-                        if gender == Some(g) {
-                            return Ok(id);
-                        }
                     }
                 }
             }
