@@ -251,6 +251,7 @@ impl Drop for Emitters {
     }
 }
 
+#[allow(dead_code)]
 pub trait Store<T> {
     fn store(
         &mut self,

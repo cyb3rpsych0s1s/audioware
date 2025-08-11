@@ -1,8 +1,12 @@
+#[allow(dead_code)]
 mod car_radio;
-
+#[allow(dead_code)]
 mod dialogue;
+#[allow(dead_code)]
 mod music;
+#[allow(dead_code)]
 mod radioport;
+#[allow(dead_code)]
 mod sfx;
 
 pub const VOLUME_MAPPING: kira::Mapping<kira::Decibels> = kira::Mapping {
@@ -11,6 +15,7 @@ pub const VOLUME_MAPPING: kira::Mapping<kira::Decibels> = kira::Mapping {
     easing: kira::Easing::OutPowf(3.0), // more realistic volume scaling
 };
 
+#[allow(unused_macros)]
 macro_rules! impl_volume {
     ($struct:ident) => {
         pub struct $struct(::kira::modulator::tweener::TweenerHandle);
