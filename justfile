@@ -100,12 +100,12 @@ uninstall FROM=game_dir:
 
 # 🎨 lint code
 format:
-  @cargo fmt
+  @cargo fmt --all
 
 # 🎨 lint code
 @lint:
-  cargo clippy --fix --allow-dirty --allow-staged --all-features
-  cargo fix --allow-dirty --allow-staged --all-features
+  cargo clippy --fix --allow-dirty --allow-staged --all-features --workspace
+  cargo fix --allow-dirty --allow-staged --all-features --workspace
   just format
 
 alias l := lint
