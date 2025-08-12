@@ -222,7 +222,10 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     }
                 }
                 Lifecycle::Session(Session::BeforeStart) => engine.reset(),
-                Lifecycle::Session(Session::Start) | Lifecycle::Session(Session::End) => {}
+                Lifecycle::Session(Session::Start) => {
+                    state.set(Flags::LOADING, true);
+                }
+                Lifecycle::Session(Session::End) => {}
                 Lifecycle::Session(Session::BeforeEnd) => {
                     if state.contains(Flags::IN_GAME) {
                         state.set(Flags::IN_GAME, false);
