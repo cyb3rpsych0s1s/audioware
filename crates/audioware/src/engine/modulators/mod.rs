@@ -7,7 +7,8 @@ use kira::{
 use crate::error::Error;
 
 mod volume;
-pub use volume::*;
+pub use volume::VOLUME_MAPPING;
+
 mod reverb;
 pub use reverb::*;
 

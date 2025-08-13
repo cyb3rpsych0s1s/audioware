@@ -26,7 +26,7 @@ public class VolumeSettingsListener extends ConfigVarListener {
             n"RadioportVolume"
         ] {
             setting = Cast<Float>((settings.GetGroup(n"/audio/volume").GetVar(name) as ConfigVarInt).GetValue());
-            this.UpdateVolume(name, setting);
+            this.UpdateVolume(name, setting, true);
         }
     }
 
@@ -52,46 +52,82 @@ public class VolumeSettingsListener extends ConfigVarListener {
             }
         }
     }
-    private func UpdateVolume(name: CName, value: Float) {
+    private func UpdateVolume(name: CName, value: Float, opt force: Bool) {
         switch name {
             case n"MasterVolume":
-                if NotEquals(value, this.master) {
+                if force || NotEquals(value, this.master) {
                     this.master = value;
                     SetVolume(name, value);
                 }
                 break;
             case n"SfxVolume":
-                if NotEquals(value, this.sfx) {
+                if force || NotEquals(value, this.sfx) {
                     this.sfx = value;
                     SetVolume(name, value);
                 }
                 break;
             case n"DialogueVolume":
-                if NotEquals(value, this.dialogue) {
+                if force || NotEquals(value, this.dialogue) {
                     this.dialogue = value;
                     SetVolume(name, value);
                 }
                 break;
             case n"MusicVolume":
-                if NotEquals(value, this.music) {
+                if force || NotEquals(value, this.music) {
                     this.music = value;
                     SetVolume(name, value);
                 }
                 break;
             case n"CarRadioVolume":
-                if NotEquals(value, this.radio) {
+                if force || NotEquals(value, this.radio) {
                     this.radio = value;
                     SetVolume(name, value);
                 }
                 break;
             case n"RadioportVolume":
-                if NotEquals(value, this.radioport) {
+                if force || NotEquals(value, this.radioport) {
                     this.radioport = value;
                     SetVolume(name, value);
                 }
                 break;
             default:
                 break;
+        }
+    }
+}
+
+/// whenever game misc audio settings change
+public class MiscSettingsListener extends ConfigVarListener {
+    private let game: GameInstance;
+    private let muteInBackground: Bool = true;
+
+    public func Initialize(game: GameInstance) {
+        this.game = game;
+
+        // update settings for Audioware, which loads way earlier
+        let settings = GameInstance.GetSettingsSystem(this.game);
+        let setting: Bool = (settings.GetGroup(n"/audio/misc").GetVar(n"MuteInBackground") as ConfigVarBool).GetValue();
+        this.UpdateMuteInBackground(setting);
+    }
+
+    public func Start() {
+        this.Register(n"/audio/misc");
+    }
+
+    protected cb func OnVarModified(groupPath: CName, varName: CName, varType: ConfigVarType, reason: ConfigChangeReason) {
+        if Equals(groupPath, n"/audio/misc")
+        && Equals(varName, n"MuteInBackground")
+        && Equals(reason, ConfigChangeReason.Accepted) {
+            let settings = GameInstance.GetSettingsSystem(this.game);
+            let setting: Bool = (settings.GetGroup(groupPath).GetVar(varName) as ConfigVarBool).GetValue();
+            this.UpdateMuteInBackground(setting);
+        }
+    }
+
+    private func UpdateMuteInBackground(value: Bool) {
+        if NotEquals(this.muteInBackground, value) {
+            this.muteInBackground = value;
+            SetMuteInBackground(value);
         }
     }
 }

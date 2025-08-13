@@ -10,7 +10,7 @@ use audioware_manifest::{Locale, ScnDialogLineType, Source, ValidateFor};
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
-    AudioManager, AudioManagerSettings, Tween,
+    AudioManager, AudioManagerSettings, Decibels, Tween,
     backend::Backend,
     sound::{FromFileError, static_sound::StaticSoundData, streaming::StreamingSoundData},
     track::TrackHandle,
@@ -52,6 +52,7 @@ pub struct Engine<B: Backend> {
     pub manager: AudioManager<B>,
     pub report: Initialization,
     pub banks: Banks,
+    pub last_volume: Option<Decibels>,
 }
 
 #[cfg(debug_assertions)]
@@ -88,6 +89,7 @@ where
             modulators,
             tracks,
             report,
+            last_volume: None,
         })
     }
 
@@ -570,36 +572,32 @@ where
         }
     }
 
+    pub fn mute(&mut self, value: bool) {
+        if value {
+            self.manager
+                .main_track()
+                .set_volume(Decibels::SILENCE, DEFAULT);
+        } else if let Some(volume) = self.last_volume {
+            self.manager.main_track().set_volume(volume, DEFAULT);
+        }
+    }
+
     pub fn set_volume(&mut self, setting: CName, value: Amplitude) {
         lifecycle!("about to change {value} for {setting}");
         // kira uses amplitude for volume, default to 1.
         // while default volume expressed as game setting is 100.
         let v = value.div(100.).clamp(0., 1.) as f64;
+        let d = crate::engine::modulators::VOLUME_MAPPING.map(v);
         match setting.as_str() {
-            "MasterVolume" => self
-                .manager
-                .main_track()
-                .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
-            "SfxVolume" => self
-                .tracks
-                .sfx
-                .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
-            "DialogueVolume" => self
-                .tracks
-                .dialogue
-                .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
-            "MusicVolume" => self
-                .tracks
-                .music
-                .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
-            "CarRadioVolume" => self
-                .tracks
-                .car_radio
-                .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
-            "RadioportVolume" => self
-                .tracks
-                .radioport
-                .set_volume(crate::engine::modulators::VOLUME_MAPPING.map(v), DEFAULT),
+            "MasterVolume" => {
+                self.manager.main_track().set_volume(d, DEFAULT);
+                self.last_volume = Some(d);
+            }
+            "SfxVolume" => self.tracks.sfx.set_volume(d, DEFAULT),
+            "DialogueVolume" => self.tracks.dialogue.set_volume(d, DEFAULT),
+            "MusicVolume" => self.tracks.music.set_volume(d, DEFAULT),
+            "CarRadioVolume" => self.tracks.car_radio.set_volume(d, DEFAULT),
+            "RadioportVolume" => self.tracks.radioport.set_volume(d, DEFAULT),
             _ => lifecycle!("unknown volume setting: {}", setting.as_str()),
         }
     }

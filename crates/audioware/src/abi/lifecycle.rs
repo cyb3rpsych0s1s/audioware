@@ -40,6 +40,9 @@ pub enum Lifecycle {
         setting: CName,
         value: Amplitude,
     },
+    SetMuteInBackground {
+        value: bool,
+    },
     SetListenerDilation {
         value: f32,
         reason: CName,
@@ -103,6 +106,9 @@ impl std::fmt::Display for Lifecycle {
             Lifecycle::Board(x) => write!(f, "{x}"),
             Lifecycle::SetVolume { setting, value } => {
                 write!(f, "set volume {} {value}", setting.as_str())
+            }
+            Lifecycle::SetMuteInBackground { value } => {
+                write!(f, "set mute in background {value}")
             }
             Lifecycle::SetListenerDilation {
                 value: dilation,

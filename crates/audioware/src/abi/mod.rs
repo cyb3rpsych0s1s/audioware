@@ -9,6 +9,10 @@ use red4ext_rs::{
     StateType, exports, methods,
     types::{CName, EntityId, IScriptable, Opt, Ref},
 };
+use windows::Win32::{
+    Foundation::HWND,
+    UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId},
+};
 
 use crate::{
     Audioware, EmitterSettings, LocalizationPackage, ToTween, Tween,
@@ -40,6 +44,18 @@ macro_rules! g {
     ($reds:literal, $rust:path) => {
         ::red4ext_rs::GlobalExport(::red4ext_rs::global!($reds, $rust))
     };
+}
+
+pub fn is_in_foreground() -> bool {
+    unsafe {
+        let hwnd: HWND = GetForegroundWindow();
+        if hwnd.0.is_null() {
+            return false;
+        }
+        let mut pid = 0;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        pid == std::process::id()
+    }
 }
 
 /// Register types in [RTTI][red4ext_rs::RttiSystem].
@@ -84,6 +100,7 @@ pub fn exports() -> impl Exportable {
         g!(c"Audioware.SetReverbMix",               Audioware::on_reverb_mix),
         g!(c"Audioware.SetPreset",                  Audioware::on_preset),
         g!(c"Audioware.SetVolume",                  Audioware::set_volume),
+        g!(c"Audioware.SetMuteInBackground",        Audioware::set_mute_in_background),
         g!(c"Audioware.SetPlayerGender",            Audioware::set_player_gender),
         g!(c"Audioware.UnsetPlayerGender",          Audioware::unset_player_gender),
         g!(c"Audioware.SetGameLocales",             Audioware::set_game_locales),
@@ -149,6 +166,7 @@ pub trait CodewareLifecycle {
 
 pub trait ListenerLifecycle {
     fn set_volume(setting: CName, value: f32);
+    fn set_mute_in_background(value: bool);
 }
 
 impl GameSessionLifecycle for Audioware {
@@ -224,6 +242,10 @@ impl ListenerLifecycle for Audioware {
             return;
         };
         queue::notify(Lifecycle::SetVolume { setting, value });
+    }
+
+    fn set_mute_in_background(value: bool) {
+        queue::notify(Lifecycle::SetMuteInBackground { value });
     }
 }
 
