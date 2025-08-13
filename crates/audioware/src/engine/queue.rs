@@ -124,12 +124,10 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
         if state.contains(Flags::MUTE_IN_BACKGROUND) {
             if !is_in_foreground() {
                 if state.contains(Flags::FOCUSED) {
-                    crate::utils::lifecycle!("switched to background");
                     state.set(Flags::FOCUSED, false);
                     engine.mute(true);
                 }
             } else if !state.contains(Flags::FOCUSED) {
-                crate::utils::lifecycle!("switched to foreground");
                 state.set(Flags::FOCUSED, true);
                 engine.mute(false);
             }
@@ -217,7 +215,6 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
                 Lifecycle::SetMuteInBackground { value } => {
                     if value != state.contains(Flags::MUTE_IN_BACKGROUND) {
-                        lifecycle!("about to set {value} for MuteInBackground");
                         state.set(Flags::MUTE_IN_BACKGROUND, value);
                     }
                 }
