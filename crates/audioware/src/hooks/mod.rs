@@ -7,6 +7,7 @@ mod time_system;
 #[cfg(debug_assertions)]
 mod entity;
 mod ink_menu_scenario;
+#[cfg(debug_assertions)]
 mod save_handling_controller;
 
 #[cfg(feature = "research")]
@@ -18,6 +19,7 @@ pub fn attach(env: &SdkEnv) {
     time_system::attach_hooks(env);
     ink_menu_scenario::attach_hooks(env);
 
+    #[cfg(debug_assertions)]
     save_handling_controller::attach_hook(env);
     #[cfg(debug_assertions)]
     entity::attach_hook(env);

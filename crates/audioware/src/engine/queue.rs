@@ -258,9 +258,6 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::EngagementScreen => {
                     state.set(Flags::IN_GAME, false);
                 }
-                Lifecycle::LoadSave => {
-                    state.set(Flags::LOADING, true);
-                }
                 Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
                 Lifecycle::System(System::PlayerAttach) => {
                     if let Err(e) = engine.try_new_scene() {

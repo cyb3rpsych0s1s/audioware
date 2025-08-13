@@ -65,7 +65,6 @@ pub enum Lifecycle {
     Session(Session),
     EngagementScreen,
     SwitchToScenario(CName),
-    LoadSave,
     UIInGameNotificationRemove,
     System(System),
     Board(Board),
@@ -98,7 +97,6 @@ impl std::fmt::Display for Lifecycle {
                 write!(f, "on switch to scenario: {}", name.as_str())
             }
             Lifecycle::EngagementScreen => write!(f, "on switch to engagement screen"),
-            Lifecycle::LoadSave => write!(f, "on load save"),
             Lifecycle::UIInGameNotificationRemove => {
                 write!(f, "on ui in-game notitification remove event")
             }
