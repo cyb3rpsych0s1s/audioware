@@ -40,6 +40,7 @@ class LocalizationService extends ScriptableService {
     private cb func OnSessionReady(event: ref<GameSessionEvent>) {
         let provider = GameInstance.GetScriptableSystemsContainer(GetGameInstance()).Get(n"Audioware.LocalizationProvider") as LocalizationProvider;
         provider.OnLocaleChange();
+        provider.OnGenderChange();
     }
 }
 
@@ -62,3 +63,4 @@ private func PropagateSubtitle(reaction: CName, entityID: EntityID, emitterName:
         SubtitleSubSystem.GetInstance(GetGameInstance()).DelayHideSubtitle(line, duration);
     }
 }
+
