@@ -1,0 +1,84 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Windows threading"><title>windows_threading - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-84e720fa.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="windows_threading" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0 (29483883e 2025-08-04)" data-channel="1.89.0" data-search-js="search-92309212.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-4e99c027.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../windows_threading/index.html">windows_<wbr>threading</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#windows-threading" title="Windows threading">Windows threading</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>windows_threading</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/windows_threading/lib.rs.html#1-84">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h3 id="windows-threading"><a class="doc-anchor" href="#windows-threading">§</a>Windows threading</h3>
+<p>The <a href="https://crates.io/crates/windows-threading">windows-threading</a> crate provides simple, safe, and efficient access to the Windows threading support.</p>
+<ul>
+<li><a href="https://kennykerr.ca/rust-getting-started/">Getting started</a></li>
+<li><a href="https://github.com/microsoft/windows-rs/tree/master/crates/samples">Samples</a></li>
+<li><a href="https://github.com/microsoft/windows-rs/releases">Releases</a></li>
+</ul>
+<p>Start by adding the following to your Cargo.toml file:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[dependencies.windows-threading]
+version = &quot;0.1&quot;</code></pre></div>
+<p>Use the Windows threading support as needed. Here is how you might submit a closure to run on the default thread pool:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>windows_threading::submit(|| {
+    <span class="macro">println!</span>(<span class="string">"thread: {}"</span>, windows_threading::thread_id());
+
+    <span class="kw">loop </span>{
+        <span class="macro">println!</span>(<span class="string">"."</span>);
+        windows_threading::sleep(<span class="number">1000</span>);
+    }
+});</code></pre></div>
+<p>As you would expect, the closure will print the thread identifier of the pool thread it is occupying indefinitely and then print “.” on one second intervals.</p>
+<div class="example-wrap"><pre class="language-text"><code>thread: 27292
+.
+.
+.
+.
+.
+.</code></pre></div>
+<p>Here is how you might call a closure on each element of the iterator in parallel, waiting for all closures to finish:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>counter = std::sync::RwLock::&lt;usize&gt;::new(<span class="number">0</span>);
+
+windows_threading::for_each(<span class="number">0</span>..<span class="number">10</span>, |value| {
+    <span class="macro">println!</span>(<span class="string">"thread: {}, value: {value}"</span>, windows_threading::thread_id());
+    <span class="kw">let </span><span class="kw-2">mut </span>counter = counter.write().unwrap();
+    <span class="kw-2">*</span>counter += value;
+});
+
+<span class="macro">println!</span>(<span class="string">"\nshould be 45 = {}"</span>, counter.read().unwrap());</code></pre></div>
+<p>The resulting thread identifiers will be unpredictable and so will be the order of the values:</p>
+<div class="example-wrap"><pre class="language-text"><code>thread: 44088, value: 0
+thread: 36152, value: 1
+thread: 36152, value: 3
+thread: 36152, value: 4
+thread: 36152, value: 5
+thread: 36152, value: 7
+thread: 36152, value: 8
+thread: 44088, value: 2
+thread: 41592, value: 6
+thread: 34688, value: 9
+
+should be 45 = 45</code></pre></div>
+<p>The <code>for_each</code> function uses a <code>Pool</code> object internally, which you can also use directly if you prefer:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>set = std::sync::RwLock::&lt;std::collections::HashMap&lt;u32, usize&gt;&gt;::default();
+<span class="kw">let </span>pool = windows_threading::Pool::new();
+pool.set_thread_limits(<span class="number">2</span>, <span class="number">10</span>);
+
+<span class="kw">for _ in </span><span class="number">0</span>..<span class="number">10 </span>{
+    pool.submit(|| {
+        windows_threading::sleep(<span class="number">10</span>);
+        <span class="kw">let </span><span class="kw-2">mut </span>writer = set.write().unwrap();
+        <span class="kw-2">*</span>writer.entry(windows_threading::thread_id()).or_default() += <span class="number">1</span>;
+    })
+}
+
+pool.join();
+<span class="macro">println!</span>(<span class="string">"{:#?}"</span>, set.read().unwrap());</code></pre></div>
+<p>The <code>set_thread_limits(2, 10)</code> method is used to ensure that the pool includes at least two threads at all times and up to a maximum of 10. There is no reason to call <code>set_thread_limits</code> if you prefer the operating system to manage this dynamically. Calling <code>set_thread_limits(1, 1)</code> will for example ensure that all closures run on the same dedicated thread.</p>
+<p>The <code>submit</code> method takes the closure and runs it on one of those threads.</p>
+<p>The <code>join</code> method waits for all previously submitted closures to finish.</p>
+<p>As you might expect, the resulting distribution of closures spans a number of threads.</p>
+<div class="example-wrap"><pre class="language-text"><code>{
+    25064: 3,
+    13692: 2,
+    40784: 2,
+    29608: 3,
+}</code></pre></div>
+<p>Removing the <code>sleep</code> call will likely produce very different results:</p>
+<div class="example-wrap"><pre class="language-text"><code>{
+    22720: 10,
+}</code></pre></div>
+<p>This is because the thread pool is careful not to overschedule and will happily reuse a small number of threads when the closures finish quickly.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Pool.html" title="struct windows_threading::Pool">Pool</a></dt><dd>A <code>Pool</code> object represents a private thread pool with its own thread limits.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.for_each.html" title="fn windows_threading::for_each">for_<wbr>each</a></dt><dd>Calls the closure on each element of the iterator in parallel, waiting for all closures to finish.</dd><dt><a class="fn" href="fn.sleep.html" title="fn windows_threading::sleep">sleep</a></dt><dd>Suspends the execution of the current thread until the time-out interval elapses.</dd><dt><a class="fn" href="fn.submit.html" title="fn windows_threading::submit">submit</a></dt><dd>Submit the closure to the default thread pool.</dd><dt><a class="fn" href="fn.thread_id.html" title="fn windows_threading::thread_id">thread_<wbr>id</a></dt><dd>The thread identifier of the calling thread.</dd></dl></section></div></main></body></html>

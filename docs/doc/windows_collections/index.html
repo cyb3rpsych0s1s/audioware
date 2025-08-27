@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Windows collection types"><title>windows_collections - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-84e720fa.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="windows_collections" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0 (29483883e 2025-08-04)" data-channel="1.89.0" data-search-js="search-92309212.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-4e99c027.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../windows_collections/index.html">windows_<wbr>collections</a><span class="version">0.2.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#windows-collection-types" title="Windows collection types">Windows collection types</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>windows_collections</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/windows_collections/lib.rs.html#1-16">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h3 id="windows-collection-types"><a class="doc-anchor" href="#windows-collection-types">§</a>Windows collection types</h3>
+<p>The <a href="https://crates.io/crates/windows-collections">windows-collections</a> crate provides stock collection support for Windows APIs.</p>
+<ul>
+<li><a href="https://kennykerr.ca/rust-getting-started/">Getting started</a></li>
+<li><a href="https://github.com/microsoft/windows-rs/tree/master/crates/samples">Samples</a></li>
+<li><a href="https://github.com/microsoft/windows-rs/releases">Releases</a></li>
+</ul>
+<p>Start by adding the following to your Cargo.toml file:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[dependencies.windows-collections]
+version = &quot;0.2&quot;</code></pre></div>
+<p>Use the Windows collection types as needed:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>windows_collections::<span class="kw-2">*</span>;
+
+<span class="kw">let </span>numbers = IIterable::&lt;i32&gt;::from(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]);
+
+<span class="kw">for </span>value <span class="kw">in </span>numbers {
+    <span class="macro">println!</span>(<span class="string">"{value}"</span>);
+}</code></pre></div>
+<p>Naturally, the Windows collection types work with other Windows crates:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>windows_collections::<span class="kw-2">*</span>;
+<span class="kw">use </span>windows_result::<span class="kw-2">*</span>;
+<span class="kw">use </span>windows_strings::<span class="kw-2">*</span>;
+
+<span class="kw">fn </span>main() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>greetings =
+        IVectorView::&lt;HSTRING&gt;::from(<span class="macro">vec!</span>[HSTRING::from(<span class="string">"hello"</span>), HSTRING::from(<span class="string">"world"</span>)]);
+
+    <span class="kw">for </span>value <span class="kw">in </span>greetings {
+        <span class="macro">println!</span>(<span class="string">"{value}"</span>);
+    }
+
+    <span class="kw">let </span>map = std::collections::BTreeMap::from([(<span class="string">"one"</span>.into(), <span class="number">1</span>), (<span class="string">"two"</span>.into(), <span class="number">2</span>)]);
+    <span class="kw">let </span>map = IMapView::&lt;HSTRING, i32&gt;::from(map);
+
+    <span class="macro">assert_eq!</span>(map.Lookup(<span class="macro">h!</span>(<span class="string">"one"</span>))<span class="question-mark">?</span>, <span class="number">1</span>);
+    <span class="macro">assert_eq!</span>(map.Lookup(<span class="macro">h!</span>(<span class="string">"two"</span>))<span class="question-mark">?</span>, <span class="number">2</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.IIterable.html" title="struct windows_collections::IIterable">IIterable</a></dt><dt><a class="struct" href="struct.IIterator.html" title="struct windows_collections::IIterator">IIterator</a></dt><dt><a class="struct" href="struct.IKeyValuePair.html" title="struct windows_collections::IKeyValuePair">IKey<wbr>Value<wbr>Pair</a></dt><dt><a class="struct" href="struct.IMap.html" title="struct windows_collections::IMap">IMap</a></dt><dt><a class="struct" href="struct.IMapView.html" title="struct windows_collections::IMapView">IMap<wbr>View</a></dt><dt><a class="struct" href="struct.IVector.html" title="struct windows_collections::IVector">IVector</a></dt><dt><a class="struct" href="struct.IVectorView.html" title="struct windows_collections::IVectorView">IVector<wbr>View</a></dt></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.IIterable_Impl.html" title="trait windows_collections::IIterable_Impl">IIterable_<wbr>Impl</a></dt><dt><a class="trait" href="trait.IIterator_Impl.html" title="trait windows_collections::IIterator_Impl">IIterator_<wbr>Impl</a></dt><dt><a class="trait" href="trait.IKeyValuePair_Impl.html" title="trait windows_collections::IKeyValuePair_Impl">IKey<wbr>Value<wbr>Pair_<wbr>Impl</a></dt><dt><a class="trait" href="trait.IMapView_Impl.html" title="trait windows_collections::IMapView_Impl">IMap<wbr>View_<wbr>Impl</a></dt><dt><a class="trait" href="trait.IMap_Impl.html" title="trait windows_collections::IMap_Impl">IMap_<wbr>Impl</a></dt><dt><a class="trait" href="trait.IVectorView_Impl.html" title="trait windows_collections::IVectorView_Impl">IVector<wbr>View_<wbr>Impl</a></dt><dt><a class="trait" href="trait.IVector_Impl.html" title="trait windows_collections::IVector_Impl">IVector_<wbr>Impl</a></dt></dl></section></div></main></body></html>

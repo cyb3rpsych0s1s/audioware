@@ -1,0 +1,93 @@
+name: Pages
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/**"
+      - "book/book.toml"
+      - "book/pages/**"
+      - "**.md"
+      - "**.rs"
+      - "**.toml"
+env:
+  MDBOOK_VERSION: '0.4.40'
+  MDBOOK_CODEBLOCKS_VERSION: '0.1.15'
+  MDBOOK_ADMONISH_VERSION: '1.18.0'
+
+jobs:
+  docs:
+    runs-on: windows-2025
+    concurrency:
+      group: pages-docs
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Prepare Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - name: Additional tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release
+      - name: Bundle docs files
+        run: just preassemble
+      - name: Upload artifact rustdoc
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdoc-latest-artifact
+          path: book/pages/docs
+          if-no-files-found: error
+  deploy:
+    runs-on: ubuntu-latest
+    needs: docs
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Additional tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: book/pages/docs
+          merge-multiple: true
+      - name: Install mdbook
+        run: |
+          mkdir mdbook
+          curl -sSL https://github.com/rust-lang/mdBook/releases/download/v${{ env.MDBOOK_VERSION }}/mdbook-v${{ env.MDBOOK_VERSION }}-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory=./mdbook
+          echo `pwd`/mdbook >> $GITHUB_PATH
+      - name: Install mdbook-codeblocks
+        run: |
+          mkdir mdbook-codeblocks
+          curl -sSL https://github.com/Roms1383/mdbook-codeblocks/releases/download/v${{ env.MDBOOK_CODEBLOCKS_VERSION }}/mdbook-codeblocks-v${{ env.MDBOOK_CODEBLOCKS_VERSION }}-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory=./mdbook-codeblocks
+          echo `pwd`/mdbook-codeblocks >> $GITHUB_PATH
+      - name: Install mdbook-admonish
+        run: |
+          mkdir mdbook-admonish
+          curl -sSL https://github.com/tommilligan/mdbook-admonish/releases/download/v${{ env.MDBOOK_ADMONISH_VERSION }}/mdbook-admonish-v${{ env.MDBOOK_ADMONISH_VERSION }}-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory=./mdbook-codeblocks
+          echo `pwd`/mdbook-admonish >> $GITHUB_PATH
+      - name: Deploy GitHub Pages
+        run: |
+          just assemble
+          git worktree add gh-pages
+          git config user.name "Deploy from CI"
+          git config user.email ""
+          cd gh-pages
+          # Delete the ref to avoid keeping history.
+          git update-ref -d refs/heads/gh-pages
+          rm -rf *
+          mv ../book/site/html/* .
+          git add .
+          git commit -m "Deploy $GITHUB_SHA to gh-pages"
+          git push --force --set-upstream origin gh-pages
