@@ -57,6 +57,10 @@ mod offsets {
     pub const INKMENUSCENARIO_QUEUE_EVENT: u32                  = 0x56A9218A;   // 0x14130F6B8 (2.3)
     pub const SCRIPTAUDIOPLAYER_PLAY_SINGLE: u32                = 0x90251060;   // 0x1406944E0 (2.3)
     pub const SCRIPTAUDIOPLAYER_PLAY_THREE: u32                 = 0x8B616DE;    // 0x1421A25DC (2.3)
+    pub const SCRIPTAUDIOPLAYER_PLAY_UNIQUE_WITH_SEEK: u32      = 0xD02C1648;   // 0x1421A2644 (2.3)
+    pub const SCRIPTAUDIOPLAYER_STOP: u32                       = 0x92EC1070;   // 0x1421A272C (2.3)
+    pub const SCRIPTAUDIOPLAYER_SET_SWITCH: u32                 = 0x50D1298;    // 0x1421A26F4 (2.3)
+    pub const SCRIPTAUDIOPLAYER_SET_PARAMETER: u32              = 0x447413E4;   // 0x1421A26BC (2.3)
 
     #[cfg(feature = "research")]
     mod events {
