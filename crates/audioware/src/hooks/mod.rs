@@ -9,11 +9,13 @@ mod entity;
 mod ink_menu_scenario;
 #[cfg(debug_assertions)]
 mod save_handling_controller;
+mod script_audio_player;
 
 #[cfg(feature = "research")]
 mod events;
 
 pub fn attach(env: &SdkEnv) {
+    script_audio_player::attach_hooks(env);
     audio_system::attach_hooks(env);
     time_dilatable::attach_hooks(env);
     time_system::attach_hooks(env);
@@ -53,6 +55,8 @@ mod offsets {
     pub const SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME: u32     = 0x9AB824D9;   // 0x14083FB6C (2.13)
     pub const INKMENUSCENARIO_SWITCH_TO_SCENARIO: u32           = 0xE9B92059;   // 0x1409CF068 (2.3)
     pub const INKMENUSCENARIO_QUEUE_EVENT: u32                  = 0x56A9218A;   // 0x14130F6B8 (2.3)
+    pub const SCRIPTAUDIOPLAYER_PLAY_SINGLE: u32                = 0x90251060;   // 0x1406944E0 (2.3)
+    pub const SCRIPTAUDIOPLAYER_PLAY_THREE: u32                 = 0x8B616DE;    // 0x1421A25DC (2.3)
 
     #[cfg(feature = "research")]
     mod events {

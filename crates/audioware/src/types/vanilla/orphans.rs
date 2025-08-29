@@ -61,3 +61,17 @@ pub struct RedTagList {
 unsafe impl NativeRepr for RedTagList {
     const NAME: &'static str = "redTagList";
 }
+
+impl std::fmt::Display for RedTagList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[{}]",
+            self.tags
+                .iter()
+                .map(|x| x.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    }
+}
