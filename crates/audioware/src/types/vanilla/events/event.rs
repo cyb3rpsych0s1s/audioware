@@ -6,7 +6,7 @@ use red4ext_rs::{
     types::{CName, IScriptable, RedArray},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[repr(transparent)]
 pub struct Event(IScriptable);
 

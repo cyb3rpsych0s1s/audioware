@@ -1,11 +1,13 @@
 use red4ext_rs::SdkEnv;
 
 mod audio_system;
+mod scene;
 mod time_dilatable;
 mod time_system;
 
 #[cfg(debug_assertions)]
 mod entity;
+mod ink_logic_controller;
 mod ink_menu_scenario;
 #[cfg(debug_assertions)]
 mod save_handling_controller;
@@ -15,10 +17,12 @@ mod script_audio_player;
 mod events;
 
 pub fn attach(env: &SdkEnv) {
+    scene::attach_hook(env);
     script_audio_player::attach_hooks(env);
     audio_system::attach_hooks(env);
     time_dilatable::attach_hooks(env);
     time_system::attach_hooks(env);
+    ink_logic_controller::attach_hook(env);
     ink_menu_scenario::attach_hooks(env);
 
     #[cfg(debug_assertions)]
@@ -34,12 +38,15 @@ pub fn attach(env: &SdkEnv) {
         events::dialog_line::attach_hook(env);
         events::weapon::attach_hook(env);
         events::trigger::attach_hooks(env);
+        events::ink::attach_hook(env);
+        events::ent::attach_hook(env);
     }
 }
 
 #[rustfmt::skip]
 #[doc(hidden)]
 mod offsets {
+    pub const AUDIO_PLAY_DIALOG_LINE: u32                       = 0x28F53A76;   // 0x1405FC310 (2.3)
     pub const AUDIOSYSTEM_PLAY: u32                             = 0xCDB11D0E;   // 0x140974F58 (2.12a)
     pub const AUDIOSYSTEM_STOP: u32                             = 0xD2781D1E;   // 0x1424503F8 (2.12a)
     pub const AUDIOSYSTEM_SWITCH: u32                           = 0x15081DEA;   // 0x140291688 (2.12a)
@@ -55,6 +62,7 @@ mod offsets {
     pub const SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME: u32     = 0x9AB824D9;   // 0x14083FB6C (2.13)
     pub const INKMENUSCENARIO_SWITCH_TO_SCENARIO: u32           = 0xE9B92059;   // 0x1409CF068 (2.3)
     pub const INKMENUSCENARIO_QUEUE_EVENT: u32                  = 0x56A9218A;   // 0x14130F6B8 (2.3)
+    pub const INKLOGICCONTROLLER_QUEUE_EVENT: u32               = 0xC87F2007;   // 0x1408663B0 (2.3)
     pub const SCRIPTAUDIOPLAYER_PLAY_SINGLE: u32                = 0x90251060;   // 0x1406944E0 (2.3)
     pub const SCRIPTAUDIOPLAYER_PLAY_THREE: u32                 = 0x8B616DE;    // 0x1421A25DC (2.3)
     pub const SCRIPTAUDIOPLAYER_PLAY_UNIQUE_WITH_SEEK: u32      = 0xD02C1648;   // 0x1421A2644 (2.3)
@@ -73,6 +81,8 @@ mod offsets {
         pub const WEAPON_STOP_FIRING_EVENT: u32                     = 0xA83C1996;   // 0x140652AF8 (2.13)
         pub const AREA_ENTERED_EVENT: u32                           = 0x252517CB;   // 0x142863744 (2.21)
         pub const AREA_EXITED_EVENT: u32                            = 0xF3E11703;   // 0x142863818 (2.21)
+        pub const INK_VO_REQUEST_EVT: u32                           = 0xBDB51D56;   // 0x1405FCBC4 (2.3)
+        pub const SOUND_PLAY_VO: u32                                = 0x7ED1B0B;   // 0x1405327B8 (2.3)
     }
     #[cfg(feature = "research")]
     pub use events::*;
