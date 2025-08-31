@@ -60,8 +60,8 @@ unsafe extern "C" fn detour(
             "audio::PlayDialogLine
     - data.string_id: {string_id:?}
     - data.is_player: {is_player}
-    - data.is_player: {is_holocall}
-    - data.is_player: {is_rewind}
+    - data.is_holocall: {is_holocall}
+    - data.is_rewind: {is_rewind}
     - data.custom_vo_event: {}
     - entity_id: {a3:?}
     - vo_event_override: {}
