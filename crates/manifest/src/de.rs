@@ -4,9 +4,12 @@ use std::{collections::HashMap, fmt, hash::Hash, path::PathBuf};
 
 use crate::{PlayerGender, ScnDialogLineType};
 use fixed_map::Map;
+use red4ext_rs::types::Cruid;
 use semver::Version;
 use serde::Deserialize;
 
+#[doc(hidden)]
+mod dialog;
 #[doc(hidden)]
 mod jingle;
 mod music;
@@ -17,6 +20,8 @@ mod setting;
 mod sfx;
 mod voice;
 
+#[doc(hidden)]
+pub use dialog::*;
 #[doc(hidden)]
 pub use jingle::*;
 pub use music::*;
@@ -39,6 +44,8 @@ pub struct Manifest {
     pub playlist: Option<HashMap<String, Playlist>>,
     #[doc(hidden)]
     pub jingles: Option<HashMap<String, Jingle>>,
+    #[doc(hidden)]
+    pub scene_dialogs: Option<HashMap<i64, SceneDialog>>,
 }
 
 // until proper implementations for 'playlist' and 'jingles' are added
@@ -50,6 +57,7 @@ impl fmt::Debug for Manifest {
             .field("onos", &self.onos)
             .field("voices", &self.voices)
             .field("music", &self.music)
+            .field("scene_dialogs", &self.scene_dialogs)
             .finish_non_exhaustive()
     }
 }
