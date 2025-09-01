@@ -14,7 +14,7 @@ use audioware_manifest::{
 use either::Either;
 use ensure::*;
 use kira::sound::static_sound::StaticSoundData;
-use red4ext_rs::types::CName;
+use red4ext_rs::types::{CName, Cruid};
 use snafu::ResultExt;
 
 pub mod conflict;
@@ -23,8 +23,12 @@ pub mod error;
 pub use error::Error;
 mod id;
 mod key;
+mod scene_id;
+mod scene_key;
 pub use id::*;
 pub use key::*;
+pub use scene_id::*;
+pub use scene_key::*;
 mod storage;
 pub use storage::*;
 
@@ -37,6 +41,7 @@ static PREVIOUS_IDS: std::sync::LazyLock<std::sync::Mutex<HashSet<Id>>> =
 #[derive(Clone)]
 pub struct Banks {
     pub ids: HashSet<Id>,
+    pub scene_ids: HashSet<SceneId>,
     pub uniques: HashMap<UniqueKey, StaticSoundData>,
     pub genders: HashMap<GenderKey, StaticSoundData>,
     pub single_voices: HashMap<LocaleKey, StaticSoundData>,
@@ -47,6 +52,10 @@ pub struct Banks {
     pub gender_settings: HashMap<GenderKey, Settings>,
     pub single_settings: HashMap<LocaleKey, Settings>,
     pub dual_settings: HashMap<BothKey, Settings>,
+    pub single_scene_dialogs: HashMap<SceneLocaleKey, StaticSoundData>,
+    pub dual_scene_dialogs: HashMap<SceneBothKey, StaticSoundData>,
+    pub single_scene_dialogs_settings: HashMap<SceneLocaleKey, Settings>,
+    pub dual_scene_dialogs_settings: HashMap<SceneBothKey, Settings>,
 }
 
 impl Banks {
@@ -192,6 +201,7 @@ impl Banks {
         let (mods, mut errors) = Self::mods();
 
         let mut ids: HashSet<Id> = HashSet::new();
+        let mut scene_ids: HashSet<SceneId> = HashSet::new();
         let mut uniques: HashMap<UniqueKey, StaticSoundData> = HashMap::new();
         let mut genders: HashMap<GenderKey, StaticSoundData> = HashMap::new();
         let mut single_voices: HashMap<LocaleKey, StaticSoundData> = HashMap::new();
@@ -202,6 +212,10 @@ impl Banks {
         let mut gender_settings: HashMap<GenderKey, Settings> = HashMap::new();
         let mut single_settings: HashMap<LocaleKey, Settings> = HashMap::new();
         let mut dual_settings: HashMap<BothKey, Settings> = HashMap::new();
+        let mut single_scene_dialogs: HashMap<SceneLocaleKey, StaticSoundData> = HashMap::new();
+        let mut dual_scene_dialogs: HashMap<SceneBothKey, StaticSoundData> = HashMap::new();
+        let mut single_scene_dialogs_settings: HashMap<SceneLocaleKey, Settings> = HashMap::new();
+        let mut dual_scene_dialogs_settings: HashMap<SceneBothKey, Settings> = HashMap::new();
 
         for m in mods {
             let paths = m.manifests_paths();
@@ -325,6 +339,26 @@ impl Banks {
                         };
                     }
                 }
+                if let Some(scene_dialogs) = manifest.scene_dialogs {
+                    for (key, value) in scene_dialogs {
+                        match ensure_scene_dialogs(
+                            &Cruid::from(key),
+                            value,
+                            &m,
+                            &mut scene_ids,
+                            &mut single_scene_dialogs,
+                            &mut dual_scene_dialogs,
+                            &mut single_scene_dialogs_settings,
+                            &mut dual_scene_dialogs_settings,
+                        ) {
+                            Ok(x) => x,
+                            Err(e) => {
+                                errors.push(e);
+                                continue;
+                            }
+                        };
+                    }
+                }
             }
         }
 
@@ -360,6 +394,7 @@ impl Banks {
         (
             Self {
                 ids,
+                scene_ids,
                 uniques,
                 genders,
                 single_voices,
@@ -370,6 +405,10 @@ impl Banks {
                 gender_settings,
                 single_settings,
                 dual_settings,
+                single_scene_dialogs,
+                dual_scene_dialogs,
+                single_scene_dialogs_settings,
+                dual_scene_dialogs_settings,
             },
             report,
         )

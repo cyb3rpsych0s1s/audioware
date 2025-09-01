@@ -11,11 +11,11 @@ use audioware_core::With;
 use audioware_manifest::*;
 use either::Either;
 use kira::sound::{FromFileError, static_sound::StaticSoundData, streaming::StreamingSoundData};
-use red4ext_rs::types::{CName, CNamePool};
+use red4ext_rs::types::{CName, CNamePool, Cruid};
 use snafu::ensure;
 
 use crate::{
-    Id,
+    Id, SceneBothKey, SceneId, SceneLocaleKey,
     error::validation::{self, *},
 };
 
@@ -607,5 +607,19 @@ pub fn ensure_jingles<'a>(
     if !existed {
         CNamePool::add_cstr(&c_string);
     }
+    Ok(())
+}
+
+#[doc(hidden)]
+pub fn ensure_scene_dialogs<'a>(
+    k: &'a Cruid,
+    v: SceneDialog,
+    m: &Mod,
+    set: &'a mut HashSet<SceneId>,
+    simple: &'a mut HashMap<SceneLocaleKey, StaticSoundData>,
+    complex: &'a mut HashMap<SceneBothKey, StaticSoundData>,
+    simple_settings: &'a mut HashMap<SceneLocaleKey, Settings>,
+    complex_settings: &'a mut HashMap<SceneBothKey, Settings>,
+) -> Result<(), Error> {
     Ok(())
 }

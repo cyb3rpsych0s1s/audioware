@@ -87,8 +87,18 @@ impl From<SceneDialog> for AnySceneDialog {
 impl From<SceneDialog> for Audio {
     fn from(value: SceneDialog) -> Self {
         match value {
-            SceneDialog::SingleInline { dialogs, usage, settings, string_id } => todo!(),
-            SceneDialog::DualInline { dialogs, usage, settings, string_id } => todo!(),
+            SceneDialog::SingleInline {
+                dialogs,
+                usage,
+                settings,
+                string_id,
+            } => todo!(),
+            SceneDialog::DualInline {
+                dialogs,
+                usage,
+                settings,
+                string_id,
+            } => todo!(),
         }
     }
 }

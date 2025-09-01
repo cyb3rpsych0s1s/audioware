@@ -4,7 +4,6 @@ use std::{collections::HashMap, fmt, hash::Hash, path::PathBuf};
 
 use crate::{PlayerGender, ScnDialogLineType};
 use fixed_map::Map;
-use red4ext_rs::types::Cruid;
 use semver::Version;
 use serde::Deserialize;
 
