@@ -1,9 +1,9 @@
 use red4ext_rs::SdkEnv;
 
+mod audio;
 mod audio_system;
 mod localization_manager;
 mod onscreen_vo;
-mod scene;
 mod sound_component;
 mod time_dilatable;
 mod time_system;
@@ -23,7 +23,7 @@ pub fn attach(env: &SdkEnv) {
     localization_manager::attach_hook(env);
     sound_component::attach_hook(env);
     onscreen_vo::attach_hook(env);
-    scene::attach_hook(env);
+    audio::attach_hook(env);
     script_audio_player::attach_hooks(env);
     audio_system::attach_hooks(env);
     time_dilatable::attach_hooks(env);

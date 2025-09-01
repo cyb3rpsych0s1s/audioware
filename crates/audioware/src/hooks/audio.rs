@@ -3,7 +3,7 @@ use red4ext_rs::{
     types::{CName, EntityId},
 };
 
-use crate::{DialogLineEventData, utils::intercept};
+use crate::DialogLineEventData;
 
 ::red4ext_rs::hooks! {
         static HOOK: fn(
@@ -56,7 +56,7 @@ unsafe extern "C" fn detour(
         let is_player = data.is_player;
         let is_holocall = data.is_holocall;
         let is_rewind = data.is_rewind;
-        intercept!(
+        crate::utils::intercept!(
             "audio::PlayDialogLine
     - data.string_id: {string_id:?}
     - data.is_player: {is_player}
@@ -73,6 +73,8 @@ unsafe extern "C" fn detour(
             a9.as_str()
         );
 
-        cb(a1, a2, a3, a4, a5, a6, a7, a8, a9)
+        let out = cb(a1, a2, a3, a4, a5, a6, a7, a8, a9);
+        crate::utils::intercept!("audio::PlayDialogLine -> {out}");
+        out
     }
 }
