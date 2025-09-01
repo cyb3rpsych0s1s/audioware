@@ -4,6 +4,7 @@ mod audio_system;
 mod localization_manager;
 mod onscreen_vo;
 mod scene;
+mod sound_component;
 mod time_dilatable;
 mod time_system;
 
@@ -20,6 +21,7 @@ mod events;
 
 pub fn attach(env: &SdkEnv) {
     localization_manager::attach_hook(env);
+    sound_component::attach_hook(env);
     onscreen_vo::attach_hook(env);
     scene::attach_hook(env);
     script_audio_player::attach_hooks(env);
@@ -75,6 +77,7 @@ mod offsets {
     pub const SCRIPTAUDIOPLAYER_SET_PARAMETER: u32              = 0x447413E4;   // 0x1421A26BC (2.3)
     pub const LOCALIZATIONMANAGER_RESOLVEFILENAME: u32          = 0x8D2C2B6E;   // 0x142045B38 (2.3)
     pub const ONSCREENVOPLAYERCONTROLLER_SHOWSUBTITLE: u32      = 0xFE3C1D52;   // 0x1404F42A0 (2.3)
+    pub const SOUNDCOMPONENT_ONSTOPDIALOGLINE: u32              = 0xD4F11D73;   // 0x1405FCB28 (2.3)
 
     #[cfg(feature = "research")]
     mod events {

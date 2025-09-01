@@ -54,9 +54,14 @@ impl AsRef<Event> for StopDialogLine {
     }
 }
 
-impl AsRef<IScriptable> for StopDialogLine {
-    fn as_ref(&self) -> &IScriptable {
-        self.base.as_ref()
+impl std::fmt::Display for StopDialogLine {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "string_id {}, fade_out {}",
+            i64::from(self.string_id),
+            self.fade_out
+        )
     }
 }
 
