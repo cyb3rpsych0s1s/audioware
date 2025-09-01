@@ -14,14 +14,11 @@ use kira::sound::{FromFileError, static_sound::StaticSoundData, streaming::Strea
 use red4ext_rs::types::{CName, CNamePool, Cruid};
 use snafu::ensure;
 
-use crate::{
-    Id, SceneBothKey, SceneId, SceneLocaleKey,
-    error::validation::{self, *},
-};
-
 use super::{
-    BothKey, Error, GenderKey, Key, LocaleKey, UniqueKey,
+    BothKey, Error, GenderKey, Id, Key, LocaleKey, SceneBothKey, SceneId, SceneKey, SceneLocaleKey,
+    SceneUsage, UniqueKey,
     conflict::{Conflict, Conflictual},
+    error::validation::{self, *},
 };
 
 /// Ensure no duplicate mod folder name across depots: `r6\audioware` and `mods`.
@@ -138,6 +135,46 @@ pub fn ensure_key_no_conflict<T: Conflictual>(
             cname: raw.to_string()
         }
     );
+    Ok(())
+}
+
+/// Ensure [SceneKey] variants do not [Conflict] with each others.
+#[inline]
+pub fn ensure_scene_key_no_conflict<T: Conflictual>(
+    key: &T,
+    raw: &(i64, Locale),
+    pool: &impl Conflict<T>,
+) -> Result<(), Error> {
+    ensure!(
+        !pool.conflict(key),
+        ConflictingSceneKeySnafu {
+            cruid: raw.0,
+            locale: raw.1
+        }
+    );
+    Ok(())
+}
+
+/// Ensure [SceneKey] variants do not [Conflict] with each others.
+#[inline]
+pub fn ensure_scene_keys_no_conflict<T: Conflictual>(
+    key: &T,
+    set: &HashSet<SceneId>,
+) -> Result<(), Error> {
+    for x in set.iter() {
+        match x {
+            SceneId::InMemory(SceneKey::Locale(key))
+            | SceneId::OnDemand(SceneUsage::Static(SceneKey::Locale(key), ..))
+            | SceneId::OnDemand(SceneUsage::Streaming(SceneKey::Locale(key), ..)) => {
+                ensure_scene_key_no_conflict(key, &(i64::from(key.0), key.1), set)?
+            }
+            SceneId::InMemory(SceneKey::Both(key))
+            | SceneId::OnDemand(SceneUsage::Static(SceneKey::Both(key), ..))
+            | SceneId::OnDemand(SceneUsage::Streaming(SceneKey::Both(key), ..)) => {
+                ensure_scene_key_no_conflict(key, &(i64::from(key.0), key.1), set)?
+            }
+        }
+    }
     Ok(())
 }
 
@@ -621,5 +658,6 @@ pub fn ensure_scene_dialogs<'a>(
     simple_settings: &'a mut HashMap<SceneLocaleKey, Settings>,
     complex_settings: &'a mut HashMap<SceneBothKey, Settings>,
 ) -> Result<(), Error> {
+    // ensure_scene_keys_no_conflict(key, set)?;
     Ok(())
 }

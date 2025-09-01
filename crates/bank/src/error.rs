@@ -34,7 +34,7 @@ pub mod registry {
 
 pub mod validation {
 
-    use audioware_manifest::DialogLine;
+    use audioware_manifest::{DialogLine, Locale};
     use snafu::Snafu;
 
     use crate::{Id, Key};
@@ -55,6 +55,11 @@ pub mod validation {
             visibility(pub(crate))
         )]
         ConflictingKey { cname: String },
+        #[snafu(
+            display("RUID conflicts with existing id: {cruid} for {locale}"),
+            visibility(pub(crate))
+        )]
+        ConflictingSceneKey { cruid: i64, locale: Locale },
         #[snafu(display("audio outside depot: {path}"), visibility(pub(crate)))]
         AudioOutsideDepot { path: String },
         #[snafu(

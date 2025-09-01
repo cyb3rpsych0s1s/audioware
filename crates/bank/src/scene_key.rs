@@ -11,6 +11,28 @@ pub enum SceneKey {
     Both(SceneBothKey),
 }
 
+impl SceneKey {
+    pub fn as_locale(&self) -> Option<&SceneLocaleKey> {
+        match self {
+            Self::Locale(x) => Some(x),
+            _ => None,
+        }
+    }
+    pub fn as_both(&self) -> Option<&SceneBothKey> {
+        match self {
+            Self::Both(x) => Some(x),
+            _ => None,
+        }
+    }
+    pub fn locale(&self) -> Locale {
+        match self {
+            Self::Both(SceneBothKey(_, locale, _)) | Self::Locale(SceneLocaleKey(_, locale)) => {
+                *locale
+            }
+        }
+    }
+}
+
 impl AsRef<Cruid> for SceneKey {
     fn as_ref(&self) -> &Cruid {
         match self {
@@ -45,8 +67,8 @@ impl std::fmt::Display for SceneLocaleKey {
         write!(f, "[{}:{}]", i64::from(self.0), self.1)
     }
 }
-impl PartialEq<(&Cruid, &Locale, &PlayerGender)> for SceneLocaleKey {
-    fn eq(&self, other: &(&Cruid, &Locale, &PlayerGender)) -> bool {
+impl PartialEq<(&Cruid, &Locale)> for SceneLocaleKey {
+    fn eq(&self, other: &(&Cruid, &Locale)) -> bool {
         &self.0 == other.0 && &self.1 == other.1
     }
 }

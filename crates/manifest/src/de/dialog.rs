@@ -1,7 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use either::Either;
-use red4ext_rs::types::Cruid;
 use serde::Deserialize;
 
 use crate::{Audio, Locale, paths_into_audios};
@@ -17,21 +16,17 @@ pub enum SceneDialog {
         dialogs: HashMap<Locale, PathBuf>,
         usage: Option<Usage>,
         settings: Option<Settings>,
-        string_id: i64,
     },
     DualInline {
         #[serde(flatten)]
         dialogs: HashMap<Locale, GenderBased<PathBuf>>,
         usage: Option<Usage>,
         settings: Option<Settings>,
-        string_id: i64,
     },
 }
 
-pub type AnySceneDialog = Either<
-    (HashMap<Locale, Audio>, Usage, Cruid),
-    (HashMap<Locale, GenderBased<Audio>>, Usage, Cruid),
->;
+pub type AnySceneDialog =
+    Either<(HashMap<Locale, Audio>, Usage), (HashMap<Locale, GenderBased<Audio>>, Usage)>;
 
 impl From<SceneDialog> for AnySceneDialog {
     fn from(value: SceneDialog) -> Self {
@@ -41,20 +36,14 @@ impl From<SceneDialog> for AnySceneDialog {
                 dialogs,
                 usage,
                 settings,
-                string_id,
             } => {
                 let dialogs = paths_into_audios(dialogs, settings);
-                Either::Left((
-                    dialogs,
-                    usage.unwrap_or(default_usage),
-                    Cruid::from(string_id),
-                ))
+                Either::Left((dialogs, usage.unwrap_or(default_usage)))
             }
             SceneDialog::DualInline {
                 dialogs,
                 usage,
                 settings,
-                string_id,
             } => {
                 let dialogs: HashMap<Locale, GenderBased<Audio>> = dialogs
                     .into_iter()
@@ -74,11 +63,7 @@ impl From<SceneDialog> for AnySceneDialog {
                         )
                     })
                     .collect();
-                Either::Right((
-                    dialogs,
-                    usage.unwrap_or(default_usage),
-                    Cruid::from(string_id),
-                ))
+                Either::Right((dialogs, usage.unwrap_or(default_usage)))
             }
         }
     }
@@ -91,13 +76,11 @@ impl From<SceneDialog> for Audio {
                 dialogs,
                 usage,
                 settings,
-                string_id,
             } => todo!(),
             SceneDialog::DualInline {
                 dialogs,
                 usage,
                 settings,
-                string_id,
             } => todo!(),
         }
     }
