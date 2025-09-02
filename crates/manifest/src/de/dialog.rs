@@ -10,7 +10,7 @@ use super::{GenderBased, Settings, Usage};
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 // variants declaration order matters: see https://github.com/cyb3rpsych0s1s/audioware/pull/39
-pub enum SceneDialog {
+pub enum SceneDialogs {
     SingleInline {
         #[serde(flatten)]
         dialogs: HashMap<Locale, PathBuf>,
@@ -28,11 +28,11 @@ pub enum SceneDialog {
 pub type AnySceneDialog =
     Either<(HashMap<Locale, Audio>, Usage), (HashMap<Locale, GenderBased<Audio>>, Usage)>;
 
-impl From<SceneDialog> for AnySceneDialog {
-    fn from(value: SceneDialog) -> Self {
+impl From<SceneDialogs> for AnySceneDialog {
+    fn from(value: SceneDialogs) -> Self {
         let default_usage = Usage::OnDemand;
         match value {
-            SceneDialog::SingleInline {
+            SceneDialogs::SingleInline {
                 dialogs,
                 usage,
                 settings,
@@ -40,7 +40,7 @@ impl From<SceneDialog> for AnySceneDialog {
                 let dialogs = paths_into_audios(dialogs, settings);
                 Either::Left((dialogs, usage.unwrap_or(default_usage)))
             }
-            SceneDialog::DualInline {
+            SceneDialogs::DualInline {
                 dialogs,
                 usage,
                 settings,
@@ -72,7 +72,7 @@ impl From<SceneDialog> for AnySceneDialog {
 #[cfg(test)]
 mod tests {
     mod inline_dialog {
-        use super::super::SceneDialog;
+        use super::super::SceneDialogs;
         use std::collections::HashMap;
         use test_case::test_case;
 
@@ -82,7 +82,7 @@ mod tests {
     en-us: ./somewhere/dialog.wav
     fr-fr: ./somewhere/else/dialog.wav"## ; "format must be consistent across locales")]
         fn basic_format(yaml: &str) {
-            let unique_dialog = serde_yaml::from_str::<HashMap<i64, SceneDialog>>(yaml);
+            let unique_dialog = serde_yaml::from_str::<HashMap<i64, SceneDialogs>>(yaml);
             dbg!("{}", &unique_dialog);
             assert!(unique_dialog.is_ok());
         }
@@ -92,7 +92,7 @@ mod tests {
         file: ./somewhere/dialog.wav
     fr-fr: ./somewhere/else/dialog.wav"## ; "format must be consistent")]
         fn incompatibility(yaml: &str) {
-            let unique_dialog = serde_yaml::from_str::<HashMap<i64, SceneDialog>>(yaml);
+            let unique_dialog = serde_yaml::from_str::<HashMap<i64, SceneDialogs>>(yaml);
             dbg!("{}", &unique_dialog);
             assert!(unique_dialog.is_err());
         }
@@ -100,7 +100,7 @@ mod tests {
     mod dual_dialog {
         use std::collections::HashMap;
 
-        use super::super::SceneDialog;
+        use super::super::SceneDialogs;
         use test_case::test_case;
 
         #[test_case(r##"1300277703738512077:
@@ -121,7 +121,7 @@ mod tests {
         region:
             starts: 500ms"## ; "dual scene dialog with specific settings")]
         fn basic_format_with_settings(yaml: &str) {
-            let dual_dialog = serde_yaml::from_str::<HashMap<i64, SceneDialog>>(yaml);
+            let dual_dialog = serde_yaml::from_str::<HashMap<i64, SceneDialogs>>(yaml);
             dbg!("{}", &dual_dialog);
             assert!(dual_dialog.is_ok());
         }
@@ -135,7 +135,7 @@ mod tests {
         male: ./male/dialog.wav
     fr-fr: ./unique/dialog.wav"## ; "format must be consistent, mixing unique and gender-based is not allowed")]
         fn incompatibility(yaml: &str) {
-            let dual_dialog = serde_yaml::from_str::<HashMap<i64, SceneDialog>>(yaml);
+            let dual_dialog = serde_yaml::from_str::<HashMap<i64, SceneDialogs>>(yaml);
             dbg!("{}", &dual_dialog);
             assert!(dual_dialog.is_err());
         }

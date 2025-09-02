@@ -15,8 +15,8 @@ use red4ext_rs::types::{CName, CNamePool, Cruid};
 use snafu::ensure;
 
 use super::{
-    BothKey, Error, GenderKey, Id, Key, LocaleKey, SceneBothKey, SceneId, SceneKey, SceneLocaleKey,
-    SceneUsage, UniqueKey,
+    BothKey, Error, GenderKey, Id, Key, LocaleKey, SceneBothKey, SceneId, SceneLocaleKey,
+    UniqueKey,
     conflict::{Conflict, Conflictual},
     error::validation::{self, *},
 };
@@ -155,29 +155,6 @@ pub fn ensure_scene_key_no_conflict<T: Conflictual>(
     Ok(())
 }
 
-/// Ensure [SceneKey] variants do not [Conflict] with each others.
-#[inline]
-pub fn ensure_scene_keys_no_conflict<T: Conflictual>(
-    key: &T,
-    set: &HashSet<SceneId>,
-) -> Result<(), Error> {
-    for x in set.iter() {
-        match x {
-            SceneId::InMemory(SceneKey::Locale(key))
-            | SceneId::OnDemand(SceneUsage::Static(SceneKey::Locale(key), ..))
-            | SceneId::OnDemand(SceneUsage::Streaming(SceneKey::Locale(key), ..)) => {
-                ensure_scene_key_no_conflict(key, &(i64::from(key.0), key.1), set)?
-            }
-            SceneId::InMemory(SceneKey::Both(key))
-            | SceneId::OnDemand(SceneUsage::Static(SceneKey::Both(key), ..))
-            | SceneId::OnDemand(SceneUsage::Streaming(SceneKey::Both(key), ..)) => {
-                ensure_scene_key_no_conflict(key, &(i64::from(key.0), key.1), set)?
-            }
-        }
-    }
-    Ok(())
-}
-
 /// Ensure [Manifest] does not contain duplicate keys among
 /// [Sfx],
 /// [Ono],
@@ -242,7 +219,30 @@ pub fn ensure_valid_audio(
     m: &Mod,
     usage: Usage,
     settings: Option<&Settings>,
+) -> Result<Either<StaticSoundData, StreamingSoundData<FromFileError>>, Error> {
+    let data = ensure_valid_audio_data(path, m, usage)?;
+    ensure_valid_contextual_audio_settings(&data, settings, path.as_ref())?;
+    Ok(data)
+}
+
+pub fn ensure_valid_audio_and_captions(
+    path: &impl AsRef<std::path::Path>,
+    m: &Mod,
+    usage: Usage,
+    settings: Option<&Settings>,
     captions: Option<&[Caption]>,
+) -> Result<Either<StaticSoundData, StreamingSoundData<FromFileError>>, Error> {
+    let data = ensure_valid_audio(path, m, usage, settings)?;
+    if let Some(captions) = captions {
+        ensure_valid_jingle_captions(&data, captions)?;
+    }
+    Ok(data)
+}
+
+pub fn ensure_valid_audio_data(
+    path: &impl AsRef<std::path::Path>,
+    m: &Mod,
+    usage: Usage,
 ) -> Result<Either<StaticSoundData, StreamingSoundData<FromFileError>>, Error> {
     use snafu::ResultExt;
     let filepath = m.as_ref().join(path.as_ref());
@@ -259,10 +259,6 @@ pub fn ensure_valid_audio(
             })
             .map(Either::Right)?,
     };
-    ensure_valid_contextual_audio_settings(&data, settings, path.as_ref())?;
-    if let Some(captions) = captions {
-        ensure_valid_jingle_captions(&data, captions)?;
-    }
     Ok(data)
 }
 
@@ -392,7 +388,7 @@ fn ensure<'a, K: PartialEq + Eq + Hash + Clone + Into<Key> + Conflictual>(
 where
     HashSet<Id>: Conflict<K>,
 {
-    let data = ensure_valid_audio(&path, m, usage, settings.as_ref(), None)?.map_either_with(
+    let data = ensure_valid_audio(&path, m, usage, settings.as_ref())?.map_either_with(
         (usage, settings.as_ref().and_then(|x| x.region.clone())),
         |ctx, data| {
             if let (Usage::InMemory, Some(region)) = ctx {
@@ -627,7 +623,7 @@ pub fn ensure_jingles<'a>(
 ) -> Result<(), Error> {
     let existed = ensure_key_unique_or_inserted(k)?;
     let Audio { file, settings } = (&v).into();
-    ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref(), v.captions())?;
+    ensure_valid_audio_and_captions(&file, m, Usage::Streaming, settings.as_ref(), v.captions())?;
     let c_string = std::ffi::CString::new(k)?;
     let cname = CName::new(k);
     let key = UniqueKey(cname);
@@ -650,14 +646,72 @@ pub fn ensure_jingles<'a>(
 #[doc(hidden)]
 pub fn ensure_scene_dialogs<'a>(
     k: &'a Cruid,
-    v: SceneDialog,
+    v: SceneDialogs,
     m: &Mod,
     set: &'a mut HashSet<SceneId>,
-    simple: &'a mut HashMap<SceneLocaleKey, StaticSoundData>,
-    complex: &'a mut HashMap<SceneBothKey, StaticSoundData>,
-    simple_settings: &'a mut HashMap<SceneLocaleKey, Settings>,
-    complex_settings: &'a mut HashMap<SceneBothKey, Settings>,
+    single: &'a mut HashMap<SceneLocaleKey, StaticSoundData>,
+    dual: &'a mut HashMap<SceneBothKey, StaticSoundData>,
+    single_settings: &'a mut HashMap<SceneLocaleKey, Settings>,
+    dual_settings: &'a mut HashMap<SceneBothKey, Settings>,
 ) -> Result<(), Error> {
-    // ensure_scene_keys_no_conflict(key, set)?;
+    match v {
+        SceneDialogs::SingleInline {
+            dialogs,
+            usage,
+            settings,
+        } => {
+            let usage = usage.unwrap_or(Usage::OnDemand);
+            for (locale, filepath) in dialogs {
+                if let Err(e) = ensure_scene_key_no_conflict(
+                    &SceneLocaleKey(*k, locale),
+                    &(i64::from(*k), locale),
+                    set,
+                ) {
+                    continue;
+                }
+                if let Err(e) = ensure_valid_audio(&filepath, m, usage, settings.as_ref()) {
+                    continue;
+                }
+            }
+        }
+        SceneDialogs::DualInline {
+            dialogs,
+            usage,
+            settings,
+        } => {
+            for (locale, gender) in dialogs {
+                if let Err(e) = ensure_scene_key_no_conflict(
+                    &SceneBothKey(*k, locale, PlayerGender::Female),
+                    &(i64::from(*k), locale),
+                    set,
+                ) {
+                    todo!();
+                }
+                if let Err(e) = ensure_scene_key_no_conflict(
+                    &SceneBothKey(*k, locale, PlayerGender::Male),
+                    &(i64::from(*k), locale),
+                    set,
+                ) {
+                    todo!();
+                }
+                if let Err(e) = ensure_valid_audio(
+                    &gender.female,
+                    m,
+                    usage.unwrap_or(Usage::OnDemand),
+                    settings.as_ref(),
+                ) {
+                    continue;
+                }
+                if let Err(e) = ensure_valid_audio(
+                    &gender.male,
+                    m,
+                    usage.unwrap_or(Usage::OnDemand),
+                    settings.as_ref(),
+                ) {
+                    continue;
+                }
+            }
+        }
+    }
     Ok(())
 }

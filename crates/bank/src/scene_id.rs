@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use audioware_manifest::SceneDialog;
+use audioware_manifest::SceneDialogs;
 use red4ext_rs::types::Cruid;
 
 use crate::SceneKey;
@@ -49,8 +49,8 @@ impl PartialEq<SceneKey> for SceneId {
     }
 }
 
-impl PartialEq<(&Cruid, &SceneDialog)> for SceneUsage {
-    fn eq(&self, other: &(&Cruid, &SceneDialog)) -> bool {
+impl PartialEq<(&Cruid, &SceneDialogs)> for SceneUsage {
+    fn eq(&self, other: &(&Cruid, &SceneDialogs)) -> bool {
         match self {
             SceneUsage::Static(scene_key, ..) | SceneUsage::Streaming(scene_key, ..) => {
                 scene_key == other
@@ -59,32 +59,32 @@ impl PartialEq<(&Cruid, &SceneDialog)> for SceneUsage {
     }
 }
 
-impl PartialEq<(&Cruid, &SceneDialog)> for SceneKey {
-    fn eq(&self, other: &(&Cruid, &SceneDialog)) -> bool {
+impl PartialEq<(&Cruid, &SceneDialogs)> for SceneKey {
+    fn eq(&self, other: &(&Cruid, &SceneDialogs)) -> bool {
         match self {
             SceneKey::Locale(scene_locale_key) if *other.0 == scene_locale_key.0 => {
                 match &other.1 {
-                    SceneDialog::SingleInline { dialogs, .. } => {
+                    SceneDialogs::SingleInline { dialogs, .. } => {
                         dialogs.contains_key(&scene_locale_key.1)
                     }
-                    SceneDialog::DualInline { dialogs, .. } => {
+                    SceneDialogs::DualInline { dialogs, .. } => {
                         dialogs.contains_key(&scene_locale_key.1)
                     }
                 }
             }
             SceneKey::Both(scene_both_key) if *other.0 == scene_both_key.0 => match &other.1 {
-                SceneDialog::SingleInline { dialogs, .. } => {
+                SceneDialogs::SingleInline { dialogs, .. } => {
                     dialogs.contains_key(&scene_both_key.1)
                 }
-                SceneDialog::DualInline { dialogs, .. } => dialogs.contains_key(&scene_both_key.1),
+                SceneDialogs::DualInline { dialogs, .. } => dialogs.contains_key(&scene_both_key.1),
             },
             _ => false,
         }
     }
 }
 
-impl PartialEq<(&Cruid, &SceneDialog)> for SceneId {
-    fn eq(&self, other: &(&Cruid, &SceneDialog)) -> bool {
+impl PartialEq<(&Cruid, &SceneDialogs)> for SceneId {
+    fn eq(&self, other: &(&Cruid, &SceneDialogs)) -> bool {
         match self {
             SceneId::OnDemand(scene_usage) => scene_usage == other,
             SceneId::InMemory(scene_key) => scene_key == other,

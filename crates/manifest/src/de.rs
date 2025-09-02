@@ -44,7 +44,7 @@ pub struct Manifest {
     #[doc(hidden)]
     pub jingles: Option<HashMap<String, Jingle>>,
     #[doc(hidden)]
-    pub scene_dialogs: Option<HashMap<i64, SceneDialog>>,
+    pub scene_dialogs: Option<HashMap<i64, SceneDialogs>>,
 }
 
 // until proper implementations for 'playlist' and 'jingles' are added
