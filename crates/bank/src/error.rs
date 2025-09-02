@@ -12,6 +12,8 @@ pub enum Error {
     Manifest {
         source: audioware_manifest::error::Error,
     },
+    #[snafu(display("Error(s): {}", errors.iter().map(|e| format!("{e}")).collect::<Vec<_>>().join("\n  -> ")), visibility(pub(crate)))]
+    Multiple { errors: Vec<Error> },
 }
 
 pub mod registry {
@@ -37,7 +39,7 @@ pub mod validation {
     use audioware_manifest::{DialogLine, Locale};
     use snafu::Snafu;
 
-    use crate::{Id, Key};
+    use crate::{Id, Key, SceneKey};
 
     #[derive(Debug, Snafu)]
     pub enum Error {
@@ -89,6 +91,8 @@ pub mod validation {
         InvalidAudioCaption { which: String, why: String },
         #[snafu(display("cannot store data: {key} ({path})"), visibility(pub(crate)))]
         CannotStoreData { key: Key, path: String },
+        #[snafu(display("cannot store scene data: {key} ({path})"), visibility(pub(crate)))]
+        CannotStoreSceneData { key: SceneKey, path: String },
         #[snafu(
             display("cannot store subtitle: {key} ({value})"),
             visibility(pub(crate))

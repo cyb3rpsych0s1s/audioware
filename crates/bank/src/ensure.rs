@@ -214,7 +214,7 @@ pub fn ensure_located_in_depot(
 }
 
 /// Ensure path refers to valid audio (based on [usage](Usage)).
-pub fn ensure_valid_audio(
+pub fn ensure_valid_audio_and_settings(
     path: &impl AsRef<std::path::Path>,
     m: &Mod,
     usage: Usage,
@@ -225,14 +225,14 @@ pub fn ensure_valid_audio(
     Ok(data)
 }
 
-pub fn ensure_valid_audio_and_captions(
+pub fn ensure_valid_audio_with_settings_and_captions(
     path: &impl AsRef<std::path::Path>,
     m: &Mod,
     usage: Usage,
     settings: Option<&Settings>,
     captions: Option<&[Caption]>,
 ) -> Result<Either<StaticSoundData, StreamingSoundData<FromFileError>>, Error> {
-    let data = ensure_valid_audio(path, m, usage, settings)?;
+    let data = ensure_valid_audio_and_settings(path, m, usage, settings)?;
     if let Some(captions) = captions {
         ensure_valid_jingle_captions(&data, captions)?;
     }
@@ -388,17 +388,18 @@ fn ensure<'a, K: PartialEq + Eq + Hash + Clone + Into<Key> + Conflictual>(
 where
     HashSet<Id>: Conflict<K>,
 {
-    let data = ensure_valid_audio(&path, m, usage, settings.as_ref())?.map_either_with(
-        (usage, settings.as_ref().and_then(|x| x.region.clone())),
-        |ctx, data| {
-            if let (Usage::InMemory, Some(region)) = ctx {
-                data.slice(region)
-            } else {
-                data
-            }
-        },
-        |_, data| data,
-    );
+    let data = ensure_valid_audio_and_settings(&path, m, usage, settings.as_ref())?
+        .map_either_with(
+            (usage, settings.as_ref().and_then(|x| x.region.clone())),
+            |ctx, data| {
+                if let (Usage::InMemory, Some(region)) = ctx {
+                    data.slice(region)
+                } else {
+                    data
+                }
+            },
+            |_, data| data,
+        );
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = match usage {
         Usage::InMemory => Id::InMemory(key.clone().into(), source),
@@ -623,7 +624,13 @@ pub fn ensure_jingles<'a>(
 ) -> Result<(), Error> {
     let existed = ensure_key_unique_or_inserted(k)?;
     let Audio { file, settings } = (&v).into();
-    ensure_valid_audio_and_captions(&file, m, Usage::Streaming, settings.as_ref(), v.captions())?;
+    ensure_valid_audio_with_settings_and_captions(
+        &file,
+        m,
+        Usage::Streaming,
+        settings.as_ref(),
+        v.captions(),
+    )?;
     let c_string = std::ffi::CString::new(k)?;
     let cname = CName::new(k);
     let key = UniqueKey(cname);

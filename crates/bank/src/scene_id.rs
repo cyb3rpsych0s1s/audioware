@@ -6,7 +6,7 @@ use red4ext_rs::types::Cruid;
 use crate::SceneKey;
 
 /// Special type whose audio data is guaranteed to both exist in banks and be valid.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SceneId {
     OnDemand(SceneUsage),
     InMemory(SceneKey),
