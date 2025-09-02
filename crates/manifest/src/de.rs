@@ -44,6 +44,7 @@ pub struct Manifest {
     #[doc(hidden)]
     pub jingles: Option<HashMap<String, Jingle>>,
     #[doc(hidden)]
+    #[serde(rename = "dialogs")]
     pub scene_dialogs: Option<HashMap<i64, SceneDialogs>>,
 }
 
@@ -56,7 +57,7 @@ impl fmt::Debug for Manifest {
             .field("onos", &self.onos)
             .field("voices", &self.voices)
             .field("music", &self.music)
-            .field("scene_dialogs", &self.scene_dialogs)
+            .field("dialogs", &self.scene_dialogs)
             .finish_non_exhaustive()
     }
 }
