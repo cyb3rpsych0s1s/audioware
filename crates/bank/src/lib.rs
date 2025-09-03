@@ -14,7 +14,7 @@ use audioware_manifest::{
 use either::Either;
 use ensure::*;
 use kira::sound::static_sound::StaticSoundData;
-use red4ext_rs::types::CName;
+use red4ext_rs::types::{CName, Cruid};
 use snafu::ResultExt;
 
 pub mod conflict;
@@ -36,6 +36,10 @@ use crate::error::registry::Error as RegistryError;
 
 #[cfg(feature = "hot-reload")]
 static PREVIOUS_IDS: std::sync::LazyLock<std::sync::Mutex<HashSet<Id>>> =
+    std::sync::LazyLock::new(Default::default);
+
+#[cfg(feature = "hot-reload")]
+static PREVIOUS_SCENE_IDS: std::sync::LazyLock<std::sync::Mutex<HashSet<SceneId>>> =
     std::sync::LazyLock::new(Default::default);
 
 #[derive(Clone)]
@@ -71,6 +75,15 @@ impl Banks {
             return false;
         }
         self.ids.iter().any(|x| AsRef::<CName>::as_ref(&x) == cname)
+    }
+    /// Whether RUID exists in banks or not.
+    pub fn exists_for_scene(&self, cruid: &Cruid) -> bool {
+        if !cruid.is_defined() {
+            return false;
+        }
+        self.scene_ids
+            .iter()
+            .any(|x| AsRef::<Cruid>::as_ref(&x) == cruid)
     }
     /// Return audio duration (as seconds) if any, otherwise `-1.0`.
     pub fn duration(
@@ -354,7 +367,7 @@ impl Banks {
                         ) {
                             Ok(x) => x,
                             Err(e) => {
-                                scene_errors.push(e.into());
+                                scene_errors.push(e);
                                 continue;
                             }
                         };
@@ -385,6 +398,12 @@ impl Banks {
 
         #[cfg(feature = "hot-reload")]
         let errors = errors
+            .into_iter()
+            .map(std::sync::Arc::new)
+            .collect::<Vec<_>>();
+
+        #[cfg(feature = "hot-reload")]
+        let scene_errors = scene_errors
             .into_iter()
             .map(std::sync::Arc::new)
             .collect::<Vec<_>>();
@@ -439,8 +458,13 @@ impl Banks {
             .lock()
             .expect("already loaded before")
             .clone_from(&self.ids.drain().collect());
+        PREVIOUS_SCENE_IDS
+            .lock()
+            .expect("already loaded before")
+            .clone_from(&self.scene_ids.drain().collect());
         let (banks, initialization) = Self::new();
         self.ids = banks.ids;
+        self.scene_ids = banks.scene_ids;
         self.uniques = banks.uniques;
         self.genders = banks.genders;
         self.single_voices = banks.single_voices;
@@ -451,6 +475,10 @@ impl Banks {
         self.gender_settings = banks.gender_settings;
         self.single_settings = banks.single_settings;
         self.dual_settings = banks.dual_settings;
+        self.single_scene_dialogs = banks.single_scene_dialogs;
+        self.dual_scene_dialogs = banks.dual_scene_dialogs;
+        self.single_scene_dialogs_settings = banks.single_scene_dialogs_settings;
+        self.dual_scene_dialogs_settings = banks.dual_scene_dialogs_settings;
         initialization
     }
 }

@@ -30,11 +30,20 @@ impl AsRef<SceneKey> for SceneId {
     }
 }
 
+impl AsRef<Cruid> for SceneId {
+    fn as_ref(&self) -> &Cruid {
+        match self {
+            SceneId::OnDemand(scene_usage) => scene_usage.as_ref(),
+            SceneId::InMemory(scene_key) => scene_key.as_ref(),
+        }
+    }
+}
+
 impl PartialEq<SceneUsage> for SceneId {
     fn eq(&self, other: &SceneUsage) -> bool {
         match self {
             SceneId::OnDemand(scene_usage) => scene_usage == other,
-            SceneId::InMemory(scene_key) => scene_key == other.as_ref(),
+            SceneId::InMemory(scene_key) => scene_key == AsRef::<SceneKey>::as_ref(other),
         }
     }
 }
@@ -114,6 +123,16 @@ impl AsRef<SceneKey> for SceneUsage {
     fn as_ref(&self) -> &SceneKey {
         match self {
             SceneUsage::Static(scene_key, ..) | SceneUsage::Streaming(scene_key, ..) => scene_key,
+        }
+    }
+}
+
+impl AsRef<Cruid> for SceneUsage {
+    fn as_ref(&self) -> &Cruid {
+        match self {
+            SceneUsage::Static(scene_key, ..) | SceneUsage::Streaming(scene_key, ..) => {
+                scene_key.as_ref()
+            }
         }
     }
 }

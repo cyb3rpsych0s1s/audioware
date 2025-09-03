@@ -16,7 +16,7 @@ use kira::{
     track::TrackHandle,
 };
 use modulators::{Modulators, Parameter};
-use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
+use red4ext_rs::types::{CName, Cruid, EntityId, GameInstance, Opt};
 pub use scene::{AffectedByTimeDilation, DilationUpdate, Scene};
 use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
@@ -617,6 +617,19 @@ where
         BANKS
             .try_read()
             .and_then(|x| x.as_ref().map(|x| x.exists(sound)))
+            .unwrap_or(false)
+    }
+
+    pub fn exists_for_scene(cruid: &Cruid) -> bool {
+        #[cfg(not(feature = "hot-reload"))]
+        return BANKS
+            .get()
+            .map(|x| x.exists_for_scene(cruid))
+            .unwrap_or(false);
+        #[cfg(feature = "hot-reload")]
+        BANKS
+            .try_read()
+            .and_then(|x| x.as_ref().map(|x| x.exists_for_scene(cruid)))
             .unwrap_or(false)
     }
 
