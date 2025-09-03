@@ -1,6 +1,6 @@
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Settings};
 use kira::Tween;
-use red4ext_rs::types::{CName, EntityId};
+use red4ext_rs::types::{CName, Cruid, EntityId};
 
 use super::{TagName, TargetId};
 
@@ -29,6 +29,12 @@ pub enum Command {
         event_name: CName,
         emitter_name: CName,
         gender: PlayerGender,
+    },
+    PlaySceneDialog {
+        string_id: Cruid,
+    },
+    StopSceneDialog {
+        string_id: Cruid,
     },
     StopOnEmitter {
         event_name: CName,
@@ -91,6 +97,16 @@ impl std::fmt::Debug for Command {
                 "Command::PlayOnEmitter {{ event_name: {event_name}, entity_id: {entity_id}, emitter_name: {}, .. }}",
                 tag_name.as_str()
             ),
+            Command::PlaySceneDialog { string_id, .. } => write!(
+                f,
+                "Command::PlaySceneDialog {{ string_id: {}, .. }}",
+                i64::from(*string_id)
+            ),
+            Command::StopSceneDialog { string_id, .. } => write!(
+                f,
+                "Command::StopSceneDialog {{ string_id: {}, .. }}",
+                i64::from(*string_id)
+            ),
             Command::StopOnEmitter {
                 event_name,
                 entity_id,
@@ -143,6 +159,8 @@ impl std::fmt::Display for Command {
                 Command::Play { .. } => "play",
                 Command::PlayOnEmitter { .. } => "play on emitter",
                 Command::PlayOverThePhone { .. } => "play over the phone",
+                Command::PlaySceneDialog { .. } => "play scene dialog",
+                Command::StopSceneDialog { .. } => "stop scene dialog",
                 Command::StopOnEmitter { .. } => "stop on emitter",
                 Command::StopVanilla { .. } => "stop vanilla",
                 Command::Stop { .. } => "stop",

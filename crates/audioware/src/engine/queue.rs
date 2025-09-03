@@ -308,6 +308,8 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     emitter_name,
                     gender,
                 } => engine.play_over_the_phone(event_name, emitter_name, gender),
+                Command::PlaySceneDialog { string_id } => engine.play_scene_dialog(string_id),
+                Command::StopSceneDialog { string_id } => engine.stop_scene_dialog(string_id),
                 Command::StopOnEmitter {
                     event_name,
                     entity_id,

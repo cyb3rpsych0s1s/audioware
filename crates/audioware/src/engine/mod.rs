@@ -200,6 +200,14 @@ where
         }
     }
 
+    pub fn play_scene_dialog(&mut self, string_id: Cruid) {
+        todo!()
+    }
+
+    pub fn stop_scene_dialog(&mut self, string_id: Cruid) {
+        todo!()
+    }
+
     pub fn play<T>(
         &mut self,
         event_name: CName,
