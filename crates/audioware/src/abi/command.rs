@@ -32,9 +32,14 @@ pub enum Command {
     },
     PlaySceneDialog {
         string_id: Cruid,
+        entity_id: EntityId,
+        is_player: bool,
+        is_holocall: bool,
+        is_rewind: bool,
     },
     StopSceneDialog {
         string_id: Cruid,
+        fade_out: f32,
     },
     StopOnEmitter {
         event_name: CName,
@@ -97,9 +102,13 @@ impl std::fmt::Debug for Command {
                 "Command::PlayOnEmitter {{ event_name: {event_name}, entity_id: {entity_id}, emitter_name: {}, .. }}",
                 tag_name.as_str()
             ),
-            Command::PlaySceneDialog { string_id, .. } => write!(
+            Command::PlaySceneDialog {
+                string_id,
+                entity_id,
+                ..
+            } => write!(
                 f,
-                "Command::PlaySceneDialog {{ string_id: {}, .. }}",
+                "Command::PlaySceneDialog {{ string_id: {}, entity_id: {entity_id}, .. }}",
                 i64::from(*string_id)
             ),
             Command::StopSceneDialog { string_id, .. } => write!(

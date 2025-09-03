@@ -1,7 +1,7 @@
 use kira::backend::cpal::CpalBackend;
 use red4ext_rs::VoidPtr;
 
-use crate::{StopDialogLine, engine::Engine, utils::intercept};
+use crate::{StopDialogLine, abi::command::Command, engine::Engine, utils::intercept};
 
 ::red4ext_rs::hooks! {
     static HOOK: fn(a1: VoidPtr,
@@ -25,8 +25,17 @@ unsafe extern "C" fn detour(
 ) {
     unsafe {
         let event = &*a2;
-        if Engine::<CpalBackend>::exists_for_scene(&event.string_id) {
+        let StopDialogLine {
+            string_id,
+            fade_out,
+            ..
+        } = event;
+        if Engine::<CpalBackend>::exists_for_scene(string_id) {
             intercept!("SoundComponent::OnStopDialogLine( {event} )");
+            crate::engine::queue::send(Command::StopSceneDialog {
+                string_id: *string_id,
+                fade_out: *fade_out,
+            });
         }
         cb(a1, a2)
     }

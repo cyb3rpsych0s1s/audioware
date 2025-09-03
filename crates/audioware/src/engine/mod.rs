@@ -24,6 +24,7 @@ use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
 use crate::{
     AsAudioSystem, AsGameInstance, AsGameObjectExt, GameObject,
+    engine::scene_dialogue::SceneDialogue,
     error::{EngineError, Error},
     propagate_subtitles,
     utils::{fails, lifecycle, success, warns},
@@ -37,6 +38,7 @@ pub mod state;
 
 mod modulators;
 mod scene;
+mod scene_dialogue;
 mod tracks;
 mod tweens;
 
@@ -53,6 +55,7 @@ pub struct Engine<B: Backend> {
     pub report: Initialization,
     pub banks: Banks,
     pub last_volume: Option<Decibels>,
+    pub scene_dialogue: SceneDialogue,
 }
 
 #[cfg(debug_assertions)]
@@ -90,6 +93,7 @@ where
             tracks,
             report,
             last_volume: None,
+            scene_dialogue: SceneDialogue::default(),
         })
     }
 
@@ -200,12 +204,21 @@ where
         }
     }
 
-    pub fn play_scene_dialog(&mut self, string_id: Cruid) {
+    pub fn play_scene_dialog(
+        &mut self,
+        string_id: Cruid,
+        entity_id: EntityId,
+        is_player: bool,
+        is_holocall: bool,
+        is_rewind: bool,
+    ) {
         todo!()
     }
 
-    pub fn stop_scene_dialog(&mut self, string_id: Cruid) {
-        todo!()
+    pub fn stop_scene_dialog(&mut self, string_id: Cruid, fade_out: f32) {
+        if let Some(ref mut scene) = self.scene {
+            
+        }
     }
 
     pub fn play<T>(

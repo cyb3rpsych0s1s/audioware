@@ -75,7 +75,13 @@ unsafe extern "C" fn detour(
                 (*a7).as_str(),
                 a9.as_str()
             );
-            crate::engine::queue::send(Command::PlaySceneDialog { string_id });
+            crate::engine::queue::send(Command::PlaySceneDialog {
+                string_id,
+                is_player,
+                is_holocall,
+                is_rewind,
+                entity_id: a3,
+            });
         }
         // still let the engine carry on, to handle subtitle
         let out = cb(a1, a2, a3, a4, a5, a6, a7, a8, a9);

@@ -1,5 +1,6 @@
 use std::num::NonZero;
 
+use ahash::HashMapExt;
 use audioware_core::SpatialTrackSettings;
 use audioware_manifest::PlayerGender;
 use dilation::Dilation;

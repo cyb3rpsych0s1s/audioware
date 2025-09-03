@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use kira::{
     Tween,
     sound::{
@@ -5,18 +7,17 @@ use kira::{
         streaming::StreamingSoundHandle,
     },
 };
-use red4ext_rs::types::CName;
 
 use crate::engine::tweens::IMMEDIATELY;
 
 #[derive(Debug, Default)]
-pub struct Handles {
-    pub statics: Vec<Handle<StaticSoundHandle>>,
-    pub streams: Vec<Handle<StreamingSoundHandle<FromFileError>>>,
+pub struct Handles<K> {
+    pub statics: Vec<Handle<K, StaticSoundHandle>>,
+    pub streams: Vec<Handle<K, StreamingSoundHandle<FromFileError>>>,
 }
 
-impl Handles {
-    pub fn stop_by_event_name(&mut self, event_name: CName, tween: Tween) {
+impl<K: PartialEq> Handles<K> {
+    pub fn stop_by_event_name(&mut self, event_name: K, tween: Tween) {
         self.statics
             .iter_mut()
             .filter(|x| x.event_name == event_name)
@@ -56,7 +57,7 @@ impl Handles {
     }
 }
 
-impl Drop for Handles {
+impl<K> Drop for Handles<K> {
     fn drop(&mut self) {
         // bug in kira DecodeScheduler NextStep::Wait
         self.streams.iter_mut().for_each(|x| {
@@ -65,13 +66,16 @@ impl Drop for Handles {
     }
 }
 
-pub struct Handle<T> {
-    pub event_name: CName,
-    pub handle: T,
+pub struct Handle<K, V> {
+    pub event_name: K,
+    pub handle: V,
     pub affected_by_time_dilation: bool,
 }
 
-impl<T> std::fmt::Debug for Handle<T> {
+impl<K, V> std::fmt::Debug for Handle<K, V>
+where
+    K: Debug,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Handle")
             .field("event_name", &self.event_name)
@@ -80,10 +84,10 @@ impl<T> std::fmt::Debug for Handle<T> {
     }
 }
 
-impl Handles {
+impl<K> Handles<K> {
     pub fn store_static(
         &mut self,
-        event_name: CName,
+        event_name: K,
         handle: StaticSoundHandle,
         affected_by_time_dilation: bool,
     ) {
@@ -95,7 +99,7 @@ impl Handles {
     }
     pub fn store_stream(
         &mut self,
-        event_name: CName,
+        event_name: K,
         handle: StreamingSoundHandle<FromFileError>,
         affected_by_time_dilation: bool,
     ) {

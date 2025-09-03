@@ -16,7 +16,7 @@ pub struct EmitterSlot {
     pub tag_name: Option<CName>,
     pub emitter_name: Option<CName>,
     pub persist_until_sounds_finish: bool,
-    pub handles: Handles,
+    pub handles: Handles<CName>,
 }
 
 type PlayResult =
