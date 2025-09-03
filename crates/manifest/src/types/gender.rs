@@ -15,6 +15,18 @@ pub enum PlayerGender {
     Male = 1,
 }
 
+impl PlayerGender {
+    /// Returns the opposite gender.
+    /// e.g. `Female` will return `Male`
+    #[inline]
+    pub fn opposite(&self) -> PlayerGender {
+        match self {
+            Self::Female => Self::Male,
+            Self::Male => Self::Female,
+        }
+    }
+}
+
 impl From<PlayerGender> for u8 {
     fn from(value: PlayerGender) -> Self {
         value as u8

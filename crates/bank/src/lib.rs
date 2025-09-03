@@ -14,7 +14,7 @@ use audioware_manifest::{
 use either::Either;
 use ensure::*;
 use kira::sound::static_sound::StaticSoundData;
-use red4ext_rs::types::{CName, Cruid};
+use red4ext_rs::types::CName;
 use snafu::ResultExt;
 
 pub mod conflict;
@@ -199,6 +199,7 @@ impl Banks {
         let mut file: Vec<u8>;
         let mut manifest: Manifest;
         let (mods, mut errors) = Self::mods();
+        let mut scene_errors = Vec::with_capacity(30);
 
         let mut ids: HashSet<Id> = HashSet::new();
         let mut scene_ids: HashSet<SceneId> = HashSet::new();
@@ -342,7 +343,7 @@ impl Banks {
                 if let Some(scene_dialogs) = manifest.scene_dialogs {
                     for (key, value) in scene_dialogs {
                         match ensure_scene_dialogs(
-                            &Cruid::from(key),
+                            key,
                             value,
                             &m,
                             &mut scene_ids,
@@ -353,7 +354,7 @@ impl Banks {
                         ) {
                             Ok(x) => x,
                             Err(e) => {
-                                errors.push(e);
+                                scene_errors.push(e.into());
                                 continue;
                             }
                         };
@@ -368,6 +369,16 @@ impl Banks {
                 Id::OnDemand(Usage::Static(..), ..) => odsta += 1,
                 Id::OnDemand(Usage::Streaming(..), ..) => odstr += 1,
                 Id::InMemory(..) => imsta += 1,
+            }
+            (odsta, odstr, imsta)
+        });
+
+        let scene_lengths = scene_ids.iter().fold((0, 0, 0), |acc, x| {
+            let (mut odsta, mut odstr, mut imsta) = acc;
+            match x {
+                SceneId::OnDemand(SceneUsage::Static(..), ..) => odsta += 1,
+                SceneId::OnDemand(SceneUsage::Streaming(..), ..) => odstr += 1,
+                SceneId::InMemory(..) => imsta += 1,
             }
             (odsta, odstr, imsta)
         });
@@ -387,8 +398,17 @@ impl Banks {
 - in-memory static audio    -> {}"##,
                 lengths.0, lengths.1, lengths.2
             ),
+            scene_lengths: format!(
+                r##"scene ids:
+- on-demand static audio    -> {}
+- on-demand streaming audio -> {}
+- in-memory static audio    -> {}"##,
+                scene_lengths.0, scene_lengths.1, scene_lengths.2
+            ),
             len_ids: ids.len(),
+            len_scene_ids: scene_ids.len(),
             errors,
+            scene_errors,
         };
 
         (
@@ -440,11 +460,17 @@ impl Banks {
 pub struct Initialization {
     duration: Duration,
     lengths: String,
+    scene_lengths: String,
     len_ids: usize,
+    len_scene_ids: usize,
     #[cfg(not(feature = "hot-reload"))]
     pub errors: Vec<Error>,
     #[cfg(feature = "hot-reload")]
     pub errors: Vec<std::sync::Arc<Error>>,
+    #[cfg(not(feature = "hot-reload"))]
+    pub scene_errors: Vec<Error>,
+    #[cfg(feature = "hot-reload")]
+    pub scene_errors: Vec<std::sync::Arc<Error>>,
 }
 
 pub enum InitializationOutcome {
@@ -454,13 +480,33 @@ pub enum InitializationOutcome {
 }
 
 impl Initialization {
-    pub fn outcome(&self) -> InitializationOutcome {
+    pub fn outcome_sections(&self) -> InitializationOutcome {
         if self.errors.is_empty() {
             InitializationOutcome::Success
         } else if self.len_ids == 0 {
             InitializationOutcome::CompleteFailure
         } else {
             InitializationOutcome::PartialSuccess
+        }
+    }
+    pub fn outcome_scene(&self) -> InitializationOutcome {
+        if self.scene_errors.is_empty() {
+            InitializationOutcome::Success
+        } else if self.len_scene_ids == 0 {
+            InitializationOutcome::CompleteFailure
+        } else {
+            InitializationOutcome::PartialSuccess
+        }
+    }
+    pub fn outcome(&self) -> InitializationOutcome {
+        match (self.outcome_sections(), self.outcome_scene()) {
+            (InitializationOutcome::Success, InitializationOutcome::Success) => {
+                InitializationOutcome::Success
+            }
+            (InitializationOutcome::CompleteFailure, InitializationOutcome::CompleteFailure) => {
+                InitializationOutcome::CompleteFailure
+            }
+            _ => InitializationOutcome::PartialSuccess,
         }
     }
 }
@@ -472,12 +518,19 @@ impl std::fmt::Display for Initialization {
             lengths,
             len_ids,
             errors,
+            scene_errors,
+            scene_lengths,
+            len_scene_ids,
         } = self;
         write!(
             f,
-            r##"{lengths}
+            r##"initialization took {duration:?}
+{lengths}
 for a total of: {len_ids} id(s)
-in {duration:?}
+{}
+-------------------------------
+{scene_lengths}
+for a total of: {len_scene_ids} scene id(s)
 {}
 "##,
             if errors.is_empty() {
@@ -486,6 +539,18 @@ in {duration:?}
                 format!(
                     "error(s):\n{}",
                     errors
+                        .iter()
+                        .map(|e| format!("- {e}"))
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                )
+            },
+            if scene_errors.is_empty() {
+                "no scene error reported!".to_string()
+            } else {
+                format!(
+                    "scene error(s):\n{}",
+                    scene_errors
                         .iter()
                         .map(|e| format!("- {e}"))
                         .collect::<Vec<_>>()

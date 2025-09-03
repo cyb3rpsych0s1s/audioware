@@ -12,6 +12,15 @@ pub enum SceneId {
     InMemory(SceneKey),
 }
 
+impl std::fmt::Display for SceneId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SceneId::OnDemand(usage, ..) => write!(f, "|on-demand| {usage}"),
+            SceneId::InMemory(key, ..) => write!(f, "|in-memory| {key}"),
+        }
+    }
+}
+
 impl AsRef<SceneKey> for SceneId {
     fn as_ref(&self) -> &SceneKey {
         match self {
@@ -105,6 +114,25 @@ impl AsRef<SceneKey> for SceneUsage {
     fn as_ref(&self) -> &SceneKey {
         match self {
             SceneUsage::Static(scene_key, ..) | SceneUsage::Streaming(scene_key, ..) => scene_key,
+        }
+    }
+}
+
+impl std::fmt::Display for SceneUsage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SceneUsage::Static(key, path) => write!(
+                f,
+                "static:{} ({})",
+                key,
+                path.display().to_string().as_str()
+            ),
+            SceneUsage::Streaming(key, path) => write!(
+                f,
+                "streaming:{} ({})",
+                key,
+                path.display().to_string().as_str()
+            ),
         }
     }
 }

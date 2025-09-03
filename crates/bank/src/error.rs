@@ -39,7 +39,7 @@ pub mod validation {
     use audioware_manifest::{DialogLine, Locale};
     use snafu::Snafu;
 
-    use crate::{Id, Key, SceneKey};
+    use crate::{Id, Key, SceneId, SceneKey};
 
     #[derive(Debug, Snafu)]
     pub enum Error {
@@ -91,7 +91,10 @@ pub mod validation {
         InvalidAudioCaption { which: String, why: String },
         #[snafu(display("cannot store data: {key} ({path})"), visibility(pub(crate)))]
         CannotStoreData { key: Key, path: String },
-        #[snafu(display("cannot store scene data: {key} ({path})"), visibility(pub(crate)))]
+        #[snafu(
+            display("cannot store scene data: {key} ({path})"),
+            visibility(pub(crate))
+        )]
         CannotStoreSceneData { key: SceneKey, path: String },
         #[snafu(
             display("cannot store subtitle: {key} ({value})"),
@@ -102,6 +105,8 @@ pub mod validation {
         CannotStoreSettings,
         #[snafu(display("cannot store id: {id}"), visibility(pub(crate)))]
         CannotStoreAgnosticId { id: Id },
+        #[snafu(display("cannot store scene id: {id}"), visibility(pub(crate)))]
+        CannotStoreSceneId { id: SceneId },
         #[snafu(display("IO: {source}"), visibility(pub(crate)))]
         IO { source: std::io::Error },
     }
