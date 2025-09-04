@@ -1,3 +1,5 @@
+use std::ops::Not;
+
 use kira::backend::cpal::CpalBackend;
 use red4ext_rs::{
     VoidPtr,
@@ -58,20 +60,42 @@ unsafe extern "C" fn detour(
         let is_player = data.is_player;
         let is_holocall = data.is_holocall;
         let is_rewind = data.is_rewind;
+        let context = data.context;
+        let expression = data.expression;
+        let seek_time = data.seek_time;
+        let playback_speed_parameter = data.playback_speed_parameter;
         crate::utils::intercept!(
             "audio::PlayDialogLine
     - data.string_id: {string_id:?}
     - data.is_player: {is_player}
     - data.is_holocall: {is_holocall}
     - data.is_rewind: {is_rewind}
+    - data.context: {context}
+    - data.expression: {expression}
+    - data.seek_time: {seek_time}
+    - data.playback_speed_parameter: {playback_speed_parameter}
     - data.custom_vo_event: {}
     - entity_id: {a3:?}
+    - has_helmet: {a5:?}
+    - played_speech_line: {}
+    - playback_speed: {}
+    - has_helmet: {a5:?}
     - vo_event_override: {}
     - played_vo_event: {}
     - tag_event: {}",
-            a4.as_str(),
             data.custom_vo_event.as_str(),
-            (*a7).as_str(),
+            if a6.is_null().not() {
+                *a6
+            } else {
+                Default::default()
+            },
+            a8,
+            a4.as_str(),
+            if a7.is_null().not() {
+                (*a7).as_str()
+            } else {
+                ""
+            },
             a9.as_str()
         );
         if Engine::<CpalBackend>::exists_for_scene(&string_id) {
