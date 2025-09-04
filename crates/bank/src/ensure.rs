@@ -14,7 +14,7 @@ use kira::sound::{FromFileError, static_sound::StaticSoundData, streaming::Strea
 use red4ext_rs::types::{CName, CNamePool, Cruid};
 use snafu::ensure;
 
-use crate::{SceneKey, SceneUsage};
+use crate::SceneKey;
 
 use super::{
     BothKey, Error, GenderKey, Id, Key, LocaleKey, SceneBothKey, SceneId, SceneLocaleKey,
@@ -482,11 +482,11 @@ where
         );
     let id: SceneId = match usage {
         Usage::InMemory => SceneId::InMemory(key.clone().into()),
-        Usage::OnDemand => SceneId::OnDemand(SceneUsage::Static(
+        Usage::OnDemand => SceneId::OnDemand(crate::Usage::Static(
             key.clone().into(),
             m.as_ref().join(path.clone()),
         )),
-        Usage::Streaming => SceneId::OnDemand(SceneUsage::Streaming(
+        Usage::Streaming => SceneId::OnDemand(crate::Usage::Streaming(
             key.clone().into(),
             m.as_ref().join(path.clone()),
         )),

@@ -31,6 +31,8 @@ pub use scene_id::*;
 pub use scene_key::*;
 mod storage;
 pub use storage::*;
+mod usage;
+pub use usage::*;
 
 use crate::error::registry::Error as RegistryError;
 
@@ -389,8 +391,8 @@ impl Banks {
         let scene_lengths = scene_ids.iter().fold((0, 0, 0), |acc, x| {
             let (mut odsta, mut odstr, mut imsta) = acc;
             match x {
-                SceneId::OnDemand(SceneUsage::Static(..), ..) => odsta += 1,
-                SceneId::OnDemand(SceneUsage::Streaming(..), ..) => odstr += 1,
+                SceneId::OnDemand(Usage::Static(..), ..) => odsta += 1,
+                SceneId::OnDemand(Usage::Streaming(..), ..) => odstr += 1,
                 SceneId::InMemory(..) => imsta += 1,
             }
             (odsta, odstr, imsta)

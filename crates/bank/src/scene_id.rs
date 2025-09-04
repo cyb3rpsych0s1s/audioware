@@ -3,12 +3,12 @@ use std::path::PathBuf;
 use audioware_manifest::SceneDialogs;
 use red4ext_rs::types::Cruid;
 
-use crate::SceneKey;
+use crate::{SceneKey, Usage};
 
 /// Special type whose audio data is guaranteed to both exist in banks and be valid.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SceneId {
-    OnDemand(SceneUsage),
+    OnDemand(Usage<SceneKey>),
     InMemory(SceneKey),
 }
 
@@ -39,8 +39,8 @@ impl AsRef<Cruid> for SceneId {
     }
 }
 
-impl PartialEq<SceneUsage> for SceneId {
-    fn eq(&self, other: &SceneUsage) -> bool {
+impl PartialEq<Usage<SceneKey>> for SceneId {
+    fn eq(&self, other: &Usage<SceneKey>) -> bool {
         match self {
             SceneId::OnDemand(scene_usage) => scene_usage == other,
             SceneId::InMemory(scene_key) => scene_key == AsRef::<SceneKey>::as_ref(other),
@@ -48,12 +48,10 @@ impl PartialEq<SceneUsage> for SceneId {
     }
 }
 
-impl PartialEq<SceneUsage> for SceneKey {
-    fn eq(&self, other: &SceneUsage) -> bool {
+impl PartialEq<Usage<SceneKey>> for SceneKey {
+    fn eq(&self, other: &Usage<SceneKey>) -> bool {
         match other {
-            SceneUsage::Static(scene_key, ..) | SceneUsage::Streaming(scene_key, ..) => {
-                scene_key == other
-            }
+            Usage::Static(scene_key, ..) | Usage::Streaming(scene_key, ..) => scene_key == other,
         }
     }
 }
@@ -67,12 +65,10 @@ impl PartialEq<SceneKey> for SceneId {
     }
 }
 
-impl PartialEq<(&Cruid, &SceneDialogs)> for SceneUsage {
+impl PartialEq<(&Cruid, &SceneDialogs)> for Usage<SceneKey> {
     fn eq(&self, other: &(&Cruid, &SceneDialogs)) -> bool {
         match self {
-            SceneUsage::Static(scene_key, ..) | SceneUsage::Streaming(scene_key, ..) => {
-                scene_key == other
-            }
+            Usage::Static(scene_key, ..) | Usage::Streaming(scene_key, ..) => scene_key == other,
         }
     }
 }
@@ -119,20 +115,18 @@ pub enum SceneUsage {
     Streaming(SceneKey, PathBuf),
 }
 
-impl AsRef<SceneKey> for SceneUsage {
+impl AsRef<SceneKey> for Usage<SceneKey> {
     fn as_ref(&self) -> &SceneKey {
         match self {
-            SceneUsage::Static(scene_key, ..) | SceneUsage::Streaming(scene_key, ..) => scene_key,
+            Usage::Static(scene_key, ..) | Usage::Streaming(scene_key, ..) => scene_key,
         }
     }
 }
 
-impl AsRef<Cruid> for SceneUsage {
+impl AsRef<Cruid> for Usage<SceneKey> {
     fn as_ref(&self) -> &Cruid {
         match self {
-            SceneUsage::Static(scene_key, ..) | SceneUsage::Streaming(scene_key, ..) => {
-                scene_key.as_ref()
-            }
+            Usage::Static(scene_key, ..) | Usage::Streaming(scene_key, ..) => scene_key.as_ref(),
         }
     }
 }

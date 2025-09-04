@@ -216,9 +216,7 @@ where
     }
 
     pub fn stop_scene_dialog(&mut self, string_id: Cruid, fade_out: f32) {
-        if let Some(ref mut scene) = self.scene {
-            
-        }
+        if let Some(ref mut scene) = self.scene {}
     }
 
     pub fn play<T>(
