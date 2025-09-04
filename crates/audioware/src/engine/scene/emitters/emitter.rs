@@ -51,4 +51,20 @@ impl Emitter {
             .map(AsTimeDilatable::get_time_dilation_value);
         Ok((position, busy, dilation, distances))
     }
+
+    #[allow(clippy::type_complexity)]
+    pub fn actor_infos(
+        entity_id: EntityId,
+    ) -> Result<(Vector4, Option<SpatialTrackDistances>), Error> {
+        let game = GameInstance::new();
+        let entity = GameInstance::find_entity_by_id(game, entity_id);
+        if entity.is_null() {
+            return Err(Error::Scene {
+                source: SceneError::MissingEmitter { entity_id },
+            });
+        }
+        let position = entity.get_world_position();
+        let distances = entity.get_emitter_distances();
+        Ok((position, distances))
+    }
 }

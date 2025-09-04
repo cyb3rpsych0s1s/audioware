@@ -3,7 +3,11 @@ use red4ext_rs::types::CName;
 
 use crate::{
     Vector4,
-    engine::{scene::dilation::Dilation, tweens::IMMEDIATELY},
+    engine::{
+        scene::dilation::Dilation,
+        traits::{reclaim::Reclaim, stop::StopBy},
+        tweens::IMMEDIATELY,
+    },
 };
 
 use super::slot::EmitterSlot;
@@ -39,10 +43,8 @@ impl EmitterSlots {
     pub fn exists_tag(&self, tag_name: &CName) -> bool {
         self.slots.iter().any(|x| x.tag_name == Some(*tag_name))
     }
-    pub fn reclaim(&mut self) {
-        self.slots.iter_mut().for_each(|x| {
-            x.handles.reclaim();
-        });
+    pub fn any_playing_handle(&self) -> bool {
+        self.slots.iter().any(|x| x.any_playing_handle())
     }
     pub fn set_emitter_position(&mut self, position: Vector4) {
         self.slots.iter_mut().for_each(|x| {
@@ -53,14 +55,10 @@ impl EmitterSlots {
         self.slots.is_empty()
     }
 
-    pub fn any_playing_handle(&self) -> bool {
-        self.slots.iter().any(|x| x.any_playing_handle())
-    }
-
     pub fn stop_on_emitter(&mut self, event_name: CName, tag_name: CName, tween: Tween) {
         self.slots.iter_mut().for_each(|x| {
             if x.tag_name == Some(tag_name) {
-                x.handles.stop_by_event_name(event_name, tween);
+                x.handles.stop_by(&event_name, tween);
             }
         });
     }
@@ -97,5 +95,11 @@ impl EmitterSlots {
         self.slots.iter_mut().for_each(|x| {
             x.sync_dilation(rate, tween);
         });
+    }
+}
+
+impl Reclaim for EmitterSlots {
+    fn reclaim(&mut self) {
+        self.slots.iter_mut().for_each(|x| x.handles.reclaim());
     }
 }

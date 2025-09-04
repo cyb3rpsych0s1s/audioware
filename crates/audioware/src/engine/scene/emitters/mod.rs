@@ -19,13 +19,12 @@ use slots::EmitterSlots;
 
 use crate::{
     Vector4,
-    engine::{tracks::Spatial, tweens::IMMEDIATELY},
+    engine::{tracks::Spatial, traits::reclaim::Reclaim, tweens::IMMEDIATELY},
     error::{EngineError, Error, SceneError},
     utils::{lifecycle, warns},
 };
 
 mod emitter;
-mod handles;
 mod slot;
 mod slots;
 
@@ -210,17 +209,17 @@ impl Emitters {
     }
     pub fn stop_emitters(&mut self, tween: Tween) {
         self.0.iter_mut().for_each(|mut x| {
-            x.value_mut().stop(tween);
+            x.stop(tween);
         });
     }
     pub fn pause(&mut self, tween: Tween) {
         self.0.iter_mut().for_each(|mut x| {
-            x.value_mut().pause(tween);
+            x.pause(tween);
         });
     }
     pub fn resume(&mut self, tween: Tween) {
         self.0.iter_mut().for_each(|mut x| {
-            x.value_mut().resume(tween);
+            x.resume(tween);
         });
     }
     pub fn get_mut(&mut self, entity_id: &EntityId) -> Option<RefMut<'_, EntityId, EmitterSlots>> {
@@ -237,7 +236,9 @@ impl Emitters {
         self.0.clear();
     }
     pub fn reclaim(&mut self) {
-        self.0.iter_mut().for_each(|mut x| x.reclaim());
+        self.0
+            .iter_mut()
+            .for_each(|mut x| x.slots.iter_mut().for_each(|x| x.handles.reclaim()));
     }
 }
 

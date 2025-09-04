@@ -59,6 +59,8 @@ pub enum SceneError {
     },
     #[snafu(display("emitter is null [{}]", entity_id))]
     MissingEmitter { entity_id: EntityId },
+    #[snafu(display("actor is null [{}]", entity_id))]
+    MissingActor { entity_id: EntityId },
 }
 
 #[derive(Debug, Snafu)]

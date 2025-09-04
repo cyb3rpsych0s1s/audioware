@@ -4,10 +4,7 @@ use dialogue::Dialogue;
 use holocall::Holocall;
 use kira::{
     Tween,
-    sound::{
-        FromFileError, PlaybackState, static_sound::StaticSoundHandle,
-        streaming::StreamingSoundHandle,
-    },
+    sound::FromFileError,
     {AudioManager, backend::Backend},
 };
 use music::Music;
@@ -17,7 +14,21 @@ use sfx::Sfx;
 pub use spatial::Spatial;
 use v::V;
 
-use crate::error::Error;
+use crate::{
+    engine::{
+        AffectedByTimeDilation,
+        traits::{
+            DualHandles,
+            clear::Clear,
+            dilation::{Comparable, SyncDilationBy},
+            pause::Pause,
+            reclaim::Reclaim,
+            resume::Resume,
+            stop::{Stop, StopBy},
+        },
+    },
+    error::Error,
+};
 
 use super::{DilationUpdate, modulators::Modulators, tweens::IMMEDIATELY};
 
@@ -31,26 +42,21 @@ mod sfx;
 mod spatial;
 mod v;
 
-pub struct Handle<K, T> {
-    pub event_name: K,
+pub struct TrackEntryOptions {
     pub entity_id: Option<EntityId>,
     pub emitter_name: Option<CName>,
-    pub handle: T,
     pub affected_by_time_dilation: bool,
 }
 
-#[derive(Default)]
-pub struct Handles<K> {
-    pub statics: Vec<Handle<K, StaticSoundHandle>>,
-    pub streams: Vec<Handle<K, StreamingSoundHandle<FromFileError>>>,
+impl AffectedByTimeDilation for TrackEntryOptions {
+    fn affected_by_time_dilation(&self) -> bool {
+        self.affected_by_time_dilation
+    }
 }
 
-impl<K> Drop for Handles<K> {
-    fn drop(&mut self) {
-        // bug in kira DecodeScheduler NextStep::Wait
-        self.streams.iter_mut().for_each(|x| {
-            x.handle.stop(IMMEDIATELY);
-        });
+impl Comparable<EntityId> for TrackEntryOptions {
+    fn compare(&self, rhs: &EntityId) -> bool {
+        self.entity_id.map(|x| x == *rhs).unwrap_or(false)
     }
 }
 
@@ -66,8 +72,8 @@ pub struct Tracks {
     pub holocall: Holocall,
     // tracks affected by reverb mix + preset (e.g. underwater)
     pub ambience: Ambience,
-    pub handles: Handles<CName>,
-    pub scene_handles: Handles<Cruid>,
+    pub handles: DualHandles<CName, TrackEntryOptions, FromFileError>,
+    pub scene_handles: DualHandles<Cruid, (), FromFileError>,
 }
 
 impl Tracks {
@@ -97,66 +103,23 @@ impl Tracks {
         })
     }
     pub fn pause(&mut self, tween: Tween) {
-        self.handles.statics.iter_mut().for_each(|x| {
-            x.handle.pause(tween);
-        });
-        self.handles.streams.iter_mut().for_each(|x| {
-            x.handle.pause(tween);
-        });
-        self.scene_handles.statics.iter_mut().for_each(|x| {
-            x.handle.pause(tween);
-        });
-        self.scene_handles.streams.iter_mut().for_each(|x| {
-            x.handle.pause(tween);
-        });
+        self.handles.pause(tween);
+        self.scene_handles.pause(tween);
     }
     pub fn resume(&mut self, tween: Tween) {
-        self.handles.statics.iter_mut().for_each(|x| {
-            x.handle.resume(tween);
-        });
-        self.handles.streams.iter_mut().for_each(|x| {
-            x.handle.resume(tween);
-        });
-        self.scene_handles.statics.iter_mut().for_each(|x| {
-            x.handle.resume(tween);
-        });
-        self.scene_handles.streams.iter_mut().for_each(|x| {
-            x.handle.resume(tween);
-        });
+        self.handles.resume(tween);
+        self.scene_handles.resume(tween);
     }
     pub fn reclaim(&mut self) {
-        self.handles
-            .statics
-            .retain(|x| x.handle.state() != PlaybackState::Stopped);
-        self.handles
-            .streams
-            .retain(|x| x.handle.state() != PlaybackState::Stopped);
-        self.scene_handles
-            .statics
-            .retain(|x| x.handle.state() != PlaybackState::Stopped);
-        self.scene_handles
-            .streams
-            .retain(|x| x.handle.state() != PlaybackState::Stopped);
+        self.handles.reclaim();
+        self.scene_handles.reclaim();
     }
     pub fn any_handle(&self) -> bool {
-        !self.handles.statics.is_empty()
-            || !self.handles.streams.is_empty()
-            || !self.scene_handles.statics.is_empty()
-            || !self.scene_handles.streams.is_empty()
+        self.handles.any_handle() || self.scene_handles.any_handle()
     }
     pub fn stop(&mut self, tween: Tween) {
-        self.handles.statics.iter_mut().for_each(|x| {
-            x.handle.stop(tween);
-        });
-        self.handles.streams.iter_mut().for_each(|x| {
-            x.handle.stop(tween);
-        });
-        self.scene_handles.statics.iter_mut().for_each(|x| {
-            x.handle.stop(tween);
-        });
-        self.scene_handles.streams.iter_mut().for_each(|x| {
-            x.handle.stop(tween);
-        });
+        self.handles.stop(tween);
+        self.scene_handles.stop(tween);
     }
     pub fn stop_by(
         &mut self,
@@ -166,67 +129,17 @@ impl Tracks {
         tween: Tween,
     ) {
         self.handles
-            .statics
-            .iter_mut()
-            .filter(|x| {
-                x.event_name == event_name
-                    && x.entity_id == entity_id
-                    && x.emitter_name == emitter_name
-            })
-            .for_each(|x| {
-                x.handle.stop(tween);
-            });
-        self.handles
-            .streams
-            .iter_mut()
-            .filter(|x| {
-                x.event_name == event_name
-                    && x.entity_id == entity_id
-                    && x.emitter_name == emitter_name
-            })
-            .for_each(|x| {
-                x.handle.stop(tween);
-            });
+            .stop_by(&(event_name, entity_id, emitter_name), tween);
     }
     pub fn stop_scene_by(&mut self, event_name: Cruid, tween: Tween) {
-        self.scene_handles
-            .statics
-            .iter_mut()
-            .filter(|x| x.event_name == event_name)
-            .for_each(|x| {
-                x.handle.stop(tween);
-            });
-        self.scene_handles
-            .streams
-            .iter_mut()
-            .filter(|x| x.event_name == event_name)
-            .for_each(|x| {
-                x.handle.stop(tween);
-            });
+        self.scene_handles.stop_by(&event_name, tween);
     }
     pub fn sync_dilation(&mut self, entity_id: EntityId, update: DilationUpdate) {
-        self.handles
-            .statics
-            .iter_mut()
-            .filter(|x| x.entity_id == Some(entity_id) && x.affected_by_time_dilation)
-            .for_each(|x| {
-                x.handle
-                    .set_playback_rate(update.dilation(), update.tween_curve());
-            });
-        self.handles
-            .streams
-            .iter_mut()
-            .filter(|x| x.entity_id == Some(entity_id) && x.affected_by_time_dilation)
-            .for_each(|x| {
-                x.handle
-                    .set_playback_rate(update.dilation(), update.tween_curve());
-            });
+        self.handles.sync_dilation_by(&entity_id, &update);
     }
     pub fn clear(&mut self) {
         self.stop(IMMEDIATELY);
-        self.handles.statics.clear();
-        self.handles.streams.clear();
-        self.scene_handles.statics.clear();
-        self.scene_handles.streams.clear();
+        self.handles.clear();
+        self.scene_handles.clear();
     }
 }

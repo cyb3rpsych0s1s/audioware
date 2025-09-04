@@ -324,7 +324,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Command::StopSceneDialog {
                     string_id,
                     fade_out,
-                } => engine.stop_scene_dialog(string_id, fade_out),
+                } => engine.stop_on_actor(string_id, fade_out),
                 Command::StopOnEmitter {
                     event_name,
                     entity_id,

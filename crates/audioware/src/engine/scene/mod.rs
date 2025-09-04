@@ -1,6 +1,5 @@
 use std::num::NonZero;
 
-use ahash::HashMapExt;
 use audioware_core::SpatialTrackSettings;
 use audioware_manifest::PlayerGender;
 use dilation::Dilation;
@@ -13,13 +12,14 @@ use crate::{
     AsEntity, AsScriptedPuppet, AsScriptedPuppetExt, AsTimeDilatable, AvObject, BikeObject,
     CarObject, Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject, TimeDilatable,
     VehicleObject,
-    engine::tracks::Spatial,
+    engine::{scene::actors::Actors, tracks::Spatial},
     error::{Error, SceneError},
     get_player,
 };
 
 use super::{lifecycle, tracks::ambience::Ambience, tweens::IMMEDIATELY};
 
+mod actors;
 mod dilation;
 mod emitters;
 mod listener;
@@ -29,11 +29,13 @@ pub use dilation::{AffectedByTimeDilation, DilationUpdate};
 /// Audio spatial scene.
 pub struct Scene {
     pub emitters: Emitters,
+    pub actors: Actors,
     pub v: Listener,
 }
 
 impl Scene {
     pub fn try_new<B: Backend>(manager: &mut AudioManager<B>) -> Result<Self, Error> {
+        const RESERVED_FOR_ACTORS: usize = 20;
         let capacity = manager.sub_track_capacity();
         let (id, position, orientation, dilation) = {
             let v = get_player(GameInstance::new()).cast::<Entity>().unwrap();
@@ -54,7 +56,8 @@ impl Scene {
                 handle,
                 dilation: Dilation::new(dilation),
             },
-            emitters: Emitters::with_capacity(capacity),
+            emitters: Emitters::with_capacity(capacity - RESERVED_FOR_ACTORS),
+            actors: Actors::with_capacity(RESERVED_FOR_ACTORS),
         })
     }
 
@@ -105,6 +108,34 @@ impl Scene {
                 .map(|x| x.0.persist_until_sounds_finish)
                 .unwrap_or(false),
         )
+    }
+
+    pub fn exists_actor(&self, entity_id: &EntityId) -> bool {
+        self.actors.exists(entity_id)
+    }
+
+    pub fn add_actor<B: Backend>(
+        &mut self,
+        manager: &mut AudioManager<B>,
+        entity_id: EntityId,
+        ambience: &Ambience,
+    ) -> Result<(), Error> {
+        if self.actors.exists(&entity_id) {
+            return Ok(());
+        }
+        if entity_id == self.v.id {
+            return Err(Error::Scene {
+                source: SceneError::InvalidEmitter,
+            });
+        }
+        let (position, distances) = Emitter::actor_infos(entity_id)?;
+        let settings = SpatialTrackSettings {
+            distances: distances.unwrap_or_default(),
+            ..Default::default()
+        };
+        let handle = Spatial::try_new(manager, self.v.handle.id(), position, settings, ambience)?;
+        self.actors.add_actor(handle, entity_id, position)?;
+        Ok(())
     }
 
     pub fn stop_on_emitter(

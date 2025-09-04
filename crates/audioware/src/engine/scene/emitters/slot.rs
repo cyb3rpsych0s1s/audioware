@@ -5,9 +5,25 @@ use kira::{
 };
 use red4ext_rs::types::CName;
 
-use crate::engine::tracks::Spatial;
+use crate::engine::traits::stop::Stop;
+use crate::engine::traits::{dilation::SyncDilation, pause::Pause};
+use crate::engine::{AffectedByTimeDilation, traits::resume::Resume};
+use crate::engine::{
+    tracks::Spatial,
+    traits::{DualHandles, Handle, store::Store},
+};
 
-use super::handles::Handles;
+// use super::handles::Handles;
+
+pub struct EmitterEntryOptions {
+    pub affected_by_time_dilation: bool,
+}
+
+impl AffectedByTimeDilation for EmitterEntryOptions {
+    fn affected_by_time_dilation(&self) -> bool {
+        self.affected_by_time_dilation
+    }
+}
 
 /// Underlying handle to the emitter,
 /// and whether sound(s) should persist until they finish playing.
@@ -16,7 +32,7 @@ pub struct EmitterSlot {
     pub tag_name: Option<CName>,
     pub emitter_name: Option<CName>,
     pub persist_until_sounds_finish: bool,
-    pub handles: Handles<CName>,
+    pub handles: DualHandles<CName, EmitterEntryOptions, FromFileError>,
 }
 
 type PlayResult =
@@ -37,7 +53,7 @@ impl EmitterSlot {
             tag_name: Some(tag_name),
             emitter_name,
             persist_until_sounds_finish,
-            handles: Handles::default(),
+            handles: DualHandles::default(),
         }
     }
     pub fn play_and_store(
@@ -50,15 +66,25 @@ impl EmitterSlot {
             Either::Left(data) => {
                 let duration = data.duration().as_secs_f32();
                 let handle = self.handle.play(data).map_err(Either::Left)?;
-                self.handles
-                    .store_static(event_name, handle, affected_by_time_dilation);
+                self.handles.store(Handle::new(
+                    event_name,
+                    handle,
+                    EmitterEntryOptions {
+                        affected_by_time_dilation,
+                    },
+                ));
                 Ok((duration, self.emitter_name))
             }
             Either::Right(data) => {
                 let duration = data.duration().as_secs_f32();
                 let handle = self.handle.play(data).map_err(Either::Right)?;
-                self.handles
-                    .store_stream(event_name, handle, affected_by_time_dilation);
+                self.handles.store(Handle::new(
+                    event_name,
+                    handle,
+                    EmitterEntryOptions {
+                        affected_by_time_dilation,
+                    },
+                ));
                 Ok((duration, self.emitter_name))
             }
         }
