@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use audioware_manifest::SceneDialogs;
 use red4ext_rs::types::Cruid;
 
@@ -106,15 +104,6 @@ impl PartialEq<(&Cruid, &SceneDialogs)> for SceneId {
     }
 }
 
-/// Specify [on-demand](SceneId::OnDemand) scene usage.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum SceneUsage {
-    /// Used with [kira static sounds](https://docs.rs/kira/latest/kira/sound/static_sound/index.html).
-    Static(SceneKey, PathBuf),
-    /// Used with [kira streaming](https://docs.rs/kira/latest/kira/sound/streaming/index.html).
-    Streaming(SceneKey, PathBuf),
-}
-
 impl AsRef<SceneKey> for Usage<SceneKey> {
     fn as_ref(&self) -> &SceneKey {
         match self {
@@ -127,25 +116,6 @@ impl AsRef<Cruid> for Usage<SceneKey> {
     fn as_ref(&self) -> &Cruid {
         match self {
             Usage::Static(scene_key, ..) | Usage::Streaming(scene_key, ..) => scene_key.as_ref(),
-        }
-    }
-}
-
-impl std::fmt::Display for SceneUsage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SceneUsage::Static(key, path) => write!(
-                f,
-                "static:{} ({})",
-                key,
-                path.display().to_string().as_str()
-            ),
-            SceneUsage::Streaming(key, path) => write!(
-                f,
-                "streaming:{} ({})",
-                key,
-                path.display().to_string().as_str()
-            ),
         }
     }
 }
