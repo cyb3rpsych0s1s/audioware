@@ -14,12 +14,10 @@ use audioware_manifest::{
 };
 use red4ext_rs::types::CName;
 
-use crate::{Banks, BothKey, Id, Key, LocaleKey, Usage};
+use crate::{Banks, BothKey, Id, Key, LocaleKey, SceneId, SceneKey, Usage};
 
-pub trait BankData {
-    type Key;
-    type Data;
-    fn data(&self, key: &Self::Key) -> Self::Data;
+pub trait BankData<K, V> {
+    fn data(&self, key: &K) -> V;
 }
 
 pub trait BankSettings {
@@ -57,11 +55,18 @@ impl<K, V> OnceStorage<K, V> {
         self.0.get().map(|x| x.keys())
     }
 }
-impl<K: Eq + Hash> BankData for OnceStorage<K, StaticSoundData> {
-    type Key = K;
-    type Data = StaticSoundData;
-
-    fn data(&self, key: &Self::Key) -> Self::Data {
+impl BankData<Key, StaticSoundData> for OnceStorage<Key, StaticSoundData> {
+    fn data(&self, key: &Key) -> StaticSoundData {
+        self.0
+            .get()
+            .expect("insertion guarantees")
+            .get(key)
+            .expect("insertion guarantees")
+            .clone()
+    }
+}
+impl BankData<SceneKey, StaticSoundData> for OnceStorage<SceneKey, StaticSoundData> {
+    fn data(&self, key: &SceneKey) -> StaticSoundData {
         self.0
             .get()
             .expect("insertion guarantees")
@@ -136,12 +141,9 @@ impl BankSettings for Banks {
     }
 }
 
-impl BankData for Banks {
-    type Key = Id;
-    type Data = Either<StaticSoundData, StreamingSoundData<FromFileError>>;
-
+impl BankData<Id, Either<StaticSoundData, StreamingSoundData<FromFileError>>> for Banks {
     /// Retrieves sound data for a given [Id], including settings if any.
-    fn data(&self, key: &Self::Key) -> Self::Data {
+    fn data(&self, key: &Id) -> Either<StaticSoundData, StreamingSoundData<FromFileError>> {
         match key {
             Id::OnDemand(Usage::Static(_, path), ..) => {
                 let settings = self.settings(key);
@@ -177,6 +179,44 @@ impl BankData for Banks {
             Id::InMemory(Key::Both(key), ..) => {
                 Either::Left(self.dual_voices.get(key).cloned().expect("key guarantees"))
             }
+        }
+    }
+}
+
+impl BankData<SceneId, Either<StaticSoundData, StreamingSoundData<FromFileError>>> for Banks {
+    /// Retrieves sound data for a given [Id], including settings if any.
+    fn data(&self, key: &SceneId) -> Either<StaticSoundData, StreamingSoundData<FromFileError>> {
+        match key {
+            SceneId::OnDemand(Usage::Static(_, path), ..) => {
+                // let settings = self.settings(key);
+                let data = StaticSoundData::from_file(path)
+                    .expect("static sound data has already been validated");
+                // if let Some(settings) = settings {
+                //     return Either::Left(data.with_settings(settings.into()));
+                // }
+                Either::Left(data)
+            }
+            SceneId::OnDemand(Usage::Streaming(_, path), ..) => {
+                // let settings = self.settings(key);
+                let data = StreamingSoundData::from_file(path)
+                    .expect("streaming sound data has already been validated");
+                // if let Some(settings) = settings {
+                //     return Either::Right(data.with_settings(settings.into()));
+                // }
+                Either::Right(data)
+            }
+            SceneId::InMemory(SceneKey::Locale(key), ..) => Either::Left(
+                self.single_scene_dialogs
+                    .get(key)
+                    .cloned()
+                    .expect("key guarantees"),
+            ),
+            SceneId::InMemory(SceneKey::Both(key), ..) => Either::Left(
+                self.dual_scene_dialogs
+                    .get(key)
+                    .cloned()
+                    .expect("key guarantees"),
+            ),
         }
     }
 }

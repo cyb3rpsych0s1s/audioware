@@ -614,3 +614,53 @@ impl TryGet for HashSet<Id> {
         Err(RegistryError::NotFound { key: name.clone() }.into())
     }
 }
+
+impl TryGet for HashSet<SceneId> {
+    type Id = SceneId;
+    type Raw = Cruid;
+
+    fn try_get<K: ErrorDisplay + Clone>(
+        &self,
+        name: &K,
+        spoken: &SpokenLocale,
+        gender: Option<&PlayerGender>,
+    ) -> Result<&Self::Id, Error>
+    where
+        Self::Raw: PartialEq<K>,
+        error::Error: From<crate::error::registry::Error<K>>,
+    {
+        let mut maybe_missing_locale = false;
+        let mut key: &SceneKey;
+        for id in self.iter() {
+            key = id.as_ref();
+            match key {
+                SceneKey::Locale(SceneLocaleKey(key, locale)) if key == name => {
+                    maybe_missing_locale = true;
+                    if locale == spoken {
+                        return Ok(id);
+                    }
+                }
+                SceneKey::Both(SceneBothKey(key, locale, g)) if key == name => {
+                    maybe_missing_locale = true;
+                    if locale == spoken {
+                        if gender.is_none() {
+                            return Err(RegistryError::RequireGender { key: name.clone() }.into());
+                        }
+                        if gender == Some(g) {
+                            return Ok(id);
+                        }
+                    }
+                }
+                _ => continue,
+            }
+        }
+        if maybe_missing_locale {
+            return Err(RegistryError::MissingSpokenLocale {
+                key: name.clone(),
+                locale: *spoken,
+            }
+            .into());
+        }
+        Err(RegistryError::NotFound { key: name.clone() }.into())
+    }
+}

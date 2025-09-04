@@ -24,7 +24,7 @@ use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
 use crate::{
     AsAudioSystem, AsGameInstance, AsGameObjectExt, GameObject,
-    engine::scene_dialogue::SceneDialogue,
+    engine::{scene_dialogue::SceneDialogue, tracks::Handle},
     error::{EngineError, Error},
     propagate_subtitles,
     utils::{fails, lifecycle, success, warns},
@@ -162,25 +162,25 @@ where
                     Either::Left(data) => {
                         duration = data.duration().as_secs_f32();
                         if let Ok(handle) = destination.play(data) {
-                            self.tracks.store_static(
+                            self.tracks.handles.statics.push(Handle::<CName, _> {
                                 handle,
                                 event_name,
-                                None,
-                                Some(emitter_name),
-                                dilatable,
-                            );
+                                entity_id: None,
+                                emitter_name: Some(emitter_name),
+                                affected_by_time_dilation: dilatable,
+                            });
                         }
                     }
                     Either::Right(data) => {
                         duration = data.duration().as_secs_f32();
                         if let Ok(handle) = destination.play(data) {
-                            self.tracks.store_stream(
+                            self.tracks.handles.streams.push(Handle::<CName, _> {
                                 handle,
                                 event_name,
-                                None,
-                                Some(emitter_name),
-                                dilatable,
-                            );
+                                entity_id: None,
+                                emitter_name: Some(emitter_name),
+                                affected_by_time_dilation: dilatable,
+                            });
                         }
                     }
                 };
@@ -212,6 +212,43 @@ where
         is_holocall: bool,
         is_rewind: bool,
     ) {
+        if is_player {
+            let spoken = SpokenLocale::get();
+            let gender = entity_id.to_gender();
+            if let Ok(key) = self
+                .banks
+                .scene_ids
+                .try_get(&string_id, &spoken, gender.as_ref())
+            {
+                let data = self.banks.data(key);
+                let destination: &mut TrackHandle = &mut self.tracks.v.vocal;
+                match data {
+                    Either::Left(data) => {
+                        if let Ok(handle) = destination.play(data) {
+                            self.tracks.scene_handles.statics.push(Handle {
+                                event_name: string_id,
+                                entity_id: Some(entity_id),
+                                emitter_name: None,
+                                handle,
+                                affected_by_time_dilation: false,
+                            });
+                        }
+                    }
+                    Either::Right(data) => {
+                        if let Ok(handle) = destination.play(data) {
+                            self.tracks.scene_handles.streams.push(Handle {
+                                event_name: string_id,
+                                entity_id: Some(entity_id),
+                                emitter_name: None,
+                                handle,
+                                affected_by_time_dilation: false,
+                            });
+                        }
+                    }
+                }
+                // red engine handles subtitles automatically
+            }
+        }
         todo!()
     }
 
@@ -267,25 +304,25 @@ where
                     Either::Left(data) => {
                         duration = data.duration().as_secs_f32();
                         if let Ok(handle) = destination.play(data.with(ext)) {
-                            self.tracks.store_static(
+                            self.tracks.handles.statics.push(Handle {
                                 handle,
                                 event_name,
                                 entity_id,
                                 emitter_name,
-                                dilatable,
-                            );
+                                affected_by_time_dilation: dilatable,
+                            });
                         }
                     }
                     Either::Right(data) => {
                         duration = data.duration().as_secs_f32();
                         if let Ok(handle) = destination.play(data.with(ext)) {
-                            self.tracks.store_stream(
+                            self.tracks.handles.streams.push(Handle {
                                 handle,
                                 event_name,
                                 entity_id,
                                 emitter_name,
-                                dilatable,
-                            );
+                                affected_by_time_dilation: dilatable,
+                            });
                         }
                     }
                 }

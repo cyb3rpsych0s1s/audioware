@@ -12,7 +12,7 @@ use kira::{
 };
 use music::Music;
 use radioport::Radioport;
-use red4ext_rs::types::{CName, EntityId};
+use red4ext_rs::types::{CName, Cruid, EntityId};
 use sfx::Sfx;
 pub use spatial::Spatial;
 use v::V;
@@ -31,8 +31,8 @@ mod sfx;
 mod spatial;
 mod v;
 
-pub struct Handle<T> {
-    pub event_name: CName,
+pub struct Handle<K, T> {
+    pub event_name: K,
     pub entity_id: Option<EntityId>,
     pub emitter_name: Option<CName>,
     pub handle: T,
@@ -40,12 +40,12 @@ pub struct Handle<T> {
 }
 
 #[derive(Default)]
-pub struct Handles {
-    pub statics: Vec<Handle<StaticSoundHandle>>,
-    pub streams: Vec<Handle<StreamingSoundHandle<FromFileError>>>,
+pub struct Handles<K> {
+    pub statics: Vec<Handle<K, StaticSoundHandle>>,
+    pub streams: Vec<Handle<K, StreamingSoundHandle<FromFileError>>>,
 }
 
-impl Drop for Handles {
+impl<K> Drop for Handles<K> {
     fn drop(&mut self) {
         // bug in kira DecodeScheduler NextStep::Wait
         self.streams.iter_mut().for_each(|x| {
@@ -66,7 +66,8 @@ pub struct Tracks {
     pub holocall: Holocall,
     // tracks affected by reverb mix + preset (e.g. underwater)
     pub ambience: Ambience,
-    handles: Handles,
+    pub handles: Handles<CName>,
+    pub scene_handles: Handles<Cruid>,
 }
 
 impl Tracks {
@@ -92,6 +93,7 @@ impl Tracks {
             dialogue,
             car_radio,
             handles: Default::default(),
+            scene_handles: Default::default(),
         })
     }
     pub fn pause(&mut self, tween: Tween) {
@@ -117,38 +119,6 @@ impl Tracks {
         self.handles
             .streams
             .retain(|x| x.handle.state() != PlaybackState::Stopped);
-    }
-    pub fn store_static(
-        &mut self,
-        handle: StaticSoundHandle,
-        event_name: CName,
-        entity_id: Option<EntityId>,
-        emitter_name: Option<CName>,
-        affected_by_time_dilation: bool,
-    ) {
-        self.handles.statics.push(Handle {
-            event_name,
-            entity_id,
-            emitter_name,
-            handle,
-            affected_by_time_dilation,
-        });
-    }
-    pub fn store_stream(
-        &mut self,
-        handle: StreamingSoundHandle<FromFileError>,
-        event_name: CName,
-        entity_id: Option<EntityId>,
-        emitter_name: Option<CName>,
-        affected_by_time_dilation: bool,
-    ) {
-        self.handles.streams.push(Handle {
-            event_name,
-            entity_id,
-            emitter_name,
-            handle,
-            affected_by_time_dilation,
-        });
     }
     pub fn any_handle(&self) -> bool {
         !self.handles.statics.is_empty() || !self.handles.streams.is_empty()
