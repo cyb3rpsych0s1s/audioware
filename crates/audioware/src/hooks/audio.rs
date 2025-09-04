@@ -55,26 +55,26 @@ unsafe extern "C" fn detour(
         let data = &*a1;
         let string_id = data.string_id;
 
+        let is_player = data.is_player;
+        let is_holocall = data.is_holocall;
+        let is_rewind = data.is_rewind;
+        crate::utils::intercept!(
+            "audio::PlayDialogLine
+    - data.string_id: {string_id:?}
+    - data.is_player: {is_player}
+    - data.is_holocall: {is_holocall}
+    - data.is_rewind: {is_rewind}
+    - data.custom_vo_event: {}
+    - entity_id: {a3:?}
+    - vo_event_override: {}
+    - played_vo_event: {}
+    - tag_event: {}",
+            a4.as_str(),
+            data.custom_vo_event.as_str(),
+            (*a7).as_str(),
+            a9.as_str()
+        );
         if Engine::<CpalBackend>::exists_for_scene(&string_id) {
-            let is_player = data.is_player;
-            let is_holocall = data.is_holocall;
-            let is_rewind = data.is_rewind;
-            crate::utils::intercept!(
-                "audio::PlayDialogLine
-        - data.string_id: {string_id:?}
-        - data.is_player: {is_player}
-        - data.is_holocall: {is_holocall}
-        - data.is_rewind: {is_rewind}
-        - data.custom_vo_event: {}
-        - entity_id: {a3:?}
-        - vo_event_override: {}
-        - played_vo_event: {}
-        - tag_event: {}",
-                a4.as_str(),
-                data.custom_vo_event.as_str(),
-                (*a7).as_str(),
-                a9.as_str()
-            );
             crate::engine::queue::send(Command::PlaySceneDialog {
                 string_id,
                 is_player,

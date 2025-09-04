@@ -103,12 +103,24 @@ impl Tracks {
         self.handles.streams.iter_mut().for_each(|x| {
             x.handle.pause(tween);
         });
+        self.scene_handles.statics.iter_mut().for_each(|x| {
+            x.handle.pause(tween);
+        });
+        self.scene_handles.streams.iter_mut().for_each(|x| {
+            x.handle.pause(tween);
+        });
     }
     pub fn resume(&mut self, tween: Tween) {
         self.handles.statics.iter_mut().for_each(|x| {
             x.handle.resume(tween);
         });
         self.handles.streams.iter_mut().for_each(|x| {
+            x.handle.resume(tween);
+        });
+        self.scene_handles.statics.iter_mut().for_each(|x| {
+            x.handle.resume(tween);
+        });
+        self.scene_handles.streams.iter_mut().for_each(|x| {
             x.handle.resume(tween);
         });
     }
@@ -119,15 +131,30 @@ impl Tracks {
         self.handles
             .streams
             .retain(|x| x.handle.state() != PlaybackState::Stopped);
+        self.scene_handles
+            .statics
+            .retain(|x| x.handle.state() != PlaybackState::Stopped);
+        self.scene_handles
+            .streams
+            .retain(|x| x.handle.state() != PlaybackState::Stopped);
     }
     pub fn any_handle(&self) -> bool {
-        !self.handles.statics.is_empty() || !self.handles.streams.is_empty()
+        !self.handles.statics.is_empty()
+            || !self.handles.streams.is_empty()
+            || !self.scene_handles.statics.is_empty()
+            || !self.scene_handles.streams.is_empty()
     }
     pub fn stop(&mut self, tween: Tween) {
         self.handles.statics.iter_mut().for_each(|x| {
             x.handle.stop(tween);
         });
         self.handles.streams.iter_mut().for_each(|x| {
+            x.handle.stop(tween);
+        });
+        self.scene_handles.statics.iter_mut().for_each(|x| {
+            x.handle.stop(tween);
+        });
+        self.scene_handles.streams.iter_mut().for_each(|x| {
             x.handle.stop(tween);
         });
     }
@@ -161,6 +188,22 @@ impl Tracks {
                 x.handle.stop(tween);
             });
     }
+    pub fn stop_scene_by(&mut self, event_name: Cruid, tween: Tween) {
+        self.scene_handles
+            .statics
+            .iter_mut()
+            .filter(|x| x.event_name == event_name)
+            .for_each(|x| {
+                x.handle.stop(tween);
+            });
+        self.scene_handles
+            .streams
+            .iter_mut()
+            .filter(|x| x.event_name == event_name)
+            .for_each(|x| {
+                x.handle.stop(tween);
+            });
+    }
     pub fn sync_dilation(&mut self, entity_id: EntityId, update: DilationUpdate) {
         self.handles
             .statics
@@ -183,5 +226,7 @@ impl Tracks {
         self.stop(IMMEDIATELY);
         self.handles.statics.clear();
         self.handles.streams.clear();
+        self.scene_handles.statics.clear();
+        self.scene_handles.streams.clear();
     }
 }

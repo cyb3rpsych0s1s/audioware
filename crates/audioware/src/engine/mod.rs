@@ -2,9 +2,10 @@ use std::{
     fmt::Debug,
     num::NonZero,
     ops::{Div, Not},
+    time::Duration,
 };
 
-use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome, TryGet};
+use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome, SceneId, TryGet};
 use audioware_core::{Amplitude, SpatialTrackSettings, With};
 use audioware_manifest::{Locale, ScnDialogLineType, Source, ValidateFor};
 use either::Either;
@@ -212,9 +213,9 @@ where
         is_holocall: bool,
         is_rewind: bool,
     ) {
+        let gender = entity_id.to_gender();
+        let spoken = SpokenLocale::get();
         if is_player {
-            let spoken = SpokenLocale::get();
-            let gender = entity_id.to_gender();
             if let Ok(key) = self
                 .banks
                 .scene_ids
@@ -246,14 +247,83 @@ where
                         }
                     }
                 }
-                // red engine handles subtitles automatically
+            }
+        } else if is_holocall
+            && let Ok(key) = self
+                .banks
+                .scene_ids
+                .try_get(&string_id, &spoken, gender.as_ref())
+        {
+            let data = self.banks.data(key);
+            let destination: &mut TrackHandle = &mut self.tracks.holocall;
+            match data {
+                Either::Left(data) => {
+                    if let Ok(handle) = destination.play(data) {
+                        self.tracks.scene_handles.statics.push(Handle {
+                            event_name: string_id,
+                            entity_id: Some(entity_id),
+                            emitter_name: None,
+                            handle,
+                            affected_by_time_dilation: false,
+                        });
+                    }
+                }
+                Either::Right(data) => {
+                    if let Ok(handle) = destination.play(data) {
+                        self.tracks.scene_handles.streams.push(Handle {
+                            event_name: string_id,
+                            entity_id: Some(entity_id),
+                            emitter_name: None,
+                            handle,
+                            affected_by_time_dilation: false,
+                        });
+                    }
+                }
+            }
+        } else if let Ok(key) = self
+            .banks
+            .scene_ids
+            .try_get(&string_id, &spoken, gender.as_ref())
+        {
+            let data = self.banks.data(key);
+            let destination: &mut TrackHandle = &mut self.tracks.dialogue;
+            match data {
+                Either::Left(data) => {
+                    if let Ok(handle) = destination.play(data) {
+                        self.tracks.scene_handles.statics.push(Handle {
+                            event_name: string_id,
+                            entity_id: Some(entity_id),
+                            emitter_name: None,
+                            handle,
+                            affected_by_time_dilation: false,
+                        });
+                    }
+                }
+                Either::Right(data) => {
+                    if let Ok(handle) = destination.play(data) {
+                        self.tracks.scene_handles.streams.push(Handle {
+                            event_name: string_id,
+                            entity_id: Some(entity_id),
+                            emitter_name: None,
+                            handle,
+                            affected_by_time_dilation: false,
+                        });
+                    }
+                }
             }
         }
-        todo!()
+        // red engine handles subtitles automatically
     }
 
     pub fn stop_scene_dialog(&mut self, string_id: Cruid, fade_out: f32) {
-        if let Some(ref mut scene) = self.scene {}
+        self.tracks.stop_scene_by(
+            string_id,
+            Tween {
+                start_time: kira::StartTime::Immediate,
+                duration: Duration::from_secs(fade_out as u64),
+                easing: kira::Easing::Linear,
+            },
+        );
     }
 
     pub fn play<T>(
@@ -753,5 +823,12 @@ impl ToOutputDestination for Id {
                 Source::Jingle => &mut tracks.car_radio,
             },
         }
+    }
+}
+
+impl ToOutputDestination for SceneId {
+    #[inline(always)]
+    fn to_output_destination<'b>(&self, tracks: &'b mut Tracks) -> &'b mut TrackHandle {
+        &mut tracks.dialogue
     }
 }
