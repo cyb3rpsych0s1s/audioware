@@ -4,7 +4,7 @@ use std::{
     ops::{Div, Not},
 };
 
-use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
+use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome, TryGet};
 use audioware_core::{Amplitude, SpatialTrackSettings, With};
 use audioware_manifest::{Locale, ScnDialogLineType, Source, ValidateFor};
 use either::Either;
@@ -152,7 +152,7 @@ where
         gender: audioware_manifest::PlayerGender,
     ) {
         let spoken = SpokenLocale::get();
-        match self.banks.try_get(&event_name, &spoken, Some(&gender)) {
+        match self.banks.ids.try_get(&event_name, &spoken, Some(&gender)) {
             Ok(key) => {
                 let data = self.banks.data(key);
                 let destination = &mut self.tracks.holocall;
@@ -234,7 +234,11 @@ where
     {
         let spoken = SpokenLocale::get();
         let gender = entity_id.as_ref().and_then(ToGender::to_gender);
-        match self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
+        match self
+            .banks
+            .ids
+            .try_get(&event_name, &spoken, gender.as_ref())
+        {
             Ok(key) => {
                 let data = self.banks.data(key);
                 if let Some(Err(e)) = ext.as_ref().map(|x| x.validate_for(&data)) {
@@ -324,7 +328,11 @@ where
         let gender = entity_id.to_gender();
         let spoken = SpokenLocale::get();
         if let Some(ref mut scene) = self.scene {
-            match self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
+            match self
+                .banks
+                .ids
+                .try_get(&sound_name, &spoken, gender.as_ref())
+            {
                 Ok(key) => {
                     match scene.emitters.play_on_emitter(
                         key,

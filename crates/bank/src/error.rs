@@ -1,11 +1,18 @@
 //! Bank errors.
 
+use red4ext_rs::types::{CName, Cruid};
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
 pub enum Error {
     #[snafu(display("Registry error: {source}"), visibility(pub(crate)))]
-    Registry { source: self::registry::Error },
+    Registry {
+        source: self::registry::Error<CName>,
+    },
+    #[snafu(display("Registry error: {source}"), visibility(pub(crate)))]
+    SceneRegistry {
+        source: self::registry::Error<Cruid>,
+    },
     #[snafu(display("Validation error: {source}"), visibility(pub(crate)))]
     Validation { source: self::validation::Error },
     #[snafu(display("Manifest error: {source}"), visibility(pub(crate)))]
@@ -18,19 +25,35 @@ pub enum Error {
 
 pub mod registry {
     use audioware_manifest::{SpokenLocale, WrittenLocale};
-    use red4ext_rs::types::CName;
+    use red4ext_rs::types::{CName, Cruid};
     use snafu::Snafu;
 
+    pub trait ErrorDisplay {
+        fn error_display(&self) -> impl std::fmt::Display;
+    }
+
+    impl ErrorDisplay for CName {
+        fn error_display(&self) -> impl std::fmt::Display {
+            self.as_str()
+        }
+    }
+
+    impl ErrorDisplay for Cruid {
+        fn error_display(&self) -> impl std::fmt::Display {
+            i64::from(*self)
+        }
+    }
+
     #[derive(Debug, Snafu)]
-    pub enum Error {
-        #[snafu(display("missing spoken locale: {} for {}", locale, cname.to_string()), visibility(pub(crate)))]
-        MissingSpokenLocale { cname: CName, locale: SpokenLocale },
-        #[snafu(display("missing written locale: {} for {}", locale, cname.to_string()), visibility(pub(crate)))]
-        MissingWrittenLocale { cname: CName, locale: WrittenLocale },
-        #[snafu(display("requires gender: {}", cname.to_string()), visibility(pub(crate)))]
-        RequireGender { cname: CName },
-        #[snafu(display("not found: {}", cname.to_string()), visibility(pub(crate)))]
-        NotFound { cname: CName },
+    pub enum Error<K: ErrorDisplay> {
+        #[snafu(display("missing spoken locale: {} for {}", locale, key.error_display()), visibility(pub(crate)))]
+        MissingSpokenLocale { key: K, locale: SpokenLocale },
+        #[snafu(display("missing written locale: {} for {}", locale, key.error_display()), visibility(pub(crate)))]
+        MissingWrittenLocale { key: K, locale: WrittenLocale },
+        #[snafu(display("requires gender: {}", key.error_display()), visibility(pub(crate)))]
+        RequireGender { key: K },
+        #[snafu(display("not found: {}", key.error_display()), visibility(pub(crate)))]
+        NotFound { key: K },
     }
 }
 
@@ -112,9 +135,15 @@ pub mod validation {
     }
 }
 
-impl From<self::registry::Error> for self::Error {
-    fn from(source: self::registry::Error) -> Self {
+impl From<self::registry::Error<CName>> for self::Error {
+    fn from(source: self::registry::Error<CName>) -> Self {
         Self::Registry { source }
+    }
+}
+
+impl From<self::registry::Error<Cruid>> for self::Error {
+    fn from(source: self::registry::Error<Cruid>) -> Self {
+        Self::SceneRegistry { source }
     }
 }
 

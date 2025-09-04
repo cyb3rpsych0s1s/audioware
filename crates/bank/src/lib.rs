@@ -34,7 +34,7 @@ pub use storage::*;
 mod usage;
 pub use usage::*;
 
-use crate::error::registry::Error as RegistryError;
+use crate::error::registry::{Error as RegistryError, ErrorDisplay};
 
 #[cfg(feature = "hot-reload")]
 static PREVIOUS_IDS: std::sync::LazyLock<std::sync::Mutex<HashSet<Id>>> =
@@ -96,7 +96,7 @@ impl Banks {
         total: bool,
     ) -> f32 {
         let locale = SpokenLocale::from(locale);
-        if let Ok(id) = self.try_get(cname, &locale, Some(&gender)) {
+        if let Ok(id) = self.ids.try_get(cname, &locale, Some(&gender)) {
             match (total, id, self.data(id)) {
                 // if no need for total and in-memory, sound data already embed settings
                 (false, Id::InMemory(..), data) => data
@@ -129,62 +129,6 @@ impl Banks {
             out.insert(key.1);
         }
         out
-    }
-    pub fn try_get(
-        &self,
-        name: &CName,
-        spoken: &SpokenLocale,
-        gender: Option<&PlayerGender>,
-    ) -> Result<&Id, Error> {
-        let mut maybe_missing_locale = false;
-        let mut key: &Key;
-        for id in self.ids.iter() {
-            key = id.as_ref();
-            if let Some(key) = key.as_unique()
-                && key.as_ref() == name
-            {
-                return Ok(id);
-            }
-            if let Some(GenderKey(k, g)) = key.as_gender()
-                && k == name
-            {
-                if gender.is_none() {
-                    return Err(RegistryError::RequireGender { cname: *name }.into());
-                }
-                if Some(g) == gender {
-                    return Ok(id);
-                }
-            }
-            if let Some(LocaleKey(k, l)) = key.as_locale()
-                && k == name
-            {
-                maybe_missing_locale = true;
-                if l == spoken {
-                    return Ok(id);
-                }
-            }
-            if let Some(BothKey(k, l, g)) = key.as_both()
-                && k == name
-            {
-                maybe_missing_locale = true;
-                if l == spoken {
-                    if gender.is_none() {
-                        return Err(RegistryError::RequireGender { cname: *name }.into());
-                    }
-                    if gender == Some(g) {
-                        return Ok(id);
-                    }
-                }
-            }
-        }
-        if maybe_missing_locale {
-            return Err(RegistryError::MissingSpokenLocale {
-                cname: *name,
-                locale: *spoken,
-            }
-            .into());
-        }
-        Err(RegistryError::NotFound { cname: *name }.into())
     }
     fn mods() -> (Vec<Mod>, Vec<Error>) {
         let mut errors = Vec::with_capacity(10);
@@ -588,5 +532,85 @@ for a total of: {len_scene_ids} scene id(s)
                 )
             }
         )
+    }
+}
+
+pub trait TryGet {
+    type Id;
+    type Raw;
+    fn try_get<K: ErrorDisplay + Clone>(
+        &self,
+        name: &K,
+        spoken: &SpokenLocale,
+        gender: Option<&PlayerGender>,
+    ) -> Result<&Self::Id, Error>
+    where
+        Self::Raw: PartialEq<K>,
+        error::Error: From<crate::error::registry::Error<K>>;
+}
+
+impl TryGet for HashSet<Id> {
+    type Id = Id;
+    type Raw = CName;
+
+    fn try_get<K: ErrorDisplay + Clone>(
+        &self,
+        name: &K,
+        spoken: &SpokenLocale,
+        gender: Option<&PlayerGender>,
+    ) -> Result<&Self::Id, Error>
+    where
+        Self::Raw: PartialEq<K>,
+        error::Error: From<crate::error::registry::Error<K>>,
+    {
+        let mut maybe_missing_locale = false;
+        let mut key: &Key;
+        for id in self.iter() {
+            key = id.as_ref();
+            if let Some(key) = key.as_unique()
+                && key.as_ref() == name
+            {
+                return Ok(id);
+            }
+            if let Some(GenderKey(k, g)) = key.as_gender()
+                && k == name
+            {
+                if gender.is_none() {
+                    return Err(RegistryError::RequireGender { key: name.clone() }.into());
+                }
+                if Some(g) == gender {
+                    return Ok(id);
+                }
+            }
+            if let Some(LocaleKey(k, l)) = key.as_locale()
+                && k == name
+            {
+                maybe_missing_locale = true;
+                if l == spoken {
+                    return Ok(id);
+                }
+            }
+            if let Some(BothKey(k, l, g)) = key.as_both()
+                && k == name
+            {
+                maybe_missing_locale = true;
+                if l == spoken {
+                    if gender.is_none() {
+                        return Err(RegistryError::RequireGender { key: name.clone() }.into());
+                    }
+                    if gender == Some(g) {
+                        return Ok(id);
+                    }
+                }
+            }
+        }
+        if maybe_missing_locale {
+            return Err(RegistryError::MissingSpokenLocale {
+                key: name.clone(),
+                locale: *spoken,
+            }
+            .into());
+        }
+        Err(RegistryError::NotFound { key: name.clone() }.into())
     }
 }
