@@ -79,7 +79,7 @@ unsafe extern "C" fn detour(
     - has_helmet: {a5:?}
     - played_speech_line: {}
     - playback_speed: {}
-    - has_helmet: {a5:?}
+    - has_helmet: {a5}
     - vo_event_override: {}
     - played_vo_event: {}
     - tag_event: {}",
@@ -98,6 +98,7 @@ unsafe extern "C" fn detour(
             },
             a9.as_str()
         );
+        let modded = Engine::<CpalBackend>::exists_for_scene(&string_id);
         if Engine::<CpalBackend>::exists_for_scene(&string_id) {
             crate::engine::queue::send(Command::PlaySceneDialog {
                 string_id,
@@ -109,7 +110,7 @@ unsafe extern "C" fn detour(
         }
         // still let the engine carry on, to handle subtitle
         let out = cb(a1, a2, a3, a4, a5, a6, a7, a8, a9);
-        crate::utils::intercept!("audio::PlayDialogLine -> {out}");
-        out
+        crate::utils::intercept!("audio::PlayDialogLine -> {} ({out})", out || modded);
+        out || modded
     }
 }
