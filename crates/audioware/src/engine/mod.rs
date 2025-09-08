@@ -730,6 +730,13 @@ where
         }
     }
 
+    pub fn any_actor(&self) -> bool {
+        match self.scene {
+            Some(ref scene) => scene.any_actor(),
+            None => false,
+        }
+    }
+
     pub fn sync_scene(&mut self) {
         match self.scene {
             Some(ref mut scene) => {

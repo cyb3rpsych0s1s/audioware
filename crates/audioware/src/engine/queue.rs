@@ -276,7 +276,10 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
             }
         }
-        if state.should_sync() && engine.any_emitter() && synchronization.try_recv().is_ok() {
+        if state.should_sync()
+            && (engine.any_emitter() || engine.any_actor())
+            && synchronization.try_recv().is_ok()
+        {
             engine.sync_scene();
         }
         if engine.any_handle() && reclamation.try_recv().is_ok() {

@@ -34,6 +34,9 @@ impl Actors {
             emitters: Default::default(),
         }
     }
+    pub fn is_empty(&self) -> bool {
+        self.emitters.is_empty()
+    }
     pub fn exists(&self, entity_id: &EntityId) -> bool {
         self.emitters.contains_key(entity_id)
     }

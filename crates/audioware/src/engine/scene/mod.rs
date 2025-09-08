@@ -224,6 +224,10 @@ impl Scene {
         !self.emitters.is_empty()
     }
 
+    pub fn any_actor(&self) -> bool {
+        !self.actors.is_empty()
+    }
+
     pub fn clear(&mut self) {
         self.stop_emitters(IMMEDIATELY);
         self.emitters.clear();
