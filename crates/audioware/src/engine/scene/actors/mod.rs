@@ -1,11 +1,17 @@
 use std::{collections::HashSet, sync::LazyLock};
 
-use dashmap::{DashMap, mapref::one::RefMut};
+use dashmap::DashMap;
 use kira::sound::FromFileError;
 use parking_lot::RwLock;
 use red4ext_rs::types::{Cruid, EntityId};
 
-use crate::engine::{scene::actors::slot::ActorSlot, traits::DualHandles};
+use crate::{
+    engine::{
+        scene::{actors::slot::ActorSlot, emitters::Emitter},
+        traits::DualHandles,
+    },
+    error::Error,
+};
 
 pub mod slot;
 
@@ -31,10 +37,21 @@ impl Actors {
     pub fn exists(&self, entity_id: &EntityId) -> bool {
         self.emitters.contains_key(entity_id)
     }
-    pub fn get_emitter_track_mut<'a>(
-        &'a self,
-        entity_id: &EntityId,
-    ) -> Option<RefMut<'a, EntityId, ActorSlot>> {
-        self.emitters.get_mut(entity_id)
+    pub fn sync_emitters(&mut self) -> Result<(), Error> {
+        if self.emitters.is_empty() {
+            return Ok(());
+        }
+        self.emitters.retain(|k, v| {
+            if !v.any_playing_handle() {
+                return false;
+            }
+            let Ok(position) = Emitter::position(*k) else {
+                return false;
+            };
+            v.last_known_position = position;
+            v.set_emitter_position(position);
+            true
+        });
+        Ok(())
     }
 }

@@ -4,7 +4,7 @@ use audioware_core::SpatialTrackSettings;
 use audioware_manifest::PlayerGender;
 use dilation::Dilation;
 use emitters::{EMITTERS, Emitter, Emitters};
-use kira::{AudioManager, Tween, backend::Backend, track::SpatialTrackDistances};
+use kira::{AudioManager, Easing, Tween, backend::Backend, track::SpatialTrackDistances};
 use listener::Listener;
 use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 
@@ -134,10 +134,23 @@ impl Scene {
         let (position, distances) = Emitter::actor_infos(entity_id)?;
         let settings = SpatialTrackSettings {
             distances: distances.unwrap_or_default(),
+            affected_by_reverb_mix: true,
+            affected_by_environmental_preset: true,
+            attenuation_function: Some(Easing::Linear),
             ..Default::default()
         };
-        let handle = Spatial::try_new(manager, self.v.handle.id(), position, settings, ambience)?;
+        let handle = Spatial::try_new(
+            manager,
+            self.v.handle.id(),
+            position,
+            settings.clone(),
+            ambience,
+        )?;
         let slot = ActorSlot::new(handle, position);
+        lifecycle!(
+            "slot about to be inserted: {slot} with settings {:?}",
+            settings
+        );
         self.actors.emitters.insert(entity_id, slot);
         Ok(())
     }
@@ -176,9 +189,15 @@ impl Scene {
         Ok(())
     }
 
+    fn sync_actors(&mut self) -> Result<(), Error> {
+        self.actors.sync_emitters()?;
+        Ok(())
+    }
+
     pub fn sync(&mut self) -> Result<(), Error> {
         self.sync_listener()?;
         self.sync_emitters()?;
+        self.sync_actors()?;
         Ok(())
     }
 

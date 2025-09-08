@@ -730,6 +730,7 @@ pub fn ensure_jingles<'a>(
 }
 
 #[doc(hidden)]
+#[allow(clippy::too_many_arguments)]
 pub fn ensure_scene_dialogs<'a>(
     k: i64,
     v: SceneDialogs,

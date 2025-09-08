@@ -67,4 +67,15 @@ impl Emitter {
         let distances = entity.get_emitter_distances();
         Ok((position, distances))
     }
+    pub fn position(entity_id: EntityId) -> Result<Vector4, Error> {
+        let game = GameInstance::new();
+        let entity = GameInstance::find_entity_by_id(game, entity_id);
+        if entity.is_null() {
+            return Err(Error::Scene {
+                source: SceneError::MissingEmitter { entity_id },
+            });
+        }
+        let position = entity.get_world_position();
+        Ok(position)
+    }
 }

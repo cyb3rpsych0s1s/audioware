@@ -221,40 +221,49 @@ where
         is_holocall: bool,
         _is_rewind: bool,
     ) {
-        let gender = entity_id.to_gender();
-        let spoken = SpokenLocale::get();
+        if !string_id.is_defined() {
+            warns!(
+                "cannot play sound with undefined RUID: {}",
+                string_id.error_display()
+            );
+            return;
+        }
+        if !entity_id.is_defined() {
+            warns!("cannot play sound on undefined entity: {}", entity_id);
+            return;
+        }
         let Some(ref mut scene) = self.scene else {
             warns!("scene is not available, and therefore dialogs aren't either");
             return;
         };
+        let gender = entity_id.to_gender();
+        let spoken = SpokenLocale::get();
+        let Ok(key) = self
+            .banks
+            .scene_ids
+            .try_get(&string_id, &spoken, gender.as_ref())
+        else {
+            warns!("couldn't find RUID in bank: {}", i64::from(string_id));
+            return;
+        };
+        let key = key.clone();
         if is_player {
-            if let Ok(key) = self
-                .banks
-                .scene_ids
-                .try_get(&string_id, &spoken, gender.as_ref())
-            {
-                let data = self.banks.data(key);
-                let destination: &mut TrackHandle = &mut self.tracks.v.vocal;
-                match data {
-                    Either::Left(data) => {
-                        if let Ok(handle) = destination.play(data) {
-                            scene.actors.v.store(Handle::new(string_id, handle, ()));
-                        }
+            let data = self.banks.data(&key);
+            let destination: &mut TrackHandle = &mut self.tracks.v.vocal;
+            match data {
+                Either::Left(data) => {
+                    if let Ok(handle) = destination.play(data) {
+                        scene.actors.v.store(Handle::new(string_id, handle, ()));
                     }
-                    Either::Right(data) => {
-                        if let Ok(handle) = destination.play(data) {
-                            scene.actors.v.store(Handle::new(string_id, handle, ()));
-                        }
+                }
+                Either::Right(data) => {
+                    if let Ok(handle) = destination.play(data) {
+                        scene.actors.v.store(Handle::new(string_id, handle, ()));
                     }
                 }
             }
-        } else if is_holocall
-            && let Ok(key) = self
-                .banks
-                .scene_ids
-                .try_get(&string_id, &spoken, gender.as_ref())
-        {
-            let data = self.banks.data(key);
+        } else if is_holocall {
+            let data = self.banks.data(&key);
             let destination: &mut TrackHandle = &mut self.tracks.holocall;
             match data {
                 Either::Left(data) => {
@@ -275,7 +284,7 @@ where
                 }
             }
         } else {
-            self.play_on_actor(string_id, entity_id);
+            self.play_on_actor(string_id, entity_id, &key);
         }
         // red engine handles subtitles automatically
     }
@@ -448,20 +457,7 @@ where
         }
     }
 
-    pub fn play_on_actor(&mut self, sound_name: Cruid, entity_id: EntityId) {
-        if !sound_name.is_defined() {
-            warns!(
-                "cannot play sound with undefined RUID: {}",
-                sound_name.error_display()
-            );
-            return;
-        }
-        if !entity_id.is_defined() {
-            warns!("cannot play sound on undefined entity: {}", entity_id);
-            return;
-        }
-        let gender = entity_id.to_gender();
-        let spoken = SpokenLocale::get();
+    pub fn play_on_actor(&mut self, sound_name: Cruid, entity_id: EntityId, key: &SceneId) {
         if let Some(ref mut scene) = self.scene {
             if !scene.exists_actor(&entity_id)
                 && let Err(e) = scene.add_actor(&mut self.manager, entity_id, &self.tracks.ambience)
@@ -469,45 +465,37 @@ where
                 warns!("could not add actor {entity_id}: {e}");
                 return;
             }
-            match self
-                .banks
-                .scene_ids
-                .try_get(&sound_name, &spoken, gender.as_ref())
-            {
-                Ok(key) => {
-                    let data = self.banks.data(key);
-                    let ext = self.banks.settings(key);
-                    if let Some(Err(e)) = ext.as_ref().map(|x| x.validate_for(&data)) {
-                        warns!("invalid setting(s) for actor audio: {e:#?}");
-                        return;
-                    }
-                    let mut slot = scene
-                        .actors
-                        .emitters
-                        .get_mut(&entity_id)
-                        .expect("actor should automatically have been added if missing");
-                    match data {
-                        Either::Left(data) => {
-                            if let Ok(handle) = slot.value_mut().track_mut().play(data) {
-                                slot.handles
-                                    .statics
-                                    .store(Handle::new(sound_name, handle, ()));
-                            }
-                        }
-                        Either::Right(data) => {
-                            if let Ok(handle) = slot.value_mut().track_mut().play(data) {
-                                slot.handles
-                                    .streams
-                                    .store(Handle::new(sound_name, handle, ()));
-                            }
-                        }
+            let data = self.banks.data(key);
+            let ext = self.banks.settings(key);
+            if let Some(Err(e)) = ext.as_ref().map(|x| x.validate_for(&data)) {
+                warns!("invalid setting(s) for actor audio: {e:#?}");
+                return;
+            }
+            let mut slot = scene
+                .actors
+                .emitters
+                .get_mut(&entity_id)
+                .expect("actor should automatically have been added if missing");
+            match data {
+                Either::Left(data) => {
+                    lifecycle!("about to play static scene audio ...");
+                    if let Ok(handle) = slot.value_mut().track_mut().play(data) {
+                        lifecycle!("about to store static scene audio ...");
+                        slot.handles
+                            .statics
+                            .store(Handle::new(sound_name, handle, ()));
+                        lifecycle!("played static scene audio!");
                     }
                 }
-                Err(e) => {
-                    warns!(
-                        "cannot play sound {} for actor ({entity_id}): {e}",
-                        i64::from(sound_name)
-                    );
+                Either::Right(data) => {
+                    lifecycle!("about to play streaming scene audio ...");
+                    if let Ok(handle) = slot.value_mut().track_mut().play(data) {
+                        lifecycle!("about to store streaming scene audio ...");
+                        slot.handles
+                            .streams
+                            .store(Handle::new(sound_name, handle, ()));
+                        lifecycle!("played streaming scene audio!");
+                    }
                 }
             }
         }
