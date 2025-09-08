@@ -20,10 +20,8 @@ pub trait BankData<K, V> {
     fn data(&self, key: &K) -> V;
 }
 
-pub trait BankSettings {
-    type Key;
-    type Settings;
-    fn settings(&self, key: &Self::Key) -> Option<Self::Settings>;
+pub trait BankSettings<K, V> {
+    fn settings(&self, key: &K) -> Option<V>;
 }
 
 pub trait BankSubtitles {
@@ -75,11 +73,8 @@ impl BankData<SceneKey, StaticSoundData> for OnceStorage<SceneKey, StaticSoundDa
             .clone()
     }
 }
-impl<K: Eq + Hash> BankSettings for OnceStorage<K, ManifestSettings> {
-    type Key = K;
-    type Settings = ManifestSettings;
-
-    fn settings(&self, key: &Self::Key) -> Option<Self::Settings> {
+impl<K: Eq + Hash> BankSettings<K, ManifestSettings> for OnceStorage<K, ManifestSettings> {
+    fn settings(&self, key: &K) -> Option<ManifestSettings> {
         self.0.get().and_then(|x| x.get(key)).cloned()
     }
 }
@@ -117,12 +112,9 @@ impl BankSubtitles for OnceStorage<BothKey, DialogLine> {
 // pub(super) static LOC_SUB: OnceStorage<LocaleKey, DialogLine> = OnceStorage::new();
 // pub(super) static MUL_SUB: OnceStorage<BothKey, DialogLine> = OnceStorage::new();
 
-impl BankSettings for Banks {
-    type Key = Id;
-    type Settings = audioware_manifest::Settings;
-
+impl BankSettings<Id, audioware_manifest::Settings> for Banks {
     /// Retrieves sound settings for a given [Id] if any.
-    fn settings(&self, key: &Self::Key) -> Option<Self::Settings> {
+    fn settings(&self, key: &Id) -> Option<audioware_manifest::Settings> {
         match key {
             Id::OnDemand(usage, ..) => {
                 let settings = match usage {
@@ -137,6 +129,25 @@ impl BankSettings for Banks {
             }
             // in-memory sound data already embed settings
             Id::InMemory(_, _) => None,
+        }
+    }
+}
+
+impl BankSettings<SceneId, audioware_manifest::Settings> for Banks {
+    /// Retrieves sound settings for a given [SceneId] if any.
+    fn settings(&self, key: &SceneId) -> Option<audioware_manifest::Settings> {
+        match key {
+            SceneId::OnDemand(usage, ..) => {
+                let settings = match usage {
+                    Usage::Static(key, _) | Usage::Streaming(key, _) => match key {
+                        SceneKey::Locale(key) => self.single_scene_dialogs_settings.get(key),
+                        SceneKey::Both(key) => self.dual_scene_dialogs_settings.get(key),
+                    },
+                };
+                settings.cloned()
+            }
+            // in-memory sound data already embed settings
+            SceneId::InMemory(_) => None,
         }
     }
 }

@@ -9,7 +9,7 @@ use kira::{
 };
 use music::Music;
 use radioport::Radioport;
-use red4ext_rs::types::{CName, Cruid, EntityId};
+use red4ext_rs::types::{CName, EntityId};
 use sfx::Sfx;
 pub use spatial::Spatial;
 use v::V;
@@ -73,7 +73,6 @@ pub struct Tracks {
     // tracks affected by reverb mix + preset (e.g. underwater)
     pub ambience: Ambience,
     pub handles: DualHandles<CName, TrackEntryOptions, FromFileError>,
-    pub scene_handles: DualHandles<Cruid, (), FromFileError>,
 }
 
 impl Tracks {
@@ -99,27 +98,22 @@ impl Tracks {
             dialogue,
             car_radio,
             handles: Default::default(),
-            scene_handles: Default::default(),
         })
     }
     pub fn pause(&mut self, tween: Tween) {
         self.handles.pause(tween);
-        self.scene_handles.pause(tween);
     }
     pub fn resume(&mut self, tween: Tween) {
         self.handles.resume(tween);
-        self.scene_handles.resume(tween);
     }
     pub fn reclaim(&mut self) {
         self.handles.reclaim();
-        self.scene_handles.reclaim();
     }
     pub fn any_handle(&self) -> bool {
-        self.handles.any_handle() || self.scene_handles.any_handle()
+        self.handles.any_handle()
     }
     pub fn stop(&mut self, tween: Tween) {
         self.handles.stop(tween);
-        self.scene_handles.stop(tween);
     }
     pub fn stop_by(
         &mut self,
@@ -131,15 +125,11 @@ impl Tracks {
         self.handles
             .stop_by(&(event_name, entity_id, emitter_name), tween);
     }
-    pub fn stop_scene_by(&mut self, event_name: Cruid, tween: Tween) {
-        self.scene_handles.stop_by(&event_name, tween);
-    }
     pub fn sync_dilation(&mut self, entity_id: EntityId, update: DilationUpdate) {
         self.handles.sync_dilation_by(&entity_id, &update);
     }
     pub fn clear(&mut self) {
         self.stop(IMMEDIATELY);
         self.handles.clear();
-        self.scene_handles.clear();
     }
 }

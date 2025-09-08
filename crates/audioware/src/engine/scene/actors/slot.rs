@@ -1,23 +1,23 @@
 use either::Either;
-use kira::{
-    PlaySoundError,
-    sound::{FromFileError, static_sound::StaticSoundData, streaming::StreamingSoundData},
-};
+use kira::{PlaySoundError, sound::FromFileError, track::SpatialTrackHandle};
 use red4ext_rs::types::Cruid;
 
 use crate::{
     Vector4,
     engine::{
         tracks::Spatial,
-        traits::{DualHandles, Handle, store::Store},
+        traits::{
+            DualHandles,
+            stop::{Stop, StopBy},
+        },
     },
 };
 
 /// Underlying handle to the actor.
 pub struct ActorSlot {
-    pub handle: Spatial,
+    handle: Spatial,
+    last_known_position: Vector4,
     pub handles: DualHandles<Cruid, (), FromFileError>,
-    pub last_known_position: Vector4,
 }
 
 type PlayResult = Result<(), Either<PlaySoundError<()>, PlaySoundError<FromFileError>>>;
@@ -29,26 +29,23 @@ impl ActorSlot {
     pub fn new(handle: Spatial, last_known_position: Vector4) -> Self {
         Self {
             handle,
-            handles: DualHandles::default(),
+            handles: Default::default(),
             last_known_position,
         }
     }
-    pub fn play_and_store(
-        &mut self,
-        event_name: Cruid,
-        data: Either<StaticSoundData, StreamingSoundData<FromFileError>>,
-    ) -> PlayResult {
-        match data {
-            Either::Left(data) => {
-                let handle = self.handle.play(data).map_err(Either::Left)?;
-                self.handles.store(Handle::new(event_name, handle, ()));
-                Ok(())
-            }
-            Either::Right(data) => {
-                let handle = self.handle.play(data).map_err(Either::Right)?;
-                self.handles.store(Handle::new(event_name, handle, ()));
-                Ok(())
-            }
-        }
+    pub fn track_mut(&mut self) -> &mut SpatialTrackHandle {
+        &mut self.handle
+    }
+}
+
+impl Stop for ActorSlot {
+    fn stop(&mut self, tween: kira::Tween) {
+        self.handles.stop(tween);
+    }
+}
+
+impl StopBy<Cruid> for ActorSlot {
+    fn stop_by(&mut self, key: &Cruid, tween: kira::Tween) {
+        self.handles.stop_by(key, tween);
     }
 }

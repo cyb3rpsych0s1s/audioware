@@ -6,7 +6,7 @@ use std::{
 };
 
 use audioware_bank::{
-    BankData, Banks, Id, Initialization, InitializationOutcome, SceneId, TryGet,
+    BankData, BankSettings, Banks, Id, Initialization, InitializationOutcome, SceneId, TryGet,
     error::registry::ErrorDisplay,
 };
 use audioware_core::{Amplitude, SpatialTrackSettings, With};
@@ -30,7 +30,7 @@ use crate::{
     AsAudioSystem, AsGameInstance, AsGameObjectExt, GameObject,
     engine::{
         tracks::TrackEntryOptions,
-        traits::{Handle, store::Store},
+        traits::{Handle, stop::StopBy, store::Store},
     },
     error::{EngineError, Error},
     propagate_subtitles,
@@ -223,6 +223,10 @@ where
     ) {
         let gender = entity_id.to_gender();
         let spoken = SpokenLocale::get();
+        let Some(ref mut scene) = self.scene else {
+            warns!("scene is not available, and therefore dialogs aren't either");
+            return;
+        };
         if is_player {
             if let Ok(key) = self
                 .banks
@@ -234,20 +238,12 @@ where
                 match data {
                     Either::Left(data) => {
                         if let Ok(handle) = destination.play(data) {
-                            self.tracks.scene_handles.statics.store(Handle::new(
-                                string_id,
-                                handle,
-                                (),
-                            ));
+                            scene.actors.v.store(Handle::new(string_id, handle, ()));
                         }
                     }
                     Either::Right(data) => {
                         if let Ok(handle) = destination.play(data) {
-                            self.tracks.scene_handles.streams.store(Handle::new(
-                                string_id,
-                                handle,
-                                (),
-                            ));
+                            scene.actors.v.store(Handle::new(string_id, handle, ()));
                         }
                     }
                 }
@@ -263,17 +259,17 @@ where
             match data {
                 Either::Left(data) => {
                     if let Ok(handle) = destination.play(data) {
-                        self.tracks
-                            .scene_handles
-                            .statics
+                        scene
+                            .actors
+                            .holocall
                             .store(Handle::new(string_id, handle, ()));
                     }
                 }
                 Either::Right(data) => {
                     if let Ok(handle) = destination.play(data) {
-                        self.tracks
-                            .scene_handles
-                            .streams
+                        scene
+                            .actors
+                            .holocall
                             .store(Handle::new(string_id, handle, ()));
                     }
                 }
@@ -479,16 +475,39 @@ where
                 .try_get(&sound_name, &spoken, gender.as_ref())
             {
                 Ok(key) => {
-                    if let Err(e) =
-                        scene
-                            .actors
-                            .play_on_actor(key, &self.banks, sound_name, entity_id)
-                    {
-                        warns!("cannot play sound on scene emitter: {e}");
+                    let data = self.banks.data(key);
+                    let ext = self.banks.settings(key);
+                    if let Some(Err(e)) = ext.as_ref().map(|x| x.validate_for(&data)) {
+                        warns!("invalid setting(s) for actor audio: {e:#?}");
+                        return;
+                    }
+                    let mut slot = scene
+                        .actors
+                        .emitters
+                        .get_mut(&entity_id)
+                        .expect("actor should automatically have been added if missing");
+                    match data {
+                        Either::Left(data) => {
+                            if let Ok(handle) = slot.value_mut().track_mut().play(data) {
+                                slot.handles
+                                    .statics
+                                    .store(Handle::new(sound_name, handle, ()));
+                            }
+                        }
+                        Either::Right(data) => {
+                            if let Ok(handle) = slot.value_mut().track_mut().play(data) {
+                                slot.handles
+                                    .streams
+                                    .store(Handle::new(sound_name, handle, ()));
+                            }
+                        }
                     }
                 }
                 Err(e) => {
-                    warns!("cannot play sound in scene: {e}");
+                    warns!(
+                        "cannot play sound {} for actor ({entity_id}): {e}",
+                        i64::from(sound_name)
+                    );
                 }
             }
         }
@@ -502,17 +521,19 @@ where
             );
             return;
         }
-        if let Some(ref mut scene) = self.scene
-            && let Err(e) = scene.actors.stop_on_actor(
-                &sound_name,
-                Tween {
-                    start_time: StartTime::Immediate,
-                    duration: Duration::from_secs_f32(fade_out),
-                    easing: Easing::Linear,
-                },
-            )
-        {
-            warns!("error stopping sound on actor: {e}");
+        if let Some(ref mut scene) = self.scene {
+            let tween = Tween {
+                start_time: StartTime::Immediate,
+                duration: Duration::from_secs_f32(fade_out),
+                easing: Easing::Linear,
+            };
+            scene.actors.v.stop_by(&sound_name, tween);
+            scene.actors.holocall.stop_by(&sound_name, tween);
+            scene
+                .actors
+                .emitters
+                .iter_mut()
+                .for_each(|mut x| x.value_mut().stop_by(&sound_name, tween));
         }
     }
 

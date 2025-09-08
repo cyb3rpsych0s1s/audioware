@@ -12,7 +12,10 @@ use crate::{
     AsEntity, AsScriptedPuppet, AsScriptedPuppetExt, AsTimeDilatable, AvObject, BikeObject,
     CarObject, Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject, TimeDilatable,
     VehicleObject,
-    engine::{scene::actors::Actors, tracks::Spatial},
+    engine::{
+        scene::actors::{Actors, slot::ActorSlot},
+        tracks::Spatial,
+    },
     error::{Error, SceneError},
     get_player,
 };
@@ -134,7 +137,8 @@ impl Scene {
             ..Default::default()
         };
         let handle = Spatial::try_new(manager, self.v.handle.id(), position, settings, ambience)?;
-        self.actors.add_actor(handle, entity_id, position)?;
+        let slot = ActorSlot::new(handle, position);
+        self.actors.emitters.insert(entity_id, slot);
         Ok(())
     }
 
