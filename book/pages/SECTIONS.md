@@ -61,13 +61,13 @@ Useful for audio that have to be translated into multiple languages, but for whi
 > e.g. a vending machine promotional speech
 ```
 
-#### Simple Voice with subtitle
+#### Simple Voice with subtitle and usage
 
 ```yml
 my_simple_voice:
-  en-us:
-    file: ./some/voice.wav
-    subtitle: "hello world"
+  en-us: ./some/voice.wav
+  subtitle: "hello world"
+  usage: streaming
 ```
 
 ```admonish info
@@ -120,3 +120,4 @@ music:
 |-----------------|---------------|-----------|
 | usage           | `streaming`   |✅         |
 | volume settings | `MusicVolume` |⛔         |
+
