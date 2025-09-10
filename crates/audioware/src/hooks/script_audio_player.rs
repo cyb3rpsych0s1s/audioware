@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use red4ext_rs::SdkEnv;
 
 pub fn attach_hooks(env: &SdkEnv) {

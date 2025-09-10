@@ -20,16 +20,19 @@ mod script_audio_player;
 mod events;
 
 pub fn attach(env: &SdkEnv) {
-    localization_manager::attach_hook(env);
     sound_component::attach_hook(env);
-    onscreen_vo::attach_hook(env);
     audio::attach_hook(env);
-    script_audio_player::attach_hooks(env);
     audio_system::attach_hooks(env);
     time_dilatable::attach_hooks(env);
     time_system::attach_hooks(env);
-    ink_logic_controller::attach_hook(env);
     ink_menu_scenario::attach_hooks(env);
+    #[cfg(feature = "research")]
+    {
+        onscreen_vo::attach_hook(env);
+        localization_manager::attach_hook(env);
+        ink_logic_controller::attach_hook(env);
+        script_audio_player::attach_hooks(env);
+    }
 
     #[cfg(debug_assertions)]
     save_handling_controller::attach_hook(env);
@@ -40,8 +43,8 @@ pub fn attach(env: &SdkEnv) {
     {
         // events::audio::attach_hook(env); // 🌊
         events::vehicle_audio::attach_hook(env);
-        events::dialog_line_end::attach_hook(env);
-        events::dialog_line::attach_hook(env);
+        // events::dialog_line_end::attach_hook(env);
+        // events::dialog_line::attach_hook(env);
         events::weapon::attach_hook(env);
         events::trigger::attach_hooks(env);
         events::ink::attach_hook(env);

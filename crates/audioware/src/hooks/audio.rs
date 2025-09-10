@@ -111,7 +111,6 @@ unsafe extern "C" fn detour(
         }
         // still let the engine carry on, to handle subtitle
         let out = cb(a1, a2, a3, a4, a5, a6, a7, a8, a9);
-        crate::utils::intercept!("audio::PlayDialogLine -> {} ({out})", out || modded);
         out || modded
     }
 }
