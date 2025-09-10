@@ -65,9 +65,8 @@ Useful for audio that have to be translated into multiple languages, but for whi
 
 ```yml
 my_simple_voice:
-  en-us:
-    file: ./some/voice.wav
-    subtitle: "hello world"
+  en-us: ./some/voice.wav
+  subtitle: "hello world"
 ```
 
 ```admonish info
@@ -78,6 +77,10 @@ Useful to add simple subtitle to be played along your audio.
 
 ```admonish tip
 Defining subtitle will *automatically* register them with [Codeware Localization](https://github.com/psiberx/cp2077-codeware/wiki#localization) and play them alongside audio, for the proper gender and locale(s).
+```
+
+```admonish warning
+There is no fallback locale. Audio will not play for other locales other than the ones explicity specified.
 ```
 
 ### Plural Voice
