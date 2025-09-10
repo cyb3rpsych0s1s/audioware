@@ -36,6 +36,7 @@ pub enum Command {
         is_player: bool,
         is_holocall: bool,
         is_rewind: bool,
+        seek_time: f32,
     },
     StopSceneDialog {
         string_id: Cruid,

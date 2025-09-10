@@ -106,6 +106,7 @@ unsafe extern "C" fn detour(
                 is_holocall,
                 is_rewind,
                 entity_id: a3,
+                seek_time,
             });
         }
         // still let the engine carry on, to handle subtitle

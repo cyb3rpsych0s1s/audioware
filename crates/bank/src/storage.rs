@@ -195,27 +195,28 @@ impl BankData<Id, Either<StaticSoundData, StreamingSoundData<FromFileError>>> fo
 }
 
 impl BankData<SceneId, Either<StaticSoundData, StreamingSoundData<FromFileError>>> for Banks {
-    /// Retrieves sound data for a given [Id], including settings if any.
+    /// Retrieves sound data for a given [SceneId], including settings if any.
     fn data(&self, key: &SceneId) -> Either<StaticSoundData, StreamingSoundData<FromFileError>> {
         match key {
             SceneId::OnDemand(Usage::Static(_, path), ..) => {
-                // let settings = self.settings(key);
+                let settings = self.settings(key);
                 let data = StaticSoundData::from_file(path)
                     .expect("static sound data has already been validated");
-                // if let Some(settings) = settings {
-                //     return Either::Left(data.with_settings(settings.into()));
-                // }
+                if let Some(settings) = settings {
+                    return Either::Left(data.with_settings(settings.into()));
+                }
                 Either::Left(data)
             }
             SceneId::OnDemand(Usage::Streaming(_, path), ..) => {
-                // let settings = self.settings(key);
+                let settings = self.settings(key);
                 let data = StreamingSoundData::from_file(path)
                     .expect("streaming sound data has already been validated");
-                // if let Some(settings) = settings {
-                //     return Either::Right(data.with_settings(settings.into()));
-                // }
+                if let Some(settings) = settings {
+                    return Either::Right(data.with_settings(settings.into()));
+                }
                 Either::Right(data)
             }
+            // in-memory sound data already embed settings
             SceneId::InMemory(SceneKey::Locale(key), ..) => Either::Left(
                 self.single_scene_dialogs
                     .get(key)

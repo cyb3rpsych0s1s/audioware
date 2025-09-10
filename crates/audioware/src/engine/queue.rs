@@ -317,12 +317,14 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     is_player,
                     is_holocall,
                     is_rewind,
+                    seek_time,
                 } => engine.play_scene_dialog(
                     string_id,
                     entity_id,
                     is_player,
                     is_holocall,
                     is_rewind,
+                    seek_time,
                 ),
                 Command::StopSceneDialog {
                     string_id,
