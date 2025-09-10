@@ -123,5 +123,3 @@ music:
 |-----------------|---------------|-----------|
 | usage           | `streaming`   |✅         |
 | volume settings | `MusicVolume` |⛔         |
-
-
