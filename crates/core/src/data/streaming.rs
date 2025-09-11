@@ -1,9 +1,12 @@
 use kira::{
     Tween,
-    sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+    sound::{
+        PlaybackPosition,
+        streaming::{StreamingSoundData, StreamingSoundSettings},
+    },
 };
 
-use crate::{AudioDuration, With};
+use crate::{AudioDuration, With, settings::SceneDialogSettings};
 
 impl<T> AudioDuration for StreamingSoundData<T>
 where
@@ -41,5 +44,25 @@ where
         Self: Sized,
     {
         self.fade_in_tween(settings)
+    }
+}
+
+impl<E: Send> With<SceneDialogSettings> for StreamingSoundData<E> {
+    fn with(self, settings: SceneDialogSettings) -> Self
+    where
+        Self: Sized,
+    {
+        if settings.is_rewind {
+            let given = self.settings.start_position;
+            return self.start_position(match given {
+                PlaybackPosition::Seconds(x) => {
+                    PlaybackPosition::Seconds(x + settings.seek_time as f64)
+                }
+                PlaybackPosition::Samples(_) => {
+                    unreachable!("samples unit is not supported with streaming sound yet")
+                }
+            });
+        }
+        self
     }
 }

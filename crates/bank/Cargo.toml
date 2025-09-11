@@ -7,7 +7,7 @@ rust-version.workspace = true
 [dependencies]
 audioware-core.workspace = true
 audioware-manifest.workspace = true
-either = "1.12"
+either.workspace = true
 kira.workspace = true
 red4ext-rs.workspace = true
 serde.workspace = true

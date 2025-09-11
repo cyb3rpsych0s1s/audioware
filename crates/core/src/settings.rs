@@ -86,3 +86,8 @@ macro_rules! impl_audio_settings {
 
 impl_audio_settings!(::kira::sound::static_sound::StaticSoundSettings);
 impl_audio_settings!(::kira::sound::streaming::StreamingSoundSettings);
+
+pub struct SceneDialogSettings {
+    pub is_rewind: bool,
+    pub seek_time: f32,
+}

@@ -9,17 +9,14 @@ use audioware_bank::{
     BankData, BankSettings, Banks, Id, Initialization, InitializationOutcome, SceneId, TryGet,
     error::registry::ErrorDisplay,
 };
-use audioware_core::{Amplitude, SpatialTrackSettings, With};
+use audioware_core::{Amplitude, SceneDialogSettings, SpatialTrackSettings, With};
 use audioware_manifest::{Locale, ScnDialogLineType, Source, ValidateFor};
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
     AudioManager, AudioManagerSettings, Decibels, Easing, StartTime, Tween,
     backend::Backend,
-    sound::{
-        FromFileError, PlaybackPosition, static_sound::StaticSoundData,
-        streaming::StreamingSoundData,
-    },
+    sound::{FromFileError, static_sound::StaticSoundData, streaming::StreamingSoundData},
     track::TrackHandle,
 };
 use modulators::{Modulators, Parameter};
@@ -251,22 +248,20 @@ where
             return;
         };
         let key = key.clone();
+        let scene_settings = SceneDialogSettings {
+            is_rewind,
+            seek_time,
+        };
         if is_player {
             let data = self.banks.data(&key);
             let destination: &mut TrackHandle = &mut self.tracks.v.vocal;
-            match data {
-                Either::Left(mut data) => {
-                    if is_rewind {
-                        data = data.start_position(PlaybackPosition::Seconds(seek_time as f64));
-                    }
+            match data.with(scene_settings) {
+                Either::Left(data) => {
                     if let Ok(handle) = destination.play(data) {
                         scene.actors.v.store(Handle::new(string_id, handle, ()));
                     }
                 }
-                Either::Right(mut data) => {
-                    if is_rewind {
-                        data = data.start_position(PlaybackPosition::Seconds(seek_time as f64));
-                    }
+                Either::Right(data) => {
                     if let Ok(handle) = destination.play(data) {
                         scene.actors.v.store(Handle::new(string_id, handle, ()));
                     }
@@ -275,11 +270,8 @@ where
         } else if is_holocall {
             let data = self.banks.data(&key);
             let destination: &mut TrackHandle = &mut self.tracks.holocall;
-            match data {
-                Either::Left(mut data) => {
-                    if is_rewind {
-                        data = data.start_position(PlaybackPosition::Seconds(seek_time as f64));
-                    }
+            match data.with(scene_settings) {
+                Either::Left(data) => {
                     if let Ok(handle) = destination.play(data) {
                         scene
                             .actors
@@ -287,10 +279,7 @@ where
                             .store(Handle::new(string_id, handle, ()));
                     }
                 }
-                Either::Right(mut data) => {
-                    if is_rewind {
-                        data = data.start_position(PlaybackPosition::Seconds(seek_time as f64));
-                    }
+                Either::Right(data) => {
                     if let Ok(handle) = destination.play(data) {
                         scene
                             .actors
@@ -300,7 +289,7 @@ where
                 }
             }
         } else {
-            self.play_on_actor(string_id, entity_id, &key, is_rewind, seek_time);
+            self.play_on_actor(string_id, entity_id, &key, scene_settings);
         }
         // red engine handles subtitles automatically
     }
@@ -478,8 +467,7 @@ where
         sound_name: Cruid,
         entity_id: EntityId,
         key: &SceneId,
-        is_rewind: bool,
-        seek_time: f32,
+        scene_settings: SceneDialogSettings,
     ) {
         if let Some(ref mut scene) = self.scene {
             if !scene.exists_actor(&entity_id)
@@ -499,21 +487,15 @@ where
                 .emitters
                 .get_mut(&entity_id)
                 .expect("actor should automatically have been added if missing");
-            match data {
-                Either::Left(mut data) => {
-                    if is_rewind {
-                        data = data.start_position(PlaybackPosition::Seconds(seek_time as f64));
-                    }
+            match data.with(scene_settings) {
+                Either::Left(data) => {
                     if let Ok(handle) = slot.value_mut().track_mut().play(data) {
                         slot.handles
                             .statics
                             .store(Handle::new(sound_name, handle, ()));
                     }
                 }
-                Either::Right(mut data) => {
-                    if is_rewind {
-                        data = data.start_position(PlaybackPosition::Seconds(seek_time as f64));
-                    }
+                Either::Right(data) => {
                     if let Ok(handle) = slot.value_mut().track_mut().play(data) {
                         slot.handles
                             .streams
