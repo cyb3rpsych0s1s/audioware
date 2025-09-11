@@ -506,7 +506,7 @@ where
         }
     }
 
-    pub fn stop_on_actor(&mut self, sound_name: Cruid, fade_out: f32) {
+    pub fn stop_on_actors(&mut self, sound_name: Cruid, fade_out: f32) {
         if !sound_name.is_defined() {
             warns!(
                 "cannot stop sound with undefined RUID: {}",

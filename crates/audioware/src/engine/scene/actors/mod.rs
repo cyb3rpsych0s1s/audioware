@@ -47,7 +47,7 @@ impl Actors {
             return Ok(());
         }
         self.emitters.retain(|k, v| {
-            if !v.any_playing_handle() {
+            if !v.any_playing_handle() && !Emitter::is_in_scene(k) {
                 return false;
             }
             let Ok(position) = Emitter::position(*k) else {

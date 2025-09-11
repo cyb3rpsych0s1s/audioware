@@ -2,7 +2,8 @@ use kira::track::SpatialTrackDistances;
 use red4ext_rs::types::{EntityId, GameInstance};
 
 use crate::{
-    AIActionHelper, AsEntity, AsGameInstance, AsTimeDilatable, GameObject, TimeDilatable, Vector4,
+    AIActionHelper, AsEntity, AsGameInstance, AsSceneSystem, AsSceneSystemInterface,
+    AsTimeDilatable, GameObject, TimeDilatable, Vector4,
     error::{Error, SceneError},
 };
 
@@ -77,5 +78,9 @@ impl Emitter {
         }
         let position = entity.get_world_position();
         Ok(position)
+    }
+    pub fn is_in_scene(entity_id: &EntityId) -> bool {
+        let interface = GameInstance::get_scene_system().get_script_interface();
+        interface.is_entity_in_scene(*entity_id)
     }
 }
