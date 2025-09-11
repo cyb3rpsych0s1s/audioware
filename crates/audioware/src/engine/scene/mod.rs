@@ -39,7 +39,7 @@ pub struct Scene {
 
 impl Scene {
     pub fn try_new<B: Backend>(manager: &mut AudioManager<B>) -> Result<Self, Error> {
-        const RESERVED_FOR_ACTORS: usize = 20;
+        const RESERVED_FOR_ACTORS: usize = 8;
         let capacity = manager.sub_track_capacity();
         let (id, position, orientation, dilation) = {
             let v = get_player(GameInstance::new()).cast::<Entity>().unwrap();
