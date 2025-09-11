@@ -7,6 +7,9 @@ use crate::{
         tracks::Spatial,
         traits::{
             DualHandles,
+            pause::Pause,
+            reclaim::Reclaim,
+            resume::Resume,
             stop::{Stop, StopBy},
         },
         tweens::IMMEDIATELY,
@@ -62,5 +65,23 @@ impl Stop for ActorSlot {
 impl StopBy<Cruid> for ActorSlot {
     fn stop_by(&mut self, key: &Cruid, tween: kira::Tween) {
         self.handles.stop_by(key, tween);
+    }
+}
+
+impl Pause for ActorSlot {
+    fn pause(&mut self, tween: kira::Tween) {
+        self.handle.pause(tween);
+    }
+}
+
+impl Resume for ActorSlot {
+    fn resume(&mut self, tween: kira::Tween) {
+        self.handle.resume(tween);
+    }
+}
+
+impl Reclaim for ActorSlot {
+    fn reclaim(&mut self) {
+        self.handles.reclaim();
     }
 }

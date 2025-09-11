@@ -15,6 +15,7 @@ use crate::{
     engine::{
         scene::actors::{Actors, slot::ActorSlot},
         tracks::Spatial,
+        traits::{clear::Clear, pause::Pause, reclaim::Reclaim, resume::Resume, stop::Stop},
     },
     error::{Error, SceneError},
     get_player,
@@ -166,8 +167,9 @@ impl Scene {
             .stop_on_emitter(event_name, entity_id, tag_name, tween);
     }
 
-    pub fn stop_emitters(&mut self, tween: Tween) {
-        self.emitters.stop_emitters(tween);
+    pub fn stop_emitters_and_actors(&mut self, tween: Tween) {
+        self.emitters.stop(tween);
+        self.actors.stop(tween);
     }
 
     fn sync_listener(&mut self) -> Result<(), Error> {
@@ -229,20 +231,24 @@ impl Scene {
     }
 
     pub fn clear(&mut self) {
-        self.stop_emitters(IMMEDIATELY);
+        self.stop_emitters_and_actors(IMMEDIATELY);
         self.emitters.clear();
+        self.actors.clear();
     }
 
     pub fn pause(&mut self, tween: Tween) {
         self.emitters.pause(tween);
+        self.actors.pause(tween);
     }
 
     pub fn resume(&mut self, tween: Tween) {
         self.emitters.resume(tween);
+        self.actors.resume(tween);
     }
 
     pub fn reclaim(&mut self) {
         self.emitters.reclaim();
+        self.actors.reclaim();
     }
 
     pub fn set_listener_dilation(&mut self, dilation: &DilationUpdate) -> bool {

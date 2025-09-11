@@ -144,9 +144,9 @@ where
         Ok(())
     }
 
-    pub fn stop_scene_emitters(&mut self) {
+    pub fn stop_scene_emitters_and_actors(&mut self) {
         if let Some(mut scene) = self.scene.take() {
-            scene.stop_emitters(IMMEDIATELY);
+            scene.stop_emitters_and_actors(IMMEDIATELY);
         }
     }
 

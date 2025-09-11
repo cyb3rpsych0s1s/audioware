@@ -8,7 +8,9 @@ use red4ext_rs::types::{Cruid, EntityId};
 use crate::{
     engine::{
         scene::{actors::slot::ActorSlot, emitters::Emitter},
-        traits::DualHandles,
+        traits::{
+            DualHandles, clear::Clear, pause::Pause, reclaim::Reclaim, resume::Resume, stop::Stop,
+        },
     },
     error::Error,
 };
@@ -56,5 +58,45 @@ impl Actors {
             true
         });
         Ok(())
+    }
+}
+
+impl Stop for Actors {
+    fn stop(&mut self, tween: kira::Tween) {
+        self.v.stop(tween);
+        self.emitters.iter_mut().for_each(|mut x| x.stop(tween));
+        self.holocall.stop(tween);
+    }
+}
+
+impl Pause for Actors {
+    fn pause(&mut self, tween: kira::Tween) {
+        self.v.pause(tween);
+        self.emitters.pause(tween);
+        self.holocall.pause(tween);
+    }
+}
+
+impl Resume for Actors {
+    fn resume(&mut self, tween: kira::Tween) {
+        self.v.resume(tween);
+        self.emitters.resume(tween);
+        self.holocall.resume(tween);
+    }
+}
+
+impl Clear for Actors {
+    fn clear(&mut self) {
+        self.v.clear();
+        self.emitters.clear();
+        self.holocall.clear();
+    }
+}
+
+impl Reclaim for Actors {
+    fn reclaim(&mut self) {
+        self.v.reclaim();
+        self.emitters.iter_mut().for_each(|mut x| x.reclaim());
+        self.holocall.reclaim();
     }
 }

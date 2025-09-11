@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use dashmap::mapref::multiple::RefMutMulti;
+use dashmap::{DashMap, mapref::multiple::RefMutMulti};
 use kira::{
     Tween,
     sound::{static_sound::StaticSoundHandle, streaming::StreamingSoundHandle},
@@ -65,5 +65,15 @@ where
 {
     fn resume(&mut self, tween: Tween) {
         self.value_mut().resume(tween);
+    }
+}
+
+impl<K, V> Resume for DashMap<K, V>
+where
+    V: Resume,
+    K: Eq + Hash,
+{
+    fn resume(&mut self, tween: Tween) {
+        self.iter_mut().for_each(|mut x| x.resume(tween));
     }
 }

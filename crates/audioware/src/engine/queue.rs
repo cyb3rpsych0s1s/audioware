@@ -261,7 +261,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                         lifecycle!("failed to create new scene: {e}");
                     }
                 }
-                Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters(),
+                Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters_and_actors(),
                 Lifecycle::Board(Board::UIMenu(opened)) => {
                     state.set(Flags::IN_MENU, opened);
                     if state.contains(Flags::IN_GAME) {
