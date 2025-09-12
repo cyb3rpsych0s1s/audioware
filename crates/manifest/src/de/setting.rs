@@ -437,11 +437,11 @@ mod tests {
             assert!(settings.is_ok());
         }
 
-        #[test_case(r##"1.2s"## ; "invalid duration")]
-        fn invalid(yaml: &str) {
+        #[test_case(r##"1.2s"## ; "valid seconds expressed in floating-point duration")]
+        fn valid_fp(yaml: &str) {
             let settings = humantime::parse_duration(yaml);
             dbg!("{}", &settings);
-            assert!(settings.is_err());
+            assert!(settings.is_ok());
         }
     }
 

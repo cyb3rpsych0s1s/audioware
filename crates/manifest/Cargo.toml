@@ -8,7 +8,7 @@ rust-version.workspace = true
 audioware-core.workspace = true
 either.workspace = true
 fixed-map = { version = "0.9", features = ["serde"] }
-humantime = "2.1"
+humantime = "2.3"
 humantime-serde = "1.1"
 kira.workspace = true
 rayon.workspace = true
