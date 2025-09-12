@@ -302,7 +302,7 @@ impl Banks {
                 if let Some(scene_dialogs) = manifest.scene_dialogs {
                     for (key, value) in scene_dialogs {
                         match ensure_scene_dialogs(
-                            key,
+                            key as i64,
                             value,
                             &m,
                             &mut scene_ids,

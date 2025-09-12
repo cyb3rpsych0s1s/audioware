@@ -40,7 +40,9 @@ pub mod registry {
 
     impl ErrorDisplay for Cruid {
         fn error_display(&self) -> impl std::fmt::Display {
-            i64::from(*self)
+            // WolvenKit and Codeware represents CRUID as u64
+            // but RED4ext.SDK as i64
+            i64::from(*self) as u64
         }
     }
 

@@ -1,3 +1,4 @@
+use audioware_bank::error::registry::ErrorDisplay;
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Settings};
 use kira::Tween;
 use red4ext_rs::types::{CName, Cruid, EntityId};
@@ -110,12 +111,12 @@ impl std::fmt::Debug for Command {
             } => write!(
                 f,
                 "Command::PlaySceneDialog {{ string_id: {}, entity_id: {entity_id}, .. }}",
-                i64::from(*string_id)
+                string_id.error_display()
             ),
             Command::StopSceneDialog { string_id, .. } => write!(
                 f,
                 "Command::StopSceneDialog {{ string_id: {}, .. }}",
-                i64::from(*string_id)
+                string_id.error_display()
             ),
             Command::StopOnEmitter {
                 event_name,

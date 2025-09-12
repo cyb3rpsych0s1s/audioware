@@ -1,3 +1,4 @@
+use audioware_bank::error::registry::ErrorDisplay;
 use red4ext_rs::{
     NativeRepr, ScriptClass,
     class_kind::Native,
@@ -59,7 +60,7 @@ impl std::fmt::Display for StopDialogLine {
         write!(
             f,
             "string_id {}, fade_out {}",
-            i64::from(self.string_id),
+            self.string_id.error_display(),
             self.fade_out
         )
     }

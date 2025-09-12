@@ -244,7 +244,7 @@ where
             .scene_ids
             .try_get(&string_id, &spoken, gender.as_ref())
         else {
-            warns!("couldn't find RUID in bank: {}", i64::from(string_id));
+            warns!("couldn't find RUID in bank: {}", string_id.error_display());
             return;
         };
         let key = key.clone();

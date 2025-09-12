@@ -1,6 +1,8 @@
 use audioware_manifest::{Locale, PlayerGender};
 use red4ext_rs::types::Cruid;
 
+use crate::error::registry::ErrorDisplay;
+
 /// Key which can be either `Locale`
 /// or `Both` (`Locale` and `Gender` at the same time).
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -64,7 +66,7 @@ impl AsRef<Cruid> for SceneLocaleKey {
 }
 impl std::fmt::Display for SceneLocaleKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}:{}]", i64::from(self.0), self.1)
+        write!(f, "[{}:{}]", self.0.error_display(), self.1)
     }
 }
 impl PartialEq<(&Cruid, &Locale)> for SceneLocaleKey {
@@ -90,7 +92,7 @@ impl AsRef<Cruid> for SceneBothKey {
 }
 impl std::fmt::Display for SceneBothKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}:{}:{}]", i64::from(self.0), self.1, self.2)
+        write!(f, "[{}:{}:{}]", self.0.error_display(), self.1, self.2)
     }
 }
 impl PartialEq<(&Cruid, &Locale, &PlayerGender)> for SceneBothKey {
