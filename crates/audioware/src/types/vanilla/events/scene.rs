@@ -1,7 +1,9 @@
 use red4ext_rs::{
     NativeRepr,
-    types::{IScriptable, ISerializable, Ref},
+    types::{CName, Cruid, IScriptable, ISerializable, Ref},
 };
+
+use crate::{VoiceoverContext, VoiceoverExpression};
 
 const PADDING_45: usize = 0x48 - 0x45;
 

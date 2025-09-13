@@ -2,21 +2,25 @@ use std::{
     fmt::Debug,
     num::NonZero,
     ops::{Div, Not},
+    time::Duration,
 };
 
-use audioware_bank::{BankData, Banks, Id, Initialization, InitializationOutcome};
-use audioware_core::{Amplitude, SpatialTrackSettings, With};
+use audioware_bank::{
+    BankData, BankSettings, Banks, Id, Initialization, InitializationOutcome, SceneId, TryGet,
+    error::registry::ErrorDisplay,
+};
+use audioware_core::{Amplitude, SceneDialogSettings, SpatialTrackSettings, With};
 use audioware_manifest::{Locale, ScnDialogLineType, Source, ValidateFor};
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
-    AudioManager, AudioManagerSettings, Decibels, Tween,
+    AudioManager, AudioManagerSettings, Decibels, Easing, StartTime, Tween,
     backend::Backend,
     sound::{FromFileError, static_sound::StaticSoundData, streaming::StreamingSoundData},
     track::TrackHandle,
 };
 use modulators::{Modulators, Parameter};
-use red4ext_rs::types::{CName, EntityId, GameInstance, Opt};
+use red4ext_rs::types::{CName, Cruid, EntityId, GameInstance, Opt};
 pub use scene::{AffectedByTimeDilation, DilationUpdate, Scene};
 use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
@@ -24,6 +28,10 @@ use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
 use crate::{
     AsAudioSystem, AsGameInstance, AsGameObjectExt, GameObject,
+    engine::{
+        tracks::TrackEntryOptions,
+        traits::{Handle, stop::StopBy, store::Store},
+    },
     error::{EngineError, Error},
     propagate_subtitles,
     utils::{fails, lifecycle, success, warns},
@@ -34,6 +42,7 @@ pub use scene::ToDistances;
 pub mod eq;
 pub mod queue;
 pub mod state;
+pub mod traits;
 
 mod modulators;
 mod scene;
@@ -135,9 +144,9 @@ where
         Ok(())
     }
 
-    pub fn stop_scene_emitters(&mut self) {
+    pub fn stop_scene_emitters_and_actors(&mut self) {
         if let Some(mut scene) = self.scene.take() {
-            scene.stop_emitters(IMMEDIATELY);
+            scene.stop_emitters_and_actors(IMMEDIATELY);
         }
     }
 
@@ -148,7 +157,7 @@ where
         gender: audioware_manifest::PlayerGender,
     ) {
         let spoken = SpokenLocale::get();
-        match self.banks.try_get(&event_name, &spoken, Some(&gender)) {
+        match self.banks.ids.try_get(&event_name, &spoken, Some(&gender)) {
             Ok(key) => {
                 let data = self.banks.data(key);
                 let destination = &mut self.tracks.holocall;
@@ -158,25 +167,29 @@ where
                     Either::Left(data) => {
                         duration = data.duration().as_secs_f32();
                         if let Ok(handle) = destination.play(data) {
-                            self.tracks.store_static(
-                                handle,
+                            self.tracks.handles.statics.store(Handle::new(
                                 event_name,
-                                None,
-                                Some(emitter_name),
-                                dilatable,
-                            );
+                                handle,
+                                TrackEntryOptions {
+                                    entity_id: None,
+                                    emitter_name: Some(emitter_name),
+                                    affected_by_time_dilation: dilatable,
+                                },
+                            ));
                         }
                     }
                     Either::Right(data) => {
                         duration = data.duration().as_secs_f32();
                         if let Ok(handle) = destination.play(data) {
-                            self.tracks.store_stream(
-                                handle,
+                            self.tracks.handles.streams.store(Handle::new(
                                 event_name,
-                                None,
-                                Some(emitter_name),
-                                dilatable,
-                            );
+                                handle,
+                                TrackEntryOptions {
+                                    entity_id: None,
+                                    emitter_name: Some(emitter_name),
+                                    affected_by_time_dilation: dilatable,
+                                },
+                            ));
                         }
                     }
                 };
@@ -200,6 +213,87 @@ where
         }
     }
 
+    pub fn play_scene_dialog(
+        &mut self,
+        string_id: Cruid,
+        entity_id: EntityId,
+        is_player: bool,
+        is_holocall: bool,
+        is_rewind: bool,
+        seek_time: f32,
+    ) {
+        if !string_id.is_defined() {
+            warns!(
+                "cannot play sound with undefined RUID: {}",
+                string_id.error_display()
+            );
+            return;
+        }
+        if !entity_id.is_defined() {
+            warns!("cannot play sound on undefined entity: {}", entity_id);
+            return;
+        }
+        let Some(ref mut scene) = self.scene else {
+            warns!("scene is not available, and therefore dialogs aren't either");
+            return;
+        };
+        let gender = entity_id.to_gender();
+        let spoken = SpokenLocale::get();
+        let Ok(key) = self
+            .banks
+            .scene_ids
+            .try_get(&string_id, &spoken, gender.as_ref())
+        else {
+            warns!("couldn't find RUID in bank: {}", string_id.error_display());
+            return;
+        };
+        let key = key.clone();
+        let scene_settings = SceneDialogSettings {
+            is_rewind,
+            seek_time,
+        };
+        if is_player {
+            let data = self.banks.data(&key);
+            let destination: &mut TrackHandle = &mut self.tracks.v.vocal;
+            match data.with(scene_settings) {
+                Either::Left(data) => {
+                    if let Ok(handle) = destination.play(data) {
+                        scene.actors.v.store(Handle::new(string_id, handle, ()));
+                    }
+                }
+                Either::Right(data) => {
+                    if let Ok(handle) = destination.play(data) {
+                        scene.actors.v.store(Handle::new(string_id, handle, ()));
+                    }
+                }
+            }
+        } else if is_holocall {
+            let data = self.banks.data(&key);
+            let destination: &mut TrackHandle = &mut self.tracks.holocall;
+            match data.with(scene_settings) {
+                Either::Left(data) => {
+                    if let Ok(handle) = destination.play(data) {
+                        scene
+                            .actors
+                            .holocall
+                            .store(Handle::new(string_id, handle, ()));
+                    }
+                }
+                Either::Right(data) => {
+                    if let Ok(handle) = destination.play(data) {
+                        scene
+                            .actors
+                            .holocall
+                            .store(Handle::new(string_id, handle, ()));
+                    }
+                }
+            }
+        } else {
+            self.play_on_actor(string_id, entity_id, &key, scene_settings);
+        }
+        // red engine handles subtitles automatically
+    }
+
     pub fn play<T>(
         &mut self,
         event_name: CName,
@@ -215,7 +309,11 @@ where
     {
         let spoken = SpokenLocale::get();
         let gender = entity_id.as_ref().and_then(ToGender::to_gender);
-        match self.banks.try_get(&event_name, &spoken, gender.as_ref()) {
+        match self
+            .banks
+            .ids
+            .try_get(&event_name, &spoken, gender.as_ref())
+        {
             Ok(key) => {
                 let data = self.banks.data(key);
                 if let Some(Err(e)) = ext.as_ref().map(|x| x.validate_for(&data)) {
@@ -244,25 +342,29 @@ where
                     Either::Left(data) => {
                         duration = data.duration().as_secs_f32();
                         if let Ok(handle) = destination.play(data.with(ext)) {
-                            self.tracks.store_static(
-                                handle,
+                            self.tracks.handles.statics.store(Handle::new(
                                 event_name,
-                                entity_id,
-                                emitter_name,
-                                dilatable,
-                            );
+                                handle,
+                                TrackEntryOptions {
+                                    entity_id,
+                                    emitter_name,
+                                    affected_by_time_dilation: dilatable,
+                                },
+                            ));
                         }
                     }
                     Either::Right(data) => {
                         duration = data.duration().as_secs_f32();
                         if let Ok(handle) = destination.play(data.with(ext)) {
-                            self.tracks.store_stream(
-                                handle,
+                            self.tracks.handles.streams.store(Handle::new(
                                 event_name,
-                                entity_id,
-                                emitter_name,
-                                dilatable,
-                            );
+                                handle,
+                                TrackEntryOptions {
+                                    entity_id,
+                                    emitter_name,
+                                    affected_by_time_dilation: dilatable,
+                                },
+                            ));
                         }
                     }
                 }
@@ -305,7 +407,11 @@ where
         let gender = entity_id.to_gender();
         let spoken = SpokenLocale::get();
         if let Some(ref mut scene) = self.scene {
-            match self.banks.try_get(&sound_name, &spoken, gender.as_ref()) {
+            match self
+                .banks
+                .ids
+                .try_get(&sound_name, &spoken, gender.as_ref())
+            {
                 Ok(key) => {
                     match scene.emitters.play_on_emitter(
                         key,
@@ -353,6 +459,74 @@ where
                     warns!("cannot play sound: {e}");
                 }
             }
+        }
+    }
+
+    pub fn play_on_actor(
+        &mut self,
+        sound_name: Cruid,
+        entity_id: EntityId,
+        key: &SceneId,
+        scene_settings: SceneDialogSettings,
+    ) {
+        if let Some(ref mut scene) = self.scene {
+            if !scene.exists_actor(&entity_id)
+                && let Err(e) = scene.add_actor(&mut self.manager, entity_id, &self.tracks.ambience)
+            {
+                warns!("could not add actor {entity_id}: {e}");
+                return;
+            }
+            let data = self.banks.data(key);
+            let ext = self.banks.settings(key);
+            if let Some(Err(e)) = ext.as_ref().map(|x| x.validate_for(&data)) {
+                warns!("invalid setting(s) for actor audio: {e:#?}");
+                return;
+            }
+            let mut slot = scene
+                .actors
+                .emitters
+                .get_mut(&entity_id)
+                .expect("actor should automatically have been added if missing");
+            match data.with(scene_settings) {
+                Either::Left(data) => {
+                    if let Ok(handle) = slot.value_mut().track_mut().play(data) {
+                        slot.handles
+                            .statics
+                            .store(Handle::new(sound_name, handle, ()));
+                    }
+                }
+                Either::Right(data) => {
+                    if let Ok(handle) = slot.value_mut().track_mut().play(data) {
+                        slot.handles
+                            .streams
+                            .store(Handle::new(sound_name, handle, ()));
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn stop_on_actors(&mut self, sound_name: Cruid, fade_out: f32) {
+        if !sound_name.is_defined() {
+            warns!(
+                "cannot stop sound with undefined RUID: {}",
+                sound_name.error_display()
+            );
+            return;
+        }
+        if let Some(ref mut scene) = self.scene {
+            let tween = Tween {
+                start_time: StartTime::Immediate,
+                duration: Duration::from_secs_f32(fade_out),
+                easing: Easing::Linear,
+            };
+            scene.actors.v.stop_by(&sound_name, tween);
+            scene.actors.holocall.stop_by(&sound_name, tween);
+            scene
+                .actors
+                .emitters
+                .iter_mut()
+                .for_each(|mut x| x.value_mut().stop_by(&sound_name, tween));
         }
     }
 
@@ -561,6 +735,13 @@ where
         }
     }
 
+    pub fn any_actor(&self) -> bool {
+        match self.scene {
+            Some(ref scene) => scene.any_actor(),
+            None => false,
+        }
+    }
+
     pub fn sync_scene(&mut self) {
         match self.scene {
             Some(ref mut scene) => {
@@ -620,6 +801,19 @@ where
             .unwrap_or(false)
     }
 
+    pub fn exists_for_scene(cruid: &Cruid) -> bool {
+        #[cfg(not(feature = "hot-reload"))]
+        return BANKS
+            .get()
+            .map(|x| x.exists_for_scene(cruid))
+            .unwrap_or(false);
+        #[cfg(feature = "hot-reload")]
+        BANKS
+            .try_read()
+            .and_then(|x| x.as_ref().map(|x| x.exists_for_scene(cruid)))
+            .unwrap_or(false)
+    }
+
     #[allow(dead_code)]
     pub fn clear(&mut self) {
         self.tracks.clear();
@@ -676,5 +870,12 @@ impl ToOutputDestination for Id {
                 Source::Jingle => &mut tracks.car_radio,
             },
         }
+    }
+}
+
+impl ToOutputDestination for SceneId {
+    #[inline(always)]
+    fn to_output_destination<'b>(&self, tracks: &'b mut Tracks) -> &'b mut TrackHandle {
+        &mut tracks.dialogue
     }
 }

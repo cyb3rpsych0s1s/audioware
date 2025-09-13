@@ -1,14 +1,19 @@
 use std::time::Duration;
 
+use either::Either;
 use kira::{
     Decibels, PlaybackRate, StartTime, Tween, Value,
-    sound::{IntoOptionalRegion, PlaybackPosition},
+    sound::{
+        IntoOptionalRegion, PlaybackPosition, static_sound::StaticSoundData,
+        streaming::StreamingSoundData,
+    },
 };
 
 mod data;
 mod settings;
 mod types;
 
+pub use settings::SceneDialogSettings;
 pub use settings::SpatialTrackSettings;
 pub use types::{Amplitude, AmplitudeError, Panning, PanningError};
 
@@ -63,5 +68,17 @@ where
             self = self.with(settings);
         }
         self
+    }
+}
+
+impl<E: Send> With<SceneDialogSettings> for Either<StaticSoundData, StreamingSoundData<E>> {
+    fn with(self, settings: SceneDialogSettings) -> Self
+    where
+        Self: Sized,
+    {
+        match self {
+            Self::Left(x) => Self::Left(x.with(settings)),
+            Self::Right(x) => Self::Right(x.with(settings)),
+        }
     }
 }

@@ -1,6 +1,7 @@
+use audioware_bank::error::registry::ErrorDisplay;
 use audioware_manifest::{PlayerGender, ScnDialogLineType, Settings};
 use kira::Tween;
-use red4ext_rs::types::{CName, EntityId};
+use red4ext_rs::types::{CName, Cruid, EntityId};
 
 use super::{TagName, TargetId};
 
@@ -29,6 +30,18 @@ pub enum Command {
         event_name: CName,
         emitter_name: CName,
         gender: PlayerGender,
+    },
+    PlaySceneDialog {
+        string_id: Cruid,
+        entity_id: EntityId,
+        is_player: bool,
+        is_holocall: bool,
+        is_rewind: bool,
+        seek_time: f32,
+    },
+    StopSceneDialog {
+        string_id: Cruid,
+        fade_out: f32,
     },
     StopOnEmitter {
         event_name: CName,
@@ -91,6 +104,20 @@ impl std::fmt::Debug for Command {
                 "Command::PlayOnEmitter {{ event_name: {event_name}, entity_id: {entity_id}, emitter_name: {}, .. }}",
                 tag_name.as_str()
             ),
+            Command::PlaySceneDialog {
+                string_id,
+                entity_id,
+                ..
+            } => write!(
+                f,
+                "Command::PlaySceneDialog {{ string_id: {}, entity_id: {entity_id}, .. }}",
+                string_id.error_display()
+            ),
+            Command::StopSceneDialog { string_id, .. } => write!(
+                f,
+                "Command::StopSceneDialog {{ string_id: {}, .. }}",
+                string_id.error_display()
+            ),
             Command::StopOnEmitter {
                 event_name,
                 entity_id,
@@ -143,6 +170,8 @@ impl std::fmt::Display for Command {
                 Command::Play { .. } => "play",
                 Command::PlayOnEmitter { .. } => "play on emitter",
                 Command::PlayOverThePhone { .. } => "play over the phone",
+                Command::PlaySceneDialog { .. } => "play scene dialog",
+                Command::StopSceneDialog { .. } => "stop scene dialog",
                 Command::StopOnEmitter { .. } => "stop on emitter",
                 Command::StopVanilla { .. } => "stop vanilla",
                 Command::Stop { .. } => "stop",

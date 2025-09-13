@@ -1,12 +1,13 @@
 use std::fmt;
 
+use bitflags::bitflags;
 use red4ext_rs::{
     NativeRepr, ScriptClass,
     class_kind::Native,
     types::{CName, IScriptable, RedArray},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[repr(transparent)]
 pub struct Event(IScriptable);
 
@@ -300,18 +301,31 @@ const PADDING_64: usize = 0x68 - 0x64;
 #[repr(C)]
 pub struct AudioEvent {
     base: Event,
-    pub event_name: CName,            // 40
-    pub emitter_name: CName,          // 48
-    pub name_data: CName,             // 50
-    pub float_data: f32,              // 58
-    pub event_type: EventActionType,  // 5C
-    pub event_flags: AudioEventFlags, // 60
-    unk64: [u8; PADDING_64],          // 64
+    pub event_name: CName,           // 40
+    pub emitter_name: CName,         // 48
+    pub name_data: CName,            // 50
+    pub float_data: f32,             // 58
+    pub event_type: EventActionType, // 5C
+    pub event_flags: EventFlags,     // 60
+    unk64: [u8; PADDING_64],         // 64
 }
 
 unsafe impl ScriptClass for AudioEvent {
     type Kind = Native;
     const NAME: &'static str = "entAudioEvent";
+}
+
+impl std::fmt::Display for AudioEvent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "event_name {}, name_data {}, emitter_name {}, event_type {}",
+            self.event_name.as_str(),
+            self.name_data.as_str(),
+            self.emitter_name.as_str(),
+            self.event_type,
+        )
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -388,4 +402,36 @@ impl fmt::Display for AudioEventFlags {
             }
         )
     }
+}
+
+bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub struct EventFlags: u32 {
+        const NONE = AudioEventFlags::NoEventFlags as u32;
+        const SLO_MO_ONLY = AudioEventFlags::SloMoOnly as u32;
+        const MUSIC = AudioEventFlags::Music as u32;
+        const UNIQUE = AudioEventFlags::Unique as u32;
+        const METADATA = AudioEventFlags::Metadata as u32;
+    }
+}
+
+impl std::fmt::Display for EventFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if *self == EventFlags::NONE {
+            write!(f, "none")
+        } else {
+            write!(
+                f,
+                "[slow motion only: {}, music: {}, unique: {}, metadata: {}]",
+                self.contains(EventFlags::SLO_MO_ONLY),
+                self.contains(EventFlags::MUSIC),
+                self.contains(EventFlags::UNIQUE),
+                self.contains(EventFlags::METADATA),
+            )
+        }
+    }
+}
+
+unsafe impl NativeRepr for EventFlags {
+    const NAME: &'static str = AudioEventFlags::NAME;
 }

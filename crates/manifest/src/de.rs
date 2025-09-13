@@ -8,6 +8,8 @@ use semver::Version;
 use serde::Deserialize;
 
 #[doc(hidden)]
+mod dialog;
+#[doc(hidden)]
 mod jingle;
 mod music;
 mod ono;
@@ -17,6 +19,8 @@ mod setting;
 mod sfx;
 mod voice;
 
+#[doc(hidden)]
+pub use dialog::*;
 #[doc(hidden)]
 pub use jingle::*;
 pub use music::*;
@@ -39,6 +43,9 @@ pub struct Manifest {
     pub playlist: Option<HashMap<String, Playlist>>,
     #[doc(hidden)]
     pub jingles: Option<HashMap<String, Jingle>>,
+    #[doc(hidden)]
+    #[serde(rename = "dialogs")]
+    pub scene_dialogs: Option<HashMap<u64, SceneDialogs>>,
 }
 
 // until proper implementations for 'playlist' and 'jingles' are added
@@ -50,6 +57,7 @@ impl fmt::Debug for Manifest {
             .field("onos", &self.onos)
             .field("voices", &self.voices)
             .field("music", &self.music)
+            .field("dialogs", &self.scene_dialogs)
             .finish_non_exhaustive()
     }
 }

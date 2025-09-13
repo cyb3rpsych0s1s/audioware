@@ -1,16 +1,18 @@
 //! Bank registry ids.
 
-use std::{hash::Hash, path::PathBuf};
+use std::hash::Hash;
 
 use audioware_manifest::{Locale, PlayerGender, Source};
 use red4ext_rs::types::CName;
+
+use crate::Usage;
 
 use super::{BothKey, GenderKey, Key, LocaleKey, UniqueKey};
 
 /// Special type whose audio data is guaranteed to both exist in banks and be valid.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Id {
-    OnDemand(Usage, Source),
+    OnDemand(Usage<Key>, Source),
     InMemory(Key, Source),
 }
 
@@ -113,35 +115,7 @@ impl PartialEq<(&CName, &Locale, Option<&PlayerGender>)> for Id {
     }
 }
 
-/// Specify [on-demand](Id::OnDemand) [Usage].
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Usage {
-    /// Used with [kira static sounds](https://docs.rs/kira/latest/kira/sound/static_sound/index.html).
-    Static(Key, PathBuf),
-    /// Used with [kira streaming](https://docs.rs/kira/latest/kira/sound/streaming/index.html).
-    Streaming(Key, PathBuf),
-}
-
-impl std::fmt::Display for Usage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Usage::Static(key, path) => write!(
-                f,
-                "static:{} ({})",
-                key,
-                path.display().to_string().as_str()
-            ),
-            Usage::Streaming(key, path) => write!(
-                f,
-                "streaming:{} ({})",
-                key,
-                path.display().to_string().as_str()
-            ),
-        }
-    }
-}
-
-impl PartialEq<(&CName, &Locale, &PlayerGender)> for Usage {
+impl PartialEq<(&CName, &Locale, &PlayerGender)> for Usage<Key> {
     fn eq(&self, other: &(&CName, &Locale, &PlayerGender)) -> bool {
         match self {
             Usage::Static(key, _) => key.eq(other),

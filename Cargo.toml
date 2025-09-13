@@ -3,7 +3,7 @@ members = ["crates/core", "crates/manifest", "crates/bank", "crates/audioware"]
 resolver = "2"
 
 [workspace.package]
-version = "1.4.7"
+version = "1.5.0"
 edition = "2024"
 rust-version = "1.89.0"
 
@@ -21,8 +21,8 @@ audioware-bank = { path = "crates/bank" }
 either = "1.15.0"
 glam = "0.30.0"
 kira = { version = "=0.10.7", features = ["serde"] }
-rayon = "1.10"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "v0.10.0" }
+rayon = "1.11"
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "411ccf1" }
 serde = "1.0"
 snafu = "0.8"
 

@@ -1,7 +1,4 @@
-use red4ext_rs::{
-    ScriptClass,
-    types::{CName, IScriptable},
-};
+use red4ext_rs::{ScriptClass, types::IScriptable};
 
 use crate::{DialogLine, DialogLineEventData, Entity, attach_native_event};
 
@@ -28,15 +25,14 @@ unsafe extern "C" fn detour(
             playback_speed_parameter,
             ..
         } = data;
+        let classname = this.as_serializable().class().name().as_str();
         let id = this
-            .as_ref()
-            .class()
-            .name()
-            .eq(&CName::new(Entity::NAME))
+            .as_serializable()
+            .is_a::<Entity>()
             .then(|| std::mem::transmute::<&IScriptable, &Entity>(this))
             .map(|x| x.entity_id);
         crate::utils::lifecycle!(
-            "intercepted {} on {id:?}:
+            "intercepted {} on {classname} ({id:?}):
 - data.string_id {string_id:?}
 - data.context {context}
 - data.expression {expression}

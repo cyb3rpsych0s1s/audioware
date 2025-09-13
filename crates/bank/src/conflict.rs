@@ -4,6 +4,8 @@ use std::collections::HashSet;
 
 use red4ext_rs::types::CName;
 
+use crate::{SceneBothKey, SceneId, SceneKey, SceneLocaleKey};
+
 use super::{BothKey, GenderKey, Id, Key, LocaleKey, UniqueKey};
 
 /// Identify a type as potentially conflictual.
@@ -96,7 +98,47 @@ impl Conflict<BothKey> for HashSet<Id> {
     }
 }
 
+impl Conflict<SceneLocaleKey> for HashSet<SceneId> {
+    /// Both key must not conflict with other kind of scene id, and self-duplicate.
+    fn conflict(&self, other: &SceneLocaleKey) -> bool {
+        for id in self.iter() {
+            match id.as_ref() {
+                SceneKey::Locale(scene_locale_key) if scene_locale_key == other => return true,
+                SceneKey::Both(scene_both_key)
+                    if scene_both_key.0 == other.0 && scene_both_key.1 == other.1 =>
+                {
+                    return true;
+                }
+                _ => continue,
+            }
+        }
+        false
+    }
+}
+
+impl Conflict<SceneBothKey> for HashSet<SceneId> {
+    /// Both key must not conflict with other kind of scene id, and self-duplicate.
+    fn conflict(&self, other: &SceneBothKey) -> bool {
+        for id in self.iter() {
+            match id.as_ref() {
+                SceneKey::Locale(scene_locale_key)
+                    if scene_locale_key.0 == other.0 && scene_locale_key.1 == other.1 =>
+                {
+                    return true;
+                }
+                SceneKey::Both(scene_both_key) if scene_both_key == other => {
+                    return true;
+                }
+                _ => continue,
+            }
+        }
+        false
+    }
+}
+
 impl Conflictual for UniqueKey {}
 impl Conflictual for GenderKey {}
 impl Conflictual for LocaleKey {}
 impl Conflictual for BothKey {}
+impl Conflictual for SceneLocaleKey {}
+impl Conflictual for SceneBothKey {}

@@ -1,9 +1,12 @@
 use kira::{
     Tween,
-    sound::static_sound::{StaticSoundData, StaticSoundSettings},
+    sound::{
+        PlaybackPosition,
+        static_sound::{StaticSoundData, StaticSoundSettings},
+    },
 };
 
-use crate::{AudioDuration, SampleRate, With};
+use crate::{AudioDuration, SampleRate, With, settings::SceneDialogSettings};
 
 impl AudioDuration for StaticSoundData {
     fn slice_duration(&self) -> std::time::Duration {
@@ -39,5 +42,24 @@ impl With<Tween> for StaticSoundData {
         Self: Sized,
     {
         self.fade_in_tween(settings)
+    }
+}
+
+impl With<SceneDialogSettings> for StaticSoundData {
+    fn with(self, settings: SceneDialogSettings) -> Self
+    where
+        Self: Sized,
+    {
+        if settings.is_rewind {
+            return self.start_position(match self.settings.start_position {
+                PlaybackPosition::Seconds(x) => {
+                    PlaybackPosition::Seconds(x + settings.seek_time as f64)
+                }
+                PlaybackPosition::Samples(x) => PlaybackPosition::Samples(
+                    x + (settings.seek_time * self.sample_rate as f32) as usize,
+                ),
+            });
+        }
+        self
     }
 }

@@ -30,6 +30,8 @@ mod quaternion;
 pub use quaternion::*;
 mod maths;
 pub use maths::*;
+mod scene_system;
+pub use scene_system::*;
 mod sound_component;
 pub use sound_component::*;
 mod time_dilatable;
@@ -43,6 +45,7 @@ pub trait AsGameInstance {
     /// `public static native func FindEntityByID(self: GameInstance, entityId: EntityID) -> ref<Entity>`
     fn find_entity_by_id(game: GameInstance, entity_id: EntityId) -> Ref<Entity>;
     fn get_audio_system() -> Ref<AudioSystem>;
+    fn get_scene_system() -> Ref<SceneSystem>;
 }
 
 impl AsGameInstance for GameInstance {
@@ -67,6 +70,16 @@ impl AsGameInstance for GameInstance {
         let game = engine.game_instance();
         game.get_system(class.as_type())
             .cast::<AudioSystem>()
+            .unwrap_or_default()
+    }
+
+    fn get_scene_system() -> Ref<SceneSystem> {
+        let rtti = RttiSystem::get();
+        let class = rtti.get_class(CName::new(SceneSystem::NAME)).unwrap();
+        let engine = GameEngine::get();
+        let game = engine.game_instance();
+        game.get_system(class.as_type())
+            .cast::<SceneSystem>()
             .unwrap_or_default()
     }
 }

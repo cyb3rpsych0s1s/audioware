@@ -11,17 +11,16 @@ use audioware_core::With;
 use audioware_manifest::*;
 use either::Either;
 use kira::sound::{FromFileError, static_sound::StaticSoundData, streaming::StreamingSoundData};
-use red4ext_rs::types::{CName, CNamePool};
+use red4ext_rs::types::{CName, CNamePool, Cruid};
 use snafu::ensure;
 
-use crate::{
-    Id,
-    error::validation::{self, *},
-};
+use crate::SceneKey;
 
 use super::{
-    BothKey, Error, GenderKey, Key, LocaleKey, UniqueKey,
+    BothKey, Error, GenderKey, Id, Key, LocaleKey, SceneBothKey, SceneId, SceneLocaleKey,
+    UniqueKey,
     conflict::{Conflict, Conflictual},
+    error::validation::{self, *},
 };
 
 /// Ensure no duplicate mod folder name across depots: `r6\audioware` and `mods`.
@@ -141,6 +140,23 @@ pub fn ensure_key_no_conflict<T: Conflictual>(
     Ok(())
 }
 
+/// Ensure [SceneKey] variants do not [Conflict] with each others.
+#[inline]
+pub fn ensure_scene_key_no_conflict<T: Conflictual>(
+    key: &T,
+    raw: &(i64, Locale),
+    pool: &impl Conflict<T>,
+) -> Result<(), Error> {
+    ensure!(
+        !pool.conflict(key),
+        ConflictingSceneKeySnafu {
+            cruid: raw.0,
+            locale: raw.1
+        }
+    );
+    Ok(())
+}
+
 /// Ensure [Manifest] does not contain duplicate keys among
 /// [Sfx],
 /// [Ono],
@@ -200,12 +216,35 @@ pub fn ensure_located_in_depot(
 }
 
 /// Ensure path refers to valid audio (based on [usage](Usage)).
-pub fn ensure_valid_audio(
+pub fn ensure_valid_audio_and_settings(
+    path: &impl AsRef<std::path::Path>,
+    m: &Mod,
+    usage: Usage,
+    settings: Option<&Settings>,
+) -> Result<Either<StaticSoundData, StreamingSoundData<FromFileError>>, Error> {
+    let data = ensure_valid_audio_data(path, m, usage)?;
+    ensure_valid_contextual_audio_settings(&data, settings, path.as_ref())?;
+    Ok(data)
+}
+
+pub fn ensure_valid_audio_with_settings_and_captions(
     path: &impl AsRef<std::path::Path>,
     m: &Mod,
     usage: Usage,
     settings: Option<&Settings>,
     captions: Option<&[Caption]>,
+) -> Result<Either<StaticSoundData, StreamingSoundData<FromFileError>>, Error> {
+    let data = ensure_valid_audio_and_settings(path, m, usage, settings)?;
+    if let Some(captions) = captions {
+        ensure_valid_jingle_captions(&data, captions)?;
+    }
+    Ok(data)
+}
+
+pub fn ensure_valid_audio_data(
+    path: &impl AsRef<std::path::Path>,
+    m: &Mod,
+    usage: Usage,
 ) -> Result<Either<StaticSoundData, StreamingSoundData<FromFileError>>, Error> {
     use snafu::ResultExt;
     let filepath = m.as_ref().join(path.as_ref());
@@ -222,10 +261,6 @@ pub fn ensure_valid_audio(
             })
             .map(Either::Right)?,
     };
-    ensure_valid_contextual_audio_settings(&data, settings, path.as_ref())?;
-    if let Some(captions) = captions {
-        ensure_valid_jingle_captions(&data, captions)?;
-    }
     Ok(data)
 }
 
@@ -305,6 +340,28 @@ pub fn ensure_store_data<T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     Ok(())
 }
 
+/// Ensure data is properly stored.
+pub fn ensure_store_scene_data<T: PartialEq + Eq + Hash + Clone + Into<SceneKey>>(
+    key: T,
+    value: StaticSoundData,
+    settings: Option<Settings>,
+    path: &impl AsRef<std::path::Path>,
+    store: &mut HashMap<T, StaticSoundData>,
+) -> Result<(), Error> {
+    let value = match settings {
+        Some(settings) => value.with(settings),
+        None => value,
+    };
+    ensure!(
+        store.insert(key.clone(), value).is_none(),
+        CannotStoreSceneDataSnafu {
+            key,
+            path: path.as_ref().display().to_string()
+        }
+    );
+    Ok(())
+}
+
 /// Ensure subtitle is properly stored.
 pub fn ensure_store_subtitle<T: PartialEq + Eq + Hash + Clone + Into<Key>>(
     key: T,
@@ -338,6 +395,13 @@ pub fn ensure_store_id(id: Id, store: &mut HashSet<Id>) -> Result<(), Error> {
     Ok(())
 }
 
+/// Ensure [SceneId] is properly indexed in appropriate bank.
+#[inline]
+pub fn ensure_store_scene_id(id: SceneId, store: &mut HashSet<SceneId>) -> Result<(), Error> {
+    ensure!(store.insert(id.clone()), CannotStoreSceneIdSnafu { id });
+    Ok(())
+}
+
 /// Ensure guarantees are upheld.
 #[allow(clippy::too_many_arguments)]
 fn ensure<'a, K: PartialEq + Eq + Hash + Clone + Into<Key> + Conflictual>(
@@ -355,17 +419,18 @@ fn ensure<'a, K: PartialEq + Eq + Hash + Clone + Into<Key> + Conflictual>(
 where
     HashSet<Id>: Conflict<K>,
 {
-    let data = ensure_valid_audio(&path, m, usage, settings.as_ref(), None)?.map_either_with(
-        (usage, settings.as_ref().and_then(|x| x.region.clone())),
-        |ctx, data| {
-            if let (Usage::InMemory, Some(region)) = ctx {
-                data.slice(region)
-            } else {
-                data
-            }
-        },
-        |_, data| data,
-    );
+    let data = ensure_valid_audio_and_settings(&path, m, usage, settings.as_ref())?
+        .map_either_with(
+            (usage, settings.as_ref().and_then(|x| x.region.clone())),
+            |ctx, data| {
+                if let (Usage::InMemory, Some(region)) = ctx {
+                    data.slice(region)
+                } else {
+                    data
+                }
+            },
+            |_, data| data,
+        );
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = match usage {
         Usage::InMemory => Id::InMemory(key.clone().into(), source),
@@ -384,6 +449,54 @@ where
         ensure_store_settings(&key, settings, smap)?;
     }
     ensure_store_id(id, set)?;
+    Ok(())
+}
+
+/// Ensure guarantees are upheld.
+#[allow(clippy::too_many_arguments)]
+fn ensure_scene<'a, K: PartialEq + Eq + Hash + Clone + Into<SceneKey> + Conflictual>(
+    key: K,
+    path: PathBuf,
+    m: &Mod,
+    usage: Usage,
+    settings: Option<Settings>,
+    set: &'a mut HashSet<SceneId>,
+    map: &'a mut HashMap<K, StaticSoundData>,
+    smap: &'a mut HashMap<K, Settings>,
+) -> Result<(), Error>
+where
+    HashSet<SceneId>: Conflict<K>,
+    SceneKey: From<K>,
+{
+    let data = ensure_valid_audio_and_settings(&path, m, usage, settings.as_ref())?
+        .map_either_with(
+            (usage, settings.as_ref().and_then(|x| x.region.clone())),
+            |ctx, data| {
+                if let (Usage::InMemory, Some(region)) = ctx {
+                    data.slice(region)
+                } else {
+                    data
+                }
+            },
+            |_, data| data,
+        );
+    let id: SceneId = match usage {
+        Usage::InMemory => SceneId::InMemory(key.clone().into()),
+        Usage::OnDemand => SceneId::OnDemand(crate::Usage::Static(
+            key.clone().into(),
+            m.as_ref().join(path.clone()),
+        )),
+        Usage::Streaming => SceneId::OnDemand(crate::Usage::Streaming(
+            key.clone().into(),
+            m.as_ref().join(path.clone()),
+        )),
+    };
+    if usage == Usage::InMemory {
+        ensure_store_scene_data(key, data.left().unwrap(), settings, &path, map)?;
+    } else if let Some(settings) = settings {
+        ensure_store_settings(&key, settings, smap)?;
+    }
+    ensure_store_scene_id(id, set)?;
     Ok(())
 }
 
@@ -590,7 +703,13 @@ pub fn ensure_jingles<'a>(
 ) -> Result<(), Error> {
     let existed = ensure_key_unique_or_inserted(k)?;
     let Audio { file, settings } = (&v).into();
-    ensure_valid_audio(&file, m, Usage::Streaming, settings.as_ref(), v.captions())?;
+    ensure_valid_audio_with_settings_and_captions(
+        &file,
+        m,
+        Usage::Streaming,
+        settings.as_ref(),
+        v.captions(),
+    )?;
     let c_string = std::ffi::CString::new(k)?;
     let cname = CName::new(k);
     let key = UniqueKey(cname);
@@ -607,5 +726,76 @@ pub fn ensure_jingles<'a>(
     if !existed {
         CNamePool::add_cstr(&c_string);
     }
+    Ok(())
+}
+
+#[doc(hidden)]
+#[allow(clippy::too_many_arguments)]
+pub fn ensure_scene_dialogs<'a>(
+    k: i64,
+    v: SceneDialogs,
+    m: &Mod,
+    set: &'a mut HashSet<SceneId>,
+    single: &'a mut HashMap<SceneLocaleKey, StaticSoundData>,
+    dual: &'a mut HashMap<SceneBothKey, StaticSoundData>,
+    single_settings: &'a mut HashMap<SceneLocaleKey, Settings>,
+    dual_settings: &'a mut HashMap<SceneBothKey, Settings>,
+) -> Result<(), Error> {
+    let mut errors = Vec::with_capacity(10);
+    let mut locale_key: SceneLocaleKey;
+    let mut both_key: SceneBothKey;
+    let v: AnySceneDialog = v.into();
+    let cruid = Cruid::from(k);
+    match v {
+        Either::Left((aud, usage)) => {
+            for (locale, Audio { file, settings }) in aud {
+                locale_key = SceneLocaleKey(cruid, locale);
+                ensure_scene_key_no_conflict(&locale_key, &(k, locale), set)?;
+                if let Err(e) = ensure_scene(
+                    locale_key,
+                    file,
+                    m,
+                    usage,
+                    settings,
+                    set,
+                    single,
+                    single_settings,
+                ) {
+                    errors.push(e);
+                    continue;
+                }
+            }
+        }
+        Either::Right((aud, usage)) => {
+            let mut checked_conflict;
+            'outer: for (locale, genders) in aud {
+                checked_conflict = false;
+                for (gender, Audio { file, settings }) in genders {
+                    both_key = SceneBothKey(Cruid::from(k), locale, gender);
+                    // only check once per pair, otherwise gender will conflict with each other
+                    if !checked_conflict {
+                        if let Err(e) = ensure_scene_key_no_conflict(&both_key, &(k, locale), set) {
+                            errors.push(e);
+                            continue 'outer;
+                        }
+                        checked_conflict = true;
+                    }
+                    if let Err(e) =
+                        ensure_scene(both_key, file, m, usage, settings, set, dual, dual_settings)
+                    {
+                        errors.push(e);
+                        // other gender might already have been added
+                        dual.remove(&SceneBothKey(Cruid::from(k), locale, gender.opposite()));
+                        dual_settings.remove(&SceneBothKey(
+                            Cruid::from(k),
+                            locale,
+                            gender.opposite(),
+                        ));
+                        continue 'outer;
+                    }
+                }
+            }
+        }
+    };
     Ok(())
 }

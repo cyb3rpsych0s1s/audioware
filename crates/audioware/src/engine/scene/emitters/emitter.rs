@@ -2,7 +2,8 @@ use kira::track::SpatialTrackDistances;
 use red4ext_rs::types::{EntityId, GameInstance};
 
 use crate::{
-    AIActionHelper, AsEntity, AsGameInstance, AsTimeDilatable, GameObject, TimeDilatable, Vector4,
+    AIActionHelper, AsEntity, AsGameInstance, AsSceneSystem, AsSceneSystemInterface,
+    AsTimeDilatable, GameObject, TimeDilatable, Vector4,
     error::{Error, SceneError},
 };
 
@@ -50,5 +51,36 @@ impl Emitter {
             .as_ref()
             .map(AsTimeDilatable::get_time_dilation_value);
         Ok((position, busy, dilation, distances))
+    }
+
+    #[allow(clippy::type_complexity)]
+    pub fn actor_infos(
+        entity_id: EntityId,
+    ) -> Result<(Vector4, Option<SpatialTrackDistances>), Error> {
+        let game = GameInstance::new();
+        let entity = GameInstance::find_entity_by_id(game, entity_id);
+        if entity.is_null() {
+            return Err(Error::Scene {
+                source: SceneError::MissingEmitter { entity_id },
+            });
+        }
+        let position = entity.get_world_position();
+        let distances = entity.get_emitter_distances();
+        Ok((position, distances))
+    }
+    pub fn position(entity_id: EntityId) -> Result<Vector4, Error> {
+        let game = GameInstance::new();
+        let entity = GameInstance::find_entity_by_id(game, entity_id);
+        if entity.is_null() {
+            return Err(Error::Scene {
+                source: SceneError::MissingEmitter { entity_id },
+            });
+        }
+        let position = entity.get_world_position();
+        Ok(position)
+    }
+    pub fn is_in_scene(entity_id: &EntityId) -> bool {
+        let interface = GameInstance::get_scene_system().get_script_interface();
+        interface.is_entity_in_scene(*entity_id)
     }
 }

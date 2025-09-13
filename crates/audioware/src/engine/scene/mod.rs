@@ -4,7 +4,7 @@ use audioware_core::SpatialTrackSettings;
 use audioware_manifest::PlayerGender;
 use dilation::Dilation;
 use emitters::{EMITTERS, Emitter, Emitters};
-use kira::{AudioManager, Tween, backend::Backend, track::SpatialTrackDistances};
+use kira::{AudioManager, Easing, Tween, backend::Backend, track::SpatialTrackDistances};
 use listener::Listener;
 use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 
@@ -12,13 +12,18 @@ use crate::{
     AsEntity, AsScriptedPuppet, AsScriptedPuppetExt, AsTimeDilatable, AvObject, BikeObject,
     CarObject, Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject, TimeDilatable,
     VehicleObject,
-    engine::tracks::Spatial,
+    engine::{
+        scene::actors::{Actors, slot::ActorSlot},
+        tracks::Spatial,
+        traits::{clear::Clear, pause::Pause, reclaim::Reclaim, resume::Resume, stop::Stop},
+    },
     error::{Error, SceneError},
     get_player,
 };
 
 use super::{lifecycle, tracks::ambience::Ambience, tweens::IMMEDIATELY};
 
+mod actors;
 mod dilation;
 mod emitters;
 mod listener;
@@ -28,11 +33,13 @@ pub use dilation::{AffectedByTimeDilation, DilationUpdate};
 /// Audio spatial scene.
 pub struct Scene {
     pub emitters: Emitters,
+    pub actors: Actors,
     pub v: Listener,
 }
 
 impl Scene {
     pub fn try_new<B: Backend>(manager: &mut AudioManager<B>) -> Result<Self, Error> {
+        const RESERVED_FOR_ACTORS: usize = 8;
         let capacity = manager.sub_track_capacity();
         let (id, position, orientation, dilation) = {
             let v = get_player(GameInstance::new()).cast::<Entity>().unwrap();
@@ -53,7 +60,8 @@ impl Scene {
                 handle,
                 dilation: Dilation::new(dilation),
             },
-            emitters: Emitters::with_capacity(capacity),
+            emitters: Emitters::with_capacity(capacity - RESERVED_FOR_ACTORS),
+            actors: Actors::with_capacity(RESERVED_FOR_ACTORS),
         })
     }
 
@@ -106,6 +114,48 @@ impl Scene {
         )
     }
 
+    pub fn exists_actor(&self, entity_id: &EntityId) -> bool {
+        self.actors.exists(entity_id)
+    }
+
+    pub fn add_actor<B: Backend>(
+        &mut self,
+        manager: &mut AudioManager<B>,
+        entity_id: EntityId,
+        ambience: &Ambience,
+    ) -> Result<(), Error> {
+        if self.actors.exists(&entity_id) {
+            return Ok(());
+        }
+        if entity_id == self.v.id {
+            return Err(Error::Scene {
+                source: SceneError::InvalidEmitter,
+            });
+        }
+        let (position, distances) = Emitter::actor_infos(entity_id)?;
+        let settings = SpatialTrackSettings {
+            distances: distances.unwrap_or_default(),
+            affected_by_reverb_mix: true,
+            affected_by_environmental_preset: true,
+            attenuation_function: Some(Easing::Linear),
+            ..Default::default()
+        };
+        let handle = Spatial::try_new(
+            manager,
+            self.v.handle.id(),
+            position,
+            settings.clone(),
+            ambience,
+        )?;
+        let slot = ActorSlot::new(handle, position);
+        lifecycle!(
+            "slot about to be inserted: {slot} with settings {:?}",
+            settings
+        );
+        self.actors.emitters.insert(entity_id, slot);
+        Ok(())
+    }
+
     pub fn stop_on_emitter(
         &mut self,
         event_name: CName,
@@ -117,8 +167,9 @@ impl Scene {
             .stop_on_emitter(event_name, entity_id, tag_name, tween);
     }
 
-    pub fn stop_emitters(&mut self, tween: Tween) {
-        self.emitters.stop_emitters(tween);
+    pub fn stop_emitters_and_actors(&mut self, tween: Tween) {
+        self.emitters.stop(tween);
+        self.actors.stop(tween);
     }
 
     fn sync_listener(&mut self) -> Result<(), Error> {
@@ -140,9 +191,15 @@ impl Scene {
         Ok(())
     }
 
+    fn sync_actors(&mut self) -> Result<(), Error> {
+        self.actors.sync_emitters()?;
+        Ok(())
+    }
+
     pub fn sync(&mut self) -> Result<(), Error> {
         self.sync_listener()?;
         self.sync_emitters()?;
+        self.sync_actors()?;
         Ok(())
     }
 
@@ -169,21 +226,29 @@ impl Scene {
         !self.emitters.is_empty()
     }
 
+    pub fn any_actor(&self) -> bool {
+        !self.actors.is_empty()
+    }
+
     pub fn clear(&mut self) {
-        self.stop_emitters(IMMEDIATELY);
+        self.stop_emitters_and_actors(IMMEDIATELY);
         self.emitters.clear();
+        self.actors.clear();
     }
 
     pub fn pause(&mut self, tween: Tween) {
         self.emitters.pause(tween);
+        self.actors.pause(tween);
     }
 
     pub fn resume(&mut self, tween: Tween) {
         self.emitters.resume(tween);
+        self.actors.resume(tween);
     }
 
     pub fn reclaim(&mut self) {
         self.emitters.reclaim();
+        self.actors.reclaim();
     }
 
     pub fn set_listener_dilation(&mut self, dilation: &DilationUpdate) -> bool {

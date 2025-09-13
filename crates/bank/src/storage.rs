@@ -14,18 +14,14 @@ use audioware_manifest::{
 };
 use red4ext_rs::types::CName;
 
-use crate::{Banks, BothKey, Id, Key, LocaleKey, Usage};
+use crate::{Banks, BothKey, Id, Key, LocaleKey, SceneId, SceneKey, Usage};
 
-pub trait BankData {
-    type Key;
-    type Data;
-    fn data(&self, key: &Self::Key) -> Self::Data;
+pub trait BankData<K, V> {
+    fn data(&self, key: &K) -> V;
 }
 
-pub trait BankSettings {
-    type Key;
-    type Settings;
-    fn settings(&self, key: &Self::Key) -> Option<Self::Settings>;
+pub trait BankSettings<K, V> {
+    fn settings(&self, key: &K) -> Option<V>;
 }
 
 pub trait BankSubtitles {
@@ -57,11 +53,8 @@ impl<K, V> OnceStorage<K, V> {
         self.0.get().map(|x| x.keys())
     }
 }
-impl<K: Eq + Hash> BankData for OnceStorage<K, StaticSoundData> {
-    type Key = K;
-    type Data = StaticSoundData;
-
-    fn data(&self, key: &Self::Key) -> Self::Data {
+impl BankData<Key, StaticSoundData> for OnceStorage<Key, StaticSoundData> {
+    fn data(&self, key: &Key) -> StaticSoundData {
         self.0
             .get()
             .expect("insertion guarantees")
@@ -70,11 +63,18 @@ impl<K: Eq + Hash> BankData for OnceStorage<K, StaticSoundData> {
             .clone()
     }
 }
-impl<K: Eq + Hash> BankSettings for OnceStorage<K, ManifestSettings> {
-    type Key = K;
-    type Settings = ManifestSettings;
-
-    fn settings(&self, key: &Self::Key) -> Option<Self::Settings> {
+impl BankData<SceneKey, StaticSoundData> for OnceStorage<SceneKey, StaticSoundData> {
+    fn data(&self, key: &SceneKey) -> StaticSoundData {
+        self.0
+            .get()
+            .expect("insertion guarantees")
+            .get(key)
+            .expect("insertion guarantees")
+            .clone()
+    }
+}
+impl<K: Eq + Hash> BankSettings<K, ManifestSettings> for OnceStorage<K, ManifestSettings> {
+    fn settings(&self, key: &K) -> Option<ManifestSettings> {
         self.0.get().and_then(|x| x.get(key)).cloned()
     }
 }
@@ -112,12 +112,9 @@ impl BankSubtitles for OnceStorage<BothKey, DialogLine> {
 // pub(super) static LOC_SUB: OnceStorage<LocaleKey, DialogLine> = OnceStorage::new();
 // pub(super) static MUL_SUB: OnceStorage<BothKey, DialogLine> = OnceStorage::new();
 
-impl BankSettings for Banks {
-    type Key = Id;
-    type Settings = audioware_manifest::Settings;
-
+impl BankSettings<Id, audioware_manifest::Settings> for Banks {
     /// Retrieves sound settings for a given [Id] if any.
-    fn settings(&self, key: &Self::Key) -> Option<Self::Settings> {
+    fn settings(&self, key: &Id) -> Option<audioware_manifest::Settings> {
         match key {
             Id::OnDemand(usage, ..) => {
                 let settings = match usage {
@@ -136,12 +133,28 @@ impl BankSettings for Banks {
     }
 }
 
-impl BankData for Banks {
-    type Key = Id;
-    type Data = Either<StaticSoundData, StreamingSoundData<FromFileError>>;
+impl BankSettings<SceneId, audioware_manifest::Settings> for Banks {
+    /// Retrieves sound settings for a given [SceneId] if any.
+    fn settings(&self, key: &SceneId) -> Option<audioware_manifest::Settings> {
+        match key {
+            SceneId::OnDemand(usage, ..) => {
+                let settings = match usage {
+                    Usage::Static(key, _) | Usage::Streaming(key, _) => match key {
+                        SceneKey::Locale(key) => self.single_scene_dialogs_settings.get(key),
+                        SceneKey::Both(key) => self.dual_scene_dialogs_settings.get(key),
+                    },
+                };
+                settings.cloned()
+            }
+            // in-memory sound data already embed settings
+            SceneId::InMemory(_) => None,
+        }
+    }
+}
 
+impl BankData<Id, Either<StaticSoundData, StreamingSoundData<FromFileError>>> for Banks {
     /// Retrieves sound data for a given [Id], including settings if any.
-    fn data(&self, key: &Self::Key) -> Self::Data {
+    fn data(&self, key: &Id) -> Either<StaticSoundData, StreamingSoundData<FromFileError>> {
         match key {
             Id::OnDemand(Usage::Static(_, path), ..) => {
                 let settings = self.settings(key);
@@ -177,6 +190,45 @@ impl BankData for Banks {
             Id::InMemory(Key::Both(key), ..) => {
                 Either::Left(self.dual_voices.get(key).cloned().expect("key guarantees"))
             }
+        }
+    }
+}
+
+impl BankData<SceneId, Either<StaticSoundData, StreamingSoundData<FromFileError>>> for Banks {
+    /// Retrieves sound data for a given [SceneId], including settings if any.
+    fn data(&self, key: &SceneId) -> Either<StaticSoundData, StreamingSoundData<FromFileError>> {
+        match key {
+            SceneId::OnDemand(Usage::Static(_, path), ..) => {
+                let settings = self.settings(key);
+                let data = StaticSoundData::from_file(path)
+                    .expect("static sound data has already been validated");
+                if let Some(settings) = settings {
+                    return Either::Left(data.with_settings(settings.into()));
+                }
+                Either::Left(data)
+            }
+            SceneId::OnDemand(Usage::Streaming(_, path), ..) => {
+                let settings = self.settings(key);
+                let data = StreamingSoundData::from_file(path)
+                    .expect("streaming sound data has already been validated");
+                if let Some(settings) = settings {
+                    return Either::Right(data.with_settings(settings.into()));
+                }
+                Either::Right(data)
+            }
+            // in-memory sound data already embed settings
+            SceneId::InMemory(SceneKey::Locale(key), ..) => Either::Left(
+                self.single_scene_dialogs
+                    .get(key)
+                    .cloned()
+                    .expect("key guarantees"),
+            ),
+            SceneId::InMemory(SceneKey::Both(key), ..) => Either::Left(
+                self.dual_scene_dialogs
+                    .get(key)
+                    .cloned()
+                    .expect("key guarantees"),
+            ),
         }
     }
 }

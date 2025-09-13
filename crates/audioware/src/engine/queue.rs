@@ -261,7 +261,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                         lifecycle!("failed to create new scene: {e}");
                     }
                 }
-                Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters(),
+                Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters_and_actors(),
                 Lifecycle::Board(Board::UIMenu(opened)) => {
                     state.set(Flags::IN_MENU, opened);
                     if state.contains(Flags::IN_GAME) {
@@ -276,7 +276,10 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
             }
         }
-        if state.should_sync() && engine.any_emitter() && synchronization.try_recv().is_ok() {
+        if state.should_sync()
+            && (engine.any_emitter() || engine.any_actor())
+            && synchronization.try_recv().is_ok()
+        {
             engine.sync_scene();
         }
         if engine.any_handle() && reclamation.try_recv().is_ok() {
@@ -308,6 +311,25 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     emitter_name,
                     gender,
                 } => engine.play_over_the_phone(event_name, emitter_name, gender),
+                Command::PlaySceneDialog {
+                    string_id,
+                    entity_id,
+                    is_player,
+                    is_holocall,
+                    is_rewind,
+                    seek_time,
+                } => engine.play_scene_dialog(
+                    string_id,
+                    entity_id,
+                    is_player,
+                    is_holocall,
+                    is_rewind,
+                    seek_time,
+                ),
+                Command::StopSceneDialog {
+                    string_id,
+                    fade_out,
+                } => engine.stop_on_actors(string_id, fade_out),
                 Command::StopOnEmitter {
                     event_name,
                     entity_id,

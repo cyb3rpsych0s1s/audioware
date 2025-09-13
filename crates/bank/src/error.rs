@@ -1,43 +1,70 @@
 //! Bank errors.
 
+use red4ext_rs::types::{CName, Cruid};
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
 pub enum Error {
     #[snafu(display("Registry error: {source}"), visibility(pub(crate)))]
-    Registry { source: self::registry::Error },
+    Registry {
+        source: self::registry::Error<CName>,
+    },
+    #[snafu(display("Registry error: {source}"), visibility(pub(crate)))]
+    SceneRegistry {
+        source: self::registry::Error<Cruid>,
+    },
     #[snafu(display("Validation error: {source}"), visibility(pub(crate)))]
     Validation { source: self::validation::Error },
     #[snafu(display("Manifest error: {source}"), visibility(pub(crate)))]
     Manifest {
         source: audioware_manifest::error::Error,
     },
+    #[snafu(display("Error(s): {}", errors.iter().map(|e| format!("{e}")).collect::<Vec<_>>().join("\n  -> ")), visibility(pub(crate)))]
+    Multiple { errors: Vec<Error> },
 }
 
 pub mod registry {
     use audioware_manifest::{SpokenLocale, WrittenLocale};
-    use red4ext_rs::types::CName;
+    use red4ext_rs::types::{CName, Cruid};
     use snafu::Snafu;
 
+    pub trait ErrorDisplay {
+        fn error_display(&self) -> impl std::fmt::Display;
+    }
+
+    impl ErrorDisplay for CName {
+        fn error_display(&self) -> impl std::fmt::Display {
+            self.as_str()
+        }
+    }
+
+    impl ErrorDisplay for Cruid {
+        fn error_display(&self) -> impl std::fmt::Display {
+            // WolvenKit and Codeware represents CRUID as u64
+            // but RED4ext.SDK as i64
+            i64::from(*self) as u64
+        }
+    }
+
     #[derive(Debug, Snafu)]
-    pub enum Error {
-        #[snafu(display("missing spoken locale: {} for {}", locale, cname.to_string()), visibility(pub(crate)))]
-        MissingSpokenLocale { cname: CName, locale: SpokenLocale },
-        #[snafu(display("missing written locale: {} for {}", locale, cname.to_string()), visibility(pub(crate)))]
-        MissingWrittenLocale { cname: CName, locale: WrittenLocale },
-        #[snafu(display("requires gender: {}", cname.to_string()), visibility(pub(crate)))]
-        RequireGender { cname: CName },
-        #[snafu(display("not found: {}", cname.to_string()), visibility(pub(crate)))]
-        NotFound { cname: CName },
+    pub enum Error<K: ErrorDisplay> {
+        #[snafu(display("missing spoken locale: {} for {}", locale, key.error_display()), visibility(pub(crate)))]
+        MissingSpokenLocale { key: K, locale: SpokenLocale },
+        #[snafu(display("missing written locale: {} for {}", locale, key.error_display()), visibility(pub(crate)))]
+        MissingWrittenLocale { key: K, locale: WrittenLocale },
+        #[snafu(display("requires gender: {}", key.error_display()), visibility(pub(crate)))]
+        RequireGender { key: K },
+        #[snafu(display("not found: {}", key.error_display()), visibility(pub(crate)))]
+        NotFound { key: K },
     }
 }
 
 pub mod validation {
 
-    use audioware_manifest::DialogLine;
+    use audioware_manifest::{DialogLine, Locale};
     use snafu::Snafu;
 
-    use crate::{Id, Key};
+    use crate::{Id, Key, SceneId, SceneKey};
 
     #[derive(Debug, Snafu)]
     pub enum Error {
@@ -55,6 +82,11 @@ pub mod validation {
             visibility(pub(crate))
         )]
         ConflictingKey { cname: String },
+        #[snafu(
+            display("RUID conflicts with existing id: {cruid} for {locale}"),
+            visibility(pub(crate))
+        )]
+        ConflictingSceneKey { cruid: i64, locale: Locale },
         #[snafu(display("audio outside depot: {path}"), visibility(pub(crate)))]
         AudioOutsideDepot { path: String },
         #[snafu(
@@ -85,6 +117,11 @@ pub mod validation {
         #[snafu(display("cannot store data: {key} ({path})"), visibility(pub(crate)))]
         CannotStoreData { key: Key, path: String },
         #[snafu(
+            display("cannot store scene data: {key} ({path})"),
+            visibility(pub(crate))
+        )]
+        CannotStoreSceneData { key: SceneKey, path: String },
+        #[snafu(
             display("cannot store subtitle: {key} ({value})"),
             visibility(pub(crate))
         )]
@@ -93,14 +130,22 @@ pub mod validation {
         CannotStoreSettings,
         #[snafu(display("cannot store id: {id}"), visibility(pub(crate)))]
         CannotStoreAgnosticId { id: Id },
+        #[snafu(display("cannot store scene id: {id}"), visibility(pub(crate)))]
+        CannotStoreSceneId { id: SceneId },
         #[snafu(display("IO: {source}"), visibility(pub(crate)))]
         IO { source: std::io::Error },
     }
 }
 
-impl From<self::registry::Error> for self::Error {
-    fn from(source: self::registry::Error) -> Self {
+impl From<self::registry::Error<CName>> for self::Error {
+    fn from(source: self::registry::Error<CName>) -> Self {
         Self::Registry { source }
+    }
+}
+
+impl From<self::registry::Error<Cruid>> for self::Error {
+    fn from(source: self::registry::Error<Cruid>) -> Self {
+        Self::SceneRegistry { source }
     }
 }
 

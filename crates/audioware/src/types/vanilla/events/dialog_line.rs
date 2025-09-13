@@ -1,3 +1,4 @@
+use audioware_bank::error::registry::ErrorDisplay;
 use red4ext_rs::{
     NativeRepr, ScriptClass,
     class_kind::Native,
@@ -54,9 +55,14 @@ impl AsRef<Event> for StopDialogLine {
     }
 }
 
-impl AsRef<IScriptable> for StopDialogLine {
-    fn as_ref(&self) -> &IScriptable {
-        self.base.as_ref()
+impl std::fmt::Display for StopDialogLine {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "string_id {}, fade_out {}",
+            self.string_id.error_display(),
+            self.fade_out
+        )
     }
 }
 
