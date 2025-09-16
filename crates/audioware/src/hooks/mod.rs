@@ -7,6 +7,7 @@ mod onscreen_vo;
 mod sound_component;
 mod time_dilatable;
 mod time_system;
+mod vo;
 
 #[cfg(debug_assertions)]
 mod entity;
@@ -56,6 +57,7 @@ pub fn attach(env: &SdkEnv) {
 #[doc(hidden)]
 mod offsets {
     pub const AUDIO_PLAY_DIALOG_LINE: u32                       = 0x28F53A76;   // 0x1405FC310 (2.3)
+    pub const VO_STORAGE_GET_VO_FILE: u32                       = 0x899C28D0;   // 0x140A93F84 (2.31)
     pub const AUDIOSYSTEM_PLAY: u32                             = 0xCDB11D0E;   // 0x140974F58 (2.12a)
     pub const AUDIOSYSTEM_STOP: u32                             = 0xD2781D1E;   // 0x1424503F8 (2.12a)
     pub const AUDIOSYSTEM_SWITCH: u32                           = 0x15081DEA;   // 0x140291688 (2.12a)

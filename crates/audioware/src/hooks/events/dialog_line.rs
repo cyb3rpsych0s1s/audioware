@@ -1,6 +1,7 @@
 use red4ext_rs::{ScriptClass, types::IScriptable};
 
 use crate::{DialogLine, DialogLineEventData, Entity, attach_native_event};
+use audioware_bank::error::registry::ErrorDisplay;
 
 attach_native_event!(super::super::offsets::EVENT_DIALOGLINE, crate::DialogLine);
 
@@ -33,7 +34,7 @@ unsafe extern "C" fn detour(
             .map(|x| x.entity_id);
         crate::utils::lifecycle!(
             "intercepted {} on {classname} ({id:?}):
-- data.string_id {string_id:?}
+- data.string_id {}
 - data.context {context}
 - data.expression {expression}
 - data.is_player {is_player}
@@ -42,7 +43,8 @@ unsafe extern "C" fn detour(
 - data.custom_vo_event {custom_vo_event}
 - data.seek_time {seek_time}
 - data.playback_speed_parameter {playback_speed_parameter}",
-            DialogLine::NAME
+            DialogLine::NAME,
+            string_id.error_display()
         );
         cb(a1, a2);
     }

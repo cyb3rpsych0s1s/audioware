@@ -50,16 +50,13 @@ impl With<SceneDialogSettings> for StaticSoundData {
     where
         Self: Sized,
     {
-        if settings.is_rewind {
-            return self.start_position(match self.settings.start_position {
-                PlaybackPosition::Seconds(x) => {
-                    PlaybackPosition::Seconds(x + settings.seek_time as f64)
-                }
-                PlaybackPosition::Samples(x) => PlaybackPosition::Samples(
-                    x + (settings.seek_time * self.sample_rate as f32) as usize,
-                ),
-            });
-        }
-        self
+        self.start_position(match self.settings.start_position {
+            PlaybackPosition::Seconds(x) => {
+                PlaybackPosition::Seconds(x + settings.seek_time as f64)
+            }
+            PlaybackPosition::Samples(x) => PlaybackPosition::Samples(
+                x + (settings.seek_time * self.sample_rate as f32) as usize,
+            ),
+        })
     }
 }

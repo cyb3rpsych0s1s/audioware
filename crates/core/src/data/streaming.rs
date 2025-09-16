@@ -52,17 +52,14 @@ impl<E: Send> With<SceneDialogSettings> for StreamingSoundData<E> {
     where
         Self: Sized,
     {
-        if settings.is_rewind {
-            let given = self.settings.start_position;
-            return self.start_position(match given {
-                PlaybackPosition::Seconds(x) => {
-                    PlaybackPosition::Seconds(x + settings.seek_time as f64)
-                }
-                PlaybackPosition::Samples(_) => {
-                    unreachable!("samples unit is not supported with streaming sound yet")
-                }
-            });
-        }
-        self
+        let given = self.settings.start_position;
+        self.start_position(match given {
+            PlaybackPosition::Seconds(x) => {
+                PlaybackPosition::Seconds(x + settings.seek_time as f64)
+            }
+            PlaybackPosition::Samples(_) => {
+                unreachable!("samples unit is not supported with streaming sound yet")
+            }
+        })
     }
 }
