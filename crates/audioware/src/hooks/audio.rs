@@ -16,8 +16,8 @@ a2: VoidPtr,
 a3: EntityId,
 a4: CName,
 a5: bool,
-a6: *const u32,
-a7: *const CName,
+a6: *mut u32,
+a7: *mut CName,
 a8: f32,
 a9: CName) -> bool;
     }
@@ -38,8 +38,8 @@ unsafe extern "C" fn detour(
     a3: EntityId,
     a4: CName,
     a5: bool,
-    a6: *const u32,
-    a7: *const CName,
+    a6: *mut u32,
+    a7: *mut CName,
     a8: f32,
     a9: CName,
     cb: unsafe extern "C" fn(
@@ -48,8 +48,8 @@ unsafe extern "C" fn detour(
         a3: EntityId,
         a4: CName,
         a5: bool,
-        a6: *const u32,
-        a7: *const CName,
+        a6: *mut u32,
+        a7: *mut CName,
         a8: f32,
         a9: CName,
     ) -> bool,
@@ -65,6 +65,19 @@ unsafe extern "C" fn detour(
         let expression = data.expression;
         let seek_time = data.seek_time;
         let playback_speed_parameter = data.playback_speed_parameter;
+        let modded = Engine::<CpalBackend>::exists_for_scene(&string_id);
+        if modded {
+            crate::engine::queue::send(Command::PlaySceneDialog {
+                string_id,
+                is_player,
+                is_holocall,
+                is_rewind,
+                entity_id: a3,
+                seek_time,
+            });
+        }
+        // still let the engine carry on, to handle subtitle
+        let out = cb(a1, a2, a3, a4, a5, a6, a7, a8, a9);
         if a7.is_null() || (*a7).as_str() != "vo_global_tv" {
             crate::utils::intercept!(
                 "audio::PlayDialogLine
@@ -84,7 +97,8 @@ unsafe extern "C" fn detour(
         - has_helmet: {a5}
         - vo_event_override: {}
         - played_vo_event: {}
-        - tag_event: {}",
+        - tag_event: {}
+        -> {out}",
                 string_id.error_display(),
                 data.custom_vo_event.as_str(),
                 if a6.is_null().not() {
@@ -102,19 +116,6 @@ unsafe extern "C" fn detour(
                 a9.as_str()
             );
         }
-        let modded = Engine::<CpalBackend>::exists_for_scene(&string_id);
-        if Engine::<CpalBackend>::exists_for_scene(&string_id) {
-            crate::engine::queue::send(Command::PlaySceneDialog {
-                string_id,
-                is_player,
-                is_holocall,
-                is_rewind,
-                entity_id: a3,
-                seek_time,
-            });
-        }
-        // still let the engine carry on, to handle subtitle
-        let out = cb(a1, a2, a3, a4, a5, a6, a7, a8, a9);
-        out || modded
+        out
     }
 }
