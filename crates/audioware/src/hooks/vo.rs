@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use audioware_bank::error::registry::ErrorDisplay;
 use red4ext_rs::VoidPtr;
 use red4ext_rs::types::{Cruid, RaRef};

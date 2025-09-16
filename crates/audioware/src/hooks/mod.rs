@@ -21,7 +21,6 @@ mod script_audio_player;
 mod events;
 
 pub fn attach(env: &SdkEnv) {
-    vo::attach_hook(env);
     sound_component::attach_hook(env);
     audio::attach_hook(env);
     audio_system::attach_hooks(env);
