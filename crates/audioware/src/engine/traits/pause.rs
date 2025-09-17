@@ -13,12 +13,14 @@ pub trait Pause {
 }
 
 impl Pause for StaticSoundHandle {
+    #[inline]
     fn pause(&mut self, tween: Tween) {
         self.pause(tween);
     }
 }
 
 impl<E> Pause for StreamingSoundHandle<E> {
+    #[inline]
     fn pause(&mut self, tween: Tween) {
         self.pause(tween);
     }
@@ -28,6 +30,7 @@ impl<K, V> Pause for RawHandle<K, V>
 where
     V: Pause,
 {
+    #[inline]
     fn pause(&mut self, tween: Tween) {
         self.value.pause(tween);
     }
@@ -37,6 +40,7 @@ impl<K, V, O> Pause for Handle<K, V, O>
 where
     V: Pause,
 {
+    #[inline]
     fn pause(&mut self, tween: Tween) {
         self.handle.pause(tween);
     }
@@ -46,12 +50,14 @@ impl<K, V, O> Pause for Handles<K, V, O>
 where
     V: Pause,
 {
+    #[inline]
     fn pause(&mut self, tween: Tween) {
         self.0.iter_mut().for_each(|x| x.handle.pause(tween));
     }
 }
 
 impl<K, O, E> Pause for DualHandles<K, O, E> {
+    #[inline]
     fn pause(&mut self, tween: Tween) {
         self.statics.pause(tween);
         self.streams.pause(tween);
@@ -63,6 +69,7 @@ where
     V: Pause,
     K: Eq + Hash,
 {
+    #[inline]
     fn pause(&mut self, tween: Tween) {
         self.value_mut().pause(tween);
     }
@@ -73,6 +80,7 @@ where
     V: Pause,
     K: Eq + Hash,
 {
+    #[inline]
     fn pause(&mut self, tween: Tween) {
         self.iter_mut().for_each(|mut x| x.pause(tween));
     }
