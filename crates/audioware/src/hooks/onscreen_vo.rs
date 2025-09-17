@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use red4ext_rs::{
     VoidPtr,
     types::{Cruid, RedString},
