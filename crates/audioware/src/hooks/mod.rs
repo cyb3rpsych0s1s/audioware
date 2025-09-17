@@ -13,17 +13,17 @@ mod ink_menu_scenario;
 mod save_handling_controller;
 
 #[cfg(feature = "research")]
+mod events;
+#[cfg(feature = "research")]
+mod ink_logic_controller;
+#[cfg(feature = "research")]
 mod localization_manager;
 #[cfg(feature = "research")]
 mod onscreen_vo;
 #[cfg(feature = "research")]
-mod vo;
-#[cfg(feature = "research")]
 mod script_audio_player;
 #[cfg(feature = "research")]
-mod ink_logic_controller;
-#[cfg(feature = "research")]
-mod events;
+mod vo;
 
 pub fn attach(env: &SdkEnv) {
     sound_component::attach_hook(env);
