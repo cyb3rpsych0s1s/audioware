@@ -56,22 +56,26 @@ impl<K, V, O> Handle<K, V, O> {
 }
 
 impl<K> RawHandle<K, StaticSoundHandle> {
+    #[inline]
     pub fn any_playing_handle(&self) -> bool {
         self.value.state() == PlaybackState::Playing
     }
 }
 
 impl<K, E> RawHandle<K, StreamingSoundHandle<E>> {
+    #[inline]
     pub fn any_playing_handle(&self) -> bool {
         self.value.state() == PlaybackState::Playing
     }
 }
 
 impl<K, O, E> DualHandles<K, O, E> {
+    #[inline]
     pub fn any_playing_handle(&self) -> bool {
         self.statics.0.iter().any(|x| x.handle.any_playing_handle())
             || self.streams.0.iter().any(|x| x.handle.any_playing_handle())
     }
+    #[inline]
     pub fn any_handle(&self) -> bool {
         !self.statics.0.is_empty() || !self.streams.0.is_empty()
     }
