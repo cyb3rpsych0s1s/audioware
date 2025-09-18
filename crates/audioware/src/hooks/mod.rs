@@ -2,23 +2,28 @@ use red4ext_rs::SdkEnv;
 
 mod audio;
 mod audio_system;
-mod localization_manager;
-mod onscreen_vo;
 mod sound_component;
 mod time_dilatable;
 mod time_system;
-mod vo;
 
 #[cfg(debug_assertions)]
 mod entity;
-mod ink_logic_controller;
 mod ink_menu_scenario;
 #[cfg(debug_assertions)]
 mod save_handling_controller;
-mod script_audio_player;
 
 #[cfg(feature = "research")]
 mod events;
+#[cfg(feature = "research")]
+mod ink_logic_controller;
+#[cfg(feature = "research")]
+mod localization_manager;
+#[cfg(feature = "research")]
+mod onscreen_vo;
+#[cfg(feature = "research")]
+mod script_audio_player;
+#[cfg(feature = "research")]
+mod vo;
 
 pub fn attach(env: &SdkEnv) {
     sound_component::attach_hook(env);
@@ -27,6 +32,7 @@ pub fn attach(env: &SdkEnv) {
     time_dilatable::attach_hooks(env);
     time_system::attach_hooks(env);
     ink_menu_scenario::attach_hooks(env);
+
     #[cfg(feature = "research")]
     {
         onscreen_vo::attach_hook(env);
@@ -57,7 +63,6 @@ pub fn attach(env: &SdkEnv) {
 #[doc(hidden)]
 mod offsets {
     pub const AUDIO_PLAY_DIALOG_LINE: u32                       = 0x28F53A76;   // 0x1405FC310 (2.3)
-    pub const VO_STORAGE_GET_VO_FILE: u32                       = 0x899C28D0;   // 0x140A93F84 (2.31)
     pub const AUDIOSYSTEM_PLAY: u32                             = 0xCDB11D0E;   // 0x140974F58 (2.12a)
     pub const AUDIOSYSTEM_STOP: u32                             = 0xD2781D1E;   // 0x1424503F8 (2.12a)
     pub const AUDIOSYSTEM_SWITCH: u32                           = 0x15081DEA;   // 0x140291688 (2.12a)
@@ -73,16 +78,23 @@ mod offsets {
     pub const SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME: u32     = 0x9AB824D9;   // 0x14083FB6C (2.13)
     pub const INKMENUSCENARIO_SWITCH_TO_SCENARIO: u32           = 0xE9B92059;   // 0x1409CF068 (2.3)
     pub const INKMENUSCENARIO_QUEUE_EVENT: u32                  = 0x56A9218A;   // 0x14130F6B8 (2.3)
-    pub const INKLOGICCONTROLLER_QUEUE_EVENT: u32               = 0xC87F2007;   // 0x1408663B0 (2.3)
-    pub const SCRIPTAUDIOPLAYER_PLAY_SINGLE: u32                = 0x90251060;   // 0x1406944E0 (2.3)
-    pub const SCRIPTAUDIOPLAYER_PLAY_THREE: u32                 = 0x8B616DE;    // 0x1421A25DC (2.3)
-    pub const SCRIPTAUDIOPLAYER_PLAY_UNIQUE_WITH_SEEK: u32      = 0xD02C1648;   // 0x1421A2644 (2.3)
-    pub const SCRIPTAUDIOPLAYER_STOP: u32                       = 0x92EC1070;   // 0x1421A272C (2.3)
-    pub const SCRIPTAUDIOPLAYER_SET_SWITCH: u32                 = 0x50D1298;    // 0x1421A26F4 (2.3)
-    pub const SCRIPTAUDIOPLAYER_SET_PARAMETER: u32              = 0x447413E4;   // 0x1421A26BC (2.3)
-    pub const LOCALIZATIONMANAGER_RESOLVEFILENAME: u32          = 0x8D2C2B6E;   // 0x142045B38 (2.3)
-    pub const ONSCREENVOPLAYERCONTROLLER_SHOWSUBTITLE: u32      = 0xFE3C1D52;   // 0x1404F42A0 (2.3)
     pub const SOUNDCOMPONENT_ONSTOPDIALOGLINE: u32              = 0xD4F11D73;   // 0x1405FCB28 (2.3)
+    
+    #[cfg(feature = "research")]
+    mod natives {
+        pub const INKLOGICCONTROLLER_QUEUE_EVENT: u32               = 0xC87F2007;   // 0x1408663B0 (2.3)
+        pub const VO_STORAGE_GET_VO_FILE: u32                       = 0x899C28D0;   // 0x140A93F84 (2.31)
+        pub const LOCALIZATIONMANAGER_RESOLVEFILENAME: u32          = 0x8D2C2B6E;   // 0x142045B38 (2.3)
+        pub const ONSCREENVOPLAYERCONTROLLER_SHOWSUBTITLE: u32      = 0xFE3C1D52;   // 0x1404F42A0 (2.3)
+        pub const SCRIPTAUDIOPLAYER_PLAY_SINGLE: u32                = 0x90251060;   // 0x1406944E0 (2.3)
+        pub const SCRIPTAUDIOPLAYER_PLAY_THREE: u32                 = 0x8B616DE;    // 0x1421A25DC (2.3)
+        pub const SCRIPTAUDIOPLAYER_PLAY_UNIQUE_WITH_SEEK: u32      = 0xD02C1648;   // 0x1421A2644 (2.3)
+        pub const SCRIPTAUDIOPLAYER_STOP: u32                       = 0x92EC1070;   // 0x1421A272C (2.3)
+        pub const SCRIPTAUDIOPLAYER_SET_SWITCH: u32                 = 0x50D1298;    // 0x1421A26F4 (2.3)
+        pub const SCRIPTAUDIOPLAYER_SET_PARAMETER: u32              = 0x447413E4;   // 0x1421A26BC (2.3)
+    }
+    #[cfg(feature = "research")]
+    pub use natives::*;
 
     #[cfg(feature = "research")]
     mod events {

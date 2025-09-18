@@ -7,18 +7,21 @@ pub trait Clear {
 }
 
 impl<K, O> Clear for Handles<K, StaticSoundHandle, O> {
+    #[inline]
     fn clear(&mut self) {
         self.0.clear();
     }
 }
 
 impl<K, O, E> Clear for Handles<K, StreamingSoundHandle<E>, O> {
+    #[inline]
     fn clear(&mut self) {
         self.0.clear();
     }
 }
 
 impl<K, O, E> Clear for DualHandles<K, O, E> {
+    #[inline]
     fn clear(&mut self) {
         self.statics.clear();
         self.streams.clear();

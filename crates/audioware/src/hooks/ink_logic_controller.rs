@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::mem;
 
 use red4ext_rs::{

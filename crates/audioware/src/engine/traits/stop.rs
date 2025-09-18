@@ -21,12 +21,14 @@ pub trait StopBy<K> {
 }
 
 impl Stop for StaticSoundHandle {
+    #[inline]
     fn stop(&mut self, tween: Tween) {
         self.stop(tween);
     }
 }
 
 impl<E> Stop for StreamingSoundHandle<E> {
+    #[inline]
     fn stop(&mut self, tween: Tween) {
         self.stop(tween);
     }
@@ -36,6 +38,7 @@ impl<K, V, O> Stop for Handle<K, V, O>
 where
     V: Stop,
 {
+    #[inline]
     fn stop(&mut self, tween: Tween) {
         self.handle.value.stop(tween);
     }
@@ -46,6 +49,7 @@ where
     K: PartialEq,
     V: Stop,
 {
+    #[inline]
     fn stop_by(&mut self, key: &K, tween: Tween) {
         self.handle.stop_by(key, tween);
     }
@@ -55,6 +59,7 @@ impl<V> StopBy<(CName, Option<EntityId>, Option<CName>)> for Handles<CName, V, T
 where
     V: Stop,
 {
+    #[inline]
     fn stop_by(&mut self, key: &(CName, Option<EntityId>, Option<CName>), tween: Tween) {
         self.0
             .iter_mut()
@@ -70,6 +75,7 @@ where
 impl<E> StopBy<(CName, Option<EntityId>, Option<CName>)>
     for DualHandles<CName, TrackEntryOptions, E>
 {
+    #[inline]
     fn stop_by(&mut self, key: &(CName, Option<EntityId>, Option<CName>), tween: Tween) {
         self.statics.stop_by(key, tween);
         self.streams.stop_by(key, tween);
@@ -77,6 +83,7 @@ impl<E> StopBy<(CName, Option<EntityId>, Option<CName>)>
 }
 
 impl<E> StopBy<Cruid> for DualHandles<Cruid, (), E> {
+    #[inline]
     fn stop_by(&mut self, key: &Cruid, tween: Tween) {
         self.statics.stop_by(key, tween);
         self.streams.stop_by(key, tween);
@@ -87,6 +94,7 @@ impl<K, V> Stop for RawHandle<K, V>
 where
     V: Stop,
 {
+    #[inline]
     fn stop(&mut self, tween: Tween) {
         self.value.stop(tween);
     }
@@ -97,6 +105,7 @@ where
     K: PartialEq,
     V: Stop,
 {
+    #[inline]
     fn stop_by(&mut self, key: &K, tween: Tween) {
         if *key == self.key {
             self.value.stop(tween);
@@ -108,6 +117,7 @@ impl<K, V, O> Stop for Handles<K, V, O>
 where
     V: Stop,
 {
+    #[inline]
     fn stop(&mut self, tween: Tween) {
         self.0.iter_mut().for_each(|x| x.stop(tween));
     }
@@ -118,12 +128,14 @@ where
     K: PartialEq,
     V: Stop,
 {
+    #[inline]
     fn stop_by(&mut self, key: &K, tween: Tween) {
         self.0.iter_mut().for_each(|x| x.stop_by(key, tween));
     }
 }
 
 impl<K, O, E> Stop for DualHandles<K, O, E> {
+    #[inline]
     fn stop(&mut self, tween: Tween) {
         self.statics.stop(tween);
         self.streams.stop(tween);
@@ -131,6 +143,7 @@ impl<K, O, E> Stop for DualHandles<K, O, E> {
 }
 
 impl<O, E> StopBy<CName> for DualHandles<CName, O, E> {
+    #[inline]
     fn stop_by(&mut self, key: &CName, tween: Tween) {
         self.statics.stop_by(key, tween);
         self.streams.stop_by(key, tween);
@@ -142,6 +155,7 @@ where
     V: Stop,
     K: Eq + Hash,
 {
+    #[inline]
     fn stop(&mut self, tween: Tween) {
         self.value_mut().stop(tween);
     }
