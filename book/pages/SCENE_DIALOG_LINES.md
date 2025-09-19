@@ -4,11 +4,11 @@ Audioware allows to use custom audio in Quest Scenes dialog lines, which can be 
 
 ## Preambule
 
-A scene a.k.a [scnSceneResource](scnSceneResource) contains multiple nodes a.k.a [scnSectionNode](scnSectionNode) chained together to create a dialogue between V and NPCs and other interactions.
+A scene a.k.a [scnSceneResource][scnSceneResource] contains multiple nodes a.k.a [scnSectionNode][scnSectionNode] chained together to create a dialogue between V and NPCs and other interactions.
 
 Thanks to WolvenKit Editor you can already visualize Quests, including their Phases and Scenes.
 
-Multiple scene section nodes can contain a dialog line event a.k.a [scnDialogLineEvent](scnDialogLineEvent).
+Multiple scene section nodes can contain a dialog line event a.k.a [scnDialogLineEvent][scnDialogLineEvent].
 
 ![multiple nodes, single event](./SCENE_DIALOG_LINES/assets/chaining-scene-dialog-line-events-across-multiple-nodes.png)
 
@@ -47,7 +47,7 @@ Scavs with digital masks, humanoids with clothing or cyberware covering their li
 
 Since the topic is hairy, a [sample example .scene is provided in the repo](https://github.com/cyb3rpsych0s1s/audioware/tree/main/examples/scenes),
 on which the following documentation is directly based so that you can follow along,
-a courtesy of [MrBill](MrBill).
+a courtesy of [MrBill][MrBill].
 
 ## Actor
 
@@ -55,11 +55,11 @@ In order to voice a dialogue you must first define the actors.
 
 At a minimum, there's a `speaker` (the one who talks), and an `addressee` (the one being talked to).
 
-The [actors](actors) field in the [scnSceneResource](scnSceneResource) defines all the actor(s), except for the player's actor(s).
+The [actors][actors] field in the [scnSceneResource][scnSceneResource] defines all the actor(s), except for the player's actor(s).
 
 ![non-player actors](./SCENE_DIALOG_LINES/assets/actors.png)
 
-The player's actor(s) can be found under [playerActors](playerActors).
+The player's actor(s) can be found under [playerActors][playerActors].
 
 ![player actors](./SCENE_DIALOG_LINES/assets/player-actors.png)
 
@@ -203,7 +203,7 @@ Let's imagine you need a 8s long silent `.wem` as a placeholder for your lipsync
 1. create an empty `Sound SFX Container` under the `Default Work Unit` in `Actor-Mixer Hierarchy`.
    ![create sound sfx container](./SCENE_DIALOG_LINES/assets/wwise-create-sound-sfx-container.png)
 1. rename the container to e.g. `8000ms`
-1. import a silent `.wav`: for convenience you can find a [1h-long .wav in the repo](https://github.com/cyb3rpsych0s1s/audioware/blob/main/silence1h.wav), a courtesy of [DBK](DBK), that you can simply trim to the appropriate duration.
+1. import a silent `.wav`: for convenience you can find a [1h-long .wav in the repo](https://github.com/cyb3rpsych0s1s/audioware/blob/main/silence1h.wav), a courtesy of [DBK][DBK], that you can simply trim to the appropriate duration.
    ![import audio](./SCENE_DIALOG_LINES/assets/wwise-import-audio.png)
 1. don't forget to use `Sound SFX`
    ![use sound sfx](./SCENE_DIALOG_LINES/assets/wwise-import-settings.png)
@@ -272,7 +272,7 @@ Here's a quick schema summarizing the resources and their dependencies.
 
 ![scene resources](./SCENE_DIALOG_LINES/assets/resources.png)
 
-Big tokens of appreciation to [MisterChedda](MisterChedda), [MrBill](MrBill), [DBK](DBK) and [Dedra](Dedra) without whom this feature would probably have never been finished!
+Big tokens of appreciation to [MisterChedda][MisterChedda], [MrBill][MrBill], [DBK][DBK] and [Dedra][Dedra] without whom this feature would probably have never been finished!
 
 [scnSceneResource]: https://nativedb.red4ext.com/scnSceneResource
 [actors]: https://nativedb.red4ext.com/scnSceneResource#actors
