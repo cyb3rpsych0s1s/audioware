@@ -125,6 +125,18 @@ It links to the map for a given language.
 
 ## Lipsync
 
+At the time of writing, creating custom lipsync animation is not possible yet.
+
+That being said, you can apply the trick that the movie industry has been using for over 50 years already when dubbing movies in foreign languages: find a lipsync animation that roughly matches both the duration and flow of the speech, and uses it.
+
+It's not perfect, but when carefully picked it usually does the trick.
+
+```admonish tip
+You will usually be tempted to create a custom audio for your sentence first, then search for the [corresponding lipsync animations in SoundDB](https://sounddb.redmodding.org/subtitles).
+
+Although it might seem counter-intuitive at first, the reverse workflow generally yields a better outcome: find some interesting sentence which roughly match what you want your character to say, and then generate the closest possible sentence to match the lipsync!
+```
+
 ### lipsync animation
 
 First define the `.anims`:
@@ -153,18 +165,58 @@ It links the localization string ID to the audio asset for each gender.
 
 ### silent .wem
 
-Another peculiarity of the RED engine is that it will start playing a lipsync anim as long as a `.wem` exits, but if its duration does not match the lipsync anim it will abruptly stop playing it halfway.
+Another peculiarity of the RED engine is that it will start playing a lipsync anim as long as a `.wem` exits, but if its duration does not match with lipsync anim it will abruptly stop playing it before reaching its end.
 
 This is why, at the time of writing, creating silent `.wem` with matching duration is a necessary evil.
 
 The most common way to do it is with Wwise.
 
+#### install Wwise
+
+Go to their [download section](https://www.audiokinetic.com/en/download/), you will also need to create an account.
+
+#### create new project
+
+You need to create a project to handle the conversion between `.wav` to `.wem`.
+
+You can use the default suggested settings, but don't forget to specify the `Conversion Settings` to `Vorbis Quality High`.
+
+![project conversion settings](./SCENE_DIALOG_LINES/assets/wwise-project-settings.png)
+
+#### convert silent audio
+
+Let's imagine you need a 8s long silent `.wem` as a placeholder for your lipsync anim.
+
+1. create an empty `Sound SFX Container` under the `Default Work Unit` in `Actor-Mixer Hierarchy`.
+   ![create sound sfx container](./SCENE_DIALOG_LINES/assets/wwise-create-sound-sfx-container.png)
+1. rename the container to e.g. `8000ms`
+1. import a silent `.wav`: for convenience you can find a [1h-long .wav in the repo](../../silence1h.wav), a courtesy of [DBK](DBK), that you can simply trim to the appropriate duration.
+   ![import audio](./SCENE_DIALOG_LINES/assets/wwise-import-audio.png)
+1. don't forget to use `Sound SFX`
+   ![use sound sfx](./SCENE_DIALOG_LINES/assets/wwise-import-settings.png)
+1. if you need to do multiple silent `.wem` of different durations, it is fine to reuse the same asset.
+   ![reuse audio on import](./SCENE_DIALOG_LINES/assets/wwise-import-reuse.png)
+1. then trim the audio, e.g. to `8` seconds.
+   ![trim audio](./SCENE_DIALOG_LINES/assets/wwise-trim-audio.png)
+1. before converting, make sure the `Conversion Settings` for the container is set to `Vorbis Quality High`
+   ![container conversion settings](./SCENE_DIALOG_LINES/assets/wwise-conversion-settings.png)
+1. convert the trimmed `.wav` to `.wem`
+   ![convert audio](./SCENE_DIALOG_LINES/assets/wwise-convert-audio.png)
+1. copy the converted `.wem` from Wwise cache (`.cache` folder by default). Each asset is identified by its hexadecimal, so it's important to select the appropriate one, usually the latest.
+   ![pick wem file](./SCENE_DIALOG_LINES/assets/wwise-grab-cache.png)
+1. finally paste it in your WolvenKit `archive`.
+
 ## Overview
+
+Ok this was a mouthful!
+
+Here's a quick schema summarizing the resources and their dependencies.
 
 ![scene resources](./SCENE_DIALOG_LINES/assets/resources.png)
 
 [scnSceneResource]: https://nativedb.red4ext.com/scnSceneResource
-[actors](https://nativedb.red4ext.com/scnSceneResource#actors)
-[playerActors](https://nativedb.red4ext.com/scnSceneResource#playerActors)
+[actors]: https://nativedb.red4ext.com/scnSceneResource#actors
+[playerActors]: https://nativedb.red4ext.com/scnSceneResource#playerActors
 [scnSectionNode]: https://nativedb.red4ext.com/scnSectionNode
 [scnDialogLineEvent]: https://nativedb.red4ext.com/scnDialogLineEvent
+[DBK]: https://next.nexusmods.com/profile/DBK01
