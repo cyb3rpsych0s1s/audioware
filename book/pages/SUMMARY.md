@@ -25,3 +25,4 @@ It's built with emphasis on getting you going fast, providing sensible defaults 
       - [Scene Dialog Lines](./SCENE_DIALOG_LINES.md)
     - [Internal docs](./DOCS.md)
   - [Integration](./INTEGRATION.md)
+- [Plugin settings](./MOD_SETTINGS.md)
