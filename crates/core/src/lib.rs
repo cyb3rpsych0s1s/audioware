@@ -32,7 +32,7 @@ pub trait AudioDuration {
 
     /// Total duration, regardless of slice and settings.
     ///
-    /// Requires `self` for [StreamingSoundData][kira::sound::streaming::StreamingSoundData].
+    /// Requires `self` for [StreamingSoundData].
     fn total_duration(self) -> Duration;
 }
 
