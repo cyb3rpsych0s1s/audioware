@@ -22,5 +22,6 @@ It's built with emphasis on getting you going fast, providing sensible defaults 
       - [Dynamic Settings](./AUDIO_SETTINGS_EXT.md)
       - [Parameters](./PARAMETERS.md)
       - [Spatialization](./SPATIALIZATION.md)
+      - [Scene Dialog Lines](./SCENE_DIALOG_LINES.md)
     - [Internal docs](./DOCS.md)
   - [Integration](./INTEGRATION.md)

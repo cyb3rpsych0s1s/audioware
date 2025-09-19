@@ -45,8 +45,9 @@ For a large portion of NPCs it's gonna be the same: devices, drones, droids, cyb
 Scavs with digital masks, humanoids with clothing or cyberware covering their lips also fall into this category.
 ```
 
-Since the topic is hairy, a [sample example .scene is provided in the repo](../../examples/scenes),
-on which the following documentation is directly based so that you can follow along.
+Since the topic is hairy, a [sample example .scene is provided in the repo](https://github.com/cyb3rpsych0s1s/audioware/tree/main/examples/scenes),
+on which the following documentation is directly based so that you can follow along,
+a courtesy of [MrBill](MrBill).
 
 ## Actor
 
@@ -153,6 +154,18 @@ Then, define the `.lipmap`:
 
 It links the actors by their voice tag to the lipsync animation and subtitles for a given language.
 
+### lipsync map localization
+
+Don't forget to register the `.lipmap` in the `.xl` manifest:
+
+```yml
+# resources\audiowaredialogtest.archive.xl
+localization:
+  # ...
+  lipmaps:
+    en-us: mod\audiowaredialogtest\localization\en-us\lipsync\dialogtest.lipmap
+```
+
 ### voiceover map
 
 By default the RED engine won't play lipsync at all if there's no associated `.wem`(s).
@@ -190,7 +203,7 @@ Let's imagine you need a 8s long silent `.wem` as a placeholder for your lipsync
 1. create an empty `Sound SFX Container` under the `Default Work Unit` in `Actor-Mixer Hierarchy`.
    ![create sound sfx container](./SCENE_DIALOG_LINES/assets/wwise-create-sound-sfx-container.png)
 1. rename the container to e.g. `8000ms`
-1. import a silent `.wav`: for convenience you can find a [1h-long .wav in the repo](../../silence1h.wav), a courtesy of [DBK](DBK), that you can simply trim to the appropriate duration.
+1. import a silent `.wav`: for convenience you can find a [1h-long .wav in the repo](https://github.com/cyb3rpsych0s1s/audioware/blob/main/silence1h.wav), a courtesy of [DBK](DBK), that you can simply trim to the appropriate duration.
    ![import audio](./SCENE_DIALOG_LINES/assets/wwise-import-audio.png)
 1. don't forget to use `Sound SFX`
    ![use sound sfx](./SCENE_DIALOG_LINES/assets/wwise-import-settings.png)
@@ -206,17 +219,67 @@ Let's imagine you need a 8s long silent `.wem` as a placeholder for your lipsync
    ![pick wem file](./SCENE_DIALOG_LINES/assets/wwise-grab-cache.png)
 1. finally paste it in your WolvenKit `archive`.
 
+### voiceover map localization
+
+Don't forget to register the `.json` in the `.xl` manifest:
+
+```yml
+# resources\audiowaredialogtest.archive.xl
+localization:
+  # ...
+  vomaps:
+    en-us: mod\audiowaredialogtest\localization\en-us\vo\voiceovermap.json
+```
+
+### string id variants map
+
+Last but not least, there's an additional file which contains the duration (or length) of the string IDs.
+If you browse vanilla files, you can find it under e.g. `base\localization\en-us\stringidvariantlengthsreport.json`.
+
+At the time of writing ArchiveXL does not support creating custom ones just yet,
+so here's how you can do with Codeware instead:
+
+```swift
+class ATStringidVariantLengthsReportService extends ScriptableService {
+  private cb func OnLoad() {
+    GameInstance
+      .GetCallbackSystem()
+      .RegisterCallback(n"Resource/PostLoad", this, n"OnPostLoad")
+      .AddTarget(
+        ResourceTarget.Path(r"base\\localization\\en-us\\stringidvariantlengthsreport.json")
+      );
+  }
+
+  private cb func OnPostLoad(event: ref<ResourceEvent>) {
+    let resource: ref<JsonResource> = event.GetResource() as JsonResource;
+    let map: ref<locVoiceoverLengthMap> = resource.root as locVoiceoverLengthMap;
+
+    let panamline1: locVoLengthEntry;
+    panamline1.stringId = HashToCRUID(13159259729229609924ul);
+    panamline1.femaleLength = 4.9;
+    panamline1.maleLength = 4.9;
+
+    ArrayPush(map.entries, panamline1);
+  }
+}
+```
+
 ## Overview
 
-Ok this was a mouthful!
+Ok, this was a mouthful!
 
 Here's a quick schema summarizing the resources and their dependencies.
 
 ![scene resources](./SCENE_DIALOG_LINES/assets/resources.png)
+
+Big tokens of appreciation to [MisterChedda](MisterChedda), [MrBill](MrBill), [DBK](DBK) and [Dedra](Dedra) without whom this feature would probably have never been finished!
 
 [scnSceneResource]: https://nativedb.red4ext.com/scnSceneResource
 [actors]: https://nativedb.red4ext.com/scnSceneResource#actors
 [playerActors]: https://nativedb.red4ext.com/scnSceneResource#playerActors
 [scnSectionNode]: https://nativedb.red4ext.com/scnSectionNode
 [scnDialogLineEvent]: https://nativedb.red4ext.com/scnDialogLineEvent
+[MrBill]: https://github.com/MrBilL61
+[MisterChedda]: https://next.nexusmods.com/profile/MisterChedda
 [DBK]: https://next.nexusmods.com/profile/DBK01
+[Dedra]: https://next.nexusmods.com/profile/dederara
