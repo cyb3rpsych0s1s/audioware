@@ -274,7 +274,7 @@ And here's the result, thanks to [MrBill][MrBill] for the `.scene` comparing:
 | modded   | audioware mp3   | vanilla |
 
 ```admonish youtube title="YouTube demo"
-<iframe width="100%" height="420" src="https://youtu.be/8ZxQGmgXOUQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="100%" height="420" src="https://www.youtube.com/embed/8ZxQGmgXOUQ?si=3jz8anszKNfp3P7z" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 ```
 
 ## Overview
