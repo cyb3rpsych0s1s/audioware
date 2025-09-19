@@ -264,6 +264,19 @@ class ATStringidVariantLengthsReportService extends ScriptableService {
 }
 ```
 
+## Showcase
+
+And here's the result, thanks to [MrBill][MrBill] for the `.scene` comparing:
+| sentence | audio           | lipsync |
+|----------|-----------------|---------|
+| vanilla  | vanilla wem     | vanilla |
+| vanilla  | audioware mp3   | vanilla |
+| modded   | audioware mp3   | vanilla |
+
+```admonish youtube title="YouTube demo"
+<iframe width="100%" height="420" src="https://youtu.be/8ZxQGmgXOUQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+```
+
 ## Overview
 
 Ok, this was a mouthful!
