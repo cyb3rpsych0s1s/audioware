@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["BOOL","Error","HRESULT"],"type":["Result"]};

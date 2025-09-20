@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["attach"],"mod":["audio","audio_system","entity","ink_menu_scenario","save_handling_controller","sound_component","time_dilatable","time_system"]};
