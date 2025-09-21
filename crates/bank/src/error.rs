@@ -83,7 +83,7 @@ pub mod validation {
         )]
         ConflictingKey { cname: String },
         #[snafu(
-            display("RUID conflicts with existing id: {cruid} for {locale}"),
+            display("RUID conflicts with existing id: {} for {locale}", *cruid as u64),
             visibility(pub(crate))
         )]
         ConflictingSceneKey { cruid: i64, locale: Locale },
