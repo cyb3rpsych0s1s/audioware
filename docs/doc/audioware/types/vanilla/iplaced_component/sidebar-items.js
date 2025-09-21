@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["IComponent","IPlacedComponent"],"trait":["AsIComponent"]};

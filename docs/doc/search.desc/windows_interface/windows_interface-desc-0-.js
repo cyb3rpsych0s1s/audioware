@@ -1,0 +1,1 @@
+searchState.loadedDescShard("windows_interface", 0, "Define COM interfaces to call or implement.\nDefines a COM interface to call or implement.")
