@@ -1,7 +1,11 @@
 use std::path::PathBuf;
 
 use audioware_core::Amplitude;
+use kira::PlaybackRate;
+use serde::Deserialize;
+use std::time::Duration;
 
+use super::setting::factor_or_semitones;
 use crate::Interpolation;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -15,19 +19,23 @@ pub struct MainMenu {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum MainMenuMusic {
+    SimpleLoop(PathBuf),
+    CustomLoop {
+        file: PathBuf,
+        settings: LoopMainMenuSettings,
+    },
     Crossfade {
         /// Audio file path.
         file: PathBuf,
         /// Volume for both tracks.
         volume: Option<Amplitude>,
         /// How the next track fades-in.
-        fade_in: Option<Fade>,
+        fade_in: Fade,
         /// How the current track fades-out.
-        fade_out: Option<Fade>,
+        fade_out: Fade,
         /// Slice for both tracks.
         region: Option<super::setting::Region>,
     },
-    Loop(LoopMainMenu),
 }
 
 /// Loop the main menu music sequentially.
@@ -77,7 +85,7 @@ mod tests {
     settings:
         volume: 0.5
         region:
-            starts: 2"## ; "custom main menu music loop")]
+            starts: 2s 12ms"## ; "custom main menu music loop")]
     fn music(yaml: &str) {
         let main_menu = serde_yaml::from_str::<MainMenu>(yaml);
         dbg!("{}", &main_menu);

@@ -167,7 +167,7 @@ impl IntoOptionalRegion for self::Region {
     }
 }
 
-fn factor_or_semitones<'de, D>(deserializer: D) -> Result<Option<PlaybackRate>, D::Error>
+pub fn factor_or_semitones<'de, D>(deserializer: D) -> Result<Option<PlaybackRate>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
