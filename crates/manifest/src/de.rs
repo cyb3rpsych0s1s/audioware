@@ -2,7 +2,7 @@
 
 use std::{collections::HashMap, fmt, hash::Hash, path::PathBuf};
 
-use crate::{PlayerGender, ScnDialogLineType, de::main_menu::MainMenu};
+use crate::{PlayerGender, ScnDialogLineType};
 use fixed_map::Map;
 use semver::Version;
 use serde::Deserialize;
@@ -24,6 +24,7 @@ mod voice;
 pub use dialog::*;
 #[doc(hidden)]
 pub use jingle::*;
+pub use main_menu::*;
 pub use music::*;
 pub use ono::*;
 #[doc(hidden)]
@@ -60,6 +61,7 @@ impl fmt::Debug for Manifest {
             .field("voices", &self.voices)
             .field("music", &self.music)
             .field("dialogs", &self.scene_dialogs)
+            .field("main_menu", &self.main_menu)
             .finish_non_exhaustive()
     }
 }

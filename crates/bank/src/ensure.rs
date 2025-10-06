@@ -799,3 +799,10 @@ pub fn ensure_scene_dialogs<'a>(
     };
     Ok(())
 }
+
+#[doc(hidden)]
+#[allow(clippy::too_many_arguments)]
+pub fn ensure_main_menu(v: &MainMenu, m: &Mod) -> Result<(), Error> {
+    ensure_valid_audio_and_settings(v, m, Usage::Streaming, None)?;
+    todo!()
+}

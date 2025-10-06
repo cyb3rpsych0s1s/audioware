@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use audioware_core::Amplitude;
 use kira::PlaybackRate;
@@ -10,7 +10,13 @@ use crate::Interpolation;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct MainMenu {
-    music: MainMenuMusic,
+    pub music: MainMenuMusic,
+}
+
+impl AsRef<Path> for MainMenu {
+    fn as_ref(&self) -> &Path {
+        self.music.as_ref()
+    }
 }
 
 /// Main menu music is played continuously,
@@ -36,6 +42,16 @@ pub enum MainMenuMusic {
         /// Slice for both tracks.
         region: Option<super::setting::Region>,
     },
+}
+
+impl AsRef<Path> for MainMenuMusic {
+    fn as_ref(&self) -> &Path {
+        match self {
+            Self::SimpleLoop(file)
+            | Self::CustomLoop { file, .. }
+            | Self::Crossfade { file, .. } => file.as_path(),
+        }
+    }
 }
 
 /// Loop the main menu music sequentially.
@@ -86,9 +102,17 @@ mod tests {
         volume: 0.5
         region:
             starts: 2s 12ms"## ; "custom main menu music loop")]
+    #[test_case(r##"music:
+    file: ./somewhere/music.wav
+    fade_in:
+        duration: 5s
+        Linear:
+    fade_out:
+        duration: 5s
+        InPowf: 3"## ; "main menu music crossfade")]
     fn music(yaml: &str) {
         let main_menu = serde_yaml::from_str::<MainMenu>(yaml);
-        dbg!("{}", &main_menu);
+        dbg!(&main_menu);
         assert!(main_menu.is_ok());
     }
 }

@@ -319,6 +319,15 @@ impl Banks {
                         };
                     }
                 }
+                if let Some(ref main_menu) = manifest.main_menu {
+                    match ensure_main_menu(main_menu, &m) {
+                        Ok(x) => x,
+                        Err(e) => {
+                            scene_errors.push(e);
+                            continue;
+                        }
+                    };
+                }
             }
         }
 
