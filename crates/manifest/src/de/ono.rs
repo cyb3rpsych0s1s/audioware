@@ -38,7 +38,7 @@ mod tests {
     usage: on-demand"## ; "explicit on-demand ono")]
     fn ono(yaml: &str) {
         let ono = serde_yaml::from_str::<HashMap<String, Ono>>(yaml);
-        dbg!("{}", &ono);
+        dbg!(&ono);
         assert!(ono.is_ok());
     }
 }

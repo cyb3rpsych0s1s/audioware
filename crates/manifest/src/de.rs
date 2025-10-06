@@ -332,7 +332,7 @@ mod tests {
     line: radio"## ; "explicit subtitle")]
     fn subtitle(yaml: &str) {
         let subtitle = serde_yaml::from_str::<HashMap<String, Subtitle>>(yaml);
-        dbg!("{}", &subtitle);
+        dbg!(&subtitle);
         assert!(subtitle.is_ok());
     }
 }

@@ -426,21 +426,21 @@ mod tests {
         #[test_case(r##"120ms"##; "valid milliseconds duration")]
         fn valid_ms(yaml: &str) {
             let settings = humantime::parse_duration(yaml);
-            dbg!("{}", &settings);
+            dbg!(&settings);
             assert!(settings.is_ok());
         }
 
         #[test_case(r##"9s"##; "valid seconds duration")]
         fn valid_s(yaml: &str) {
             let settings = humantime::parse_duration(yaml);
-            dbg!("{}", &settings);
+            dbg!(&settings);
             assert!(settings.is_ok());
         }
 
         #[test_case(r##"1.2s"## ; "valid seconds expressed in floating-point duration")]
         fn valid_fp(yaml: &str) {
             let settings = humantime::parse_duration(yaml);
-            dbg!("{}", &settings);
+            dbg!(&settings);
             assert!(settings.is_ok());
         }
     }
@@ -477,7 +477,7 @@ mod tests {
         InPowi: 2"## ; "complex settings")]
     fn settings(yaml: &str) {
         let settings = serde_yaml::from_str::<HashMap<String, Settings>>(yaml);
-        dbg!("{}", &settings);
+        dbg!(&settings);
         assert!(settings.is_ok());
     }
 }

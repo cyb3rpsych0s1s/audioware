@@ -83,7 +83,7 @@ mod tests {
     fr-fr: ./somewhere/else/dialog.wav"## ; "format must be consistent across locales")]
         fn basic_format(yaml: &str) {
             let unique_dialog = serde_yaml::from_str::<HashMap<u64, SceneDialogs>>(yaml);
-            dbg!("{}", &unique_dialog);
+            dbg!(&unique_dialog);
             assert!(unique_dialog.is_ok());
         }
 
@@ -93,7 +93,7 @@ mod tests {
     fr-fr: ./somewhere/else/dialog.wav"## ; "format must be consistent")]
         fn incompatibility(yaml: &str) {
             let unique_dialog = serde_yaml::from_str::<HashMap<u64, SceneDialogs>>(yaml);
-            dbg!("{}", &unique_dialog);
+            dbg!(&unique_dialog);
             assert!(unique_dialog.is_err());
         }
     }
@@ -122,7 +122,7 @@ mod tests {
             starts: 500ms"## ; "dual scene dialog with specific settings")]
         fn basic_format_with_settings(yaml: &str) {
             let dual_dialog = serde_yaml::from_str::<HashMap<u64, SceneDialogs>>(yaml);
-            dbg!("{}", &dual_dialog);
+            dbg!(&dual_dialog);
             assert!(dual_dialog.is_ok());
         }
 
@@ -136,7 +136,7 @@ mod tests {
     fr-fr: ./unique/dialog.wav"## ; "format must be consistent, mixing unique and gender-based is not allowed")]
         fn incompatibility(yaml: &str) {
             let dual_dialog = serde_yaml::from_str::<HashMap<u64, SceneDialogs>>(yaml);
-            dbg!("{}", &dual_dialog);
+            dbg!(&dual_dialog);
             assert!(dual_dialog.is_err());
         }
     }

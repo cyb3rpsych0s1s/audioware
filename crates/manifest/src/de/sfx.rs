@@ -59,7 +59,7 @@ mod tests {
     usage: in-memory"## ; "explicit in-memory sfx")]
     fn sfx(yaml: &str) {
         let sfx = serde_yaml::from_str::<HashMap<String, Sfx>>(yaml);
-        dbg!("{}", &sfx);
+        dbg!(&sfx);
         assert!(sfx.is_ok());
     }
 }

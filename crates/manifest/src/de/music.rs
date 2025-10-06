@@ -51,7 +51,7 @@ mod tests {
         start_position: 5s"## ; "music with both usage and settings")]
     fn music(yaml: &str) {
         let music = serde_yaml::from_str::<HashMap<String, Music>>(yaml);
-        dbg!("{}", &music);
+        dbg!(&music);
         assert!(music.is_ok());
     }
 }

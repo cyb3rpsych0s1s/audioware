@@ -35,7 +35,7 @@ mod tests {
         everyday: ./somewhere/else/song.wav"## ; "simple playlist")]
     fn playlist(yaml: &str) {
         let playlist = serde_yaml::from_str::<HashMap<String, Playlist>>(yaml);
-        dbg!("{}", &playlist);
+        dbg!(&playlist);
         assert!(playlist.is_ok());
     }
 }
