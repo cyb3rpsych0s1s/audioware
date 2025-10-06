@@ -2,7 +2,7 @@
 
 use std::{collections::HashMap, fmt, hash::Hash, path::PathBuf};
 
-use crate::{PlayerGender, ScnDialogLineType};
+use crate::{PlayerGender, ScnDialogLineType, de::main_menu::MainMenu};
 use fixed_map::Map;
 use semver::Version;
 use serde::Deserialize;
@@ -11,6 +11,7 @@ use serde::Deserialize;
 mod dialog;
 #[doc(hidden)]
 mod jingle;
+mod main_menu;
 mod music;
 mod ono;
 #[doc(hidden)]
@@ -31,7 +32,7 @@ pub use setting::*;
 pub use sfx::*;
 pub use voice::*;
 
-/// allows modder to describe audio files, subtitles and settings.
+/// Allows modder to describe audio files, subtitles and settings.
 #[derive(Deserialize)]
 pub struct Manifest {
     pub version: Version,
@@ -46,6 +47,7 @@ pub struct Manifest {
     #[doc(hidden)]
     #[serde(rename = "dialogs")]
     pub scene_dialogs: Option<HashMap<u64, SceneDialogs>>,
+    pub main_menu: Option<MainMenu>,
 }
 
 // until proper implementations for 'playlist' and 'jingles' are added
