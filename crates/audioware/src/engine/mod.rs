@@ -90,7 +90,7 @@ where
             },
         })?;
         let modulators = Modulators::try_new(&mut manager)?;
-        let tracks = Tracks::try_new(&mut manager, &modulators)?;
+        let tracks = Tracks::try_new(&mut manager, &banks, &modulators)?;
         Ok(Engine {
             banks,
             manager,

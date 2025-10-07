@@ -114,6 +114,16 @@ impl From<PlaySoundError<FromFileError>> for Error {
     }
 }
 
+impl From<FromFileError> for Error {
+    fn from(source: FromFileError) -> Self {
+        Self::Engine {
+            source: EngineError::FromFile {
+                source: PlaySoundError::IntoSoundError(source),
+            },
+        }
+    }
+}
+
 impl From<audioware_bank::Error> for Error {
     fn from(source: audioware_bank::Error) -> Self {
         Self::Bank { source }

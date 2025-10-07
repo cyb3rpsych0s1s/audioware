@@ -1,7 +1,10 @@
 use std::path::{Path, PathBuf};
 
-use audioware_core::Amplitude;
-use kira::PlaybackRate;
+use audioware_core::{Amplitude, With};
+use kira::{
+    PlaybackRate, Tween,
+    sound::{PlaybackPosition, streaming::StreamingSoundSettings},
+};
 use serde::Deserialize;
 use std::time::Duration;
 
@@ -78,6 +81,32 @@ pub struct LoopMainMenuSettings {
     pub fade_in_tween: Option<Interpolation>,
 }
 
+impl With<LoopMainMenuSettings> for StreamingSoundSettings {
+    fn with(mut self, settings: LoopMainMenuSettings) -> Self
+    where
+        Self: Sized,
+    {
+        if let Some(start_position) = settings.start_position {
+            self = self.start_position(PlaybackPosition::Seconds(start_position.as_secs_f64()));
+        }
+        if let Some(volume) = settings.volume {
+            self = self.volume(volume.as_decibels());
+        }
+        if let Some(region) = settings.region {
+            self = self.loop_region(region);
+        } else {
+            self = self.loop_region(..); // we necessarily want to loop
+        }
+        if let Some(playback_rate) = settings.playback_rate {
+            self = self.playback_rate(playback_rate);
+        }
+        if let Some(fade_in_tween) = settings.fade_in_tween {
+            self = self.fade_in_tween(Some(fade_in_tween.into()));
+        }
+        self
+    }
+}
+
 /// Deserialization subset type for [kira::Tween].
 #[derive(Debug, Deserialize, Clone)]
 pub struct Fade {
@@ -87,6 +116,16 @@ pub struct Fade {
     /// How the audio should fade.
     #[serde(flatten)]
     pub easing: kira::Easing,
+}
+
+impl From<Fade> for Tween {
+    fn from(value: Fade) -> Self {
+        Self {
+            start_time: kira::StartTime::Immediate,
+            duration: value.duration,
+            easing: value.easing,
+        }
+    }
 }
 
 #[cfg(test)]

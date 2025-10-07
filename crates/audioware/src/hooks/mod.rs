@@ -20,7 +20,6 @@ mod ink_logic_controller;
 mod localization_manager;
 #[cfg(feature = "research")]
 mod onscreen_vo;
-#[cfg(feature = "research")]
 mod script_audio_player;
 #[cfg(feature = "research")]
 mod vo;
@@ -32,13 +31,13 @@ pub fn attach(env: &SdkEnv) {
     time_dilatable::attach_hooks(env);
     time_system::attach_hooks(env);
     ink_menu_scenario::attach_hooks(env);
+    script_audio_player::attach_hooks(env);
 
     #[cfg(feature = "research")]
     {
         onscreen_vo::attach_hook(env);
         localization_manager::attach_hook(env);
         ink_logic_controller::attach_hook(env);
-        script_audio_player::attach_hooks(env);
     }
 
     #[cfg(debug_assertions)]
@@ -86,13 +85,13 @@ mod offsets {
         pub const VO_STORAGE_GET_VO_FILE: u32                       = 0x899C28D0;   // 0x140A93F84 (2.31)
         pub const LOCALIZATIONMANAGER_RESOLVEFILENAME: u32          = 0x8D2C2B6E;   // 0x142045B38 (2.3)
         pub const ONSCREENVOPLAYERCONTROLLER_SHOWSUBTITLE: u32      = 0xFE3C1D52;   // 0x1404F42A0 (2.3)
-        pub const SCRIPTAUDIOPLAYER_PLAY_SINGLE: u32                = 0x90251060;   // 0x1406944E0 (2.3)
-        pub const SCRIPTAUDIOPLAYER_PLAY_THREE: u32                 = 0x8B616DE;    // 0x1421A25DC (2.3)
-        pub const SCRIPTAUDIOPLAYER_PLAY_UNIQUE_WITH_SEEK: u32      = 0xD02C1648;   // 0x1421A2644 (2.3)
-        pub const SCRIPTAUDIOPLAYER_STOP: u32                       = 0x92EC1070;   // 0x1421A272C (2.3)
-        pub const SCRIPTAUDIOPLAYER_SET_SWITCH: u32                 = 0x50D1298;    // 0x1421A26F4 (2.3)
-        pub const SCRIPTAUDIOPLAYER_SET_PARAMETER: u32              = 0x447413E4;   // 0x1421A26BC (2.3)
     }
+    pub const SCRIPTAUDIOPLAYER_PLAY_SINGLE: u32                = 0x90251060;   // 0x1406944E0 (2.3)
+    pub const SCRIPTAUDIOPLAYER_PLAY_THREE: u32                 = 0x8B616DE;    // 0x1421A25DC (2.3)
+    pub const SCRIPTAUDIOPLAYER_PLAY_UNIQUE_WITH_SEEK: u32      = 0xD02C1648;   // 0x1421A2644 (2.3)
+    pub const SCRIPTAUDIOPLAYER_STOP: u32                       = 0x92EC1070;   // 0x1421A272C (2.3)
+    pub const SCRIPTAUDIOPLAYER_SET_SWITCH: u32                 = 0x50D1298;    // 0x1421A26F4 (2.3)
+    pub const SCRIPTAUDIOPLAYER_SET_PARAMETER: u32              = 0x447413E4;   // 0x1421A26BC (2.3)
     #[cfg(feature = "research")]
     pub use natives::*;
 

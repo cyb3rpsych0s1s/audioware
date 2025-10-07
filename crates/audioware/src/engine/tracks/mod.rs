@@ -1,4 +1,5 @@
 use ambience::Ambience;
+use audioware_bank::Banks;
 use car_radio::CarRadio;
 use dialogue::Dialogue;
 use holocall::Holocall;
@@ -78,6 +79,7 @@ pub struct Tracks {
 impl Tracks {
     pub fn try_new<B: Backend>(
         manager: &mut AudioManager<B>,
+        banks: &Banks,
         modulators: &Modulators,
     ) -> Result<Self, Error> {
         let ambience = Ambience::try_new(manager, modulators)?;
@@ -85,7 +87,7 @@ impl Tracks {
         let holocall = Holocall::try_new(manager, &ambience)?;
         let sfx = Sfx::try_new(manager, &ambience)?;
         let radioport = Radioport::try_new(manager, &ambience)?;
-        let music = Music::try_new(manager, &ambience)?;
+        let music = Music::try_new(manager, banks, &ambience)?;
         let dialogue = Dialogue::try_new(manager, &ambience)?;
         let car_radio = CarRadio::try_new(manager, &ambience)?;
         Ok(Self {

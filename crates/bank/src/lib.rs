@@ -7,8 +7,8 @@ use std::{
 
 use audioware_core::{AudioDuration, With};
 use audioware_manifest::{
-    Depot, DialogLine, Locale, Manifest, Mod, PlayerGender, R6Audioware, REDmod, Settings,
-    SpokenLocale,
+    Depot, DialogLine, Locale, MainMenu, Manifest, Mod, PlayerGender, R6Audioware, REDmod,
+    Settings, SpokenLocale,
     error::{CannotParseManifest, CannotReadManifest},
 };
 use either::Either;
@@ -62,6 +62,7 @@ pub struct Banks {
     pub dual_scene_dialogs: HashMap<SceneBothKey, StaticSoundData>,
     pub single_scene_dialogs_settings: HashMap<SceneLocaleKey, Settings>,
     pub dual_scene_dialogs_settings: HashMap<SceneBothKey, Settings>,
+    pub main_menu: Option<MainMenu>,
 }
 
 impl Banks {
@@ -176,6 +177,7 @@ impl Banks {
         let mut dual_scene_dialogs: HashMap<SceneBothKey, StaticSoundData> = HashMap::new();
         let mut single_scene_dialogs_settings: HashMap<SceneLocaleKey, Settings> = HashMap::new();
         let mut dual_scene_dialogs_settings: HashMap<SceneBothKey, Settings> = HashMap::new();
+        let mut main_menu: Option<MainMenu> = None;
 
         for m in mods {
             let paths = m.manifests_paths();
@@ -319,9 +321,13 @@ impl Banks {
                         };
                     }
                 }
-                if let Some(ref main_menu) = manifest.main_menu {
-                    match ensure_main_menu(main_menu, &m) {
-                        Ok(x) => x,
+                if main_menu.is_none()
+                    && let Some(value) = manifest.main_menu
+                {
+                    match ensure_main_menu(&value, &m) {
+                        Ok(_) => {
+                            main_menu = Some(value);
+                        }
                         Err(e) => {
                             scene_errors.push(e);
                             continue;
@@ -403,6 +409,7 @@ impl Banks {
                 dual_scene_dialogs,
                 single_scene_dialogs_settings,
                 dual_scene_dialogs_settings,
+                main_menu,
             },
             report,
         )
