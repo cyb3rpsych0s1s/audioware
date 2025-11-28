@@ -254,7 +254,7 @@ mod tests {
         subtitle: "bonjour tout le monde"
     line: radio"## ; "format must be consistent across locales when there are subtitles")]
         fn basic_format(yaml: &str) {
-            let unique_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
+            let unique_dialog = serde_saphyr::from_str::<HashMap<String, Voice>>(yaml);
             dbg!("{}", &unique_dialog);
             assert!(unique_dialog.is_ok());
         }
@@ -265,7 +265,7 @@ mod tests {
         subtitle: "hello world"
     fr-fr: ./somewhere/else/sfx.wav"## ; "format must be consistent")]
         fn incompatibility(yaml: &str) {
-            let unique_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
+            let unique_dialog = serde_saphyr::from_str::<HashMap<String, Voice>>(yaml);
             dbg!("{}", &unique_dialog);
             assert!(unique_dialog.is_err());
         }
@@ -295,7 +295,7 @@ mod tests {
         region:
             starts: 500ms"## ; "dual dialog without subtitle with specific settings")]
         fn basic_format_without_subtitle(yaml: &str) {
-            let dual_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
+            let dual_dialog = serde_saphyr::from_str::<HashMap<String, Voice>>(yaml);
             dbg!("{}", &dual_dialog);
             assert!(dual_dialog.is_ok());
         }
@@ -352,7 +352,7 @@ mod tests {
         file: ./thai/male_intro.mp3
         subtitle: "heya""## ; "dual dialog with different subtitles")]
         fn basic_format_with_subtitles(yaml: &str) {
-            let dual_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
+            let dual_dialog = serde_saphyr::from_str::<HashMap<String, Voice>>(yaml);
             dbg!("{}", &dual_dialog);
             assert!(dual_dialog.is_ok());
         }
@@ -379,7 +379,7 @@ mod tests {
         male: ./somewhere/else/sfx.wav
     line: radio"## ; "format must be consistent, if there's no subtitle there shouldn't be any line")]
         fn incompatibility(yaml: &str) {
-            let dual_dialog = serde_yaml::from_str::<HashMap<String, Voice>>(yaml);
+            let dual_dialog = serde_saphyr::from_str::<HashMap<String, Voice>>(yaml);
             dbg!("{}", &dual_dialog);
             assert!(dual_dialog.is_err());
         }

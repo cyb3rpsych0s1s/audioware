@@ -32,7 +32,7 @@ pub enum Error {
     /// An error occured while parsing a [Manifest](crate::Manifest) file.
     CannotParseManifest {
         manifest: String,
-        source: serde_yaml::Error,
+        source: serde_saphyr::Error,
     },
 }
 

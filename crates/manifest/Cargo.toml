@@ -15,7 +15,7 @@ rayon.workspace = true
 red4ext-rs.workspace = true
 semver = { version = "1", features = ["serde"] }
 serde.workspace = true
-serde_yaml = "0.9"
+serde-saphyr.workspace = true
 snafu.workspace = true
 strum = "0.27.2"
 strum_macros = "0.27.2"

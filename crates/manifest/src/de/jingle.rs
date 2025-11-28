@@ -70,7 +70,7 @@ mod tests {
           msg: "goodbye"
     line: radio"## ; "jingle with timed localized captions and specific line")]
     fn jingle(yaml: &str) {
-        let jingle = serde_yaml::from_str::<HashMap<String, Jingle>>(yaml);
+        let jingle = serde_saphyr::from_str::<HashMap<String, Jingle>>(yaml);
         dbg!("{}", &jingle);
         assert!(jingle.is_ok());
     }

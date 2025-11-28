@@ -11,7 +11,7 @@ either.workspace = true
 kira.workspace = true
 red4ext-rs.workspace = true
 serde.workspace = true
-serde_yaml = "0.9"
+serde-saphyr.workspace = true
 snafu.workspace = true
 
 [package.metadata.cargo-machete]

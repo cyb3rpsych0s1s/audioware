@@ -34,7 +34,7 @@ mod tests {
         come_again: ./somewhere/song.wav
         everyday: ./somewhere/else/song.wav"## ; "simple playlist")]
     fn playlist(yaml: &str) {
-        let playlist = serde_yaml::from_str::<HashMap<String, Playlist>>(yaml);
+        let playlist = serde_saphyr::from_str::<HashMap<String, Playlist>>(yaml);
         dbg!("{}", &playlist);
         assert!(playlist.is_ok());
     }

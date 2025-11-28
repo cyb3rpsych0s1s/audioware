@@ -58,7 +58,7 @@ mod tests {
     file: ./somewhere/sfx.wav
     usage: in-memory"## ; "explicit in-memory sfx")]
     fn sfx(yaml: &str) {
-        let sfx = serde_yaml::from_str::<HashMap<String, Sfx>>(yaml);
+        let sfx = serde_saphyr::from_str::<HashMap<String, Sfx>>(yaml);
         dbg!("{}", &sfx);
         assert!(sfx.is_ok());
     }

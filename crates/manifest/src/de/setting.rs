@@ -171,7 +171,7 @@ fn factor_or_semitones<'de, D>(deserializer: D) -> Result<Option<PlaybackRate>, 
 where
     D: serde::Deserializer<'de>,
 {
-    let s: Option<&str> = Deserialize::deserialize(deserializer)?;
+    let s: Option<String> = Deserialize::deserialize(deserializer)?;
     if let Some(s) = s {
         let s = s.trim();
         if s.starts_with('x') || s.starts_with('X') {
@@ -476,7 +476,7 @@ mod tests {
         duration: 9s
         InPowi: 2"## ; "complex settings")]
     fn settings(yaml: &str) {
-        let settings = serde_yaml::from_str::<HashMap<String, Settings>>(yaml);
+        let settings = serde_saphyr::from_str::<HashMap<String, Settings>>(yaml);
         dbg!("{}", &settings);
         assert!(settings.is_ok());
     }

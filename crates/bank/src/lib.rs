@@ -189,7 +189,7 @@ impl Banks {
                         continue;
                     }
                 };
-                match serde_yaml::from_slice::<Manifest>(file.as_slice()).context(
+                match serde_saphyr::from_slice::<Manifest>(file.as_slice()).context(
                     CannotParseManifest {
                         manifest: path.display().to_string(),
                     },
