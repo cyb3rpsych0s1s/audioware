@@ -133,6 +133,7 @@ public native class AudioSystemExt {
     }
 
     public final func StopOnEmitter(eventName: CName, entityID: EntityID, tagName: CName) -> Void {
-        this.StopOnEmitter(eventName, entityID, tagName);
+        let tween: ref<Tween>;
+        this.StopOnEmitter(eventName, entityID, tagName, tween);
     }
 }
