@@ -236,6 +236,9 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     }
                 }
                 Lifecycle::Session(Session::Ready) => {
+                    if let Err(e) = engine.try_new_scene() {
+                        lifecycle!("failed to create new scene: {e}");
+                    }
                     state.set(Flags::LOADING, false);
                     state.set(Flags::IN_MENU, false);
                     state.set(Flags::IN_GAME, true);
@@ -256,11 +259,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                     state.set(Flags::IN_GAME, false);
                 }
                 Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
-                Lifecycle::System(System::PlayerAttach) => {
-                    if let Err(e) = engine.try_new_scene() {
-                        lifecycle!("failed to create new scene: {e}");
-                    }
-                }
+                Lifecycle::System(System::PlayerAttach) => {}
                 Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters_and_actors(),
                 Lifecycle::Board(Board::UIMenu(opened)) => {
                     state.set(Flags::IN_MENU, opened);
