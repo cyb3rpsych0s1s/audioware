@@ -330,9 +330,10 @@ impl std::fmt::Display for AudioEvent {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u32)]
 pub enum EventActionType {
+    #[default]
     Play = 0,
     PlayAnimation = 1,
     SetParameter = 2,
@@ -373,6 +374,32 @@ impl fmt::Display for EventActionType {
                 Self::RemoveContainerStreamingPrefetch => "RemoveContainerStreamingPrefetch",
             }
         )
+    }
+}
+
+bitflags! {
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct EventActionTypes: u32 {
+        const NONE = 0;
+        const PLAY = 1 << 1;
+        const PLAY_ANIMATION = 1 << 2;
+        const SET_PARAMETER = 1 << 3;
+        const STOP_SOUND = 1 << 4;
+        const SET_SWITCH = 1 << 5;
+        const STOP_TAGGED = 1 << 6;
+        const PLAY_EXTERNAL = 1 << 7;
+        const TAG = 1 << 8;
+        const UNTAG = 1 << 9;
+        const SET_APPEARANCE_NAME = 1 << 10;
+        const SET_ENTITY_NAME = 1 << 11;
+        const ADD_CONTAINER_STREAMING_PREFETCH = 1 << 12;
+        const REMOVE_CONTAINER_STREAMING_PREFETCH = 1 << 13;
+    }
+}
+
+impl From<EventActionType> for EventActionTypes {
+    fn from(value: EventActionType) -> Self {
+        Self::from_bits_truncate(value as u32)
     }
 }
 

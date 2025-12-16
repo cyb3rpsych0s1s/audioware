@@ -244,7 +244,7 @@ public class AudioMuteService extends ScriptableService {
     private cb func OnLoad() {
         FTLog(s"AudioMuteService.OnLoad");
         let manager = new AudioEventManager();
-        manager.Mute(n"cp_intro_temp_sfx_music_start");
-        manager.Mute(n"cp_intro_temp_sfx_music_stop");
+        manager.MuteSpecific(n"cp_intro_temp_sfx_music_start", audioEventActionType.Play);
+        manager.MuteSpecific(n"cp_intro_temp_sfx_music_stop", audioEventActionType.StopSound);
     }
 }

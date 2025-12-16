@@ -88,6 +88,9 @@ pub fn exports() -> impl Exportable {
                 .base(IScriptable::NAME)
                 .methods(methods![
                     final c"Mute" => AudioEventManager::mute,
+                    final c"MuteSpecific" => AudioEventManager::mute_specific,
+                    final c"IsMuted" => AudioEventManager::is_muted,
+                    final c"IsSpecificMuted" => AudioEventManager::is_specific_muted,
                 ])
                 .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),

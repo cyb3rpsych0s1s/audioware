@@ -34,8 +34,9 @@ unsafe extern "C" fn detour(
     unsafe {
         if !a2.is_null() && !a1.offset(8).is_null() {
             let event = &*a2;
+            let event_type = event.event_type();
             if let Ok(event_name) = EventName::try_from(event.event_name())
-                && !Replacements.is_muted(event_name)
+                && !Replacements.is_specific_muted(event_name, event_type)
             {
                 crate::utils::intercept!("AudioInterface::PostEvent( {{ {event} }}, .. )");
                 cb(a1, a2, a3);
