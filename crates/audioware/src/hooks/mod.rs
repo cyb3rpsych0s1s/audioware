@@ -79,7 +79,9 @@ mod offsets {
     pub const INKMENUSCENARIO_SWITCH_TO_SCENARIO: u32           = 0xE9B92059;   // 0x1409CF068 (2.3)
     pub const INKMENUSCENARIO_QUEUE_EVENT: u32                  = 0x56A9218A;   // 0x14130F6B8 (2.3)
     pub const SOUNDCOMPONENT_ONSTOPDIALOGLINE: u32              = 0xD4F11D73;   // 0x1405FCB28 (2.3)
-    
+    #[allow(dead_code)]
+    pub const AUDIOINTERFACE_POST_EVENT: u32                    = 0xB6131578;   // 0x140130B84 (2.31)
+
     #[cfg(feature = "research")]
     mod natives {
         pub const INKLOGICCONTROLLER_QUEUE_EVENT: u32               = 0xC87F2007;   // 0x1408663B0 (2.3)
