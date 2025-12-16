@@ -9,3 +9,5 @@ public native class AudioEventManager {
   public final native func IsSpecificMuted(eventName: CName, eventType: audioEventActionType);
 }
 
+@addMethod(GameInstance)
+public static final func GetAudioEventManager() -> ref<AudioEventManager> = new AudioEventManager();
