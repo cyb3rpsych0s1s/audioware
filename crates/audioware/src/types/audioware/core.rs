@@ -1,12 +1,8 @@
-use red4ext_rs::{NativeRepr, types::CName};
+use red4ext_rs::types::CName;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct EventName(CName);
-
-unsafe impl NativeRepr for EventName {
-    const NAME: &'static str = CName::NAME;
-}
 
 impl TryFrom<CName> for EventName {
     type Error = ();

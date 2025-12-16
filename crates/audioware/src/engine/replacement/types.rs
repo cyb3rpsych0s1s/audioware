@@ -2,7 +2,11 @@ use std::{sync::LazyLock, time::Duration};
 
 use dashmap::DashMap;
 use parking_lot::RwLock;
-use red4ext_rs::{ScriptClass, class_kind::Native, types::IScriptable};
+use red4ext_rs::{
+    ScriptClass,
+    class_kind::Native,
+    types::{CName, IScriptable},
+};
 
 use crate::{
     EventActionType, EventActionTypes, EventName,
@@ -31,48 +35,72 @@ unsafe impl ScriptClass for AudioEventManager {
 }
 
 pub trait Mute {
-    fn mute(&self, event_name: EventName);
-    fn unmute(&self, event_name: EventName);
-    fn mute_specific(&self, event_name: EventName, event_type: EventActionType);
-    fn unmute_specific(&self, event_name: EventName, event_type: EventActionType);
-    fn is_muted(&self, event_name: EventName) -> bool;
-    fn is_specific_muted(&self, event_name: EventName, event_type: EventActionType) -> bool;
+    type Name;
+    fn mute(&self, event_name: Self::Name);
+    fn unmute(&self, event_name: Self::Name);
+    fn mute_specific(&self, event_name: Self::Name, event_type: EventActionType);
+    fn unmute_specific(&self, event_name: Self::Name, event_type: EventActionType);
+    fn is_muted(&self, event_name: Self::Name) -> bool;
+    fn is_specific_muted(&self, event_name: Self::Name, event_type: EventActionType) -> bool;
 }
 
 impl Mute for AudioEventManager {
+    type Name = CName;
     #[inline]
-    fn mute(&self, event_name: EventName) {
+    fn mute(&self, event_name: CName) {
+        let Ok(event_name) = event_name.try_into() else {
+            warns!("mute: invalid event name ({event_name})");
+            return;
+        };
         queue::notify(Lifecycle::Replacement(ReplacementNotification::Mute(
             event_name,
         )));
     }
 
     #[inline]
-    fn is_muted(&self, event_name: EventName) -> bool {
+    fn is_muted(&self, event_name: CName) -> bool {
+        let Ok(event_name) = event_name.try_into() else {
+            return false;
+        };
         Replacements.is_muted(event_name)
     }
 
     #[inline]
-    fn mute_specific(&self, event_name: EventName, event_type: EventActionType) {
+    fn mute_specific(&self, event_name: CName, event_type: EventActionType) {
+        let Ok(event_name) = event_name.try_into() else {
+            warns!("mute specific: invalid event name ({event_name})");
+            return;
+        };
         queue::notify(Lifecycle::Replacement(
             ReplacementNotification::MuteSpecific(event_name, event_type),
         ));
     }
 
     #[inline]
-    fn is_specific_muted(&self, event_name: EventName, event_type: EventActionType) -> bool {
+    fn is_specific_muted(&self, event_name: CName, event_type: EventActionType) -> bool {
+        let Ok(event_name) = event_name.try_into() else {
+            return false;
+        };
         Replacements.is_specific_muted(event_name, event_type)
     }
 
     #[inline]
-    fn unmute(&self, event_name: EventName) {
+    fn unmute(&self, event_name: CName) {
+        let Ok(event_name) = event_name.try_into() else {
+            warns!("unmute: invalid event name ({event_name})");
+            return;
+        };
         queue::notify(Lifecycle::Replacement(ReplacementNotification::Unmute(
             event_name,
         )));
     }
 
     #[inline]
-    fn unmute_specific(&self, event_name: EventName, event_type: EventActionType) {
+    fn unmute_specific(&self, event_name: CName, event_type: EventActionType) {
+        let Ok(event_name) = event_name.try_into() else {
+            warns!("unmute specific: invalid event name ({event_name})");
+            return;
+        };
         queue::notify(Lifecycle::Replacement(
             ReplacementNotification::UnmuteSpecific(event_name, event_type),
         ));
@@ -80,6 +108,7 @@ impl Mute for AudioEventManager {
 }
 
 impl Mute for Replacements {
+    type Name = EventName;
     fn mute(&self, event_name: EventName) {
         if let Some(set) = MUTES.try_write_for(ALLOWED_CONTENTION) {
             set.entry(event_name)
