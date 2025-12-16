@@ -1,6 +1,9 @@
-use red4ext_rs::{VoidPtr, types::CName};
+use red4ext_rs::VoidPtr;
 
-use crate::{AudioEventId, AudioInternalEvent};
+use crate::{
+    AudioEventId, AudioInternalEvent, EventName,
+    engine::{Mute, Replacements},
+};
 
 ::red4ext_rs::hooks! {
     static HOOK: fn(a1: VoidPtr,
@@ -29,10 +32,14 @@ unsafe extern "C" fn detour(
     ) -> (),
 ) {
     unsafe {
-        if !a2.is_null() && (&*a2).event_name() != CName::undefined() && !a1.offset(8).is_null() {
+        if !a2.is_null() && !a1.offset(8).is_null() {
             let event = &*a2;
-            crate::utils::intercept!("AudioInterface::PostEvent( {{ {event} }}, .. )");
-            cb(a1, a2, a3);
+            if let Ok(event_name) = EventName::try_from(event.event_name())
+                && !Replacements.is_muted(event_name)
+            {
+                crate::utils::intercept!("AudioInterface::PostEvent( {{ {event} }}, .. )");
+                cb(a1, a2, a3);
+            }
         }
     }
 }

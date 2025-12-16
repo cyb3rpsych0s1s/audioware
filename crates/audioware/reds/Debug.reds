@@ -239,3 +239,12 @@ public exec func TestSpecificVolume(game: GameInstance, amplitude: Float) {
 public exec func StopTestVolume(game: GameInstance) {
     GameInstance.GetAudioSystemExt(game).Stop(n"straight_outta_compton");
 }
+
+public class AudioMuteService extends ScriptableService {
+    private cb func OnLoad() {
+        FTLog(s"AudioMuteService.OnLoad");
+        let manager = new AudioEventManager();
+        manager.Mute(n"cp_intro_temp_sfx_music_start");
+        manager.Mute(n"cp_intro_temp_sfx_music_stop");
+    }
+}

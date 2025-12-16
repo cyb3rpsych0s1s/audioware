@@ -16,7 +16,7 @@ use windows::Win32::{
 
 use crate::{
     Audioware, EmitterSettings, LocalizationPackage, ToTween, Tween,
-    engine::{Engine, eq::Preset, state},
+    engine::{AudioEventManager, Engine, Mute, eq::Preset, state},
     queue,
     utils::{fails, lifecycle, warns},
 };
@@ -82,6 +82,12 @@ pub fn exports() -> impl Exportable {
                     final c"Duration" => AudioSystemExt::duration,
                     final c"IsDebug" => AudioSystemExt::is_debug,
                     final c"SemanticVersion" => AudioSystemExt::semantic_version,
+                ])
+                .build(),
+        ClassExport::<AudioEventManager>::builder()
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    final c"Mute" => AudioEventManager::mute,
                 ])
                 .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
