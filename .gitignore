@@ -1,0 +1,20 @@
+/target
+/Cargo.lock
+/red4ext
+/r6
+/.vscode
+/community
+/book/screenshots
+/book/PATTERNS.md
+/book/PHASES.md
+/book/REVERSE.md
+/book/site
+/book/pages/docs
+# auto-generated
+/book/theme/css/mdbook-admonish-custom.css
+.env
+/audioware-copy
+/release-audioware
+checksum.txt
+rustc-ice-*.txt
+*.code-workspace
