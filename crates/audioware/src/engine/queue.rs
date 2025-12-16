@@ -17,10 +17,10 @@ use crate::{
     abi::{
         command::Command,
         is_in_foreground,
-        lifecycle::{Board, Lifecycle, Session, System},
+        lifecycle::{Board, Lifecycle, ReplacementNotification, Session, System},
     },
     config::BufferSize,
-    engine::{DilationUpdate, tweens::DILATION_EASE_OUT},
+    engine::{DilationUpdate, Mute, Replacements, tweens::DILATION_EASE_OUT},
     error::Error,
     utils::{fails, lifecycle},
 };
@@ -272,6 +272,20 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                         }
                     }
                 }
+                Lifecycle::Replacement(ReplacementNotification::Mute(event_name)) => {
+                    Replacements.mute(event_name)
+                }
+                Lifecycle::Replacement(ReplacementNotification::MuteSpecific(
+                    event_name,
+                    event_type,
+                )) => Replacements.mute_specific(event_name, event_type),
+                Lifecycle::Replacement(ReplacementNotification::Unmute(event_name)) => {
+                    Replacements.unmute(event_name)
+                }
+                Lifecycle::Replacement(ReplacementNotification::UnmuteSpecific(
+                    event_name,
+                    event_type,
+                )) => Replacements.unmute_specific(event_name, event_type),
                 Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
             }

@@ -4,7 +4,12 @@ use dashmap::DashMap;
 use parking_lot::RwLock;
 use red4ext_rs::{ScriptClass, class_kind::Native, types::IScriptable};
 
-use crate::{EventActionType, EventActionTypes, EventName, utils::warns};
+use crate::{
+    EventActionType, EventActionTypes, EventName,
+    abi::lifecycle::{Lifecycle, ReplacementNotification},
+    engine::queue,
+    utils::warns,
+};
 
 const ALLOWED_CONTENTION: Duration = Duration::from_millis(20);
 
@@ -37,7 +42,9 @@ pub trait Mute {
 impl Mute for AudioEventManager {
     #[inline]
     fn mute(&self, event_name: EventName) {
-        Replacements.mute(event_name);
+        queue::notify(Lifecycle::Replacement(ReplacementNotification::Mute(
+            event_name,
+        )));
     }
 
     #[inline]
@@ -47,7 +54,9 @@ impl Mute for AudioEventManager {
 
     #[inline]
     fn mute_specific(&self, event_name: EventName, event_type: EventActionType) {
-        Replacements.mute_specific(event_name, event_type);
+        queue::notify(Lifecycle::Replacement(
+            ReplacementNotification::MuteSpecific(event_name, event_type),
+        ));
     }
 
     #[inline]
@@ -57,12 +66,16 @@ impl Mute for AudioEventManager {
 
     #[inline]
     fn unmute(&self, event_name: EventName) {
-        Replacements.unmute(event_name);
+        queue::notify(Lifecycle::Replacement(ReplacementNotification::Unmute(
+            event_name,
+        )));
     }
 
     #[inline]
     fn unmute_specific(&self, event_name: EventName, event_type: EventActionType) {
-        Replacements.unmute_specific(event_name, event_type);
+        queue::notify(Lifecycle::Replacement(
+            ReplacementNotification::UnmuteSpecific(event_name, event_type),
+        ));
     }
 }
 
