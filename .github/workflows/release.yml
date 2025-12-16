@@ -13,7 +13,6 @@ env:
   CARGO_TERM_COLOR: always
   IS_DRAFT: ${{ startsWith(github.ref_name, 'beta') || startsWith(github.ref_name, 'alpha') }}
   IS_PRERELEASE: ${{ startsWith(github.ref_name, 'rc') }}
-  IS_RELEASE: ${{ startsWith(github.ref_name, 'v') }}
   BIN-NAME: Audioware-windows-latest-${{ github.ref_name }}
   CARGO_NET_GIT_FETCH_WITH_CLI: true
 
