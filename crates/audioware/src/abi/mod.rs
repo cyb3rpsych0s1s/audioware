@@ -88,7 +88,9 @@ pub fn exports() -> impl Exportable {
                 .base(IScriptable::NAME)
                 .methods(methods![
                     final c"Mute" => AudioEventManager::mute,
+                    final c"Unmute" => AudioEventManager::unmute,
                     final c"MuteSpecific" => AudioEventManager::mute_specific,
+                    final c"UnmuteSpecific" => AudioEventManager::unmute_specific,
                     final c"IsMuted" => AudioEventManager::is_muted,
                     final c"IsSpecificMuted" => AudioEventManager::is_specific_muted,
                 ])

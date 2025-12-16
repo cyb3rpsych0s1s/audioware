@@ -27,7 +27,9 @@ unsafe impl ScriptClass for AudioEventManager {
 
 pub trait Mute {
     fn mute(&self, event_name: EventName);
+    fn unmute(&self, event_name: EventName);
     fn mute_specific(&self, event_name: EventName, event_type: EventActionType);
+    fn unmute_specific(&self, event_name: EventName, event_type: EventActionType);
     fn is_muted(&self, event_name: EventName) -> bool;
     fn is_specific_muted(&self, event_name: EventName, event_type: EventActionType) -> bool;
 }
@@ -52,6 +54,16 @@ impl Mute for AudioEventManager {
     fn is_specific_muted(&self, event_name: EventName, event_type: EventActionType) -> bool {
         Replacements.is_specific_muted(event_name, event_type)
     }
+
+    #[inline]
+    fn unmute(&self, event_name: EventName) {
+        Replacements.unmute(event_name);
+    }
+
+    #[inline]
+    fn unmute_specific(&self, event_name: EventName, event_type: EventActionType) {
+        Replacements.unmute_specific(event_name, event_type);
+    }
 }
 
 impl Mute for Replacements {
@@ -61,7 +73,7 @@ impl Mute for Replacements {
                 .and_modify(|x| *x = EventActionTypes::all())
                 .or_insert(EventActionTypes::all());
         } else {
-            warns!("write contention on muted event names store ({event_name})");
+            warns!("write contention on muted event names store (mute: {event_name})");
         }
     }
 
@@ -84,7 +96,9 @@ impl Mute for Replacements {
                 .and_modify(|x| x.set(event_type.into(), true))
                 .or_insert(event_type.into());
         } else {
-            warns!("write contention on muted event names store ({event_name}, {event_type})");
+            warns!(
+                "write contention on muted event names store (mute: {event_name}, {event_type})"
+            );
         }
     }
 
@@ -97,7 +111,37 @@ impl Mute for Replacements {
             }
             return false;
         }
-        warns!("read contention on muted event names store ({event_name})");
+        warns!("read contention on muted event names store ({event_name}, {event_type})");
         false
+    }
+
+    fn unmute(&self, event_name: EventName) {
+        if let Some(ref mut set) = MUTES.try_write_for(ALLOWED_CONTENTION) {
+            set.remove(&event_name);
+        } else {
+            warns!("write contention on muted event names store (unmute: {event_name})");
+        }
+    }
+
+    fn unmute_specific(&self, event_name: EventName, event_type: EventActionType) {
+        if let Some(ref mut set) = MUTES.try_write_for(ALLOWED_CONTENTION) {
+            match set.entry(event_name) {
+                dashmap::Entry::Occupied(mut x) => {
+                    let empty = {
+                        let v = x.get_mut();
+                        v.set(event_type.into(), false);
+                        v.is_empty()
+                    };
+                    if empty {
+                        x.remove_entry();
+                    }
+                }
+                dashmap::Entry::Vacant(_) => {}
+            };
+        } else {
+            warns!(
+                "write contention on muted event names store (unmute: {event_name}, {event_type})"
+            );
+        }
     }
 }
