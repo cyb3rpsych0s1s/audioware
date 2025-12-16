@@ -7,6 +7,8 @@ use red4ext_rs::{
     types::{CName, IScriptable, RedArray},
 };
 
+use crate::Vector3;
+
 #[derive(Debug, Clone)]
 #[repr(transparent)]
 pub struct Event(IScriptable);
@@ -301,13 +303,13 @@ const PADDING_64: usize = 0x68 - 0x64;
 #[repr(C)]
 pub struct AudioEvent {
     base: Event,
-    pub event_name: CName,           // 40
-    pub emitter_name: CName,         // 48
-    pub name_data: CName,            // 50
-    pub float_data: f32,             // 58
-    pub event_type: EventActionType, // 5C
-    pub event_flags: EventFlags,     // 60
-    unk64: [u8; PADDING_64],         // 64
+    pub event_name: CName,            // 40
+    pub emitter_name: CName,          // 48
+    pub name_data: CName,             // 50
+    pub float_data: f32,              // 58
+    pub event_type: EventActionType,  // 5C
+    pub event_flags: AudioEventFlags, // 60
+    unk64: [u8; PADDING_64],          // 64
 }
 
 unsafe impl ScriptClass for AudioEvent {
@@ -374,64 +376,262 @@ impl fmt::Display for EventActionType {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[repr(u32)]
-pub enum AudioEventFlags {
-    NoEventFlags = 0,
-    SloMoOnly = 1,
-    Music = 2,
-    Unique = 4,
-    Metadata = 8,
+bitflags! {
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct AudioEventFlags: u32 {
+        const NO_EVENT_FLAGS = 0;
+        const SLO_MO_ONLY = 1 << 0;
+        const MUSIC = 1 << 1;
+        const UNIQUE = 1 << 2;
+        const METADATA = 1 << 3;
+    }
 }
 
 unsafe impl NativeRepr for AudioEventFlags {
-    const NAME: &'static str = "AudioEventFlags";
+    const NAME: &'static str = "audioAudioEventFlags";
 }
 
 impl fmt::Display for AudioEventFlags {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::NoEventFlags => "NoEventFlags",
-                Self::SloMoOnly => "SloMoOnly",
-                Self::Music => "Music",
-                Self::Unique => "Unique",
-                Self::Metadata => "Metadata",
-            }
-        )
-    }
-}
-
-bitflags! {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-    pub struct EventFlags: u32 {
-        const NONE = AudioEventFlags::NoEventFlags as u32;
-        const SLO_MO_ONLY = AudioEventFlags::SloMoOnly as u32;
-        const MUSIC = AudioEventFlags::Music as u32;
-        const UNIQUE = AudioEventFlags::Unique as u32;
-        const METADATA = AudioEventFlags::Metadata as u32;
-    }
-}
-
-impl std::fmt::Display for EventFlags {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if *self == EventFlags::NONE {
-            write!(f, "none")
+        if self.is_empty() {
+            write!(f, "")
         } else {
-            write!(
-                f,
-                "[slow motion only: {}, music: {}, unique: {}, metadata: {}]",
-                self.contains(EventFlags::SLO_MO_ONLY),
-                self.contains(EventFlags::MUSIC),
-                self.contains(EventFlags::UNIQUE),
-                self.contains(EventFlags::METADATA),
-            )
+            let mut out = Vec::with_capacity(4);
+            if self.contains(Self::SLO_MO_ONLY) {
+                out.push("SloMoOnly");
+            }
+            if self.contains(Self::MUSIC) {
+                out.push("Music");
+            }
+            if self.contains(Self::UNIQUE) {
+                out.push("Unique");
+            }
+            if self.contains(Self::METADATA) {
+                out.push("Metadata");
+            }
+            write!(f, "[{}]", out.join("|"))
         }
     }
 }
 
-unsafe impl NativeRepr for EventFlags {
-    const NAME: &'static str = AudioEventFlags::NAME;
+#[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
+pub struct AudioEventId(u32);
+
+impl std::fmt::Display for AudioEventId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "wwise:{}", self.0)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct ApplyEmitterStrategy {
+    emitter_name: CName,
+    position_name: CName,
+}
+
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub union AudioStrategyUnion {
+    by_emitter_and_position: ApplyEmitterStrategy,
+    by_emitter_id: u32,
+    by_position: Vector3,
+    by_tags: [CName; 2],
+    by_event_id: AudioEventId,
+}
+
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub union AudioParamUnion {
+    pub name: CName,
+    pub float: f32,
+}
+
+#[derive(Clone)]
+#[repr(C)]
+pub struct AudioInternalEvent {
+    strategy: AudioStrategyUnion,          // 0
+    name: CName,                           // 0x10
+    param: AudioParamUnion,                // 0x18
+    external_source_path: u64,             // 0x20
+    id: AudioEventId,                      // 0x28
+    pub action: EventActionType,           // 0x2C
+    pub flags: AudioEventFlags,            // 0x30
+    strategy_type: EventApplyStrategyType, // 0x34
+}
+
+impl AudioInternalEvent {
+    pub fn event_name(&self) -> CName {
+        self.name
+    }
+    pub fn emitter_name(&self) -> Option<CName> {
+        if self
+            .strategy_type
+            .contains(EventApplyStrategyType::APPLY_EMITTER)
+            || self
+                .strategy_type
+                .contains(EventApplyStrategyType::APPLY_POSITION_NAME)
+        {
+            return Some(unsafe { self.strategy.by_emitter_and_position.emitter_name });
+        }
+        None
+    }
+    pub fn event_flags(&self) -> AudioEventFlags {
+        self.flags
+    }
+    pub fn event_type(&self) -> EventActionType {
+        self.action
+    }
+    pub fn name_data(&self) -> Option<CName> {
+        if self.action == EventActionType::SetSwitch {
+            return Some(unsafe { self.param.name });
+        }
+        None
+    }
+    pub fn float_data(&self) -> Option<f32> {
+        match self.action {
+            EventActionType::PlayExternal if self.external_source_path != 0 => {
+                Some(unsafe { self.param.float })
+            }
+            EventActionType::SetParameter | EventActionType::Play | EventActionType::StopSound => {
+                Some(unsafe { self.param.float })
+            }
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for AudioInternalEvent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut out = format!("name: {}, action: {}", self.name, self.action);
+        if !self.flags.is_empty() {
+            out.push_str(&format!(", flags: {}", self.flags));
+        }
+        match self.action {
+            EventActionType::PlayExternal if self.external_source_path != 0 => {
+                out.push_str(&format!(", param.float: {}", unsafe { self.param.float }));
+            }
+            EventActionType::SetParameter | EventActionType::Play | EventActionType::StopSound => {
+                out.push_str(&format!(", param.float: {}", unsafe { self.param.float }));
+            }
+            EventActionType::SetSwitch => {
+                out.push_str(&format!(", param.name: {}", unsafe { self.param.name }));
+            }
+            EventActionType::SetEntityName
+            | EventActionType::AddContainerStreamingPrefetch
+            | EventActionType::RemoveContainerStreamingPrefetch
+            | EventActionType::SetAppearanceName
+            | EventActionType::StopTagged
+            | EventActionType::Tag
+            | EventActionType::Untag
+            | EventActionType::PlayAnimation
+            | EventActionType::PlayExternal => {}
+        };
+        if !self.strategy_type.is_empty() {
+            if self
+                .strategy_type
+                .contains(EventApplyStrategyType::APPLY_EMITTER)
+                || self
+                    .strategy_type
+                    .contains(EventApplyStrategyType::APPLY_POSITION_NAME)
+            {
+                out.push_str(&format!(", extra.emitter_name: {}", unsafe {
+                    self.strategy.by_emitter_and_position.emitter_name
+                }));
+            }
+            if self
+                .strategy_type
+                .contains(EventApplyStrategyType::APPLY_POSITION_NAME)
+            {
+                out.push_str(&format!(", extra.position_name: {}", unsafe {
+                    self.strategy.by_emitter_and_position.position_name
+                }));
+            }
+            if self
+                .strategy_type
+                .contains(EventApplyStrategyType::APPLY_EMITTER_WITH_ID)
+            {
+                out.push_str(&format!(", extra.emitter_id: {}", unsafe {
+                    self.strategy.by_emitter_id
+                }));
+            }
+            if self
+                .strategy_type
+                .contains(EventApplyStrategyType::APPLY_POSITION)
+            {
+                out.push_str(&format!(", extra.position: {}", unsafe {
+                    self.strategy.by_position
+                }));
+            }
+            if self
+                .strategy_type
+                .contains(EventApplyStrategyType::APPLY_EVENT_ID)
+                && unsafe { self.strategy.by_event_id.0 } != 0
+            {
+                out.push_str(&format!(", extra.event_id: {}", unsafe {
+                    self.strategy.by_event_id
+                }));
+            }
+            if self
+                .strategy_type
+                .contains(EventApplyStrategyType::APPLY_TAGGED)
+                && unsafe { self.strategy.by_tags[0] } != CName::new("None")
+            {
+                if unsafe { self.strategy.by_tags[1] } != CName::new("None") {
+                    out.push_str(&format!(
+                        ", extra.tags: [{}, {}]",
+                        unsafe { self.strategy.by_tags[0] },
+                        unsafe { self.strategy.by_tags[1] },
+                    ));
+                } else {
+                    out.push_str(&format!(", extra.tags: [{}]", unsafe {
+                        self.strategy.by_tags[0]
+                    },));
+                }
+            }
+        }
+        write!(f, "{}", out)
+    }
+}
+
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct EventApplyStrategyType: u8 {
+        const APPLY_ENTITY = 1 << 0;
+        const APPLY_EMITTER = 1 << 1;
+        const APPLY_EMITTER_WITH_ID = 1 << 2;
+        const APPLY_POSITION = 1 << 3;
+        const APPLY_EVENT_ID = 1 << 4;
+        const APPLY_TAGGED = 1 << 5;
+        const APPLY_POSITION_NAME = 1 << 6;
+    }
+}
+
+impl std::fmt::Display for EventApplyStrategyType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut out = Vec::with_capacity(7);
+        if self.contains(Self::APPLY_ENTITY) {
+            out.push("entity");
+        }
+        if self.contains(Self::APPLY_EMITTER) {
+            out.push("emitter");
+        }
+        if self.contains(Self::APPLY_EMITTER_WITH_ID) {
+            out.push("emitter ID");
+        }
+        if self.contains(Self::APPLY_POSITION) {
+            out.push("position");
+        }
+        if self.contains(Self::APPLY_EVENT_ID) {
+            out.push("event ID");
+        }
+        if self.contains(Self::APPLY_TAGGED) {
+            out.push("tagged");
+        }
+        if self.contains(Self::APPLY_POSITION_NAME) {
+            out.push("position name");
+        }
+        write!(f, "[{}]", out.join("|"))
+    }
 }
