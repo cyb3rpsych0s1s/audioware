@@ -1,6 +1,7 @@
 use red4ext_rs::SdkEnv;
 
 mod audio;
+mod audio_interface;
 mod audio_system;
 mod sound_component;
 mod time_dilatable;
@@ -26,6 +27,7 @@ mod script_audio_player;
 mod vo;
 
 pub fn attach(env: &SdkEnv) {
+    audio_interface::attach_hook(env);
     sound_component::attach_hook(env);
     audio::attach_hook(env);
     audio_system::attach_hooks(env);
