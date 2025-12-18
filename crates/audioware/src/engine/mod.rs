@@ -45,6 +45,7 @@ pub mod queue;
 pub mod state;
 pub mod traits;
 
+mod callbacks;
 mod modulators;
 mod replacement;
 mod scene;

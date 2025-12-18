@@ -5,6 +5,10 @@ use red4ext_rs::{
     IntoRepr, RttiSystem, log,
     types::{CName, ScriptRef},
 };
+use windows::{
+    Win32::{Foundation::HMODULE, System::LibraryLoader::GetModuleHandleW},
+    core::w,
+};
 
 use crate::Audioware;
 
@@ -33,7 +37,7 @@ macro_rules! intercept {
     ($($arg:tt)*) => {{
         #[allow(unused_variables, reason = "unused lint")]
         let msg = format!($($arg)*);
-        $crate::utils::silly!("*~ {msg}")
+        $crate::utils::silly!("[{:?}] *~ {msg}", std::thread::current().id())
     }};
 }
 #[allow(unused_imports)]
@@ -162,4 +166,8 @@ fn console(msg: impl Into<String>, func_name: &str) {
     } else {
         log::error!(env, "Redscript RTTI hasn't loaded yet")
     }
+}
+
+pub fn get_base_offset() -> HMODULE {
+    unsafe { GetModuleHandleW(w!("Cyberpunk2077.exe")) }.unwrap()
 }

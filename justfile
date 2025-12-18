@@ -4,7 +4,7 @@ set dotenv-load
 # default to steam default game dir
 DEFAULT_GAME_DIR := join("C:\\", "Program Files (x86)", "Steam", "steamapps", "common", "Cyberpunk 2077")
 
-game_dir            := env_var_or_default("GAME_DIR", DEFAULT_GAME_DIR)
+game_dir            := env("GAME_DIR", DEFAULT_GAME_DIR)
 plugin_name         := 'audioware'
 
 # codebase (here)

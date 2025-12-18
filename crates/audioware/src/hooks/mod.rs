@@ -4,6 +4,7 @@ mod audio;
 mod audio_interface;
 mod audio_system;
 mod sound_component;
+mod sound_engine;
 mod time_dilatable;
 mod time_system;
 
@@ -27,6 +28,7 @@ mod script_audio_player;
 mod vo;
 
 pub fn attach(env: &SdkEnv) {
+    sound_engine::attach_hooks(env);
     audio_interface::attach_hook(env);
     sound_component::attach_hook(env);
     audio::attach_hook(env);
@@ -83,6 +85,13 @@ mod offsets {
     pub const SOUNDCOMPONENT_ONSTOPDIALOGLINE: u32              = 0xD4F11D73;   // 0x1405FCB28 (2.3)
     #[allow(dead_code)]
     pub const AUDIOINTERFACE_POST_EVENT: u32                    = 0xB6131578;   // 0x140130B84 (2.31)
+    pub const SOUNDENGINE_POST_EVENT: u32                       = 0x594613D5;   // 0x140A30218 (2.31)
+    pub const SOUNDENGINE_POST_EVENT_ONESHOT: u32               = 0xEF7F1A37;   // 0x140A2F80C (2.31)
+    pub const SOUNDENGINE_EXTERNAL_EVENT_RES: u32               = 0xA9AA1CA7;   // 0x140A2F548 (2.31)
+    pub const SOUNDENGINE_SET_SWITCH: u32                       = 0xB03210CC;   // 0x1409E8B78 (2.31)
+    pub const SOUNDENGINE_SET_PARAMETER: u32                    = 0xEB171218;   // 0x1409E88E0 (2.31)
+    pub const SOUNDENGINE_SET_GLOBAL_PARAMETER: u32             = 0x2D61ABB;    // 0x1409DA450 (2.31)
+    pub const AUDIOINTERNALEVENT_APPLY_ACTION: u32              = 0x3ECF1E9E;   // 0x1404418B0 (2.31)
 
     #[cfg(feature = "research")]
     mod natives {
@@ -112,7 +121,7 @@ mod offsets {
         pub const AREA_ENTERED_EVENT: u32                           = 0x252517CB;   // 0x142863744 (2.21)
         pub const AREA_EXITED_EVENT: u32                            = 0xF3E11703;   // 0x142863818 (2.21)
         pub const INK_VO_REQUEST_EVT: u32                           = 0xBDB51D56;   // 0x1405FCBC4 (2.3)
-        pub const SOUND_PLAY_VO: u32                                = 0x7ED1B0B;   // 0x1405327B8 (2.3)
+        pub const SOUND_PLAY_VO: u32                                = 0x7ED1B0B;    // 0x1405327B8 (2.3)
     }
     #[cfg(feature = "research")]
     pub use events::*;

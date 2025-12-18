@@ -1,14 +1,11 @@
 use red4ext_rs::VoidPtr;
 
-use crate::{
-    AudioEventId, AudioInternalEvent, EventName,
-    engine::{Mute, Replacements},
-};
+use crate::{AudioEventId, AudioInternalEvent};
 
 ::red4ext_rs::hooks! {
     static HOOK: fn(a1: VoidPtr,
-    a2: *const AudioInternalEvent,
-    a3: *const AudioEventId) -> ();
+    a2: *mut AudioInternalEvent,
+    a3: *mut AudioEventId) -> ();
 }
 
 #[allow(clippy::missing_transmute_annotations)]
@@ -23,24 +20,63 @@ pub fn attach_hook(env: &::red4ext_rs::SdkEnv) {
 
 unsafe extern "C" fn detour(
     a1: VoidPtr,
-    a2: *const AudioInternalEvent,
-    a3: *const AudioEventId,
-    cb: unsafe extern "C" fn(
-        a1: VoidPtr,
-        a2: *const AudioInternalEvent,
-        a3: *const AudioEventId,
-    ) -> (),
+    a2: *mut AudioInternalEvent,
+    a3: *mut AudioEventId,
+    cb: unsafe extern "C" fn(a1: VoidPtr, a2: *mut AudioInternalEvent, a3: *mut AudioEventId) -> (),
 ) {
     unsafe {
-        if !a2.is_null() && !a1.offset(8).is_null() {
-            let event = &*a2;
-            let event_type = event.event_type();
-            if let Ok(event_name) = EventName::try_from(event.event_name())
-                && !Replacements.is_specific_muted(event_name, event_type)
-            {
-                crate::utils::intercept!("AudioInterface::PostEvent( {{ {event} }}, .. )");
-                cb(a1, a2, a3);
-            }
-        }
+        // if !a2.is_null() && !a1.offset(8).is_null() {
+        //     let event = &*a2;
+        //     let event_type = event.event_type();
+        //     if ![
+        //         EventActionType::Play,
+        //         EventActionType::PlayAnimation,
+        //         EventActionType::PlayExternal,
+        //         EventActionType::SetParameter,
+        //         EventActionType::SetSwitch,
+        //     ]
+        //     .contains(&event_type)
+        //         && let Ok(event_name) = EventName::try_from(event.event_name())
+        //     {
+        //         if AudioEventCallbackSystem::any_callback(event_name, Some(event_type)) {
+        //             match event_type {
+        //                 EventActionType::AddContainerStreamingPrefetch => {
+        //                     queue::forward(Callback::FireCallbacks(
+        //                         FireCallback::AddContainerStreamingPrefetch(
+        //                             FireAddContainerStreamingPrefetchCallback {
+        //                                 event_name,
+        //                                 event_type,
+        //                                 entity_id: EntityId::default(),
+        //                                 emitter_name: CName::default(),
+        //                                 metadata_name: CName::default(),
+        //                             },
+        //                         ),
+        //                     ));
+        //                 }
+        //                 EventActionType::RemoveContainerStreamingPrefetch => {
+        //                     queue::forward(Callback::FireCallbacks(
+        //                         FireCallback::RemoveContainerStreamingPrefetch(
+        //                             FireRemoveContainerStreamingPrefetchCallback {
+        //                                 event_name,
+        //                                 event_type,
+        //                                 entity_id: EntityId::default(),
+        //                                 emitter_name: CName::default(),
+        //                                 metadata_name: CName::default(),
+        //                             },
+        //                         ),
+        //                     ));
+        //                 }
+        //                 _ => {} // TODO
+        //             }
+        //         }
+        //         if !Replacements.is_specific_muted(event_name, event_type) {
+        //             // crate::utils::intercept!("AudioInterface::PostEvent( {{ {event} }}, .. )");
+        //             cb(a1, a2, a3);
+        //         }
+        //     } else {
+        //         cb(a1, a2, a3);
+        //     }
+        // }
+        cb(a1, a2, a3);
     }
 }

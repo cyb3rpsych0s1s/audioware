@@ -22,7 +22,7 @@ either = "1.15.0"
 glam = "0.30.0"
 kira = { version = "=0.10.7", features = ["serde"] }
 rayon = "1.11"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "411ccf1" }
+red4ext-rs = { git = "https://github.com/Roms1383/red4ext-rs", branch = "chore/call-ancestor-arg" }
 serde = "1.0"
 snafu = "0.8"
 

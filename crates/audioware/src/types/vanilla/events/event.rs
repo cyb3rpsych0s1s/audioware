@@ -1,10 +1,10 @@
-use std::fmt;
+use std::{fmt, ops::Deref};
 
 use bitflags::bitflags;
 use red4ext_rs::{
     NativeRepr, ScriptClass,
     class_kind::Native,
-    types::{CName, IScriptable, RedArray},
+    types::{CName, EntityId, IScriptable, RedArray},
 };
 
 use crate::Vector3;
@@ -207,15 +207,31 @@ impl AsRef<IScriptable> for SoundEvent {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default, Clone, Copy)]
+#[repr(C)]
+pub struct AudParam {
+    pub name: CName, // 0
+    pub value: f32,  // 08
+}
+
+unsafe impl NativeRepr for AudParam {
+    const NAME: &'static str = "Audioware.AudParam";
+}
+
+impl fmt::Display for AudParam {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}: {}", self.name, self.value)
+    }
+}
+
+#[derive(Debug, Default, Clone, Copy)]
 #[repr(C)]
 pub struct AudSwitch {
     pub name: CName,  // 0
     pub value: CName, // 08
 }
 
-unsafe impl ScriptClass for AudSwitch {
-    type Kind = Native;
+unsafe impl NativeRepr for AudSwitch {
     const NAME: &'static str = "audioAudSwitch";
 }
 
@@ -261,12 +277,13 @@ impl fmt::Display for AudParameter {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[repr(u32)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(i32)]
 pub enum ESoundCurveType {
     Log3 = 0,
     Sine = 1,
     InversedSCurve = 3,
+    #[default]
     Linear = 4,
     SCurve = 5,
     Exp1 = 6,
@@ -275,7 +292,7 @@ pub enum ESoundCurveType {
 }
 
 unsafe impl NativeRepr for ESoundCurveType {
-    const NAME: &'static str = "ESoundCurveType";
+    const NAME: &'static str = "audioESoundCurveType";
 }
 
 impl fmt::Display for ESoundCurveType {
@@ -436,7 +453,10 @@ impl fmt::Display for AudioEventFlags {
             if self.contains(Self::METADATA) {
                 out.push("Metadata");
             }
-            write!(f, "[{}]", out.join("|"))
+            if out.is_empty() {
+                return write!(f, "none");
+            }
+            write!(f, "({})", out.join("|"))
         }
     }
 }
@@ -447,8 +467,39 @@ pub struct AudioEventId(u32);
 
 impl std::fmt::Display for AudioEventId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "aeid:{}", self.0)
+    }
+}
+
+const INVALID_WWISE_ID: u32 = 2166136261;
+
+#[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
+pub struct WwiseId(u32);
+
+impl WwiseId {
+    pub fn is_null(&self) -> bool {
+        self.0 == INVALID_WWISE_ID
+    }
+    pub fn to_i64(&self) -> i64 {
+        self.0 as i64
+    }
+}
+
+impl Default for WwiseId {
+    fn default() -> Self {
+        Self(INVALID_WWISE_ID)
+    }
+}
+
+impl std::fmt::Display for WwiseId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "wwise:{}", self.0)
     }
+}
+
+unsafe impl NativeRepr for WwiseId {
+    const NAME: &'static str = u32::NAME;
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -465,7 +516,7 @@ pub union AudioStrategyUnion {
     by_emitter_id: u32,
     by_position: Vector3,
     by_tags: [CName; 2],
-    by_event_id: AudioEventId,
+    by_event_id: WwiseId,
 }
 
 #[derive(Clone, Copy)]
@@ -482,7 +533,7 @@ pub struct AudioInternalEvent {
     name: CName,                           // 0x10
     param: AudioParamUnion,                // 0x18
     external_source_path: u64,             // 0x20
-    id: AudioEventId,                      // 0x28
+    id: WwiseId,                           // 0x28
     pub action: EventActionType,           // 0x2C
     pub flags: AudioEventFlags,            // 0x30
     strategy_type: EventApplyStrategyType, // 0x34
@@ -532,28 +583,21 @@ impl AudioInternalEvent {
 impl std::fmt::Display for AudioInternalEvent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut out = format!("name: {}, action: {}", self.name, self.action);
-        if !self.flags.is_empty() {
-            out.push_str(&format!(", flags: {}", self.flags));
-        }
+        out.push_str(&format!(", flags: {}", self.flags));
         match self.action {
-            EventActionType::PlayExternal if self.external_source_path != 0 => {
-                out.push_str(&format!(", param.float: {}", unsafe { self.param.float }));
-            }
-            EventActionType::SetParameter | EventActionType::Play | EventActionType::StopSound => {
-                out.push_str(&format!(", param.float: {}", unsafe { self.param.float }));
-            }
             EventActionType::SetSwitch => {
                 out.push_str(&format!(", param.name: {}", unsafe { self.param.name }));
             }
-            EventActionType::SetEntityName
-            | EventActionType::AddContainerStreamingPrefetch
-            | EventActionType::RemoveContainerStreamingPrefetch
-            | EventActionType::SetAppearanceName
-            | EventActionType::StopTagged
-            | EventActionType::Tag
-            | EventActionType::Untag
-            | EventActionType::PlayAnimation
-            | EventActionType::PlayExternal => {}
+            EventActionType::PlayExternal => {
+                out.push_str(&format!(
+                    ", param.external_source_path: {}",
+                    self.external_source_path
+                ));
+                out.push_str(&format!(", param.float: {}", unsafe { self.param.float }));
+            }
+            _ => {
+                out.push_str(&format!(", param.float: {}", unsafe { self.param.float }));
+            }
         };
         if !self.strategy_type.is_empty() {
             if self
@@ -579,9 +623,10 @@ impl std::fmt::Display for AudioInternalEvent {
                 .strategy_type
                 .contains(EventApplyStrategyType::APPLY_EMITTER_WITH_ID)
             {
-                out.push_str(&format!(", extra.emitter_id: {}", unsafe {
-                    self.strategy.by_emitter_id
-                }));
+                out.push_str(&format!(
+                    ", extra.emitter_id: {}",
+                    unsafe { self.strategy.by_emitter_id } // EntityId::from(unsafe { self.strategy.by_emitter_id } as u64) ?
+                ));
             }
             if self
                 .strategy_type
@@ -660,5 +705,15 @@ impl std::fmt::Display for EventApplyStrategyType {
             out.push("position name");
         }
         write!(f, "[{}]", out.join("|"))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct SoundObjectId(i64);
+
+impl std::fmt::Display for SoundObjectId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "soid:{}", self.0)
     }
 }

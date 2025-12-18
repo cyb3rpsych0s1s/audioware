@@ -2,8 +2,12 @@
 
 mod core;
 pub use core::*;
+mod callback;
+pub use callback::*;
 mod easing;
 pub use easing::*;
+mod event;
+pub use event::*;
 mod settings;
 pub use settings::*;
 mod subtitles;
