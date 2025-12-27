@@ -12,25 +12,25 @@ pub enum Callback {
         event_name: EventName,
         target: DebugIgnore<WeakRef<IScriptable>>,
         function_name: FunctionName,
-        id: u32,
+        id: usize,
     },
     RegisterStaticFunction {
         event_name: EventName,
         class_name: ClassName,
         function_name: FunctionName,
-        id: u32,
+        id: usize,
     },
     FireCallbacks(FireCallback),
     Unregister {
-        id: u32,
+        id: usize,
     },
     Filter {
-        id: u32,
+        id: usize,
         target: AnyTarget,
         add: bool,
     },
     SetLifetime {
-        id: u32,
+        id: usize,
         sticky: bool,
     },
 }

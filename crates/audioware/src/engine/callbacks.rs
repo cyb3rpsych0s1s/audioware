@@ -1,9 +1,10 @@
-use std::{sync::LazyLock, time::Duration};
+use std::sync::{
+    LazyLock,
+    atomic::{AtomicUsize, Ordering},
+};
 
 use dashmap::DashMap;
-use fastrand::Rng;
 use kira::backend::Backend;
-use parking_lot::Mutex;
 use red4ext_rs::{
     InvokeError, RttiSystem, ScriptClass, ScriptClassOps,
     types::{CName, Function, IScriptable, Ref, TaggedType, WeakRef},
@@ -21,15 +22,13 @@ use crate::{
     utils::{fails, lifecycle, warns},
 };
 
-const ALLOWED_GENERATOR_CONTENTION: Duration = Duration::from_micros(500);
-
 static CALLBACKS: LazyLock<DashMap<Key, AudioEventCallbackWrapper>> =
     LazyLock::new(|| DashMap::with_capacity(128));
 
-static COUNTER: LazyLock<Mutex<Rng>> = LazyLock::new(|| Mutex::new(Rng::new()));
+static COUNTER: LazyLock<AtomicUsize> = LazyLock::new(|| AtomicUsize::new(0));
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Key(u32);
+pub struct Key(usize);
 
 impl std::fmt::Display for Key {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -43,19 +42,19 @@ pub trait Listen {
         event_name: EventName,
         target: WeakRef<IScriptable>,
         function_name: FunctionName,
-        id: u32,
+        id: usize,
     );
     fn register_static_callback(
         &self,
         event_name: EventName,
         class_name: ClassName,
         function_name: FunctionName,
-        id: u32,
+        id: usize,
     );
-    fn unregister_callback(&self, id: u32);
-    fn filter_callback(&mut self, id: u32, add: bool, target: AnyTarget);
+    fn unregister_callback(&self, id: usize);
+    fn filter_callback(&mut self, id: usize, add: bool, target: AnyTarget);
     fn session_reset(&mut self);
-    fn set_callback_lifetime(&mut self, id: u32, sticky: bool);
+    fn set_callback_lifetime(&mut self, id: usize, sticky: bool);
 }
 
 pub trait Dispatch {
@@ -72,7 +71,7 @@ impl AudioEventCallbackSystem {
             .iter()
             .any(|x| x.value().matches(event_name, event_type))
     }
-    pub fn is_registered(handler_id: u32) -> bool {
+    pub fn is_registered(handler_id: usize) -> bool {
         CALLBACKS.contains_key(&Key(handler_id))
     }
     pub fn dispatch<T: Into<FireCallback>>(event: T) {
@@ -96,13 +95,7 @@ impl AudioEventCallbackSystem {
             warns!("target is null");
             return Ref::default();
         }
-        let Some(id) = COUNTER
-            .try_lock_for(ALLOWED_GENERATOR_CONTENTION)
-            .map(|mut x| x.u32(..))
-        else {
-            fails!("contention on handler id generator");
-            return Ref::default();
-        };
+        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
         queue::forward(Callback::RegisterFunction {
             event_name,
             target: target.downgrade().into(),
@@ -132,13 +125,7 @@ impl AudioEventCallbackSystem {
             warns!("function_name is invalid ({})", function_name.as_str());
             return Ref::default();
         };
-        let Some(id) = COUNTER
-            .try_lock_for(ALLOWED_GENERATOR_CONTENTION)
-            .map(|mut x| x.u32(..))
-        else {
-            fails!("contention on handler id generator");
-            return Ref::default();
-        };
+        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
         queue::forward(Callback::RegisterStaticFunction {
             event_name,
             class_name,
@@ -322,7 +309,7 @@ impl<B: Backend> Listen for Engine<B> {
         event_name: EventName,
         target: WeakRef<IScriptable>,
         function_name: FunctionName,
-        id: u32,
+        id: usize,
     ) {
         let callback = AudioEventCallback::Member(MemberFunc {
             target,
@@ -348,7 +335,7 @@ impl<B: Backend> Listen for Engine<B> {
         event_name: EventName,
         class_name: ClassName,
         function_name: FunctionName,
-        id: u32,
+        id: usize,
     ) {
         let callback = AudioEventCallback::Static(StaticFunc {
             class_name,
@@ -373,11 +360,11 @@ impl<B: Backend> Listen for Engine<B> {
         }
     }
 
-    fn unregister_callback(&self, id: u32) {
+    fn unregister_callback(&self, id: usize) {
         CALLBACKS.remove(&Key(id));
     }
 
-    fn filter_callback(&mut self, id: u32, add: bool, target: AnyTarget) {
+    fn filter_callback(&mut self, id: usize, add: bool, target: AnyTarget) {
         if let Some(mut cb) = CALLBACKS.get_mut(&Key(id)) {
             if add && !cb.targets.contains(&target) {
                 cb.targets.push(target);
@@ -391,7 +378,7 @@ impl<B: Backend> Listen for Engine<B> {
         CALLBACKS.retain(|_, v| v.sticky);
     }
 
-    fn set_callback_lifetime(&mut self, id: u32, sticky: bool) {
+    fn set_callback_lifetime(&mut self, id: usize, sticky: bool) {
         if let Some(mut cb) = CALLBACKS.get_mut(&Key(id)) {
             cb.sticky = sticky;
         }

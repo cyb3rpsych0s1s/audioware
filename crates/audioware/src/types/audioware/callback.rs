@@ -71,7 +71,7 @@ impl std::fmt::Display for AudioEventCallbackLifetime {
 #[repr(C)]
 pub struct AudioEventCallbackHandler {
     base: IScriptable,
-    pub(crate) id: Cell<u32>,
+    pub(crate) id: Cell<usize>,
 }
 
 unsafe impl ScriptClass for AudioEventCallbackHandler {
