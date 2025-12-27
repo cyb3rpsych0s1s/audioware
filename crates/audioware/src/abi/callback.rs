@@ -93,8 +93,8 @@ impl FireCallback {
     }
     pub fn event_type(&self) -> EventActionType {
         match self {
-            Self::Play(FirePlayCallback { event_type, .. }) => *event_type,
-            Self::PlayOneShot(FirePlayOneShotCallback {
+            Self::Play(FirePlayCallback { event_type, .. })
+            | Self::PlayOneShot(FirePlayOneShotCallback {
                 base: FirePlayCallback { event_type, .. },
                 ..
             }) => *event_type,
