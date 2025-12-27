@@ -22,7 +22,7 @@ use crate::{
     utils::{fails, lifecycle, warns},
 };
 
-static CALLBACKS: LazyLock<DashMap<Key, AudioEventCallbackWrapper>> =
+static CALLBACKS: LazyLock<DashMap<Key, AudioEventCallback>> =
     LazyLock::new(|| DashMap::with_capacity(128));
 
 static COUNTER: LazyLock<AtomicUsize> = LazyLock::new(|| AtomicUsize::new(0));
@@ -139,29 +139,29 @@ impl AudioEventCallbackSystem {
     }
 }
 
-impl Dispatch for AudioEventCallback {
+impl Dispatch for CallbackFunction {
     fn dispatch(&self, fire: FireCallback) {
         match self {
-            AudioEventCallback::Member(x) => x.dispatch(fire),
-            AudioEventCallback::Static(x) => x.dispatch(fire),
+            CallbackFunction::Member(x) => x.dispatch(fire),
+            CallbackFunction::Static(x) => x.dispatch(fire),
         }
     }
 }
 
-pub struct AudioEventCallbackWrapper {
-    callback: AudioEventCallback,
+pub struct AudioEventCallback {
+    callback: CallbackFunction,
     targets: Vec<AnyTarget>,
     event_name: EventName,
     sticky: bool,
 }
 
-impl Dispatch for AudioEventCallbackWrapper {
+impl Dispatch for AudioEventCallback {
     fn dispatch(&self, fire: FireCallback) {
         self.callback.dispatch(fire);
     }
 }
 
-pub enum AudioEventCallback {
+pub enum CallbackFunction {
     Member(MemberFunc),
     Static(StaticFunc),
 }
@@ -311,11 +311,11 @@ impl<B: Backend> Listen for Engine<B> {
         function_name: FunctionName,
         id: usize,
     ) {
-        let callback = AudioEventCallback::Member(MemberFunc {
+        let callback = CallbackFunction::Member(MemberFunc {
             target,
             function_name,
         });
-        let value = AudioEventCallbackWrapper {
+        let value = AudioEventCallback {
             callback,
             targets: Vec::with_capacity(5),
             event_name,
@@ -337,11 +337,11 @@ impl<B: Backend> Listen for Engine<B> {
         function_name: FunctionName,
         id: usize,
     ) {
-        let callback = AudioEventCallback::Static(StaticFunc {
+        let callback = CallbackFunction::Static(StaticFunc {
             class_name,
             function_name,
         });
-        let value = AudioEventCallbackWrapper {
+        let value = AudioEventCallback {
             callback,
             targets: Vec::with_capacity(5),
             event_name,
@@ -396,7 +396,7 @@ impl<B: Backend> Dispatch for Engine<B> {
     }
 }
 
-impl AudioEventCallbackWrapper {
+impl AudioEventCallback {
     pub fn matches(&self, event_name: EventName, event_type: EventActionType) -> bool {
         self.event_name == event_name
             && (self
