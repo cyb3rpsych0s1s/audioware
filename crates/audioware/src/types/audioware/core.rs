@@ -6,7 +6,7 @@ use red4ext_rs::{
     types::{CName, EntityId, IScriptable, Ref},
 };
 
-use crate::{EventActionType, utils::lifecycle};
+use crate::EventActionType;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
@@ -173,7 +173,6 @@ impl AudioEventCallbackEventTarget {
             }
             _ => None,
         };
-        lifecycle!(";;;;;;;;;;; got {ty:?}");
         if let Some(ty) = ty {
             return Self::new_with_action_type(ty);
         }
