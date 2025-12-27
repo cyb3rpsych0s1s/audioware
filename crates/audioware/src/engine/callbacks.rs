@@ -6,7 +6,7 @@ use kira::backend::Backend;
 use parking_lot::Mutex;
 use red4ext_rs::{
     InvokeError, RttiSystem, ScriptClass, ScriptClassOps,
-    types::{CName, Function, IScriptable, PtrEq, Ref, TaggedType, WeakRef},
+    types::{CName, Function, IScriptable, Ref, TaggedType, WeakRef},
 };
 
 use crate::{
@@ -313,42 +313,6 @@ fn inner_call<T: ScriptClass>(
         }),
     } {
         fails!("couldn't execute callback: {e}");
-    }
-}
-
-impl PartialEq for AudioEventCallback {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (
-                Self::Member(MemberFunc {
-                    target: l_target,
-                    function_name: l_function_name,
-                }),
-                Self::Member(MemberFunc {
-                    target: r_target,
-                    function_name: r_function_name,
-                }),
-            ) => {
-                l_target
-                    .clone()
-                    .upgrade()
-                    .zip(r_target.clone().upgrade())
-                    .map(|(l, r)| l.ptr_eq(&r))
-                    .unwrap_or(false)
-                    && l_function_name == r_function_name
-            }
-            (
-                Self::Static(StaticFunc {
-                    class_name: l_class_name,
-                    function_name: l_function_name,
-                }),
-                Self::Static(StaticFunc {
-                    class_name: r_class_name,
-                    function_name: r_function_name,
-                }),
-            ) => l_class_name == r_class_name && l_function_name == r_function_name,
-            _ => false,
-        }
     }
 }
 
