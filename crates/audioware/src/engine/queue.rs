@@ -1,7 +1,7 @@
 use std::{sync::OnceLock, thread::JoinHandle, time::Duration};
 
 use bitflags::bitflags;
-use crossbeam::channel::{Receiver, Sender, bounded, tick};
+use crossbeam::channel::{Receiver, Sender, bounded, tick, unbounded};
 use kira::{
     AudioManagerSettings,
     backend::cpal::{CpalBackend, CpalBackendSettings},
@@ -15,12 +15,17 @@ use std::sync::{Mutex, RwLock};
 
 use crate::{
     abi::{
+        callback::Callback,
         command::Command,
         is_in_foreground,
-        lifecycle::{Board, Lifecycle, Session, System},
+        lifecycle::{Board, Lifecycle, ReplacementNotification, Session, System},
     },
     config::BufferSize,
-    engine::{DilationUpdate, tweens::DILATION_EASE_OUT},
+    engine::{
+        DilationUpdate, Mute, Replacements,
+        callbacks::{Dispatch, Listen},
+        tweens::DILATION_EASE_OUT,
+    },
     error::Error,
     utils::{fails, lifecycle},
 };
@@ -77,6 +82,7 @@ impl std::fmt::Display for Flags {
 static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
 static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
+static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
 
 fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
@@ -103,17 +109,24 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
                 lifecycle!("initialize channels...");
                 let (sl, rl) = bounded::<Lifecycle>(32);
                 let (sc, rc) = bounded::<Command>(capacity);
+                let (se, re) = unbounded::<Callback>();
                 let _ = LIFECYCLE.set(RwLock::new(Some(sl)));
                 let _ = COMMAND.set(RwLock::new(Some(sc)));
+                let _ = CALLBACKS.set(RwLock::new(Some(se)));
                 lifecycle!("initialized channels");
-                self::run(rl, rc, engine);
+                self::run(rl, rc, re, engine);
             })?,
     )));
     lifecycle!("spawned plugin thread");
     Ok(())
 }
 
-pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<CpalBackend>) {
+pub fn run(
+    rl: Receiver<Lifecycle>,
+    rc: Receiver<Command>,
+    re: Receiver<Callback>,
+    mut engine: Engine<CpalBackend>,
+) {
     crate::utils::lifecycle!("run engine thread");
     let s = |x| Duration::from_secs_f32(x);
     let ms = |x| Duration::from_millis(x);
@@ -228,6 +241,7 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                         state.set(Flags::IN_GAME, false);
                         engine.scene = None;
                         engine.tracks.clear();
+                        engine.session_reset();
                     }
                 }
                 Lifecycle::UIInGameNotificationRemove => {
@@ -271,6 +285,20 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                         }
                     }
                 }
+                Lifecycle::Replacement(ReplacementNotification::Mute(event_name)) => {
+                    Replacements.mute(event_name)
+                }
+                Lifecycle::Replacement(ReplacementNotification::MuteSpecific(
+                    event_name,
+                    event_type,
+                )) => Replacements.mute_specific(event_name, event_type),
+                Lifecycle::Replacement(ReplacementNotification::Unmute(event_name)) => {
+                    Replacements.unmute(event_name)
+                }
+                Lifecycle::Replacement(ReplacementNotification::UnmuteSpecific(
+                    event_name,
+                    event_type,
+                )) => Replacements.unmute_specific(event_name, event_type),
                 Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
             }
@@ -376,8 +404,32 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
                 ),
             }
         }
+        for e in re.try_iter() {
+            lifecycle!("~ {e}");
+            match e {
+                Callback::RegisterFunction {
+                    event_name,
+                    target,
+                    function_name,
+                    id,
+                } => engine.register_callback(event_name, target.0, function_name, id),
+                Callback::RegisterStaticFunction {
+                    event_name,
+                    class_name,
+                    function_name,
+                    id,
+                } => engine.register_static_callback(event_name, class_name, function_name, id),
+                Callback::FireCallbacks(x) => engine.dispatch(x),
+                Callback::Unregister { id } => engine.unregister_callback(id),
+                Callback::Filter { add, id, target } => engine.filter_callback(id, add, target),
+                Callback::SetLifetime { id, sticky } => engine.set_callback_lifetime(id, sticky),
+            }
+        }
     }
     let _ = LIFECYCLE
+        .get()
+        .and_then(|x| x.write().ok().map(|mut x| x.take()));
+    let _ = CALLBACKS
         .get()
         .and_then(|x| x.write().ok().map(|mut x| x.take()));
     let _ = COMMAND
@@ -386,7 +438,8 @@ pub fn run(rl: Receiver<Lifecycle>, rc: Receiver<Command>, mut engine: Engine<Cp
     lifecycle!("closed engine");
 }
 
-pub fn notify(lifecycle: Lifecycle) {
+pub fn notify<T: Into<Lifecycle>>(lifecycle: T) {
+    let lifecycle = lifecycle.into();
     lifecycle!("{lifecycle}");
     if let Some(x) = LIFECYCLE.get() {
         if let Ok(x) = x.try_read() {
@@ -394,6 +447,24 @@ pub fn notify(lifecycle: Lifecycle) {
                 && let Err(e) = x.try_send(lifecycle)
             {
                 fails!("failed to notify plugin lifecycle: {e}");
+            }
+        } else {
+            fails!("plugin game channel is not initialized");
+        }
+    } else {
+        fails!("plugin game loop is not initialized");
+    }
+}
+
+pub fn forward<T: Into<Callback>>(callback: T) {
+    let callback = callback.into();
+    lifecycle!("{callback}");
+    if let Some(x) = CALLBACKS.get() {
+        if let Ok(x) = x.try_read() {
+            if let Some(x) = x.as_ref()
+                && let Err(e) = x.try_send(callback)
+            {
+                fails!("failed to notify plugin callback: {e}");
             }
         } else {
             fails!("plugin game channel is not initialized");
