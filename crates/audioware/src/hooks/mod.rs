@@ -1,7 +1,6 @@
 use red4ext_rs::SdkEnv;
 
 mod audio;
-mod audio_interface;
 mod audio_system;
 mod sound_component;
 mod sound_engine;
@@ -29,7 +28,6 @@ mod vo;
 
 pub fn attach(env: &SdkEnv) {
     sound_engine::attach_hooks(env);
-    audio_interface::attach_hook(env);
     sound_component::attach_hook(env);
     audio::attach_hook(env);
     audio_system::attach_hooks(env);

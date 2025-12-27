@@ -25,58 +25,6 @@ unsafe extern "C" fn detour(
     cb: unsafe extern "C" fn(a1: VoidPtr, a2: *mut AudioInternalEvent, a3: *mut AudioEventId) -> (),
 ) {
     unsafe {
-        // if !a2.is_null() && !a1.offset(8).is_null() {
-        //     let event = &*a2;
-        //     let event_type = event.event_type();
-        //     if ![
-        //         EventActionType::Play,
-        //         EventActionType::PlayAnimation,
-        //         EventActionType::PlayExternal,
-        //         EventActionType::SetParameter,
-        //         EventActionType::SetSwitch,
-        //     ]
-        //     .contains(&event_type)
-        //         && let Ok(event_name) = EventName::try_from(event.event_name())
-        //     {
-        //         if AudioEventCallbackSystem::any_callback(event_name, Some(event_type)) {
-        //             match event_type {
-        //                 EventActionType::AddContainerStreamingPrefetch => {
-        //                     queue::forward(Callback::FireCallbacks(
-        //                         FireCallback::AddContainerStreamingPrefetch(
-        //                             FireAddContainerStreamingPrefetchCallback {
-        //                                 event_name,
-        //                                 event_type,
-        //                                 entity_id: EntityId::default(),
-        //                                 emitter_name: CName::default(),
-        //                                 metadata_name: CName::default(),
-        //                             },
-        //                         ),
-        //                     ));
-        //                 }
-        //                 EventActionType::RemoveContainerStreamingPrefetch => {
-        //                     queue::forward(Callback::FireCallbacks(
-        //                         FireCallback::RemoveContainerStreamingPrefetch(
-        //                             FireRemoveContainerStreamingPrefetchCallback {
-        //                                 event_name,
-        //                                 event_type,
-        //                                 entity_id: EntityId::default(),
-        //                                 emitter_name: CName::default(),
-        //                                 metadata_name: CName::default(),
-        //                             },
-        //                         ),
-        //                     ));
-        //                 }
-        //                 _ => {} // TODO
-        //             }
-        //         }
-        //         if !Replacements.is_specific_muted(event_name, event_type) {
-        //             // crate::utils::intercept!("AudioInterface::PostEvent( {{ {event} }}, .. )");
-        //             cb(a1, a2, a3);
-        //         }
-        //     } else {
-        //         cb(a1, a2, a3);
-        //     }
-        // }
         cb(a1, a2, a3);
     }
 }
