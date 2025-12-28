@@ -3,7 +3,7 @@ use red4ext_rs::types::{CName, EntityId, IScriptable, ResRef, WeakRef};
 
 use crate::{
     AnyTarget, AudioEventCallbackLifetime, ClassName, ESoundCurveType, EventActionType, EventName,
-    FunctionName, Pair, Vector4, WwiseId,
+    FunctionName, Pair, TFlag, Vector4, WwiseId,
 };
 
 #[derive(Debug)]
@@ -204,8 +204,7 @@ pub struct FirePlayOneShotCallback {
     pub switches: Vec<Pair<CName>>,
     pub graph_occlusion: f32,
     pub raycast_occlusion: f32,
-    pub has_graph_occlusion: bool,
-    pub has_raycast_occlusion: bool,
+    pub flags: TFlag,
 }
 
 impl FirePlayOneShotCallback {

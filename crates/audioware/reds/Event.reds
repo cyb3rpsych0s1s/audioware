@@ -40,6 +40,7 @@ public native class PlayOneShotEvent extends PlayEvent {
     public final native func RaycastOcclusion() -> Float;
     public final native func HasGraphOcclusion() -> Bool;
     public final native func HasRaycastOcclusion() -> Bool;
+    public final native func IsInDifferentRoom() -> Bool;
 }
 
 public native class StopSoundEvent extends EmitterEvent {

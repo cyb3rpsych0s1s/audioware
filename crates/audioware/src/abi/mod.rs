@@ -163,6 +163,7 @@ pub fn exports() -> impl Exportable {
                     final c"RaycastOcclusion" => PlayOneShotEvent::raycast_occlusion,
                     final c"HasGraphOcclusion" => PlayOneShotEvent::has_graph_occlusion,
                     final c"HasRaycastOcclusion" => PlayOneShotEvent::has_raycast_occlusion,
+                    final c"IsInDifferentRoom" => PlayOneShotEvent::is_in_different_room,
                 ])
                 .build(),
         ClassExport::<StopSoundEvent>::builder()

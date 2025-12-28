@@ -125,7 +125,7 @@ pub mod post_event {
 
         use std::ops::Not;
 
-        use crate::{OneShotSound, SoundObject, TFlag, abi::callback::FirePlayOneShotCallback};
+        use crate::{OneShotSound, SoundObject, abi::callback::FirePlayOneShotCallback};
 
         use super::*;
 
@@ -178,9 +178,7 @@ pub mod post_event {
                     let switches = oneshot.switches().to_vec();
                     let graph_occlusion = oneshot.graph_occlusion();
                     let raycast_occlusion = oneshot.raycast_occlusion();
-                    let has_graph_occlusion = oneshot.flags().contains(TFlag::HAS_GRAPH_OCCLUSION);
-                    let has_raycast_occlusion =
-                        oneshot.flags().contains(TFlag::HAS_RAYCAST_OCCLUSION);
+                    let flags = oneshot.flags();
                     let position = sound_object.and_then(|x| x.position()).unwrap_or_default();
                     let has_position = sound_object
                         .map(|x| x.position().is_some())
@@ -205,8 +203,7 @@ pub mod post_event {
                                 switches,
                                 graph_occlusion,
                                 raycast_occlusion,
-                                has_graph_occlusion,
-                                has_raycast_occlusion,
+                                flags,
                             },
                         ));
                     }

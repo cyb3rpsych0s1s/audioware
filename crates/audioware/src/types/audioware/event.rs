@@ -7,7 +7,7 @@ use red4ext_rs::{
 };
 
 use crate::{
-    AudParam, AudSwitch, ESoundCurveType, EventName, Vector4, WwiseId,
+    AudParam, AudSwitch, ESoundCurveType, EventName, TFlag, Vector4, WwiseId,
     abi::callback::{
         FireAddContainerStreamingPrefetchCallback, FirePlayCallback, FirePlayExternalCallback,
         FirePlayOneShotCallback, FireRemoveContainerStreamingPrefetchCallback,
@@ -45,6 +45,7 @@ pub trait WithOcclusions {
     fn raycast_occlusion(&self) -> f32;
     fn has_graph_occlusion(&self) -> bool;
     fn has_raycast_occlusion(&self) -> bool;
+    fn is_in_different_room(&self) -> bool;
 }
 
 pub trait WithEventName {
@@ -404,8 +405,7 @@ pub struct PlayOneShotEvent {
     switches: RefCell<Vec<AudSwitch>>,
     graph_occlusion: Cell<f32>,
     raycast_occlusion: Cell<f32>,
-    has_graph_occlusion: Cell<bool>,
-    has_raycast_occlusion: Cell<bool>,
+    flags: Cell<TFlag>,
 }
 
 impl WithParamsAndSwitches for PlayOneShotEvent {
@@ -428,11 +428,15 @@ impl WithOcclusions for PlayOneShotEvent {
     }
 
     fn has_graph_occlusion(&self) -> bool {
-        self.has_graph_occlusion.get()
+        self.flags.get().contains(TFlag::HAS_GRAPH_OCCLUSION)
     }
 
     fn has_raycast_occlusion(&self) -> bool {
-        self.has_raycast_occlusion.get()
+        self.flags.get().contains(TFlag::HAS_RAYCAST_OCCLUSION)
+    }
+
+    fn is_in_different_room(&self) -> bool {
+        self.flags.get().contains(TFlag::IS_IN_DIFFERENT_ROOM)
     }
 }
 
@@ -470,8 +474,7 @@ impl Hydrate<FirePlayOneShotCallback> for PlayOneShotEvent {
             .collect();
         self.graph_occlusion.set(other.graph_occlusion);
         self.raycast_occlusion.set(other.raycast_occlusion);
-        self.has_graph_occlusion.set(other.has_graph_occlusion);
-        self.has_raycast_occlusion.set(other.has_raycast_occlusion);
+        self.flags.set(other.flags);
     }
 }
 
