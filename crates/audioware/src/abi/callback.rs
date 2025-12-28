@@ -180,6 +180,7 @@ pub struct FirePlayCallback {
     pub sound_tags: Vec<CName>,
     pub emitter_tags: Vec<CName>,
     pub wwise_id: WwiseId,
+    pub seek: f32,
 }
 
 #[derive(Debug, Clone)]

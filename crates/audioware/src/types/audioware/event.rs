@@ -43,6 +43,10 @@ pub trait WithName {
     fn name(&self) -> CName;
 }
 
+pub trait WithSeek {
+    fn seek(&self) -> f32;
+}
+
 pub trait WithTagName {
     fn tag_name(&self) -> CName;
 }
@@ -293,6 +297,7 @@ pub struct PlayEvent {
     event_name: Cell<EventName>,
     sound_tags: RefCell<Vec<CName>>,
     emitter_tags: RefCell<Vec<CName>>,
+    seek: Cell<f32>,
 }
 
 impl WithTags for PlayEvent {
@@ -302,6 +307,12 @@ impl WithTags for PlayEvent {
 
     fn emitter_tags(&self) -> Vec<CName> {
         self.emitter_tags.borrow().clone()
+    }
+}
+
+impl WithSeek for PlayEvent {
+    fn seek(&self) -> f32 {
+        self.seek.get()
     }
 }
 
@@ -322,6 +333,7 @@ impl Hydrate<FirePlayCallback> for PlayEvent {
         self.event_name.set(other.event_name);
         *self.sound_tags.borrow_mut() = other.sound_tags.clone();
         *self.emitter_tags.borrow_mut() = other.emitter_tags.clone();
+        self.seek.set(other.seek);
     }
 }
 

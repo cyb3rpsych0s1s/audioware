@@ -22,7 +22,7 @@ use crate::{
     RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent, SetEntityNameEvent,
     SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent, StopTaggedEvent,
     TagEvent, ToTween, Tween, UntagEvent, WithEmitter, WithEventName, WithExternalResourcePath,
-    WithFloatData, WithParamsAndSwitches, WithTagName, WithTags, WithWwise,
+    WithFloatData, WithParamsAndSwitches, WithSeek, WithTagName, WithTags, WithWwise,
     engine::{AudioEventManager, Engine, Mute, eq::Preset, state},
     queue,
     utils::{fails, lifecycle, warns},
@@ -142,6 +142,7 @@ pub fn exports() -> impl Exportable {
                     final c"EventName" => PlayEvent::event_name,
                     final c"SoundTags" => PlayEvent::sound_tags,
                     final c"EmitterTags" => PlayEvent::emitter_tags,
+                    final c"Seek" => PlayEvent::seek,
                 ])
                 .build(),
         ClassExport::<PlayExternalEvent>::builder()

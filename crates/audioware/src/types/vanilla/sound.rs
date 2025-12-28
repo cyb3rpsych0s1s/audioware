@@ -373,6 +373,9 @@ impl Sound {
         }
         None
     }
+    pub fn seek(&self) -> f32 {
+        self.play_context.seek
+    }
     pub fn sound_name(&self) -> CName {
         self.play_context.sound_name
     }

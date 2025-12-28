@@ -76,6 +76,7 @@ pub mod post_event {
                 let emitter_tags = sound_object
                     .map(|x| x.emitter_tags().map(|x| x.to_vec()).unwrap_or_default())
                     .unwrap_or_default();
+                let seek = sound.seek();
                 if sound.is_play_external() {
                     AudioEventCallbackSystem::dispatch(FireCallback::PlayExternal(
                         FirePlayExternalCallback {
@@ -87,6 +88,7 @@ pub mod post_event {
                                 sound_tags,
                                 emitter_tags,
                                 wwise_id,
+                                seek,
                             },
                             external_resource_path: sound.external_resource_path(),
                         },
@@ -100,6 +102,7 @@ pub mod post_event {
                         sound_tags,
                         emitter_tags,
                         wwise_id,
+                        seek,
                     }));
                 }
             }
@@ -178,6 +181,7 @@ pub mod post_event {
                                     sound_tags,
                                     emitter_tags,
                                     wwise_id,
+                                    seek: 0.,
                                 },
                                 params,
                                 switches,
@@ -263,6 +267,7 @@ pub mod external_event {
                 let emitter_tags = sound_object
                     .map(|x| x.emitter_tags().map(|x| x.to_vec()).unwrap_or_default())
                     .unwrap_or_default();
+                let seek = sound.seek();
                 if AudioEventCallbackSystem::any_callback(event_name, event_type) {
                     AudioEventCallbackSystem::dispatch(FireCallback::PlayExternal(
                         FirePlayExternalCallback {
@@ -274,6 +279,7 @@ pub mod external_event {
                                 wwise_id,
                                 sound_tags,
                                 emitter_tags,
+                                seek,
                             },
                             external_resource_path: if a3.is_null().not() {
                                 (*a3).clone()
@@ -422,6 +428,7 @@ pub mod parameter {
                             sound_tags,
                             emitter_tags,
                             wwise_id,
+                            seek: 0.,
                         },
                         switch_name: a2,
                         switch_value: a3,
@@ -502,6 +509,7 @@ pub mod set_switch {
                             sound_tags,
                             emitter_tags,
                             wwise_id: switch_name_wwise_id,
+                            seek: 0.,
                         },
                         switch_name: a2,
                         switch_value: a3,
