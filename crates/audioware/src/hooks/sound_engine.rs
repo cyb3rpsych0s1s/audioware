@@ -50,7 +50,7 @@ pub mod post_event {
             };
             let wwise_id = SoundEngine::get()
                 .metadata_manager()
-                .wwise_id(sound.sound_name());
+                .event_wwise_id(sound.sound_name());
             let event_type = if sound.is_play_external() {
                 crate::EventActionType::PlayExternal
             } else {
@@ -254,7 +254,7 @@ pub mod external_event {
                 let event_type = crate::EventActionType::SetParameter;
                 let engine = SoundEngine::get();
                 let sound_object = sound.sound_object();
-                let wwise_id = engine.metadata_manager().game_parameter_id(a2);
+                let wwise_id = engine.metadata_manager().event_wwise_id(a2);
                 let entity_id = sound_object.map(|x| x.entity_id()).unwrap_or_default();
                 let emitter_name = sound_object.map(|x| x.emitter_name()).unwrap_or_default();
                 let sound_tags = sound_object
@@ -582,7 +582,7 @@ pub mod event {
                 let emitter_name = EventApplicationInterface::new(a2).emitter_name();
                 let metadata_name = EventApplicationInterface::new(a2).metadata_name();
                 let float_data = audio.float_data().unwrap_or(0.);
-                let wwise_id = SoundEngine::get().metadata_manager().wwise_id(name);
+                let wwise_id = SoundEngine::get().metadata_manager().event_wwise_id(name);
                 if AudioEventCallbackSystem::any_callback(event_name, event_type) {
                     match event_type {
                         EventActionType::SetAppearanceName => {

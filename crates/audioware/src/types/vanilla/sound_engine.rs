@@ -56,7 +56,7 @@ impl SoundEngine {
 }
 
 impl MetadataManager {
-    pub fn wwise_id(&self, event_name: CName) -> WwiseId {
+    pub fn event_wwise_id(&self, event_name: CName) -> WwiseId {
         const HASH: u32 = 0x3B1D13A1;
         let get_event_wwise_id = ::red4ext_rs::addr_hashes::resolve(HASH);
         let get_event_wwise_id = unsafe {

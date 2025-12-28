@@ -108,7 +108,7 @@ impl OneShotSound {
     pub unsafe fn wwise_id(&self) -> WwiseId {
         unsafe { SoundEngine::get() }
             .metadata_manager()
-            .wwise_id(self.event_name)
+            .event_wwise_id(self.event_name)
     }
     pub fn params(&self) -> &[Pair<f32>] {
         self.params.iter().as_slice()
@@ -383,7 +383,7 @@ impl Sound {
     pub unsafe fn wwise_id(&self) -> WwiseId {
         unsafe { SoundEngine::get() }
             .metadata_manager()
-            .wwise_id(self.play_context.sound_name)
+            .event_wwise_id(self.play_context.sound_name)
     }
     pub fn is_play_external(&self) -> bool {
         self.play_context.play_type == PlayContextType::PlayExternal
