@@ -438,7 +438,7 @@ unsafe impl NativeRepr for AudioEventFlags {
 impl fmt::Display for AudioEventFlags {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_empty() {
-            write!(f, "")
+            write!(f, "none")
         } else {
             let mut out = Vec::with_capacity(4);
             if self.contains(Self::SLO_MO_ONLY) {
@@ -690,25 +690,25 @@ impl std::fmt::Display for EventApplyStrategyType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut out = Vec::with_capacity(7);
         if self.contains(Self::APPLY_ENTITY) {
-            out.push("entity");
+            out.push("ApplyEntity");
         }
         if self.contains(Self::APPLY_EMITTER) {
-            out.push("emitter");
+            out.push("ApplyEmitter");
         }
         if self.contains(Self::APPLY_EMITTER_WITH_ID) {
-            out.push("emitter ID");
+            out.push("ApplyEmitterWithID");
         }
         if self.contains(Self::APPLY_POSITION) {
-            out.push("position");
+            out.push("ApplyPosition");
         }
         if self.contains(Self::APPLY_EVENT_ID) {
-            out.push("event ID");
+            out.push("ApplyEventID");
         }
         if self.contains(Self::APPLY_TAGGED) {
-            out.push("tagged");
+            out.push("ApplyTagged");
         }
         if self.contains(Self::APPLY_POSITION_NAME) {
-            out.push("position name");
+            out.push("ApplyPositionName");
         }
         write!(f, "[{}]", out.join("|"))
     }
