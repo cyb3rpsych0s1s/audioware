@@ -76,11 +76,6 @@ pub mod post_event {
                 let emitter_tags = sound_object
                     .map(|x| x.emitter_tags().map(|x| x.to_vec()).unwrap_or_default())
                     .unwrap_or_default();
-                if *event_name == CName::new("w_gun_lmg_power_ma70_fire_single") {
-                    crate::utils::intercept!(
-                        "SoundEngine::PostEvent( {a2}, {sound} ) / {wwise_id}",
-                    );
-                }
                 if sound.is_play_external() {
                     AudioEventCallbackSystem::dispatch(FireCallback::PlayExternal(
                         FirePlayExternalCallback {
@@ -171,15 +166,6 @@ pub mod post_event {
                         .unwrap_or_default();
                     let params = oneshot.params().to_vec();
                     let switches = oneshot.switches().to_vec();
-                    if oneshot.event_name() == CName::new("w_gun_lmg_power_ma70_fire_single") {
-                        crate::utils::intercept!(
-                            "SoundEngine::PostEvent_OneShot( {{ {} }}, {{ {} }} ) / {wwise_id}",
-                            oneshot,
-                            sound_object
-                                .map(|x| format!("{x}"))
-                                .unwrap_or("..".to_string())
-                        );
-                    }
 
                     if AudioEventCallbackSystem::any_callback(event_name, event_type) {
                         AudioEventCallbackSystem::dispatch(FireCallback::PlayOneShot(
@@ -264,12 +250,6 @@ pub mod external_event {
                 let engine = SoundEngine::get();
                 let sound_object = sound.sound_object();
                 let wwise_id = engine.metadata_manager().game_parameter_id(a2);
-                if *event_name == CName::new("w_gun_lmg_power_ma70_fire_single") {
-                    crate::utils::intercept!(
-                        "SoundEngine::ExternalEvent( {{ {a2} }}, .., {{ {} }} ) / {wwise_id}",
-                        &*a4,
-                    );
-                }
                 let entity_id = sound_object.map(|x| x.entity_id()).unwrap_or_default();
                 let emitter_name = sound_object.map(|x| x.emitter_name()).unwrap_or_default();
                 let sound_tags = sound_object
