@@ -307,7 +307,8 @@ impl std::fmt::Display for SoundPlayContext {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "sound_name: {}, seek: {}, play_type: {}, ..",
+            "external_filename: {}, sound_name: {}, seek: {}, play_type: {}, ..",
+            unsafe { std::mem::transmute::<ResRef, u64>(self.external_filename.clone()) },
             self.sound_name.as_str(),
             self.seek,
             self.play_type
