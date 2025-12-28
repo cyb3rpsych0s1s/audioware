@@ -34,6 +34,10 @@ public native class PlayExternalEvent extends PlayEvent {
 public native class PlayOneShotEvent extends PlayEvent {
     public final native func Params() -> array<AudParam>;
     public final native func Switches() -> array<audioAudSwitch>;
+    public final native func GraphOcclusion() -> Float;
+    public final native func RaycastOcclusion() -> Float;
+    public final native func HasGraphOcclusion() -> Bool;
+    public final native func HasRaycastOcclusion() -> Bool;
 }
 
 public native class StopSoundEvent extends EmitterEvent {
