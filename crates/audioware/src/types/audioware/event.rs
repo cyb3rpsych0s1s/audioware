@@ -7,7 +7,7 @@ use red4ext_rs::{
 };
 
 use crate::{
-    AudParam, AudSwitch, ESoundCurveType, EventName, WwiseId,
+    AudParam, AudSwitch, ESoundCurveType, EventName, Vector4, WwiseId,
     abi::callback::{
         FireAddContainerStreamingPrefetchCallback, FirePlayCallback, FirePlayExternalCallback,
         FirePlayOneShotCallback, FireRemoveContainerStreamingPrefetchCallback,
@@ -28,6 +28,11 @@ pub trait WithWwise {
 pub trait WithEmitter {
     fn entity_id(&self) -> EntityId;
     fn emitter_name(&self) -> CName;
+}
+
+pub trait WithPosition {
+    fn position(&self) -> Vector4;
+    fn has_position(&self) -> bool;
 }
 
 pub trait WithTags {
@@ -305,6 +310,18 @@ pub struct PlayEvent {
     sound_tags: RefCell<Vec<CName>>,
     emitter_tags: RefCell<Vec<CName>>,
     seek: Cell<f32>,
+    position: Cell<Vector4>,
+    has_position: Cell<bool>,
+}
+
+impl WithPosition for PlayEvent {
+    fn position(&self) -> Vector4 {
+        self.position.get()
+    }
+
+    fn has_position(&self) -> bool {
+        self.has_position.get()
+    }
 }
 
 impl WithTags for PlayEvent {
@@ -341,6 +358,8 @@ impl Hydrate<FirePlayCallback> for PlayEvent {
         *self.sound_tags.borrow_mut() = other.sound_tags.clone();
         *self.emitter_tags.borrow_mut() = other.emitter_tags.clone();
         self.seek.set(other.seek);
+        self.position.set(other.position);
+        self.has_position.set(other.has_position);
     }
 }
 

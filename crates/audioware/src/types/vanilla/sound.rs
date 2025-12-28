@@ -195,6 +195,12 @@ impl SoundObject {
         }
         None
     }
+    pub fn position(&self) -> Option<Vector4> {
+        if self.position_entry.is_null().not() {
+            return Some(unsafe { &*self.position_entry }.position);
+        }
+        None
+    }
 }
 
 impl std::fmt::Display for SoundObject {
@@ -384,6 +390,9 @@ impl Sound {
     }
     pub fn seek(&self) -> f32 {
         self.play_context.seek
+    }
+    pub fn position(&self) -> Option<Vector4> {
+        self.sound_object().and_then(|x| x.position())
     }
     pub fn sound_name(&self) -> CName {
         self.play_context.sound_name

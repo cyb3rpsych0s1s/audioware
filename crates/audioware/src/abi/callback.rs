@@ -3,7 +3,7 @@ use red4ext_rs::types::{CName, EntityId, IScriptable, ResRef, WeakRef};
 
 use crate::{
     AnyTarget, AudioEventCallbackLifetime, ClassName, ESoundCurveType, EventActionType, EventName,
-    FunctionName, Pair, WwiseId,
+    FunctionName, Pair, Vector4, WwiseId,
 };
 
 #[derive(Debug)]
@@ -181,6 +181,8 @@ pub struct FirePlayCallback {
     pub emitter_tags: Vec<CName>,
     pub wwise_id: WwiseId,
     pub seek: f32,
+    pub position: Vector4,
+    pub has_position: bool,
 }
 
 #[derive(Debug, Clone)]

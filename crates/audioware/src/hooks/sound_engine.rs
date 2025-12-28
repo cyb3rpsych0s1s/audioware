@@ -77,6 +77,9 @@ pub mod post_event {
                     .map(|x| x.emitter_tags().map(|x| x.to_vec()).unwrap_or_default())
                     .unwrap_or_default();
                 let seek = sound.seek();
+                let position = sound.position().unwrap_or_default();
+                let has_position = sound.position().is_some();
+
                 if sound.is_play_external() {
                     AudioEventCallbackSystem::dispatch(FireCallback::PlayExternal(
                         FirePlayExternalCallback {
@@ -89,6 +92,8 @@ pub mod post_event {
                                 emitter_tags,
                                 wwise_id,
                                 seek,
+                                position,
+                                has_position,
                             },
                             external_resource_path: sound.external_resource_path(),
                         },
@@ -103,6 +108,8 @@ pub mod post_event {
                         emitter_tags,
                         wwise_id,
                         seek,
+                        position,
+                        has_position,
                     }));
                 }
             }
@@ -174,6 +181,10 @@ pub mod post_event {
                     let has_graph_occlusion = oneshot.flags().contains(TFlag::HAS_GRAPH_OCCLUSION);
                     let has_raycast_occlusion =
                         oneshot.flags().contains(TFlag::HAS_RAYCAST_OCCLUSION);
+                    let position = sound_object.and_then(|x| x.position()).unwrap_or_default();
+                    let has_position = sound_object
+                        .map(|x| x.position().is_some())
+                        .unwrap_or(false);
 
                     if AudioEventCallbackSystem::any_callback(event_name, event_type) {
                         AudioEventCallbackSystem::dispatch(FireCallback::PlayOneShot(
@@ -187,6 +198,8 @@ pub mod post_event {
                                     emitter_tags,
                                     wwise_id,
                                     seek: 0.,
+                                    position,
+                                    has_position,
                                 },
                                 params,
                                 switches,
@@ -277,6 +290,9 @@ pub mod external_event {
                     .map(|x| x.emitter_tags().map(|x| x.to_vec()).unwrap_or_default())
                     .unwrap_or_default();
                 let seek = sound.seek();
+                let position = sound.position().unwrap_or_default();
+                let has_position = sound.position().is_some();
+
                 if AudioEventCallbackSystem::any_callback(event_name, event_type) {
                     AudioEventCallbackSystem::dispatch(FireCallback::PlayExternal(
                         FirePlayExternalCallback {
@@ -289,6 +305,8 @@ pub mod external_event {
                                 sound_tags,
                                 emitter_tags,
                                 seek,
+                                position,
+                                has_position,
                             },
                             external_resource_path: if a3.is_null().not() {
                                 (*a3).clone()
@@ -425,6 +443,10 @@ pub mod parameter {
             let emitter_tags = sound_object
                 .map(|x| x.emitter_tags().map(|x| x.to_vec()).unwrap_or_default())
                 .unwrap_or_default();
+            let position = sound_object.and_then(|x| x.position()).unwrap_or_default();
+            let has_position = sound_object
+                .map(|x| x.position().is_some())
+                .unwrap_or(false);
 
             if AudioEventCallbackSystem::any_callback(event_name, event_type) {
                 AudioEventCallbackSystem::dispatch(FireCallback::SetParameter(
@@ -438,6 +460,8 @@ pub mod parameter {
                             emitter_tags,
                             wwise_id,
                             seek: 0.,
+                            position,
+                            has_position,
                         },
                         switch_name: a2,
                         switch_value: a3,
@@ -507,6 +531,11 @@ pub mod set_switch {
             let emitter_tags = sound_object
                 .map(|x| x.emitter_tags().map(|x| x.to_vec()).unwrap_or_default())
                 .unwrap_or_default();
+            let position = sound_object.and_then(|x| x.position()).unwrap_or_default();
+            let has_position = sound_object
+                .map(|x| x.position().is_some())
+                .unwrap_or(false);
+
             if AudioEventCallbackSystem::any_callback(event_name, event_type) {
                 AudioEventCallbackSystem::dispatch(FireCallback::SetSwitch(
                     FireSetSwitchCallback {
@@ -519,6 +548,8 @@ pub mod set_switch {
                             emitter_tags,
                             wwise_id: switch_name_wwise_id,
                             seek: 0.,
+                            position,
+                            has_position,
                         },
                         switch_name: a2,
                         switch_value: a3,

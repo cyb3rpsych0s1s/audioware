@@ -25,6 +25,8 @@ public native class PlayEvent extends EmitterEvent {
     public final native func SoundTags() -> array<CName>;
     public final native func EmitterTags() -> array<CName>;
     public final native func Seek() -> Float;
+    public final native func Position() -> Vector4;
+    public final native func HasPosition() -> Bool;
 }
 
 public native class PlayExternalEvent extends PlayEvent {
