@@ -443,6 +443,7 @@ pub mod set_switch {
     use crate::{
         AudioEventCallbackSystem, EventName, SoundEngine, SoundObjectId,
         abi::callback::{FireCallback, FirePlayCallback, FireSetSwitchCallback},
+        engine::{Mute, Replacements},
     };
 
     use super::*;
@@ -508,6 +509,12 @@ pub mod set_switch {
                         switch_value_wwise_id,
                     },
                 ));
+            }
+            if !Replacements.is_specific_muted(event_name, event_type) {
+                crate::utils::intercept!(
+                    "SoundEngine::SetSwitch( {a2}, {a3}, {a4} ) / switch_name_wwise_id: {switch_name_wwise_id} switch_value_wwise_id: {switch_value_wwise_id}"
+                );
+                return cb(a1, a2, a3, a4);
             }
         }
         0
