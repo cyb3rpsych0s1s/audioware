@@ -3,7 +3,7 @@ use std::ops::Not;
 use bitflags::bitflags;
 use red4ext_rs::types::{CName, EntityId, RedArray, ResRef};
 
-use crate::{RedTagList, SoundEngine, SoundObjectId, Vector4, WwiseId};
+use crate::{AudioEventId, RedTagList, SoundEngine, SoundObjectId, Vector4, WwiseId};
 
 #[derive(Debug, Clone)]
 #[repr(C)]
@@ -72,7 +72,13 @@ impl std::fmt::Display for SoundId {
 
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
-pub struct PlayingSoundId(u32);
+pub struct PlayingSoundId(AudioEventId);
+
+impl PlayingSoundId {
+    pub fn invalid() -> Self {
+        Self(AudioEventId::invalid())
+    }
+}
 
 impl std::fmt::Display for PlayingSoundId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

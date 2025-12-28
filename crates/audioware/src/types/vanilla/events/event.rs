@@ -471,6 +471,12 @@ impl std::fmt::Display for AudioEventId {
     }
 }
 
+impl AudioEventId {
+    pub fn invalid() -> Self {
+        Self(0)
+    }
+}
+
 const INVALID_WWISE_ID: u32 = 2166136261;
 
 #[derive(Debug, Clone, Copy)]

@@ -13,7 +13,7 @@ pub fn attach_hooks(env: &SdkEnv) {
 
 pub mod post_event {
     use crate::{
-        AudioEventCallbackSystem, Sound, SoundEngine,
+        AudioEventCallbackSystem, PlayingSoundId, Sound, SoundEngine,
         abi::callback::{FireCallback, FirePlayCallback, FirePlayExternalCallback},
         engine::{Mute, Replacements},
     };
@@ -23,7 +23,7 @@ pub mod post_event {
     ::red4ext_rs::hooks! {
         static HOOK: fn(a1: VoidPtr,
         a2: CName,
-        a3: *mut Sound) -> u32;
+        a3: *mut Sound) -> PlayingSoundId;
     }
 
     #[allow(clippy::missing_transmute_annotations)]
@@ -41,8 +41,8 @@ pub mod post_event {
         a1: VoidPtr,
         a2: CName,
         a3: *mut Sound,
-        cb: unsafe extern "C" fn(a1: VoidPtr, a2: CName, a3: *mut Sound) -> u32,
-    ) -> u32 {
+        cb: unsafe extern "C" fn(a1: VoidPtr, a2: CName, a3: *mut Sound) -> PlayingSoundId,
+    ) -> PlayingSoundId {
         unsafe {
             let sound = &*a3;
             let Ok(event_name) = sound.sound_name().try_into() else {
@@ -107,7 +107,7 @@ pub mod post_event {
                 crate::utils::intercept!("SoundEngine::PostEvent( {a2}, {sound} ) / {wwise_id}",);
                 return cb(a1, a2, a3);
             }
-            0
+            PlayingSoundId::invalid()
         }
     }
 
@@ -122,7 +122,7 @@ pub mod post_event {
         ::red4ext_rs::hooks! {
             static HOOK: fn(a1: VoidPtr,
             a2: *mut OneShotSound,
-            a3: *mut SoundObject) -> u32;
+            a3: *mut SoundObject) -> PlayingSoundId;
         }
 
         #[allow(clippy::missing_transmute_annotations)]
@@ -145,8 +145,8 @@ pub mod post_event {
                 a1: VoidPtr,
                 a2: *mut OneShotSound,
                 a3: *mut SoundObject,
-            ) -> u32,
-        ) -> u32 {
+            ) -> PlayingSoundId,
+        ) -> PlayingSoundId {
             unsafe {
                 if !a2.is_null() && !a2.byte_offset(48).is_null() {
                     let event_type = crate::EventActionType::Play;
@@ -185,7 +185,7 @@ pub mod post_event {
                         ));
                     }
                     if Replacements.is_specific_muted(event_name, event_type) {
-                        return 0;
+                        return PlayingSoundId::invalid();
                     }
                     crate::utils::intercept!(
                         "SoundEngine::PostEvent_OneShot( {{ {} }}, {{ {} }} ) / {wwise_id}",
@@ -207,7 +207,7 @@ pub mod external_event {
     use red4ext_rs::types::ResRef;
 
     use crate::{
-        AudioEventCallbackSystem, EventName, Sound, SoundEngine,
+        AudioEventCallbackSystem, EventName, PlayingSoundId, Sound, SoundEngine,
         abi::callback::{FireCallback, FirePlayCallback, FirePlayExternalCallback},
         engine::{Mute, Replacements},
     };
@@ -218,7 +218,7 @@ pub mod external_event {
         static HOOK: fn(a1: VoidPtr,
         a2: CName,
         a3: *const ResRef,
-        a4: *mut Sound) -> u32;
+        a4: *mut Sound) -> PlayingSoundId;
     }
 
     #[allow(clippy::missing_transmute_annotations)]
@@ -238,8 +238,13 @@ pub mod external_event {
         a2: CName,
         a3: *const ResRef,
         a4: *mut Sound,
-        cb: unsafe extern "C" fn(a1: VoidPtr, a2: CName, a3: *const ResRef, a4: *mut Sound) -> u32,
-    ) -> u32 {
+        cb: unsafe extern "C" fn(
+            a1: VoidPtr,
+            a2: CName,
+            a3: *const ResRef,
+            a4: *mut Sound,
+        ) -> PlayingSoundId,
+    ) -> PlayingSoundId {
         unsafe {
             if a4.is_null().not() && a3.is_null().not() {
                 let Ok(event_name) = EventName::try_from(a2) else {
@@ -279,7 +284,7 @@ pub mod external_event {
                     ));
                 }
                 if Replacements.is_specific_muted(event_name, event_type) {
-                    return 0;
+                    return PlayingSoundId::invalid();
                 }
                 crate::utils::intercept!(
                     "SoundEngine::ExternalEvent( {{ {a2} }}, .., {{ {} }} ) / {wwise_id}",
