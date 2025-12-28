@@ -30,7 +30,6 @@ rust-ini = "0.21.1"
 snafu.workspace = true
 windows = {version = "0.61.3", features = ["Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader"]}
 debug-ignore = "1.0.5"
-fastrand = "2.3.0"
 
 [build-dependencies]
 semver = "1.0"
