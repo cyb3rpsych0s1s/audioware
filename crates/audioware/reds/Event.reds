@@ -16,10 +16,6 @@ public abstract native class EmitterEvent extends WwiseEvent {
     public final native func EmitterName() -> CName;
 }
 
-//public abstract native class MetadataEvent extends EmitterEvent {
-//    public final native func MetadataName() -> CName;
-//}
-
 public native class PlayEvent extends EmitterEvent {
     public final native func EventName() -> CName;
     public final native func SoundTags() -> array<CName>;
@@ -43,12 +39,14 @@ public native class PlayOneShotEvent extends PlayEvent {
     public final native func IsInDifferentRoom() -> Bool;
 }
 
-public native class StopSoundEvent extends EmitterEvent {
+public native class StopSoundEvent extends WwiseEvent {
+    public final native func EntityID() -> EntityID;
     public final native func EventName() -> CName;
     public final native func FloatData() -> Float;
 }
 
-public native class StopTaggedEvent extends EmitterEvent {
+public native class StopTaggedEvent extends WwiseEvent {
+    public final native func EntityID() -> EntityID;
     public final native func TagName() -> CName;
 }
 
@@ -71,27 +69,33 @@ public native class SetSwitchEvent extends SoundEvent {
     public final native func SwitchValueWwiseID() -> Uint32;
 }
 
-public native class SetAppearanceNameEvent extends EmitterEvent {
+public native class SetAppearanceNameEvent extends WwiseEvent {
+    public final native func EntityID() -> EntityID;
     public final native func Name() -> CName;
 }
 
-public native class SetEntityNameEvent extends EmitterEvent {
+public native class SetEntityNameEvent extends WwiseEvent {
+    public final native func EntityID() -> EntityID;
     public final native func Name() -> CName;
 }
 
-public native class TagEvent extends EmitterEvent {
+public native class TagEvent extends WwiseEvent {
+    public final native func EntityID() -> EntityID;
     public final native func TagName() -> CName;
 }
 
-public native class UntagEvent extends EmitterEvent {
+public native class UntagEvent extends WwiseEvent {
+    public final native func EntityID() -> EntityID;
     public final native func TagName() -> CName;
 }
 
-public native class AddContainerStreamingPrefetchEvent extends EmitterEvent {
+public native class AddContainerStreamingPrefetchEvent extends WwiseEvent {
+    public final native func EntityID() -> EntityID;
     public final native func EventName() -> CName;
 }
 
-public native class RemoveContainerStreamingPrefetchEvent extends EmitterEvent {
+public native class RemoveContainerStreamingPrefetchEvent extends WwiseEvent {
+    public final native func EntityID() -> EntityID;
     public final native func EventName() -> CName;
 }
 

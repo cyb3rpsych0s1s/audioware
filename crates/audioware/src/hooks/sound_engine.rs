@@ -624,8 +624,6 @@ pub mod event {
                 && let Ok(event_name) = EventName::try_from(name)
             {
                 let entity_id = EventApplicationInterface::new(a2).entity_id();
-                let emitter_name = EventApplicationInterface::new(a2).emitter_name();
-                let metadata_name = EventApplicationInterface::new(a2).metadata_name();
                 let float_data = audio.float_data().unwrap_or(0.);
                 let wwise_id = SoundEngine::get().metadata_manager().event_wwise_id(name);
                 if AudioEventCallbackSystem::any_callback(event_name, event_type) {
@@ -635,8 +633,6 @@ pub mod event {
                                 FireSetAppearanceNameCallback {
                                     event_name,
                                     entity_id,
-                                    emitter_name,
-                                    metadata_name,
                                     wwise_id,
                                 },
                             ));
@@ -646,8 +642,6 @@ pub mod event {
                                 FireSetEntityNameCallback {
                                     event_name,
                                     entity_id,
-                                    emitter_name,
-                                    metadata_name,
                                     wwise_id,
                                 },
                             ));
@@ -657,8 +651,6 @@ pub mod event {
                                 FireStopCallback {
                                     event_name,
                                     entity_id,
-                                    emitter_name,
-                                    metadata_name,
                                     event_type,
                                     float_data,
                                     wwise_id,
@@ -670,8 +662,6 @@ pub mod event {
                                 FireStopTaggedCallback {
                                     event_name,
                                     entity_id,
-                                    emitter_name,
-                                    metadata_name,
                                     event_type,
                                     float_data,
                                     wwise_id,
@@ -683,8 +673,6 @@ pub mod event {
                                 FireTagCallback {
                                     event_name,
                                     entity_id,
-                                    emitter_name,
-                                    metadata_name,
                                     event_type,
                                     wwise_id,
                                 },
@@ -695,8 +683,6 @@ pub mod event {
                                 FireUntagCallback {
                                     event_name,
                                     entity_id,
-                                    emitter_name,
-                                    metadata_name,
                                     event_type,
                                     wwise_id,
                                 },
@@ -708,8 +694,6 @@ pub mod event {
                                     FireAddContainerStreamingPrefetchCallback {
                                         event_name,
                                         entity_id,
-                                        emitter_name,
-                                        metadata_name,
                                         event_type,
                                         wwise_id,
                                     },
@@ -722,8 +706,6 @@ pub mod event {
                                     FireRemoveContainerStreamingPrefetchCallback {
                                         event_name,
                                         entity_id,
-                                        emitter_name,
-                                        metadata_name,
                                         event_type,
                                         wwise_id,
                                     },
@@ -737,7 +719,7 @@ pub mod event {
                     return;
                 }
                 crate::utils::intercept!(
-                    "AudioInternalEvent::ApplyAction( .. ) / event_name: {name}, event_type: {event_type}, entity_id: {entity_id}, emitter_name: {emitter_name}, metadata_name: {metadata_name}"
+                    "AudioInternalEvent::ApplyAction( .. ) / event_name: {name}, event_type: {event_type}, entity_id: {entity_id}"
                 );
             }
             cb(a1, a2, a3);

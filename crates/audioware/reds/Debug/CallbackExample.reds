@@ -21,7 +21,7 @@ public class AudioCallbackService extends ScriptableService {
          FTLog(s"AudioCallbackService.OnWindowsInFocus parameter_name: \(NameToString(event.Name())), parameter_value: \(event.Value()), wwise_id: \(event.WwiseID())");
     }
     public cb static func OnSetDefaultAppearance(event: ref<SetAppearanceNameEvent>) {
-         FTLog(s"AudioCallbackService.OnSetDefaultAppearance parameter_name: \(NameToString(event.Name())), entity_id: \(EntityID.ToDebugString(event.EntityID())), emitter_name: \(NameToString(event.EmitterName()))");
+         FTLog(s"AudioCallbackService.OnSetDefaultAppearance parameter_name: \(NameToString(event.Name())), entity_id: \(EntityID.ToDebugString(event.EntityID()))");
     }
     public cb static func OnMetalCar(base: ref<SoundEvent>) {
         if base.IsA(n"Audioware.PlayExternalEvent") {
@@ -101,11 +101,11 @@ public class MyFireSystem extends ScriptableSystem {
         }
         else if event.IsA(n"Audioware.AddContainerStreamingPrefetchEvent") {
             let prefetch = event as AddContainerStreamingPrefetchEvent;
-            FTLog(s"MyFireSystem.OnFireSMG \(NameToString(event.GetClassName())) entity: \(EntityID.ToDebugString(prefetch.EntityID())), emitter name: \(NameToString(prefetch.EmitterName())), wwise_id: \(prefetch.WwiseID())");
+            FTLog(s"MyFireSystem.OnFireSMG \(NameToString(event.GetClassName())) entity: \(EntityID.ToDebugString(prefetch.EntityID())), wwise_id: \(prefetch.WwiseID())");
         }
         else if event.IsA(n"Audioware.RemoveContainerStreamingPrefetchEvent") {
             let prefetch = event as RemoveContainerStreamingPrefetchEvent;
-            FTLog(s"MyFireSystem.OnFireSMG \(NameToString(event.GetClassName())) entity: \(EntityID.ToDebugString(prefetch.EntityID())), emitter name: \(NameToString(prefetch.EmitterName())), wwise_id: \(prefetch.WwiseID())");
+            FTLog(s"MyFireSystem.OnFireSMG \(NameToString(event.GetClassName())) entity: \(EntityID.ToDebugString(prefetch.EntityID())), wwise_id: \(prefetch.WwiseID())");
         }
         else {
             FTLog(s"MyFireSystem.OnFireSMG \(NameToString(event.GetClassName()))");

@@ -133,22 +133,4 @@ impl EventApplicationInterface {
             std::ptr::with_exposed_provenance::<unsafe extern "C" fn(VoidPtr) -> EntityId>(getter);
         unsafe { (*getter)(self.0) }
     }
-
-    pub fn emitter_name(&self) -> CName {
-        const OFFSET: usize = 0x70;
-        let me = unsafe { *(self.0 as *const usize) };
-        let getter = me + OFFSET;
-        let getter =
-            std::ptr::with_exposed_provenance::<unsafe extern "C" fn(VoidPtr) -> CName>(getter);
-        unsafe { (*getter)(self.0) }
-    }
-
-    pub fn metadata_name(&self) -> CName {
-        const OFFSET: usize = 0x88;
-        let me = unsafe { *(self.0 as *const usize) };
-        let getter = me + OFFSET;
-        let getter =
-            std::ptr::with_exposed_provenance::<unsafe extern "C" fn(VoidPtr) -> CName>(getter);
-        unsafe { (*getter)(self.0) }
-    }
 }

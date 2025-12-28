@@ -140,15 +140,15 @@ impl FireCallback {
             Self::PlayOneShot(x) => Some(x.base.emitter_name),
             Self::SetParameter(x) => Some(x.base.emitter_name),
             Self::SetSwitch(x) => Some(x.base.emitter_name),
-            Self::SetAppearanceName(x) => Some(x.emitter_name),
-            Self::SetEntityName(x) => Some(x.emitter_name),
-            Self::Stop(x) => Some(x.emitter_name),
-            Self::StopTagged(x) => Some(x.emitter_name),
-            Self::Tag(x) => Some(x.emitter_name),
-            Self::Untag(x) => Some(x.emitter_name),
-            Self::AddContainerStreamingPrefetch(x) => Some(x.emitter_name),
-            Self::RemoveContainerStreamingPrefetch(x) => Some(x.emitter_name),
-            Self::SetGlobalParameter(_) => None,
+            Self::SetAppearanceName(_)
+            | Self::SetEntityName(_)
+            | Self::Stop(_)
+            | Self::StopTagged(_)
+            | Self::Tag(_)
+            | Self::Untag(_)
+            | Self::AddContainerStreamingPrefetch(_)
+            | Self::RemoveContainerStreamingPrefetch(_)
+            | Self::SetGlobalParameter(_) => None,
         }
     }
 }
@@ -157,8 +157,6 @@ impl FireCallback {
 pub struct FireSetAppearanceNameCallback {
     pub event_name: EventName,
     pub entity_id: EntityId,
-    pub emitter_name: CName,
-    pub metadata_name: CName,
     pub wwise_id: WwiseId,
 }
 
@@ -166,8 +164,6 @@ pub struct FireSetAppearanceNameCallback {
 pub struct FireSetEntityNameCallback {
     pub event_name: EventName,
     pub entity_id: EntityId,
-    pub emitter_name: CName,
-    pub metadata_name: CName,
     pub wwise_id: WwiseId,
 }
 
@@ -264,8 +260,6 @@ pub struct FireStopCallback {
     pub event_name: EventName,
     pub event_type: EventActionType,
     pub entity_id: EntityId,
-    pub emitter_name: CName,
-    pub metadata_name: CName, // TODO: remove
     pub float_data: f32,
     pub wwise_id: WwiseId,
 }
@@ -275,8 +269,6 @@ pub struct FireStopTaggedCallback {
     pub event_name: EventName,
     pub event_type: EventActionType,
     pub entity_id: EntityId,
-    pub emitter_name: CName,
-    pub metadata_name: CName, // TODO: remove
     pub float_data: f32,
     pub wwise_id: WwiseId,
 }
@@ -286,8 +278,6 @@ pub struct FireTagCallback {
     pub event_name: EventName,
     pub event_type: EventActionType,
     pub entity_id: EntityId,
-    pub emitter_name: CName,
-    pub metadata_name: CName,
     pub wwise_id: WwiseId,
 }
 
@@ -296,8 +286,6 @@ pub struct FireUntagCallback {
     pub event_name: EventName,
     pub event_type: EventActionType,
     pub entity_id: EntityId,
-    pub emitter_name: CName,
-    pub metadata_name: CName,
     pub wwise_id: WwiseId,
 }
 
@@ -306,8 +294,6 @@ pub struct FireAddContainerStreamingPrefetchCallback {
     pub event_name: EventName,
     pub event_type: EventActionType,
     pub entity_id: EntityId,
-    pub emitter_name: CName,
-    pub metadata_name: CName,
     pub wwise_id: WwiseId,
 }
 
@@ -316,8 +302,6 @@ pub struct FireRemoveContainerStreamingPrefetchCallback {
     pub event_name: EventName,
     pub event_type: EventActionType,
     pub entity_id: EntityId,
-    pub emitter_name: CName,
-    pub metadata_name: CName,
     pub wwise_id: WwiseId,
 }
 

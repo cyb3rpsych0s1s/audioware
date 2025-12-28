@@ -21,9 +21,9 @@ use crate::{
     EngineWwiseEvent, Handler, LocalizationPackage, PlayEvent, PlayExternalEvent, PlayOneShotEvent,
     RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent, SetEntityNameEvent,
     SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent, StopTaggedEvent,
-    TagEvent, ToTween, Tween, UntagEvent, WithEmitter, WithEventName, WithExternalResourcePath,
-    WithFloatData, WithOcclusions, WithParamsAndSwitches, WithPosition, WithSeek, WithTagName,
-    WithTags, WithWwise,
+    TagEvent, ToTween, Tween, UntagEvent, WithEmitter, WithEntityId, WithEventName,
+    WithExternalResourcePath, WithFloatData, WithOcclusions, WithParamsAndSwitches, WithPosition,
+    WithSeek, WithTagName, WithTags, WithWwise,
     engine::{AudioEventManager, Engine, Mute, eq::Preset, state},
     queue,
     utils::{fails, lifecycle, warns},
@@ -167,15 +167,17 @@ pub fn exports() -> impl Exportable {
                 ])
                 .build(),
         ClassExport::<StopSoundEvent>::builder()
-                .base(EngineEmitterEvent::NAME)
+                .base(EngineWwiseEvent::NAME)
                 .methods(methods![
+                    final c"EntityID" => StopSoundEvent::entity_id,
                     final c"EventName" => StopSoundEvent::event_name,
                     final c"FloatData" => StopSoundEvent::float_data,
                 ])
                 .build(),
         ClassExport::<StopTaggedEvent>::builder()
-                .base(EngineEmitterEvent::NAME)
+                .base(EngineWwiseEvent::NAME)
                 .methods(methods![
+                    final c"EntityID" => StopTaggedEvent::entity_id,
                     final c"TagName" => StopTaggedEvent::tag_name,
                 ])
                 .build(),
@@ -205,38 +207,44 @@ pub fn exports() -> impl Exportable {
                 ])
                 .build(),
         ClassExport::<SetAppearanceNameEvent>::builder()
-                .base(EngineEmitterEvent::NAME)
+                .base(EngineWwiseEvent::NAME)
                 .methods(methods![
+                    final c"EntityID" => SetAppearanceNameEvent::entity_id,
                     final c"Name" => SetAppearanceNameEvent::name,
                 ])
                 .build(),
         ClassExport::<SetEntityNameEvent>::builder()
-                .base(EngineEmitterEvent::NAME)
+                .base(EngineWwiseEvent::NAME)
                 .methods(methods![
+                    final c"EntityID" => SetEntityNameEvent::entity_id,
                     final c"Name" => SetEntityNameEvent::name,
                 ])
                 .build(),
         ClassExport::<TagEvent>::builder()
-                .base(EngineEmitterEvent::NAME)
+                .base(EngineWwiseEvent::NAME)
                 .methods(methods![
+                    final c"EntityID" => TagEvent::entity_id,
                     final c"TagName" => TagEvent::tag_name,
                 ])
                 .build(),
         ClassExport::<UntagEvent>::builder()
-                .base(EngineEmitterEvent::NAME)
+                .base(EngineWwiseEvent::NAME)
                 .methods(methods![
+                    final c"EntityID" => UntagEvent::entity_id,
                     final c"TagName" => UntagEvent::tag_name,
                 ])
                 .build(),
         ClassExport::<AddContainerStreamingPrefetchEvent>::builder()
-                .base(EngineEmitterEvent::NAME)
+                .base(EngineWwiseEvent::NAME)
                 .methods(methods![
+                    final c"EntityID" => AddContainerStreamingPrefetchEvent::entity_id,
                     final c"EventName" => AddContainerStreamingPrefetchEvent::event_name,
                 ])
                 .build(),
         ClassExport::<RemoveContainerStreamingPrefetchEvent>::builder()
-                .base(EngineEmitterEvent::NAME)
+                .base(EngineWwiseEvent::NAME)
                 .methods(methods![
+                    final c"EntityID" => RemoveContainerStreamingPrefetchEvent::entity_id,
                     final c"EventName" => RemoveContainerStreamingPrefetchEvent::event_name,
                 ])
                 .build(),

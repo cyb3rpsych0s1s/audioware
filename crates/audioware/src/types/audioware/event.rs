@@ -25,8 +25,11 @@ pub trait WithWwise {
     fn wwise_id(&self) -> WwiseId;
 }
 
-pub trait WithEmitter {
+pub trait WithEntityId {
     fn entity_id(&self) -> EntityId;
+}
+
+pub trait WithEmitter: WithEntityId {
     fn emitter_name(&self) -> CName;
 }
 
@@ -75,6 +78,23 @@ pub trait WithExternalResourcePath {
 pub trait WithParamsAndSwitches {
     fn params(&self) -> Vec<AudParam>;
     fn switches(&self) -> Vec<AudSwitch>;
+}
+
+macro_rules! with_entity_id {
+    ($ty:ty) => {
+        impl WithEntityId for $ty {
+            fn entity_id(&self) -> EntityId {
+                self.entity_id.get()
+            }
+        }
+    };
+    (base $ty:ty) => {
+        impl WithEntityId for $ty {
+            fn entity_id(&self) -> EntityId {
+                self.base.entity_id()
+            }
+        }
+    };
 }
 
 macro_rules! with_event_name {
@@ -144,6 +164,34 @@ macro_rules! with_float_data {
         }
     };
 }
+
+macro_rules! with_wwise {
+    ($ty:ty) => {
+        impl WithWwise for $ty {
+            fn wwise_id(&self) -> WwiseId {
+                self.base.wwise_id()
+            }
+        }
+    };
+}
+
+with_wwise!(EngineEmitterEvent);
+with_wwise!(PlayEvent);
+with_wwise!(PlayExternalEvent);
+with_wwise!(PlayOneShotEvent);
+
+with_entity_id!(EngineEmitterEvent);
+with_entity_id!(base PlayEvent);
+with_entity_id!(base PlayExternalEvent);
+with_entity_id!(base PlayOneShotEvent);
+with_entity_id!(StopSoundEvent);
+with_entity_id!(StopTaggedEvent);
+with_entity_id!(AddContainerStreamingPrefetchEvent);
+with_entity_id!(RemoveContainerStreamingPrefetchEvent);
+with_entity_id!(TagEvent);
+with_entity_id!(UntagEvent);
+with_entity_id!(SetAppearanceNameEvent);
+with_entity_id!(SetEntityNameEvent);
 
 with_name!(SetAppearanceNameEvent);
 with_name!(SetEntityNameEvent);
@@ -221,36 +269,12 @@ hydrate_from_wwise!(FireUntagCallback);
 hydrate_from_wwise!(FireAddContainerStreamingPrefetchCallback);
 hydrate_from_wwise!(FireRemoveContainerStreamingPrefetchCallback);
 
-macro_rules! with_wwise {
-    ($ty:ty) => {
-        impl WithWwise for $ty {
-            fn wwise_id(&self) -> WwiseId {
-                self.base.wwise_id()
-            }
-        }
-    };
-}
-
-with_wwise!(EngineEmitterEvent);
-with_wwise!(PlayEvent);
-with_wwise!(PlayExternalEvent);
-with_wwise!(PlayOneShotEvent);
-
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct EngineEmitterEvent {
     base: EngineWwiseEvent,
     entity_id: Cell<EntityId>,
     emitter_name: Cell<CName>,
-}
-
-impl WithEmitter for EngineEmitterEvent {
-    fn entity_id(&self) -> EntityId {
-        self.entity_id.get()
-    }
-    fn emitter_name(&self) -> CName {
-        self.emitter_name.get()
-    }
 }
 
 unsafe impl ScriptClass for EngineEmitterEvent {
@@ -277,21 +301,17 @@ macro_rules! hydrate_from_emitter {
 }
 
 hydrate_from_emitter!(FirePlayCallback);
-hydrate_from_emitter!(FireSetAppearanceNameCallback);
-hydrate_from_emitter!(FireSetEntityNameCallback);
-hydrate_from_emitter!(FireStopCallback);
-hydrate_from_emitter!(FireStopTaggedCallback);
-hydrate_from_emitter!(FireTagCallback);
-hydrate_from_emitter!(FireUntagCallback);
-hydrate_from_emitter!(FireAddContainerStreamingPrefetchCallback);
-hydrate_from_emitter!(FireRemoveContainerStreamingPrefetchCallback);
 
 macro_rules! with_emitter {
     ($ty:ty) => {
         impl WithEmitter for $ty {
-            fn entity_id(&self) -> EntityId {
-                self.base.entity_id()
+            fn emitter_name(&self) -> CName {
+                self.emitter_name.get()
             }
+        }
+    };
+    (base $ty:ty) => {
+        impl WithEmitter for $ty {
             fn emitter_name(&self) -> CName {
                 self.base.emitter_name()
             }
@@ -299,9 +319,10 @@ macro_rules! with_emitter {
     };
 }
 
-with_emitter!(PlayEvent);
-with_emitter!(PlayExternalEvent);
-with_emitter!(PlayOneShotEvent);
+with_emitter!(EngineEmitterEvent);
+with_emitter!(base PlayEvent);
+with_emitter!(base PlayExternalEvent);
+with_emitter!(base PlayOneShotEvent);
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
@@ -481,7 +502,8 @@ impl Hydrate<FirePlayOneShotCallback> for PlayOneShotEvent {
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct StopSoundEvent {
-    base: EngineEmitterEvent,
+    base: EngineWwiseEvent,
+    entity_id: Cell<EntityId>,
     event_name: Cell<EventName>,
     float_data: Cell<f32>,
 }
@@ -493,13 +515,14 @@ unsafe impl ScriptClass for StopSoundEvent {
 
 impl AsRef<IScriptable> for StopSoundEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base
+        &self.base.base.base
     }
 }
 
 impl Hydrate<FireStopCallback> for StopSoundEvent {
     fn hydrate(&mut self, other: &FireStopCallback) {
         self.base.hydrate(other);
+        self.entity_id.set(other.entity_id);
         self.event_name.set(other.event_name);
         self.float_data.set(other.float_data);
     }
@@ -508,7 +531,8 @@ impl Hydrate<FireStopCallback> for StopSoundEvent {
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct StopTaggedEvent {
-    base: EngineEmitterEvent,
+    base: EngineWwiseEvent,
+    entity_id: Cell<EntityId>,
     tag_name: Cell<CName>,
 }
 
@@ -525,14 +549,15 @@ unsafe impl ScriptClass for StopTaggedEvent {
 
 impl AsRef<IScriptable> for StopTaggedEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base
+        &self.base.base.base
     }
 }
 
 impl Hydrate<FireStopTaggedCallback> for StopTaggedEvent {
     fn hydrate(&mut self, other: &FireStopTaggedCallback) {
         self.base.hydrate(other);
-        self.tag_name.set(other.metadata_name);
+        self.entity_id.set(other.entity_id);
+        self.tag_name.set(*other.event_name);
     }
 }
 
@@ -666,7 +691,8 @@ impl Hydrate<FireSetSwitchCallback> for SetSwitchEvent {
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct SetAppearanceNameEvent {
-    base: EngineEmitterEvent,
+    base: EngineWwiseEvent,
+    entity_id: Cell<EntityId>,
     name: Cell<CName>,
 }
 
@@ -683,21 +709,23 @@ unsafe impl ScriptClass for SetAppearanceNameEvent {
 
 impl AsRef<IScriptable> for SetAppearanceNameEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base
+        &self.base.base.base
     }
 }
 
 impl Hydrate<FireSetAppearanceNameCallback> for SetAppearanceNameEvent {
     fn hydrate(&mut self, other: &FireSetAppearanceNameCallback) {
         self.base.hydrate(other);
-        self.name.set(other.metadata_name);
+        self.entity_id.set(other.entity_id);
+        self.name.set(*other.event_name);
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct SetEntityNameEvent {
-    base: EngineEmitterEvent,
+    base: EngineWwiseEvent,
+    entity_id: Cell<EntityId>,
     name: Cell<CName>,
 }
 
@@ -714,21 +742,23 @@ unsafe impl ScriptClass for SetEntityNameEvent {
 
 impl AsRef<IScriptable> for SetEntityNameEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base
+        &self.base.base.base
     }
 }
 
 impl Hydrate<FireSetEntityNameCallback> for SetEntityNameEvent {
     fn hydrate(&mut self, other: &FireSetEntityNameCallback) {
         self.base.hydrate(other);
-        self.name.set(other.metadata_name);
+        self.entity_id.set(other.entity_id);
+        self.name.set(*other.event_name);
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct TagEvent {
-    base: EngineEmitterEvent,
+    base: EngineWwiseEvent,
+    entity_id: Cell<EntityId>,
     tag_name: Cell<CName>,
 }
 
@@ -739,21 +769,23 @@ unsafe impl ScriptClass for TagEvent {
 
 impl AsRef<IScriptable> for TagEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base
+        &self.base.base.base
     }
 }
 
 impl Hydrate<FireTagCallback> for TagEvent {
     fn hydrate(&mut self, other: &FireTagCallback) {
         self.base.hydrate(other);
-        self.tag_name.set(other.metadata_name);
+        self.entity_id.set(other.entity_id);
+        self.tag_name.set(*other.event_name);
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct UntagEvent {
-    base: EngineEmitterEvent,
+    base: EngineWwiseEvent,
+    entity_id: Cell<EntityId>,
     tag_name: Cell<CName>,
 }
 
@@ -764,21 +796,23 @@ unsafe impl ScriptClass for UntagEvent {
 
 impl AsRef<IScriptable> for UntagEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base
+        &self.base.base.base
     }
 }
 
 impl Hydrate<FireUntagCallback> for UntagEvent {
     fn hydrate(&mut self, other: &FireUntagCallback) {
         self.base.hydrate(other);
-        self.tag_name.set(other.metadata_name);
+        self.entity_id.set(other.entity_id);
+        self.tag_name.set(*other.event_name);
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct AddContainerStreamingPrefetchEvent {
-    base: EngineEmitterEvent,
+    base: EngineWwiseEvent,
+    entity_id: Cell<EntityId>,
     event_name: Cell<EventName>,
 }
 
@@ -789,13 +823,14 @@ unsafe impl ScriptClass for AddContainerStreamingPrefetchEvent {
 
 impl AsRef<IScriptable> for AddContainerStreamingPrefetchEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base
+        &self.base.base.base
     }
 }
 
 impl Hydrate<FireAddContainerStreamingPrefetchCallback> for AddContainerStreamingPrefetchEvent {
     fn hydrate(&mut self, other: &FireAddContainerStreamingPrefetchCallback) {
         self.base.hydrate(other);
+        self.entity_id.set(other.entity_id);
         self.event_name.set(other.event_name);
     }
 }
@@ -803,7 +838,8 @@ impl Hydrate<FireAddContainerStreamingPrefetchCallback> for AddContainerStreamin
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct RemoveContainerStreamingPrefetchEvent {
-    base: EngineEmitterEvent,
+    base: EngineWwiseEvent,
+    entity_id: Cell<EntityId>,
     event_name: Cell<EventName>,
 }
 
@@ -814,7 +850,7 @@ unsafe impl ScriptClass for RemoveContainerStreamingPrefetchEvent {
 
 impl AsRef<IScriptable> for RemoveContainerStreamingPrefetchEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base
+        &self.base.base.base
     }
 }
 
@@ -823,6 +859,7 @@ impl Hydrate<FireRemoveContainerStreamingPrefetchCallback>
 {
     fn hydrate(&mut self, other: &FireRemoveContainerStreamingPrefetchCallback) {
         self.base.hydrate(other);
+        self.entity_id.set(other.entity_id);
         self.event_name.set(other.event_name);
     }
 }
