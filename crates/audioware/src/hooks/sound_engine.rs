@@ -516,8 +516,8 @@ pub mod set_switch {
                 );
                 return cb(a1, a2, a3, a4);
             }
+            0
         }
-        0
     }
 }
 
