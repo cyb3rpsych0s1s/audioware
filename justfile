@@ -19,8 +19,8 @@ red_cache_dir         := join("r6", "cache")
 red4ext_logs_dir      := join("red4ext", "logs")
 
 # cli
-zoltan_exe            := env_var_or_default("ZOLTAN_EXE", "")
-wwiser_exe            := env_var_or_default("WWISER_EXE", "")
+zoltan_exe            := env("ZOLTAN_EXE", "")
+wwiser_exe            := env("WWISER_EXE", "")
 
 [private]
 setup path:
@@ -33,6 +33,7 @@ delete path:
 [private]
 no-debug path:
   @if (Test-Path '{{path}}') { Get-ChildItem -Path '{{path}}' -Recurse -Filter 'Debug*.reds' | Remove-Item -Force; } else { Write-Host "Unknown folder: {{path}}"; exit 1 }
+  @just delete '{{ join(path, redscript_deploy_dir, "Debug") }}'
 
 [private]
 copy from to:
