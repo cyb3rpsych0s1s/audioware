@@ -1,3 +1,5 @@
+use std::ops::Not;
+
 use red4ext_rs::VoidPtr;
 
 use crate::{AudioEventId, AudioInternalEvent};
@@ -25,6 +27,11 @@ unsafe extern "C" fn detour(
     cb: unsafe extern "C" fn(a1: VoidPtr, a2: *mut AudioInternalEvent, a3: *mut AudioEventId) -> (),
 ) {
     unsafe {
+        let interface = a2.is_null().not().then(|| &*a2);
+        let id = a3.is_null().not().then(|| *a3);
+        if let (Some(interface), Some(id)) = (interface, id) {
+            crate::utils::intercept!("AudioInterface::PostEvent( {{ {interface} }}, {id} )");
+        }
         cb(a1, a2, a3);
     }
 }

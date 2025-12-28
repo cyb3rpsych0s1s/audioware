@@ -104,7 +104,7 @@ pub mod post_event {
                 }
             }
             if !Replacements.is_specific_muted(event_name, event_type) {
-                // crate::utils::intercept!("SoundEngine::PostEvent( {a2}, {sound} ) / {wwise_id}",);
+                crate::utils::intercept!("SoundEngine::PostEvent( {a2}, {sound} ) / {wwise_id}",);
                 return cb(a1, a2, a3);
             }
             0
@@ -187,13 +187,13 @@ pub mod post_event {
                     if Replacements.is_specific_muted(event_name, event_type) {
                         return 0;
                     }
-                    // crate::utils::intercept!(
-                    //     "SoundEngine::PostEvent_OneShot( {{ {} }}, {{ {} }} ) / {wwise_id}",
-                    //     oneshot,
-                    //     sound_object
-                    //         .map(|x| format!("{x}"))
-                    //         .unwrap_or("..".to_string())
-                    // );
+                    crate::utils::intercept!(
+                        "SoundEngine::PostEvent_OneShot( {{ {} }}, {{ {} }} ) / {wwise_id}",
+                        oneshot,
+                        sound_object
+                            .map(|x| format!("{x}"))
+                            .unwrap_or("..".to_string())
+                    );
                 }
                 cb(a1, a2, a3)
             }
@@ -281,10 +281,10 @@ pub mod external_event {
                 if Replacements.is_specific_muted(event_name, event_type) {
                     return 0;
                 }
-                // crate::utils::intercept!(
-                //     "SoundEngine::ExternalEvent( {{ {a2} }}, .., {{ {} }} ) / {wwise_id}",
-                //     &*a4,
-                // );
+                crate::utils::intercept!(
+                    "SoundEngine::ExternalEvent( {{ {a2} }}, .., {{ {} }} ) / {wwise_id}",
+                    &*a4,
+                );
             }
             cb(a1, a2, a3, a4)
         }
