@@ -522,7 +522,7 @@ pub union AudioStrategyUnion {
     by_emitter_id: u32,
     by_position: Vector3,
     by_tags: [CName; 2],
-    by_event_id: WwiseId,
+    by_event_id: AudioEventId,
 }
 
 #[derive(Clone, Copy)]
@@ -539,7 +539,7 @@ pub struct AudioInternalEvent {
     name: CName,                           // 0x10
     param: AudioParamUnion,                // 0x18
     external_source_path: u64,             // 0x20
-    id: WwiseId,                           // 0x28
+    id: AudioEventId,                      // 0x28
     pub action: EventActionType,           // 0x2C
     pub flags: AudioEventFlags,            // 0x30
     strategy_type: EventApplyStrategyType, // 0x34
