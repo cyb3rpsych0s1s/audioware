@@ -353,7 +353,7 @@ pub struct Sound {
     event_metadata: *const std::ffi::c_void,     // 38
     sound_id: SoundId,                           // 40
     playing_id: PlayingSoundId,                  // 44
-    event_id: WwiseId,                           // 48
+    event_id: AudioEventId,                      // 48
     unkx: [u8; PADDING_PAST_IDS],                // ?
     duration: f32,                               // 54
     callback_flags: u8,                          // 58
