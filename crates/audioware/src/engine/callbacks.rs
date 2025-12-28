@@ -293,6 +293,14 @@ fn inner_call<T: ScriptClass>(
                 expected: EngineEmitterEvent::NAME,
                 index: 0,
             })),
+        PlayEvent::NAME => event
+            .cast::<PlayEvent>()
+            .map(|x| func.execute::<_, ()>(receiver, (x,)))
+            .unwrap_or(Err(InvokeError::ArgMismatch {
+                function: func.name().as_str(),
+                expected: PlayEvent::NAME,
+                index: 0,
+            })),
         _ => Err(InvokeError::ArgMismatch {
             function: func.name().as_str(),
             expected: T::NAME,
