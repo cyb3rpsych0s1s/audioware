@@ -22,7 +22,8 @@ use crate::{
     RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent, SetEntityNameEvent,
     SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent, StopTaggedEvent,
     TagEvent, ToTween, Tween, UntagEvent, WithEmitter, WithEventName, WithExternalResourcePath,
-    WithFloatData, WithParamsAndSwitches, WithSeek, WithTagName, WithTags, WithWwise,
+    WithFloatData, WithOcclusions, WithParamsAndSwitches, WithSeek, WithTagName, WithTags,
+    WithWwise,
     engine::{AudioEventManager, Engine, Mute, eq::Preset, state},
     queue,
     utils::{fails, lifecycle, warns},
@@ -156,6 +157,10 @@ pub fn exports() -> impl Exportable {
                 .methods(methods![
                     final c"Params" => PlayOneShotEvent::params,
                     final c"Switches" => PlayOneShotEvent::switches,
+                    final c"GraphOcclusion" => PlayOneShotEvent::graph_occlusion,
+                    final c"RaycastOcclusion" => PlayOneShotEvent::raycast_occlusion,
+                    final c"HasGraphOcclusion" => PlayOneShotEvent::has_graph_occlusion,
+                    final c"HasRaycastOcclusion" => PlayOneShotEvent::has_raycast_occlusion,
                 ])
                 .build(),
         ClassExport::<StopSoundEvent>::builder()

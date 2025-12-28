@@ -35,6 +35,13 @@ pub trait WithTags {
     fn emitter_tags(&self) -> Vec<CName>;
 }
 
+pub trait WithOcclusions {
+    fn graph_occlusion(&self) -> f32;
+    fn raycast_occlusion(&self) -> f32;
+    fn has_graph_occlusion(&self) -> bool;
+    fn has_raycast_occlusion(&self) -> bool;
+}
+
 pub trait WithEventName {
     fn event_name(&self) -> CName;
 }
@@ -376,6 +383,10 @@ pub struct PlayOneShotEvent {
     base: PlayEvent,
     params: RefCell<Vec<AudParam>>,
     switches: RefCell<Vec<AudSwitch>>,
+    graph_occlusion: Cell<f32>,
+    raycast_occlusion: Cell<f32>,
+    has_graph_occlusion: Cell<bool>,
+    has_raycast_occlusion: Cell<bool>,
 }
 
 impl WithParamsAndSwitches for PlayOneShotEvent {
@@ -385,6 +396,24 @@ impl WithParamsAndSwitches for PlayOneShotEvent {
 
     fn switches(&self) -> Vec<AudSwitch> {
         self.switches.borrow().clone()
+    }
+}
+
+impl WithOcclusions for PlayOneShotEvent {
+    fn graph_occlusion(&self) -> f32 {
+        self.graph_occlusion.get()
+    }
+
+    fn raycast_occlusion(&self) -> f32 {
+        self.raycast_occlusion.get()
+    }
+
+    fn has_graph_occlusion(&self) -> bool {
+        self.has_graph_occlusion.get()
+    }
+
+    fn has_raycast_occlusion(&self) -> bool {
+        self.has_raycast_occlusion.get()
     }
 }
 
@@ -420,6 +449,10 @@ impl Hydrate<FirePlayOneShotCallback> for PlayOneShotEvent {
                 value: x.value,
             })
             .collect();
+        self.graph_occlusion.set(other.graph_occlusion);
+        self.raycast_occlusion.set(other.raycast_occlusion);
+        self.has_graph_occlusion.set(other.has_graph_occlusion);
+        self.has_raycast_occlusion.set(other.has_raycast_occlusion);
     }
 }
 

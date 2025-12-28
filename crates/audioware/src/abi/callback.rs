@@ -200,6 +200,10 @@ pub struct FirePlayOneShotCallback {
     pub base: FirePlayCallback,
     pub params: Vec<Pair<f32>>,
     pub switches: Vec<Pair<CName>>,
+    pub graph_occlusion: f32,
+    pub raycast_occlusion: f32,
+    pub has_graph_occlusion: bool,
+    pub has_raycast_occlusion: bool,
 }
 
 impl FirePlayOneShotCallback {

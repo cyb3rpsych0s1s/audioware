@@ -116,6 +116,15 @@ impl OneShotSound {
     pub fn switches(&self) -> &[Pair<CName>] {
         self.switches.iter().as_slice()
     }
+    pub fn graph_occlusion(&self) -> f32 {
+        self.graph_occlusion
+    }
+    pub fn raycast_occlusion(&self) -> f32 {
+        self.raycast_occlusion
+    }
+    pub fn flags(&self) -> TFlag {
+        self.flags
+    }
 }
 
 impl std::fmt::Display for OneShotSound {
