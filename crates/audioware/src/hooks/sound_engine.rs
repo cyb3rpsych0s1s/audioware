@@ -691,9 +691,9 @@ pub mod event {
                 if Replacements.is_specific_muted(event_name, event_type) {
                     return;
                 }
-                // crate::utils::intercept!(
-                //     "AudioInternalEvent::ApplyAction( .. ) / event_name: {name}, event_type: {event_type}, entity_id: {entity_id}, emitter_name: {emitter_name}, metadata_name: {metadata_name}"
-                // );
+                crate::utils::intercept!(
+                    "AudioInternalEvent::ApplyAction( .. ) / event_name: {name}, event_type: {event_type}, entity_id: {entity_id}, emitter_name: {emitter_name}, metadata_name: {metadata_name}"
+                );
             }
             cb(a1, a2, a3);
         }
