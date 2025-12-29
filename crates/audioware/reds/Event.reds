@@ -1,35 +1,69 @@
 module Audioware
 
+// TODO: refactor when interfaces land in Redscript. 
+
+enum EventHookType {
+    Play,
+    PlayExternal,
+    PlayOneShot,
+    Seek,
+    Stop,
+    StopTagged,
+    SetParameter,
+    SetSwitch,
+    SetGlobalParameter,
+}
+
 public native class AudioEventCallbackSystem {
     public native final func RegisterCallback(eventName: CName, target: ref<IScriptable>, functionName: CName) -> ref<AudioEventCallbackHandler>;
     public native final func RegisterStaticCallback(eventName: CName, className: CName, functionName: CName) -> ref<AudioEventCallbackHandler>;
 }
 
-public abstract native class SoundEvent {}
-
-public abstract native class WwiseEvent extends SoundEvent {
-    public final native func WwiseID() -> Uint32;
+public abstract native class SoundEvent {
+    public func PrimaryName() -> CName;
+    public final static func InvalidWwiseID() -> Uint32 = 2166136261u;
 }
 
-public abstract native class EmitterEvent extends WwiseEvent {
+public native class PlayEvent extends SoundEvent {
+    public final native func EventName() -> CName;
+    
     public final native func EntityID() -> EntityID;
     public final native func EmitterName() -> CName;
-}
-
-public native class PlayEvent extends EmitterEvent {
-    public final native func EventName() -> CName;
+    public final native func Position() -> Vector4;
+    public final native func WwiseID() -> Uint32;
+    
     public final native func SoundTags() -> array<CName>;
     public final native func EmitterTags() -> array<CName>;
     public final native func Seek() -> Float;
+    
+    public func PrimaryName() -> CName = this.EventName();
+}
+
+public native class PlayExternalEvent extends SoundEvent {
+    public final native func EventName() -> CName;
+    
+    public final native func EntityID() -> EntityID;
+    public final native func EmitterName() -> CName;
     public final native func Position() -> Vector4;
-    public final native func HasPosition() -> Bool;
+    public final native func WwiseID() -> Uint32;
+    
+    public final native func SoundTags() -> array<CName>;
+    public final native func EmitterTags() -> array<CName>;
+    public final native func Seek() -> Float;
+    
+    public final native func ExternalResourcePath() -> ResRef;
+    
+    public func PrimaryName() -> CName = this.EventName();
 }
 
-public native class PlayExternalEvent extends PlayEvent {
-    public final native func ExternalResourcePath() -> Uint64;
-}
-
-public native class PlayOneShotEvent extends PlayEvent {
+public native class PlayOneShotEvent extends SoundEvent {
+    public final native func EventName() -> CName;
+    
+    public final native func EntityID() -> EntityID;
+    public final native func EmitterName() -> CName;
+    public final native func Position() -> Vector4;
+    public final native func WwiseID() -> Uint32;
+    
     public final native func Params() -> array<AudParam>;
     public final native func Switches() -> array<audioAudSwitch>;
     public final native func GraphOcclusion() -> Float;
@@ -37,66 +71,123 @@ public native class PlayOneShotEvent extends PlayEvent {
     public final native func HasGraphOcclusion() -> Bool;
     public final native func HasRaycastOcclusion() -> Bool;
     public final native func IsInDifferentRoom() -> Bool;
+    
+    public func PrimaryName() -> CName = this.EventName();
 }
 
-public native class StopSoundEvent extends WwiseEvent {
+public native class StopSoundEvent extends SoundEvent {
+    public final native func SoundName() -> CName;
+    
     public final native func EntityID() -> EntityID;
-    public final native func EventName() -> CName;
-    public final native func FloatData() -> Float;
+    public final native func WwiseID() -> Uint32;
+    
+    public final native func FadeOut() -> Float;
+    
+    public func PrimaryName() -> CName = this.SoundName();
 }
 
-public native class StopTaggedEvent extends WwiseEvent {
-    public final native func EntityID() -> EntityID;
+public native class StopTaggedEvent extends SoundEvent {
     public final native func TagName() -> CName;
+    
+    public final native func EntityID() -> EntityID;
+    public final native func WwiseID() -> Uint32;
+    
+    public func PrimaryName() -> CName = this.TagName();
 }
 
-public native class SetParameterEvent extends EmitterEvent {
-    public final native func NameData() -> CName;
-    public final native func FloatData() -> Float;
+public native class SetParameterEvent extends SoundEvent {
+    public final native func ParamName() -> CName;
+    public final native func ParamValue() -> Float;
+    
+    public final native func EntityID() -> EntityID;
+    public final native func WwiseID() -> Uint32;
+    
+    public final native func SoundTags() -> array<CName>;
+    public final native func EmitterTags() -> array<CName>;
+    
+    public func PrimaryName() -> CName = this.ParamName();
 }
 
-public native class SetGlobalParameterEvent extends WwiseEvent {
+public native class SetGlobalParameterEvent extends SoundEvent {
     public final native func Name() -> CName;
     public final native func Value() -> Float;
     public final native func Duration() -> Float;
     public final native func CurveType() -> audioESoundCurveType;
+    
+    public final native func WwiseID() -> Uint32;
+    
+    public func PrimaryName() -> CName = this.Name();
 }
 
-public native class SetSwitchEvent extends PlayEvent {
+public native class SetSwitchEvent extends SoundEvent {
     public final native func SwitchName() -> CName;
     public final native func SwitchValue() -> CName;
+    
     public final native func SwitchNameWwiseID() -> Uint32;
     public final native func SwitchValueWwiseID() -> Uint32;
+    
+    public final native func EntityID() -> EntityID;
+    public final native func EmitterName() -> CName;
+    public final native func Position() -> Vector4;
+    
+    public final native func SoundTags() -> array<CName>;
+    public final native func EmitterTags() -> array<CName>;
+    
+    public func PrimaryName() -> CName = this.SwitchName();
 }
 
-public native class SetAppearanceNameEvent extends WwiseEvent {
-    public final native func EntityID() -> EntityID;
+public native class SetAppearanceNameEvent extends SoundEvent {
     public final native func Name() -> CName;
+    
+    public final native func EntityID() -> EntityID;
+    public final native func WwiseID() -> Uint32;
+    
+    public func PrimaryName() -> CName = this.Name();
 }
 
-public native class SetEntityNameEvent extends WwiseEvent {
-    public final native func EntityID() -> EntityID;
+public native class SetEntityNameEvent extends SoundEvent {
     public final native func Name() -> CName;
+    
+    public final native func EntityID() -> EntityID;
+    public final native func WwiseID() -> Uint32;
+    
+    public func PrimaryName() -> CName = this.Name();
 }
 
-public native class TagEvent extends WwiseEvent {
-    public final native func EntityID() -> EntityID;
+public native class TagEvent extends SoundEvent {
     public final native func TagName() -> CName;
+    
+    public final native func EntityID() -> EntityID;
+    public final native func WwiseID() -> Uint32;
+    
+    public func PrimaryName() -> CName = this.TagName();
 }
 
-public native class UntagEvent extends WwiseEvent {
-    public final native func EntityID() -> EntityID;
+public native class UntagEvent extends SoundEvent {
     public final native func TagName() -> CName;
+    
+    public final native func EntityID() -> EntityID;
+    public final native func WwiseID() -> Uint32;
+    
+    public func PrimaryName() -> CName = this.TagName();
 }
 
-public native class AddContainerStreamingPrefetchEvent extends WwiseEvent {
-    public final native func EntityID() -> EntityID;
+public native class AddContainerStreamingPrefetchEvent extends SoundEvent {
     public final native func EventName() -> CName;
+    
+    public final native func EntityID() -> EntityID;
+    public final native func WwiseID() -> Uint32;
+    
+    public func PrimaryName() -> CName = this.EventName();
 }
 
-public native class RemoveContainerStreamingPrefetchEvent extends WwiseEvent {
-    public final native func EntityID() -> EntityID;
+public native class RemoveContainerStreamingPrefetchEvent extends SoundEvent {
     public final native func EventName() -> CName;
+    
+    public final native func EntityID() -> EntityID;
+    public final native func WwiseID() -> Uint32;
+    
+    public func PrimaryName() -> CName = this.EventName();
 }
 
 public struct AudParam {
