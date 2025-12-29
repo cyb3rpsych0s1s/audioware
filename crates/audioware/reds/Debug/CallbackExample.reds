@@ -1,18 +1,31 @@
 import Audioware.*
 
 public class AudioCallbackService extends ScriptableService {
+    private let occlusions: ref<inkIntHashMap>;
     private cb func OnLoad() {
         FTLog(s"AudioCallbackService.OnLoad");
         let system = new AudioEventCallbackSystem();
-        system.RegisterStaticCallback(n"game_occlusion", n"AudioCallbackService", n"OnOcclusion");
+        system.RegisterCallback(n"game_occlusion", this, n"OnOcclusion");
         system.RegisterStaticCallback(n"veh_tyre_condition", n"AudioCallbackService", n"OnTyreCondition");
         system.RegisterStaticCallback(n"game_window_in_focus", n"AudioCallbackService", n"OnWindowsInFocus");
         system.RegisterStaticCallback(n"default", n"AudioCallbackService", n"OnSetDefaultAppearance")
             .SetLifetime(AudioEventCallbackLifetime.Forever);
         system.RegisterStaticCallback(n"ph_metal_car", n"AudioCallbackService", n"OnMetalCar");
     }
-    public cb static func OnOcclusion(event: ref<SetParameterEvent>) {
-         FTLog(s"AudioCallbackService.OnOcclusion name_data: \(NameToString(event.NameData())), float_data: \(event.FloatData()), entity_id: \(EntityID.ToDebugString(event.EntityID())), emitter_name: \(NameToString(event.EmitterName())), wwise_id: \(event.WwiseID())");
+    public cb func OnOcclusion(event: ref<SetParameterEvent>) {
+        let hash = EntityID.GetHash(event.EntityID());
+        let percent = event.FloatData() * 100.;
+        let value = Cast<Int32>(percent);
+        if this.occlusions.KeyExist(Cast(hash)) {
+            if this.occlusions.Get(Cast(hash)) == value {
+                return;
+            } else {
+                this.occlusions.Set(Cast(hash), value);
+            }
+        } else {
+            this.occlusions.Insert(Cast(hash), value);
+        }
+        FTLog(s"AudioCallbackService.OnOcclusion name_data: \(NameToString(event.NameData())), float_data: \(event.FloatData()), entity_id: \(EntityID.ToDebugString(event.EntityID())), emitter_name: \(NameToString(event.EmitterName())), wwise_id: \(event.WwiseID())");
     }
     public cb static func OnTyreCondition(event: ref<SetSwitchEvent>) {
          FTLog(s"AudioCallbackService.OnTyreCondition switch_name: \(NameToString(event.SwitchName())), switch_value: \(NameToString(event.SwitchValue())), switch_name_wwise_id: \(event.SwitchNameWwiseID())");
