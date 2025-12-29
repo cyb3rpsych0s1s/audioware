@@ -14,7 +14,7 @@ public class AudioCallbackService extends ScriptableService {
     }
     public cb func OnOcclusion(event: ref<SetParameterEvent>) {
         let hash = EntityID.GetHash(event.EntityID());
-        let percent = event.FloatData() * 100.;
+        let percent = event.ParamValue() * 100.;
         let value = Cast<Int32>(percent);
         if this.occlusions.KeyExist(Cast(hash)) {
             if this.occlusions.Get(Cast(hash)) == value {
@@ -25,7 +25,7 @@ public class AudioCallbackService extends ScriptableService {
         } else {
             this.occlusions.Insert(Cast(hash), value);
         }
-        FTLog(s"AudioCallbackService.OnOcclusion name_data: \(NameToString(event.NameData())), float_data: \(event.FloatData()), entity_id: \(EntityID.ToDebugString(event.EntityID())), emitter_name: \(NameToString(event.EmitterName())), wwise_id: \(event.WwiseID())");
+        FTLog(s"AudioCallbackService.OnOcclusion name_data: \(NameToString(event.ParamName())), float_data: \(event.ParamValue()), entity_id: \(EntityID.ToDebugString(event.EntityID())), emitter_name: \(NameToString(event.EmitterName())), wwise_id: \(event.WwiseID())");
     }
     public cb static func OnTyreCondition(event: ref<SetSwitchEvent>) {
          FTLog(s"AudioCallbackService.OnTyreCondition switch_name: \(NameToString(event.SwitchName())), switch_value: \(NameToString(event.SwitchValue())), switch_name_wwise_id: \(event.SwitchNameWwiseID())");
@@ -107,7 +107,7 @@ public class MyFireSystem extends ScriptableSystem {
             this.idle = null;
         }
     }
-    private cb func OnFireSMG(event: ref<WwiseEvent>) {
+    private cb func OnFireSMG(event: ref<SoundEvent>) {
         if event.IsA(n"Audioware.PlayEvent") {
             let play = event as PlayEvent;
             FTLog(s"MyFireSystem.OnFireSMG on entity: \(EntityID.ToDebugString(play.EntityID())) \(play.EntityID()), emitter name: \(NameToString(play.EmitterName()))");
@@ -125,6 +125,6 @@ public class MyFireSystem extends ScriptableSystem {
         }
     }
     private cb func OnStopIdleStart(event: ref<StopSoundEvent>) {
-        FTLog(s"MyFireSystem.OnStopIdleStart => event_name: \(NameToString(event.EventName())), entity_id: \(EntityID.ToDebugString(event.EntityID())), float_data: \(event.FloatData())");
+        FTLog(s"MyFireSystem.OnStopIdleStart => event_name: \(NameToString(event.SoundName())), entity_id: \(EntityID.ToDebugString(event.EntityID())), fade_out: \(event.FadeOut())");
     }
 }

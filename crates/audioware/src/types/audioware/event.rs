@@ -17,199 +17,72 @@ use crate::{
     },
 };
 
-pub trait Hydrate<T> {
-    fn hydrate(&mut self, other: &T);
-}
-
-pub trait WithWwise {
-    fn wwise_id(&self) -> WwiseId;
-}
-
-pub trait WithEntityId {
-    fn entity_id(&self) -> EntityId;
-}
-
-pub trait WithEmitter: WithEntityId {
-    fn emitter_name(&self) -> CName;
-}
-
-pub trait WithPosition {
-    fn position(&self) -> Vector4;
-    fn has_position(&self) -> bool;
-}
-
-pub trait WithTags {
-    fn sound_tags(&self) -> Vec<CName>;
-    fn emitter_tags(&self) -> Vec<CName>;
-}
-
-pub trait WithOcclusions {
-    fn graph_occlusion(&self) -> f32;
-    fn raycast_occlusion(&self) -> f32;
-    fn has_graph_occlusion(&self) -> bool;
-    fn has_raycast_occlusion(&self) -> bool;
-    fn is_in_different_room(&self) -> bool;
-}
-
-pub trait WithEventName {
-    fn event_name(&self) -> CName;
-}
-
-pub trait WithName {
-    fn name(&self) -> CName;
-}
-
-pub trait WithSeek {
-    fn seek(&self) -> f32;
-}
-
-pub trait WithTagName {
-    fn tag_name(&self) -> CName;
-}
-
-pub trait WithFloatData {
-    fn float_data(&self) -> f32;
-}
-
-pub trait WithExternalResourcePath {
-    fn external_resource_path(&self) -> u64;
-}
-
-pub trait WithParamsAndSwitches {
-    fn params(&self) -> Vec<AudParam>;
-    fn switches(&self) -> Vec<AudSwitch>;
-}
-
-macro_rules! with_entity_id {
-    ($ty:ty) => {
-        impl WithEntityId for $ty {
-            fn entity_id(&self) -> EntityId {
-                self.entity_id.get()
-            }
+macro_rules! getter {
+    (cell $name:ident -> $ty:ty) => {
+        pub fn $name(&self) -> $ty {
+            self.$name.get()
         }
     };
-    (base $ty:ty) => {
-        impl WithEntityId for $ty {
-            fn entity_id(&self) -> EntityId {
-                self.base.entity_id()
-            }
+    (*cell $name:ident -> $ty:ty) => {
+        pub fn $name(&self) -> $ty {
+            *self.$name.get()
+        }
+    };
+    (refcell $name:ident -> $ty:ty) => {
+        pub fn $name(&self) -> $ty {
+            self.$name.borrow().clone()
         }
     };
 }
 
-macro_rules! with_event_name {
-    ($ty:ty) => {
-        impl WithEventName for $ty {
-            fn event_name(&self) -> CName {
-                *self.event_name.get()
-            }
+macro_rules! setter {
+    (cell $set:ident $name:ident -> $ty:ty => $other:ty) => {
+        pub fn $set(&self, other: &$other) {
+            self.$name.set(other.$name);
         }
     };
-    (base $ty:ty) => {
-        impl WithEventName for $ty {
-            fn event_name(&self) -> CName {
-                self.base.event_name()
-            }
+    (*cell $set:ident $name:ident -> $ty:ty => $other:ty) => {
+        pub fn $set(&self, other: &$other) {
+            self.$name.set(*other.$name);
         }
     };
-}
-
-macro_rules! with_name {
-    ($ty:ty) => {
-        impl WithName for $ty {
-            fn name(&self) -> CName {
-                self.name.get()
-            }
+    (refcell $set:ident $name:ident -> $ty:ty => $other:ty) => {
+        pub fn $set(&self, other: &$other) {
+            *self.$name.borrow_mut() = other.$name.clone();
         }
     };
-    (base $ty:ty) => {
-        impl WithName for $ty {
-            fn name(&self) -> CName {
-                self.base.name()
-            }
+    (refcell cast $elem:ident, $set:ident $name:ident -> $ty:ty => $other:ty) => {
+        pub fn $set(&self, other: &$other) {
+            *self.$name.borrow_mut() = other
+                .$name
+                .iter()
+                .copied()
+                .map(|x| $elem {
+                    name: x.name,
+                    value: x.value,
+                })
+                .collect();
         }
     };
-}
-
-macro_rules! with_tag_name {
-    ($ty:ty) => {
-        impl WithTagName for $ty {
-            fn tag_name(&self) -> CName {
-                self.tag_name.get()
-            }
+    (base cell $set:ident $name:ident -> $ty:ty => $other:ty) => {
+        #[inline]
+        pub fn $set(&self, other: &$other) {
+            self.$name.set(other.base.$name);
         }
     };
-    (base $ty:ty) => {
-        impl WithTagName for $ty {
-            fn tag_name(&self) -> CName {
-                self.base.tag_name()
-            }
+    (base *cell $set:ident $name:ident -> $ty:ty => $other:ty) => {
+        #[inline]
+        pub fn $set(&self, other: &$other) {
+            self.$name.set(*other.base.$name);
         }
     };
-}
-
-macro_rules! with_float_data {
-    ($ty:ty) => {
-        impl WithFloatData for $ty {
-            fn float_data(&self) -> f32 {
-                self.float_data.get()
-            }
-        }
-    };
-    (base $ty:ty) => {
-        impl WithFloatData for $ty {
-            fn float_data(&self) -> f32 {
-                self.base.float_data()
-            }
+    (base refcell $set:ident $name:ident -> $ty:ty => $other:ty) => {
+        #[inline]
+        pub fn $set(&self, other: &$other) {
+            *self.$name.borrow_mut() = other.base.$name.clone();
         }
     };
 }
-
-macro_rules! with_wwise {
-    ($ty:ty) => {
-        impl WithWwise for $ty {
-            fn wwise_id(&self) -> WwiseId {
-                self.base.wwise_id()
-            }
-        }
-    };
-}
-
-with_wwise!(EngineEmitterEvent);
-with_wwise!(PlayEvent);
-with_wwise!(PlayExternalEvent);
-with_wwise!(PlayOneShotEvent);
-with_wwise!(SetSwitchEvent);
-
-with_entity_id!(EngineEmitterEvent);
-with_entity_id!(base PlayEvent);
-with_entity_id!(base PlayExternalEvent);
-with_entity_id!(base PlayOneShotEvent);
-with_entity_id!(base SetSwitchEvent);
-with_entity_id!(StopSoundEvent);
-with_entity_id!(StopTaggedEvent);
-with_entity_id!(AddContainerStreamingPrefetchEvent);
-with_entity_id!(RemoveContainerStreamingPrefetchEvent);
-with_entity_id!(TagEvent);
-with_entity_id!(UntagEvent);
-with_entity_id!(SetAppearanceNameEvent);
-with_entity_id!(SetEntityNameEvent);
-
-with_name!(SetAppearanceNameEvent);
-with_name!(SetEntityNameEvent);
-
-with_tag_name!(TagEvent);
-with_tag_name!(UntagEvent);
-
-with_event_name!(PlayEvent);
-with_event_name!(base PlayExternalEvent);
-with_event_name!(base PlayOneShotEvent);
-with_event_name!(base SetSwitchEvent);
-with_event_name!(StopSoundEvent);
-with_event_name!(AddContainerStreamingPrefetchEvent);
-with_event_name!(RemoveContainerStreamingPrefetchEvent);
-
-with_float_data!(StopSoundEvent);
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
@@ -230,138 +103,46 @@ impl AsRef<IScriptable> for EngineSoundEvent {
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
-pub struct EngineWwiseEvent {
+pub struct PlayEvent {
     base: EngineSoundEvent,
-    wwise_id: Cell<WwiseId>,
-}
-
-impl WithWwise for EngineWwiseEvent {
-    fn wwise_id(&self) -> WwiseId {
-        self.wwise_id.get()
-    }
-}
-
-unsafe impl ScriptClass for EngineWwiseEvent {
-    type Kind = Native;
-    const NAME: &'static str = "Audioware.WwiseEvent";
-}
-
-impl AsRef<IScriptable> for EngineWwiseEvent {
-    fn as_ref(&self) -> &IScriptable {
-        &self.base.base
-    }
-}
-
-macro_rules! hydrate_from_wwise {
-    ($ty:ty) => {
-        impl Hydrate<$ty> for EngineWwiseEvent {
-            fn hydrate(&mut self, other: &$ty) {
-                self.wwise_id.set(other.wwise_id);
-            }
-        }
-    };
-}
-
-hydrate_from_wwise!(FirePlayCallback);
-hydrate_from_wwise!(FireSetAppearanceNameCallback);
-hydrate_from_wwise!(FireSetEntityNameCallback);
-hydrate_from_wwise!(FireStopCallback);
-hydrate_from_wwise!(FireStopTaggedCallback);
-hydrate_from_wwise!(FireTagCallback);
-hydrate_from_wwise!(FireUntagCallback);
-hydrate_from_wwise!(FireAddContainerStreamingPrefetchCallback);
-hydrate_from_wwise!(FireRemoveContainerStreamingPrefetchCallback);
-
-#[derive(Debug, Clone, Default)]
-#[repr(C)]
-pub struct EngineEmitterEvent {
-    base: EngineWwiseEvent,
+    event_name: Cell<EventName>,
     entity_id: Cell<EntityId>,
     emitter_name: Cell<CName>,
-}
-
-unsafe impl ScriptClass for EngineEmitterEvent {
-    type Kind = Native;
-    const NAME: &'static str = "Audioware.EmitterEvent";
-}
-
-impl AsRef<IScriptable> for EngineEmitterEvent {
-    fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base
-    }
-}
-
-macro_rules! hydrate_from_emitter {
-    ($ty:ty) => {
-        impl Hydrate<$ty> for EngineEmitterEvent {
-            fn hydrate(&mut self, other: &$ty) {
-                self.base.hydrate(other);
-                self.entity_id.set(other.entity_id);
-                self.emitter_name.set(other.emitter_name);
-            }
-        }
-    };
-}
-
-hydrate_from_emitter!(FirePlayCallback);
-
-macro_rules! with_emitter {
-    ($ty:ty) => {
-        impl WithEmitter for $ty {
-            fn emitter_name(&self) -> CName {
-                self.emitter_name.get()
-            }
-        }
-    };
-    (base $ty:ty) => {
-        impl WithEmitter for $ty {
-            fn emitter_name(&self) -> CName {
-                self.base.emitter_name()
-            }
-        }
-    };
-}
-
-with_emitter!(EngineEmitterEvent);
-with_emitter!(base PlayEvent);
-with_emitter!(base PlayExternalEvent);
-with_emitter!(base PlayOneShotEvent);
-
-#[derive(Debug, Clone, Default)]
-#[repr(C)]
-pub struct PlayEvent {
-    base: EngineEmitterEvent,
-    event_name: Cell<EventName>,
+    position: Cell<Vector4>,
+    wwise_id: Cell<WwiseId>,
     sound_tags: RefCell<Vec<CName>>,
     emitter_tags: RefCell<Vec<CName>>,
     seek: Cell<f32>,
-    position: Cell<Vector4>,
-    has_position: Cell<bool>,
 }
 
-impl WithPosition for PlayEvent {
-    fn position(&self) -> Vector4 {
-        self.position.get()
-    }
+impl PlayEvent {
+    getter!(*cell event_name -> CName);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell emitter_name -> CName);
+    getter!(cell position -> Vector4);
+    getter!(cell wwise_id -> WwiseId);
+    getter!(refcell sound_tags -> Vec<CName>);
+    getter!(refcell emitter_tags -> Vec<CName>);
+    getter!(cell seek -> f32);
 
-    fn has_position(&self) -> bool {
-        self.has_position.get()
-    }
-}
+    setter!(cell set_event_name event_name -> CName => FirePlayCallback);
+    setter!(cell set_entity_id entity_id -> EntityId => FirePlayCallback);
+    setter!(cell set_emitter_name emitter_name -> CName => FirePlayCallback);
+    setter!(cell set_position position -> Vector4 => FirePlayCallback);
+    setter!(cell set_wwise_id wwise_id -> WwiseId => FirePlayCallback);
+    setter!(refcell set_sound_tags sound_tags -> Vec<CName> => FirePlayCallback);
+    setter!(refcell set_emitter_tags emitter_tags -> Vec<CName> => FirePlayCallback);
+    setter!(cell set_seek seek -> f32 => FirePlayCallback);
 
-impl WithTags for PlayEvent {
-    fn sound_tags(&self) -> Vec<CName> {
-        self.sound_tags.borrow().clone()
-    }
-
-    fn emitter_tags(&self) -> Vec<CName> {
-        self.emitter_tags.borrow().clone()
-    }
-}
-
-impl WithSeek for PlayEvent {
-    fn seek(&self) -> f32 {
-        self.seek.get()
+    pub fn hydrate(&mut self, other: &FirePlayCallback) {
+        self.set_event_name(other);
+        self.set_entity_id(other);
+        self.set_emitter_name(other);
+        self.set_position(other);
+        self.set_wwise_id(other);
+        self.set_sound_tags(other);
+        self.set_emitter_tags(other);
+        self.set_seek(other);
     }
 }
 
@@ -372,32 +153,62 @@ unsafe impl ScriptClass for PlayEvent {
 
 impl AsRef<IScriptable> for PlayEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base
-    }
-}
-
-impl Hydrate<FirePlayCallback> for PlayEvent {
-    fn hydrate(&mut self, other: &FirePlayCallback) {
-        self.base.hydrate(other);
-        self.event_name.set(other.event_name);
-        *self.sound_tags.borrow_mut() = other.sound_tags.clone();
-        *self.emitter_tags.borrow_mut() = other.emitter_tags.clone();
-        self.seek.set(other.seek);
-        self.position.set(other.position);
-        self.has_position.set(other.has_position);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct PlayExternalEvent {
-    base: PlayEvent,
+    base: EngineSoundEvent,
+    event_name: Cell<EventName>,
+    entity_id: Cell<EntityId>,
+    emitter_name: Cell<CName>,
+    wwise_id: Cell<WwiseId>,
+    sound_tags: RefCell<Vec<CName>>,
+    emitter_tags: RefCell<Vec<CName>>,
+    seek: Cell<f32>,
+    position: Cell<Vector4>,
     external_resource_path: RefCell<ResRef>,
 }
 
-impl WithExternalResourcePath for PlayExternalEvent {
-    fn external_resource_path(&self) -> u64 {
+impl PlayExternalEvent {
+    getter!(*cell event_name -> CName);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell emitter_name -> CName);
+    getter!(cell position -> Vector4);
+    getter!(cell wwise_id -> WwiseId);
+    getter!(refcell sound_tags -> Vec<CName>);
+    getter!(refcell emitter_tags -> Vec<CName>);
+    getter!(cell seek -> f32);
+
+    pub fn external_resource_path(&self) -> u64 {
         unsafe { std::mem::transmute::<ResRef, u64>(self.external_resource_path.borrow().clone()) }
+    }
+
+    setter!(base cell set_event_name event_name -> CName => FirePlayExternalCallback);
+    setter!(base cell set_entity_id entity_id -> EntityId => FirePlayExternalCallback);
+    setter!(base cell set_emitter_name emitter_name -> CName => FirePlayExternalCallback);
+    setter!(base cell set_position position -> Vector4 => FirePlayExternalCallback);
+    setter!(base cell set_wwise_id wwise_id -> WwiseId => FirePlayExternalCallback);
+    setter!(base refcell set_sound_tags sound_tags -> Vec<CName> => FirePlayExternalCallback);
+    setter!(base refcell set_emitter_tags emitter_tags -> Vec<CName> => FirePlayExternalCallback);
+    setter!(base cell set_seek seek -> f32 => FirePlayExternalCallback);
+
+    pub fn set_external_resource_path(&self, other: &FirePlayExternalCallback) {
+        *self.external_resource_path.borrow_mut() = other.external_resource_path.clone();
+    }
+
+    pub fn hydrate(&mut self, other: &FirePlayExternalCallback) {
+        self.set_event_name(other);
+        self.set_entity_id(other);
+        self.set_emitter_name(other);
+        self.set_position(other);
+        self.set_wwise_id(other);
+        self.set_sound_tags(other);
+        self.set_emitter_tags(other);
+        self.set_seek(other);
+        self.set_external_resource_path(other);
     }
 }
 
@@ -408,23 +219,19 @@ unsafe impl ScriptClass for PlayExternalEvent {
 
 impl AsRef<IScriptable> for PlayExternalEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base.base
-    }
-}
-
-impl Hydrate<FirePlayExternalCallback> for PlayExternalEvent {
-    fn hydrate(&mut self, other: &FirePlayExternalCallback) {
-        self.base.hydrate(&other.base);
-        self.external_resource_path
-            .borrow_mut()
-            .clone_from(&other.external_resource_path);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct PlayOneShotEvent {
-    base: PlayEvent,
+    base: EngineSoundEvent,
+    event_name: Cell<EventName>,
+    entity_id: Cell<EntityId>,
+    emitter_name: Cell<CName>,
+    position: Cell<Vector4>,
+    wwise_id: Cell<WwiseId>,
     params: RefCell<Vec<AudParam>>,
     switches: RefCell<Vec<AudSwitch>>,
     graph_occlusion: Cell<f32>,
@@ -432,35 +239,47 @@ pub struct PlayOneShotEvent {
     flags: Cell<TFlag>,
 }
 
-impl WithParamsAndSwitches for PlayOneShotEvent {
-    fn params(&self) -> Vec<AudParam> {
-        self.params.borrow().clone()
-    }
+impl PlayOneShotEvent {
+    getter!(*cell event_name -> CName);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell emitter_name -> CName);
+    getter!(cell position -> Vector4);
+    getter!(cell wwise_id -> WwiseId);
+    getter!(refcell params -> Vec<AudParam>);
+    getter!(refcell switches -> Vec<AudSwitch>);
+    getter!(cell graph_occlusion -> f32);
+    getter!(cell raycast_occlusion -> f32);
 
-    fn switches(&self) -> Vec<AudSwitch> {
-        self.switches.borrow().clone()
-    }
-}
-
-impl WithOcclusions for PlayOneShotEvent {
-    fn graph_occlusion(&self) -> f32 {
-        self.graph_occlusion.get()
-    }
-
-    fn raycast_occlusion(&self) -> f32 {
-        self.raycast_occlusion.get()
-    }
-
-    fn has_graph_occlusion(&self) -> bool {
+    pub fn has_graph_occlusion(&self) -> bool {
         self.flags.get().contains(TFlag::HAS_GRAPH_OCCLUSION)
     }
-
-    fn has_raycast_occlusion(&self) -> bool {
+    pub fn has_raycast_occlusion(&self) -> bool {
         self.flags.get().contains(TFlag::HAS_RAYCAST_OCCLUSION)
     }
-
-    fn is_in_different_room(&self) -> bool {
+    pub fn is_in_different_room(&self) -> bool {
         self.flags.get().contains(TFlag::IS_IN_DIFFERENT_ROOM)
+    }
+
+    setter!(base cell set_event_name event_name -> CName => FirePlayOneShotCallback);
+    setter!(base cell set_entity_id entity_id -> EntityId => FirePlayOneShotCallback);
+    setter!(base cell set_emitter_name emitter_name -> CName => FirePlayOneShotCallback);
+    setter!(base cell set_position position -> Vector4 => FirePlayOneShotCallback);
+    setter!(base cell set_wwise_id wwise_id -> WwiseId => FirePlayOneShotCallback);
+    setter!(cell set_graph_occlusion graph_occlusion -> f32 => FirePlayOneShotCallback);
+    setter!(cell set_raycast_occlusion raycast_occlusion -> f32 => FirePlayOneShotCallback);
+    setter!(refcell cast AudParam, set_params params -> Vec<AudParam> => FirePlayOneShotCallback);
+    setter!(refcell cast AudSwitch, set_switches switches -> Vec<AudSwitch> => FirePlayOneShotCallback);
+
+    pub fn hydrate(&mut self, other: &FirePlayOneShotCallback) {
+        self.set_event_name(other);
+        self.set_entity_id(other);
+        self.set_emitter_name(other);
+        self.set_position(other);
+        self.set_wwise_id(other);
+        self.set_graph_occlusion(other);
+        self.set_raycast_occlusion(other);
+        self.set_params(other);
+        self.set_switches(other);
     }
 }
 
@@ -471,44 +290,37 @@ unsafe impl ScriptClass for PlayOneShotEvent {
 
 impl AsRef<IScriptable> for PlayOneShotEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base.base
-    }
-}
-
-impl Hydrate<FirePlayOneShotCallback> for PlayOneShotEvent {
-    fn hydrate(&mut self, other: &FirePlayOneShotCallback) {
-        self.base.hydrate(&other.base);
-        *self.params.borrow_mut() = other
-            .params
-            .iter()
-            .copied()
-            .map(|x| AudParam {
-                name: x.name,
-                value: x.value,
-            })
-            .collect();
-        *self.switches.borrow_mut() = other
-            .switches
-            .iter()
-            .copied()
-            .map(|x| AudSwitch {
-                name: x.name,
-                value: x.value,
-            })
-            .collect();
-        self.graph_occlusion.set(other.graph_occlusion);
-        self.raycast_occlusion.set(other.raycast_occlusion);
-        self.flags.set(other.flags);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct StopSoundEvent {
-    base: EngineWwiseEvent,
+    base: EngineSoundEvent,
+    wwise_id: Cell<WwiseId>,
     entity_id: Cell<EntityId>,
     event_name: Cell<EventName>,
     float_data: Cell<f32>,
+}
+
+impl StopSoundEvent {
+    getter!(*cell event_name -> CName);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell wwise_id -> WwiseId);
+    getter!(cell float_data -> f32);
+
+    setter!(cell set_event_name event_name -> EventName => FireStopCallback);
+    setter!(cell set_entity_id entity_id -> EntityId => FireStopCallback);
+    setter!(cell set_wwise_id wwise_id -> WwiseId => FireStopCallback);
+    setter!(cell set_float_data float_data -> f32 => FireStopCallback);
+
+    pub fn hydrate(&mut self, other: &FireStopCallback) {
+        self.set_event_name(other);
+        self.set_entity_id(other);
+        self.set_float_data(other);
+        self.set_wwise_id(other);
+    }
 }
 
 unsafe impl ScriptClass for StopSoundEvent {
@@ -518,30 +330,35 @@ unsafe impl ScriptClass for StopSoundEvent {
 
 impl AsRef<IScriptable> for StopSoundEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base
-    }
-}
-
-impl Hydrate<FireStopCallback> for StopSoundEvent {
-    fn hydrate(&mut self, other: &FireStopCallback) {
-        self.base.hydrate(other);
-        self.entity_id.set(other.entity_id);
-        self.event_name.set(other.event_name);
-        self.float_data.set(other.float_data);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct StopTaggedEvent {
-    base: EngineWwiseEvent,
-    entity_id: Cell<EntityId>,
+    base: EngineSoundEvent,
     tag_name: Cell<CName>,
+    entity_id: Cell<EntityId>,
+    wwise_id: Cell<WwiseId>,
 }
 
 impl StopTaggedEvent {
-    pub fn tag_name(&self) -> CName {
-        self.tag_name.get()
+    getter!(cell tag_name -> CName);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell wwise_id -> WwiseId);
+
+    setter!(cell set_entity_id entity_id -> EntityId => FireStopTaggedCallback);
+    setter!(cell set_wwise_id wwise_id -> WwiseId => FireStopTaggedCallback);
+
+    pub fn set_tag_name(&mut self, other: &FireStopTaggedCallback) {
+        self.tag_name.set(*other.event_name);
+    }
+
+    pub fn hydrate(&mut self, other: &FireStopTaggedCallback) {
+        self.set_tag_name(other);
+        self.set_entity_id(other);
+        self.set_wwise_id(other);
     }
 }
 
@@ -552,32 +369,52 @@ unsafe impl ScriptClass for StopTaggedEvent {
 
 impl AsRef<IScriptable> for StopTaggedEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base
-    }
-}
-
-impl Hydrate<FireStopTaggedCallback> for StopTaggedEvent {
-    fn hydrate(&mut self, other: &FireStopTaggedCallback) {
-        self.base.hydrate(other);
-        self.entity_id.set(other.entity_id);
-        self.tag_name.set(*other.event_name);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct SetParameterEvent {
-    base: EngineEmitterEvent,
-    name_data: Cell<CName>,
-    float_data: Cell<f32>,
+    base: EngineSoundEvent,
+    switch_name: Cell<CName>,
+    switch_value: Cell<f32>,
+    entity_id: Cell<EntityId>,
+    emitter_name: Cell<CName>,
+    position: Cell<Vector4>,
+    wwise_id: Cell<WwiseId>,
+    sound_tags: RefCell<Vec<CName>>,
+    emitter_tags: RefCell<Vec<CName>>,
 }
 
 impl SetParameterEvent {
-    pub fn name_data(&self) -> CName {
-        self.name_data.get()
-    }
-    pub fn float_data(&self) -> f32 {
-        self.float_data.get()
+    getter!(cell switch_name -> CName);
+    getter!(cell switch_value -> f32);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell emitter_name -> CName);
+    getter!(cell position -> Vector4);
+    getter!(cell wwise_id -> WwiseId);
+    getter!(refcell sound_tags -> Vec<CName>);
+    getter!(refcell emitter_tags -> Vec<CName>);
+
+    setter!(cell set_switch_name switch_name -> CName => FireSetParameterCallback);
+    setter!(cell set_switch_value switch_value -> f32 => FireSetParameterCallback);
+    setter!(base cell set_entity_id entity_id -> EntityId => FireSetParameterCallback);
+    setter!(base cell set_emitter_name emitter_name -> CName => FireSetParameterCallback);
+    setter!(base cell set_position position -> Vector4 => FireSetParameterCallback);
+    setter!(base cell set_wwise_id wwise_id -> WwiseId => FireSetParameterCallback);
+    setter!(base refcell set_sound_tags sound_tags -> Vec<CName> => FireSetParameterCallback);
+    setter!(base refcell set_emitter_tags emitter_tags -> Vec<CName> => FireSetParameterCallback);
+
+    pub fn hydrate(&mut self, other: &FireSetParameterCallback) {
+        self.set_switch_name(other);
+        self.set_switch_value(other);
+        self.set_entity_id(other);
+        self.set_emitter_name(other);
+        self.set_position(other);
+        self.set_wwise_id(other);
+        self.set_sound_tags(other);
+        self.set_emitter_tags(other);
     }
 }
 
@@ -588,40 +425,40 @@ unsafe impl ScriptClass for SetParameterEvent {
 
 impl AsRef<IScriptable> for SetParameterEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base
-    }
-}
-
-impl Hydrate<FireSetParameterCallback> for SetParameterEvent {
-    fn hydrate(&mut self, other: &FireSetParameterCallback) {
-        self.base.hydrate(&other.base);
-        self.name_data.set(other.switch_name);
-        self.float_data.set(other.switch_value);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct SetGlobalParameterEvent {
-    base: EngineWwiseEvent,
+    base: EngineSoundEvent,
     name: Cell<EventName>,
     value: Cell<f32>,
     duration: Cell<f32>,
     curve_type: Cell<ESoundCurveType>,
+    wwise_id: Cell<WwiseId>,
 }
 
 impl SetGlobalParameterEvent {
-    pub fn name(&self) -> CName {
-        *self.name.get()
-    }
-    pub fn value(&self) -> f32 {
-        self.value.get()
-    }
-    pub fn duration(&self) -> f32 {
-        self.duration.get()
-    }
-    pub fn curve_type(&self) -> ESoundCurveType {
-        self.curve_type.get()
+    getter!(*cell name -> CName);
+    getter!(cell value -> f32);
+    getter!(cell duration -> f32);
+    getter!(cell curve_type -> ESoundCurveType);
+    getter!(cell wwise_id -> WwiseId);
+
+    setter!(cell set_name name -> CName => FireSetGlobalParameterCallback);
+    setter!(cell set_value value -> f32 => FireSetGlobalParameterCallback);
+    setter!(cell set_duration duration -> f32 => FireSetGlobalParameterCallback);
+    setter!(cell set_curve_type curve_type -> ESoundCurveType => FireSetGlobalParameterCallback);
+    setter!(cell set_wwise_id wwise_id -> WwiseId => FireSetGlobalParameterCallback);
+
+    pub fn hydrate(&mut self, other: &FireSetGlobalParameterCallback) {
+        self.set_name(other);
+        self.set_value(other);
+        self.set_duration(other);
+        self.set_curve_type(other);
+        self.set_wwise_id(other);
     }
 }
 
@@ -632,42 +469,56 @@ unsafe impl ScriptClass for SetGlobalParameterEvent {
 
 impl AsRef<IScriptable> for SetGlobalParameterEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base
-    }
-}
-
-impl Hydrate<FireSetGlobalParameterCallback> for SetGlobalParameterEvent {
-    fn hydrate(&mut self, other: &FireSetGlobalParameterCallback) {
-        self.base.wwise_id.set(other.wwise_id); // TODO
-        self.name.set(other.name);
-        self.value.set(other.value);
-        self.duration.set(other.duration);
-        self.curve_type.set(other.curve_type);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct SetSwitchEvent {
-    base: PlayEvent,
+    base: EngineSoundEvent,
     switch_name: Cell<CName>,
     switch_value: Cell<CName>,
     switch_name_wwise_id: Cell<WwiseId>,
     switch_value_wwise_id: Cell<WwiseId>,
+    entity_id: Cell<EntityId>,
+    emitter_name: Cell<CName>,
+    position: Cell<Vector4>,
+    sound_tags: RefCell<Vec<CName>>,
+    emitter_tags: RefCell<Vec<CName>>,
 }
 
 impl SetSwitchEvent {
-    pub fn switch_name(&self) -> CName {
-        self.switch_name.get()
-    }
-    pub fn switch_value(&self) -> CName {
-        self.switch_value.get()
-    }
-    pub fn switch_name_wwise_id(&self) -> WwiseId {
-        self.switch_name_wwise_id.get()
-    }
-    pub fn switch_value_wwise_id(&self) -> WwiseId {
-        self.switch_value_wwise_id.get()
+    getter!(cell switch_name -> CName);
+    getter!(cell switch_value -> CName);
+    getter!(cell switch_name_wwise_id -> WwiseId);
+    getter!(cell switch_value_wwise_id -> WwiseId);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell emitter_name -> CName);
+    getter!(cell position -> Vector4);
+    getter!(refcell sound_tags -> Vec<CName>);
+    getter!(refcell emitter_tags -> Vec<CName>);
+
+    setter!(cell set_switch_name switch_name -> CName => FireSetSwitchCallback);
+    setter!(cell set_switch_value switch_value -> CName => FireSetSwitchCallback);
+    setter!(cell set_switch_name_wwise_id switch_name_wwise_id -> WwiseId => FireSetSwitchCallback);
+    setter!(cell set_switch_value_wwise_id switch_value_wwise_id -> WwiseId => FireSetSwitchCallback);
+    setter!(base cell set_entity_id entity_id -> EntityId => FireSetSwitchCallback);
+    setter!(base cell set_emitter_name emitter_name -> CName => FireSetSwitchCallback);
+    setter!(base cell set_position position -> Vector4 => FireSetSwitchCallback);
+    setter!(base refcell set_sound_tags sound_tags -> Vec<CName> => FireSetSwitchCallback);
+    setter!(base refcell set_emitter_tags emitter_tags -> Vec<CName> => FireSetSwitchCallback);
+
+    pub fn hydrate(&mut self, other: &FireSetSwitchCallback) {
+        self.set_switch_name(other);
+        self.set_switch_value(other);
+        self.set_switch_name_wwise_id(other);
+        self.set_switch_value_wwise_id(other);
+        self.set_entity_id(other);
+        self.set_emitter_name(other);
+        self.set_position(other);
+        self.set_sound_tags(other);
+        self.set_emitter_tags(other);
     }
 }
 
@@ -678,31 +529,32 @@ unsafe impl ScriptClass for SetSwitchEvent {
 
 impl AsRef<IScriptable> for SetSwitchEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base.base.base
-    }
-}
-
-impl Hydrate<FireSetSwitchCallback> for SetSwitchEvent {
-    fn hydrate(&mut self, other: &FireSetSwitchCallback) {
-        self.base.hydrate(&other.base);
-        self.switch_name.set(other.switch_name);
-        self.switch_value.set(other.switch_value);
-        self.switch_name_wwise_id.set(other.switch_name_wwise_id);
-        self.switch_value_wwise_id.set(other.switch_value_wwise_id);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct SetAppearanceNameEvent {
-    base: EngineWwiseEvent,
+    base: EngineSoundEvent,
+    event_name: Cell<CName>,
     entity_id: Cell<EntityId>,
-    name: Cell<CName>,
+    wwise_id: Cell<WwiseId>,
 }
 
 impl SetAppearanceNameEvent {
-    pub fn name(&self) -> CName {
-        self.name.get()
+    getter!(cell event_name -> CName);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell wwise_id -> WwiseId);
+
+    setter!(*cell set_event_name event_name -> CName => FireSetAppearanceNameCallback);
+    setter!(cell set_entity_id entity_id -> EntityId => FireSetAppearanceNameCallback);
+    setter!(cell set_wwise_id wwise_id -> WwiseId => FireSetAppearanceNameCallback);
+
+    pub fn hydrate(&mut self, other: &FireSetAppearanceNameCallback) {
+        self.set_event_name(other);
+        self.set_entity_id(other);
+        self.set_wwise_id(other);
     }
 }
 
@@ -713,29 +565,32 @@ unsafe impl ScriptClass for SetAppearanceNameEvent {
 
 impl AsRef<IScriptable> for SetAppearanceNameEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base
-    }
-}
-
-impl Hydrate<FireSetAppearanceNameCallback> for SetAppearanceNameEvent {
-    fn hydrate(&mut self, other: &FireSetAppearanceNameCallback) {
-        self.base.hydrate(other);
-        self.entity_id.set(other.entity_id);
-        self.name.set(*other.event_name);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct SetEntityNameEvent {
-    base: EngineWwiseEvent,
+    base: EngineSoundEvent,
+    event_name: Cell<CName>,
     entity_id: Cell<EntityId>,
-    name: Cell<CName>,
+    wwise_id: Cell<WwiseId>,
 }
 
 impl SetEntityNameEvent {
-    pub fn name(&self) -> CName {
-        self.name.get()
+    getter!(cell event_name -> CName);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell wwise_id -> WwiseId);
+
+    setter!(*cell set_event_name event_name -> CName => FireSetEntityNameCallback);
+    setter!(cell set_entity_id entity_id -> EntityId => FireSetEntityNameCallback);
+    setter!(cell set_wwise_id wwise_id -> WwiseId => FireSetEntityNameCallback);
+
+    pub fn hydrate(&mut self, other: &FireSetEntityNameCallback) {
+        self.set_event_name(other);
+        self.set_entity_id(other);
+        self.set_wwise_id(other);
     }
 }
 
@@ -746,24 +601,33 @@ unsafe impl ScriptClass for SetEntityNameEvent {
 
 impl AsRef<IScriptable> for SetEntityNameEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base
-    }
-}
-
-impl Hydrate<FireSetEntityNameCallback> for SetEntityNameEvent {
-    fn hydrate(&mut self, other: &FireSetEntityNameCallback) {
-        self.base.hydrate(other);
-        self.entity_id.set(other.entity_id);
-        self.name.set(*other.event_name);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct TagEvent {
-    base: EngineWwiseEvent,
+    base: EngineSoundEvent,
+    event_name: Cell<CName>,
     entity_id: Cell<EntityId>,
-    tag_name: Cell<CName>,
+    wwise_id: Cell<WwiseId>,
+}
+
+impl TagEvent {
+    getter!(cell event_name -> CName);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell wwise_id -> WwiseId);
+
+    setter!(*cell set_event_name event_name -> CName => FireTagCallback);
+    setter!(cell set_entity_id entity_id -> EntityId => FireTagCallback);
+    setter!(cell set_wwise_id wwise_id -> WwiseId => FireTagCallback);
+
+    pub fn hydrate(&mut self, other: &FireTagCallback) {
+        self.set_event_name(other);
+        self.set_entity_id(other);
+        self.set_wwise_id(other);
+    }
 }
 
 unsafe impl ScriptClass for TagEvent {
@@ -773,24 +637,33 @@ unsafe impl ScriptClass for TagEvent {
 
 impl AsRef<IScriptable> for TagEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base
-    }
-}
-
-impl Hydrate<FireTagCallback> for TagEvent {
-    fn hydrate(&mut self, other: &FireTagCallback) {
-        self.base.hydrate(other);
-        self.entity_id.set(other.entity_id);
-        self.tag_name.set(*other.event_name);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct UntagEvent {
-    base: EngineWwiseEvent,
+    base: EngineSoundEvent,
+    event_name: Cell<CName>,
     entity_id: Cell<EntityId>,
-    tag_name: Cell<CName>,
+    wwise_id: Cell<WwiseId>,
+}
+
+impl UntagEvent {
+    getter!(cell event_name -> CName);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell wwise_id -> WwiseId);
+
+    setter!(*cell set_event_name event_name -> CName => FireUntagCallback);
+    setter!(cell set_entity_id entity_id -> EntityId => FireUntagCallback);
+    setter!(cell set_wwise_id wwise_id -> WwiseId => FireUntagCallback);
+
+    pub fn hydrate(&mut self, other: &FireUntagCallback) {
+        self.set_event_name(other);
+        self.set_entity_id(other);
+        self.set_wwise_id(other);
+    }
 }
 
 unsafe impl ScriptClass for UntagEvent {
@@ -800,24 +673,33 @@ unsafe impl ScriptClass for UntagEvent {
 
 impl AsRef<IScriptable> for UntagEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base
-    }
-}
-
-impl Hydrate<FireUntagCallback> for UntagEvent {
-    fn hydrate(&mut self, other: &FireUntagCallback) {
-        self.base.hydrate(other);
-        self.entity_id.set(other.entity_id);
-        self.tag_name.set(*other.event_name);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct AddContainerStreamingPrefetchEvent {
-    base: EngineWwiseEvent,
-    entity_id: Cell<EntityId>,
+    base: EngineSoundEvent,
     event_name: Cell<EventName>,
+    entity_id: Cell<EntityId>,
+    wwise_id: Cell<WwiseId>,
+}
+
+impl AddContainerStreamingPrefetchEvent {
+    getter!(*cell event_name -> CName);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell wwise_id -> WwiseId);
+
+    setter!(cell set_event_name event_name -> CName => FireAddContainerStreamingPrefetchCallback);
+    setter!(cell set_entity_id entity_id -> EntityId => FireAddContainerStreamingPrefetchCallback);
+    setter!(cell set_wwise_id wwise_id -> WwiseId => FireAddContainerStreamingPrefetchCallback);
+
+    pub fn hydrate(&mut self, other: &FireAddContainerStreamingPrefetchCallback) {
+        self.set_event_name(other);
+        self.set_entity_id(other);
+        self.set_wwise_id(other);
+    }
 }
 
 unsafe impl ScriptClass for AddContainerStreamingPrefetchEvent {
@@ -827,24 +709,33 @@ unsafe impl ScriptClass for AddContainerStreamingPrefetchEvent {
 
 impl AsRef<IScriptable> for AddContainerStreamingPrefetchEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base
-    }
-}
-
-impl Hydrate<FireAddContainerStreamingPrefetchCallback> for AddContainerStreamingPrefetchEvent {
-    fn hydrate(&mut self, other: &FireAddContainerStreamingPrefetchCallback) {
-        self.base.hydrate(other);
-        self.entity_id.set(other.entity_id);
-        self.event_name.set(other.event_name);
+        &self.base.base
     }
 }
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct RemoveContainerStreamingPrefetchEvent {
-    base: EngineWwiseEvent,
+    base: EngineSoundEvent,
+    wwise_id: Cell<WwiseId>,
     entity_id: Cell<EntityId>,
     event_name: Cell<EventName>,
+}
+
+impl RemoveContainerStreamingPrefetchEvent {
+    getter!(*cell event_name -> CName);
+    getter!(cell entity_id -> EntityId);
+    getter!(cell wwise_id -> WwiseId);
+
+    setter!(cell set_event_name event_name -> CName => FireRemoveContainerStreamingPrefetchCallback);
+    setter!(cell set_entity_id entity_id -> EntityId => FireRemoveContainerStreamingPrefetchCallback);
+    setter!(cell set_wwise_id wwise_id -> WwiseId => FireRemoveContainerStreamingPrefetchCallback);
+
+    pub fn hydrate(&mut self, other: &FireRemoveContainerStreamingPrefetchCallback) {
+        self.set_event_name(other);
+        self.set_entity_id(other);
+        self.set_wwise_id(other);
+    }
 }
 
 unsafe impl ScriptClass for RemoveContainerStreamingPrefetchEvent {
@@ -854,16 +745,6 @@ unsafe impl ScriptClass for RemoveContainerStreamingPrefetchEvent {
 
 impl AsRef<IScriptable> for RemoveContainerStreamingPrefetchEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base.base
-    }
-}
-
-impl Hydrate<FireRemoveContainerStreamingPrefetchCallback>
-    for RemoveContainerStreamingPrefetchEvent
-{
-    fn hydrate(&mut self, other: &FireRemoveContainerStreamingPrefetchCallback) {
-        self.base.hydrate(other);
-        self.entity_id.set(other.entity_id);
-        self.event_name.set(other.event_name);
+        &self.base.base
     }
 }

@@ -1,18 +1,6 @@
 module Audioware
 
-// TODO: refactor when interfaces land in Redscript. 
-
-enum EventHookType {
-    Play,
-    PlayExternal,
-    PlayOneShot,
-    Seek,
-    Stop,
-    StopTagged,
-    SetParameter,
-    SetSwitch,
-    SetGlobalParameter,
-}
+// TODO: refactor when interfaces land in Redscript.
 
 public native class AudioEventCallbackSystem {
     public native final func RegisterCallback(eventName: CName, target: ref<IScriptable>, functionName: CName) -> ref<AudioEventCallbackHandler>;
@@ -100,6 +88,8 @@ public native class SetParameterEvent extends SoundEvent {
     public final native func ParamValue() -> Float;
     
     public final native func EntityID() -> EntityID;
+    public final native func EmitterName() -> CName;
+    public final native func Position() -> Vector4;
     public final native func WwiseID() -> Uint32;
     
     public final native func SoundTags() -> array<CName>;

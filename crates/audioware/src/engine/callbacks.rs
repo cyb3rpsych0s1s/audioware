@@ -12,11 +12,11 @@ use red4ext_rs::{
 
 use crate::{
     AddContainerStreamingPrefetchEvent, AnyTarget, AudioEventCallbackHandler,
-    AudioEventCallbackSystem, ClassName, EngineEmitterEvent, EngineSoundEvent, EngineWwiseEvent,
-    EventActionType, EventName, FunctionName, Hydrate, PlayEvent, PlayExternalEvent,
-    PlayOneShotEvent, RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent,
-    SetEntityNameEvent, SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent,
-    StopTaggedEvent, TagEvent, UntagEvent,
+    AudioEventCallbackSystem, ClassName, EngineSoundEvent, EventActionType, EventName,
+    FunctionName, PlayEvent, PlayExternalEvent, PlayOneShotEvent,
+    RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent, SetEntityNameEvent,
+    SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent, StopTaggedEvent,
+    TagEvent, UntagEvent,
     abi::callback::{Callback, FireCallback},
     engine::{Engine, queue},
     utils::{fails, lifecycle, warns},
@@ -275,30 +275,6 @@ fn inner_call<T: ScriptClass>(
             .unwrap_or(Err(InvokeError::ArgMismatch {
                 function: func.name().as_str(),
                 expected: EngineSoundEvent::NAME,
-                index: 0,
-            })),
-        EngineWwiseEvent::NAME => event
-            .cast::<EngineWwiseEvent>()
-            .map(|x| func.execute::<_, ()>(receiver, (x,)))
-            .unwrap_or(Err(InvokeError::ArgMismatch {
-                function: func.name().as_str(),
-                expected: EngineWwiseEvent::NAME,
-                index: 0,
-            })),
-        EngineEmitterEvent::NAME => event
-            .cast::<EngineEmitterEvent>()
-            .map(|x| func.execute::<_, ()>(receiver, (x,)))
-            .unwrap_or(Err(InvokeError::ArgMismatch {
-                function: func.name().as_str(),
-                expected: EngineEmitterEvent::NAME,
-                index: 0,
-            })),
-        PlayEvent::NAME => event
-            .cast::<PlayEvent>()
-            .map(|x| func.execute::<_, ()>(receiver, (x,)))
-            .unwrap_or(Err(InvokeError::ArgMismatch {
-                function: func.name().as_str(),
-                expected: PlayEvent::NAME,
                 index: 0,
             })),
         _ => Err(InvokeError::ArgMismatch {
