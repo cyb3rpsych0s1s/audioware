@@ -198,7 +198,7 @@ pub fn exports() -> impl Exportable {
                 ])
                 .build(),
         ClassExport::<SetSwitchEvent>::builder()
-                .base(EngineSoundEvent::NAME)
+                .base(PlayEvent::NAME)
                 .methods(methods![
                     final c"SwitchName" => SetSwitchEvent::switch_name,
                     final c"SwitchValue" => SetSwitchEvent::switch_value,

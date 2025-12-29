@@ -179,11 +179,13 @@ with_wwise!(EngineEmitterEvent);
 with_wwise!(PlayEvent);
 with_wwise!(PlayExternalEvent);
 with_wwise!(PlayOneShotEvent);
+with_wwise!(SetSwitchEvent);
 
 with_entity_id!(EngineEmitterEvent);
 with_entity_id!(base PlayEvent);
 with_entity_id!(base PlayExternalEvent);
 with_entity_id!(base PlayOneShotEvent);
+with_entity_id!(base SetSwitchEvent);
 with_entity_id!(StopSoundEvent);
 with_entity_id!(StopTaggedEvent);
 with_entity_id!(AddContainerStreamingPrefetchEvent);
@@ -202,6 +204,7 @@ with_tag_name!(UntagEvent);
 with_event_name!(PlayEvent);
 with_event_name!(base PlayExternalEvent);
 with_event_name!(base PlayOneShotEvent);
+with_event_name!(base SetSwitchEvent);
 with_event_name!(StopSoundEvent);
 with_event_name!(AddContainerStreamingPrefetchEvent);
 with_event_name!(RemoveContainerStreamingPrefetchEvent);
@@ -646,7 +649,7 @@ impl Hydrate<FireSetGlobalParameterCallback> for SetGlobalParameterEvent {
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct SetSwitchEvent {
-    base: EngineSoundEvent,
+    base: PlayEvent,
     switch_name: Cell<CName>,
     switch_value: Cell<CName>,
     switch_name_wwise_id: Cell<WwiseId>,
@@ -675,12 +678,13 @@ unsafe impl ScriptClass for SetSwitchEvent {
 
 impl AsRef<IScriptable> for SetSwitchEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base.base
+        &self.base.base.base.base.base
     }
 }
 
 impl Hydrate<FireSetSwitchCallback> for SetSwitchEvent {
     fn hydrate(&mut self, other: &FireSetSwitchCallback) {
+        self.base.hydrate(&other.base);
         self.switch_name.set(other.switch_name);
         self.switch_value.set(other.switch_value);
         self.switch_name_wwise_id.set(other.switch_name_wwise_id);

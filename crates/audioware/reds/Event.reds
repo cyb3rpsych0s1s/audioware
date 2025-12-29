@@ -62,7 +62,7 @@ public native class SetGlobalParameterEvent extends WwiseEvent {
     public final native func CurveType() -> audioESoundCurveType;
 }
 
-public native class SetSwitchEvent extends SoundEvent {
+public native class SetSwitchEvent extends PlayEvent {
     public final native func SwitchName() -> CName;
     public final native func SwitchValue() -> CName;
     public final native func SwitchNameWwiseID() -> Uint32;
