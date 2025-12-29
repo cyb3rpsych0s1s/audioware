@@ -2,8 +2,8 @@ use debug_ignore::DebugIgnore;
 use red4ext_rs::types::{CName, EntityId, IScriptable, ResRef, WeakRef};
 
 use crate::{
-    AnyTarget, AudioEventCallbackLifetime, ClassName, ESoundCurveType, EventActionType, EventName,
-    FunctionName, Pair, TFlag, Vector4, WwiseId,
+    AnyTarget, AudioEventCallbackLifetime, ClassName, ESoundCurveType, EventActionType,
+    EventHookType, EventName, FunctionName, Pair, TFlag, Vector4, WwiseId,
 };
 
 #[derive(Debug)]
@@ -149,6 +149,45 @@ impl FireCallback {
             | Self::AddContainerStreamingPrefetch(_)
             | Self::RemoveContainerStreamingPrefetch(_)
             | Self::SetGlobalParameter(_) => None,
+        }
+    }
+    pub fn wwise_id(&self) -> WwiseId {
+        match self {
+            Self::Play(x) => x.wwise_id,
+            Self::PlayExternal(x) => x.base.wwise_id,
+            Self::PlayOneShot(x) => x.base.wwise_id,
+            Self::SetParameter(x) => x.base.wwise_id,
+            Self::SetSwitch(x) => x.base.wwise_id,
+            Self::SetAppearanceName(x) => x.wwise_id,
+            Self::SetEntityName(x) => x.wwise_id,
+            Self::Stop(x) => x.wwise_id,
+            Self::StopTagged(x) => x.wwise_id,
+            Self::Tag(x) => x.wwise_id,
+            Self::Untag(x) => x.wwise_id,
+            Self::AddContainerStreamingPrefetch(x) => x.wwise_id,
+            Self::RemoveContainerStreamingPrefetch(x) => x.wwise_id,
+            Self::SetGlobalParameter(x) => x.wwise_id,
+        }
+    }
+
+    pub fn event_hook_type(&self) -> EventHookType {
+        match self {
+            Self::Play(_) => EventHookType::Play,
+            Self::PlayExternal(_) => EventHookType::PlayExternal,
+            Self::PlayOneShot(_) => EventHookType::PlayOneShot,
+            Self::SetParameter(_) => EventHookType::SetParameter,
+            Self::SetSwitch(_) => EventHookType::SetSwitch,
+            Self::SetAppearanceName(_) => EventHookType::SetAppearanceName,
+            Self::SetEntityName(_) => EventHookType::SetEntityName,
+            Self::Stop(_) => EventHookType::StopSound,
+            Self::StopTagged(_) => EventHookType::StopTagged,
+            Self::Tag(_) => EventHookType::Tag,
+            Self::Untag(_) => EventHookType::Untag,
+            Self::AddContainerStreamingPrefetch(_) => EventHookType::AddContainerStreamingPrefetch,
+            Self::RemoveContainerStreamingPrefetch(_) => {
+                EventHookType::RemoveContainerStreamingPrefetch
+            }
+            Self::SetGlobalParameter(_) => EventHookType::SetGlobalParameter,
         }
     }
 }

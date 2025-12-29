@@ -7,8 +7,8 @@ use red4ext_rs::{
 };
 
 use crate::{
-    AudioEventCallbackEntityTarget, AudioEventCallbackEventTarget, CallbackSystemTarget,
-    abi::callback::Callback, engine::queue,
+    AudioEventCallbackAssetTarget, AudioEventCallbackEntityTarget, AudioEventCallbackEventTarget,
+    CallbackSystemTarget, abi::callback::Callback, engine::queue,
 };
 
 #[derive(Debug, Default, Clone)]
@@ -121,7 +121,7 @@ impl Handler for AudioEventCallbackHandler {
                         }
                     };
                 }
-            } else if let Some(value) = value.cast::<AudioEventCallbackEventTarget>()
+            } else if let Some(value) = value.clone().cast::<AudioEventCallbackEventTarget>()
                 && let Some(value) = unsafe { value.fields() }
                 && let Some(value) = value.value.as_ref()
             {
@@ -130,6 +130,26 @@ impl Handler for AudioEventCallbackHandler {
                         queue::forward(Callback::Filter {
                             id: self.id.get(),
                             target: crate::AnyTarget::Type(*ty),
+                            add,
+                        });
+                    }
+                    super::EventTargetInner::HookType(ty) => {
+                        queue::forward(Callback::Filter {
+                            id: self.id.get(),
+                            target: crate::AnyTarget::Hook(*ty),
+                            add,
+                        });
+                    }
+                };
+            } else if let Some(value) = value.cast::<AudioEventCallbackAssetTarget>()
+                && let Some(value) = unsafe { value.fields() }
+                && let Some(value) = value.value.as_ref()
+            {
+                match value {
+                    super::AssetTargetInner::WwiseId(ty) => {
+                        queue::forward(Callback::Filter {
+                            id: self.id.get(),
+                            target: crate::AnyTarget::Wwise(*ty),
                             add,
                         });
                     }
@@ -169,7 +189,7 @@ impl Handler for AudioEventCallbackHandler {
                         }
                     };
                 }
-            } else if let Some(value) = value.cast::<AudioEventCallbackEventTarget>()
+            } else if let Some(value) = value.clone().cast::<AudioEventCallbackEventTarget>()
                 && let Some(value) = unsafe { value.fields() }
                 && let Some(value) = value.value.as_ref()
             {
@@ -178,6 +198,26 @@ impl Handler for AudioEventCallbackHandler {
                         queue::forward(Callback::Filter {
                             id: self.id.get(),
                             target: crate::AnyTarget::Type(*ty),
+                            add,
+                        });
+                    }
+                    super::EventTargetInner::HookType(ty) => {
+                        queue::forward(Callback::Filter {
+                            id: self.id.get(),
+                            target: crate::AnyTarget::Hook(*ty),
+                            add,
+                        });
+                    }
+                };
+            } else if let Some(value) = value.cast::<AudioEventCallbackAssetTarget>()
+                && let Some(value) = unsafe { value.fields() }
+                && let Some(value) = value.value.as_ref()
+            {
+                match value {
+                    super::AssetTargetInner::WwiseId(ty) => {
+                        queue::forward(Callback::Filter {
+                            id: self.id.get(),
+                            target: crate::AnyTarget::Wwise(*ty),
                             add,
                         });
                     }

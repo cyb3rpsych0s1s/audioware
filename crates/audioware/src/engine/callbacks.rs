@@ -394,29 +394,35 @@ impl AudioEventCallback {
                     _ => false,
                 }))
     }
-    pub fn matches_filters(&self, other: &FireCallback) -> bool {
-        self.matches(other.event_name(), other.event_type())
-            && (self
-                .targets
-                .iter()
-                .filter(|t| matches!(t, AnyTarget::Id(_)))
-                .count()
-                == 0
-                || self.targets.iter().any(|t| match t {
-                    AnyTarget::Id(x) => other.entity_id().map(|y| *x == y).unwrap_or(true),
-                    _ => false,
-                }))
-            && (self
-                .targets
-                .iter()
-                .filter(|t| matches!(t, AnyTarget::EmitterName(_)))
-                .count()
-                == 0
-                || self.targets.iter().any(|t| match t {
-                    AnyTarget::EmitterName(x) => {
-                        other.emitter_name().map(|y| *x == y).unwrap_or(true)
+    fn matches_filters(&self, other: &FireCallback) -> bool {
+        if self.event_name != other.event_name() {
+            return false;
+        }
+        if self.targets.is_empty() {
+            return true;
+        }
+        for target in self.targets.iter() {
+            match target {
+                AnyTarget::Hook(x) if other.event_hook_type() == *x => return true,
+                AnyTarget::Type(x) if other.event_type() == *x => return true,
+                AnyTarget::Wwise(x) if other.wwise_id() == *x => return true,
+                AnyTarget::Id(x) => {
+                    if let Some(entity_id) = other.entity_id()
+                        && entity_id == *x
+                    {
+                        return true;
                     }
-                    _ => false,
-                }))
+                }
+                AnyTarget::EmitterName(x) => {
+                    if let Some(emitter_name) = other.emitter_name()
+                        && emitter_name == *x
+                    {
+                        return true;
+                    }
+                }
+                _ => {}
+            };
+        }
+        false
     }
 }

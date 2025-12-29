@@ -479,7 +479,7 @@ impl AudioEventId {
 
 const INVALID_WWISE_ID: u32 = 2166136261;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct WwiseId(u32);
 

@@ -7,6 +7,23 @@ public native class AudioEventCallbackSystem {
     public native final func RegisterStaticCallback(eventName: CName, className: CName, functionName: CName) -> ref<AudioEventCallbackHandler>;
 }
 
+enum EventHookType {
+    Play = 0,
+    PlayOneShot = 1,
+    SetParameter = 2,
+    StopSound = 3,
+    SetSwitch = 4,
+    StopTagged = 5,
+    PlayExternal = 6,
+    Tag = 7,
+    Untag = 8,
+    SetAppearanceName = 9,
+    SetEntityName = 10,
+    AddContainerStreamingPrefetch = 11,
+    RemoveContainerStreamingPrefetch = 12,
+    SetGlobalParameter = 13,
+}
+
 public abstract native class SoundEvent {
     public func PrimaryName() -> CName;
     public final static func InvalidWwiseID() -> Uint32 = 2166136261u;
@@ -200,7 +217,10 @@ public native class EntityTarget extends AudioEventCallbackTarget {
 }
 public native class EventTarget extends AudioEventCallbackTarget {
     public static native func ActionType(eventType: audioEventActionType) -> ref<EventTarget>;
-    public static native func ActionTypeName(eventType: String) -> ref<EventTarget>;
+    public static native func HookType(hookType: EventHookType) -> ref<EventTarget>;
+}
+public native class AssetTarget extends AudioEventCallbackTarget {
+    public static native func WwiseID(wwiseID: Uint32) -> ref<AssetTarget>;
 }
 
 public enum AudioEventCallbackLifetime {

@@ -1,12 +1,12 @@
 use std::ops::Deref;
 
 use red4ext_rs::{
-    ScriptClass,
+    NativeRepr, ScriptClass,
     class_kind::Native,
     types::{CName, EntityId, IScriptable, Ref},
 };
 
-use crate::EventActionType;
+use crate::{EventActionType, WwiseId};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
@@ -95,6 +95,30 @@ impl Deref for FunctionName {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(i64)]
+pub enum EventHookType {
+    #[default]
+    Play = 0,
+    PlayOneShot = 1,
+    SetParameter = 2,
+    StopSound = 3,
+    SetSwitch = 4,
+    StopTagged = 5,
+    PlayExternal = 6,
+    Tag = 7,
+    Untag = 8,
+    SetAppearanceName = 9,
+    SetEntityName = 10,
+    AddContainerStreamingPrefetch = 11,
+    RemoveContainerStreamingPrefetch = 12,
+    SetGlobalParameter = 13,
+}
+
+unsafe impl NativeRepr for EventHookType {
+    const NAME: &'static str = "Audioware.EventHookType";
+}
+
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct AudioEventCallbackTarget {
@@ -133,6 +157,27 @@ unsafe impl ScriptClass for AudioEventCallbackEntityTarget {
     const NAME: &'static str = "Audioware.EntityTarget";
 }
 
+#[derive(Debug, Clone, Default)]
+#[repr(C)]
+pub struct AudioEventCallbackAssetTarget {
+    base: AudioEventCallbackTarget,
+    pub value: Option<AssetTargetInner>,
+}
+
+impl AudioEventCallbackAssetTarget {
+    pub fn new_with_wwise_id(value: WwiseId) -> Ref<Self> {
+        Ref::new_with(|x: &mut Self| {
+            x.value = Some(AssetTargetInner::WwiseId(value));
+        })
+        .unwrap_or_default()
+    }
+}
+
+unsafe impl ScriptClass for AudioEventCallbackAssetTarget {
+    type Kind = Native;
+    const NAME: &'static str = "Audioware.AssetTarget";
+}
+
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub enum EntityTargetInner {
@@ -154,29 +199,11 @@ impl AudioEventCallbackEventTarget {
         })
         .unwrap_or_default()
     }
-    pub fn new_with_action_type_name(value: String) -> Ref<Self> {
-        let ty = match value.as_str() {
-            "Play" => Some(EventActionType::Play),
-            "PlayAnimation" => Some(EventActionType::PlayAnimation),
-            "SetParameter" => Some(EventActionType::SetParameter),
-            "StopSound" => Some(EventActionType::StopSound),
-            "SetSwitch" => Some(EventActionType::SetSwitch),
-            "StopTagged" => Some(EventActionType::StopTagged),
-            "PlayExternal" => Some(EventActionType::PlayExternal),
-            "Tag" => Some(EventActionType::Tag),
-            "Untag" => Some(EventActionType::Untag),
-            "SetAppearanceName" => Some(EventActionType::SetAppearanceName),
-            "SetEntityName" => Some(EventActionType::SetEntityName),
-            "AddContainerStreamingPrefetch" => Some(EventActionType::AddContainerStreamingPrefetch),
-            "RemoveContainerStreamingPrefetch" => {
-                Some(EventActionType::RemoveContainerStreamingPrefetch)
-            }
-            _ => None,
-        };
-        if let Some(ty) = ty {
-            return Self::new_with_action_type(ty);
-        }
-        Ref::default()
+    pub fn new_with_hook_type(value: EventHookType) -> Ref<Self> {
+        Ref::new_with(|x: &mut Self| {
+            x.value = Some(EventTargetInner::HookType(value));
+        })
+        .unwrap_or_default()
     }
 }
 
@@ -189,6 +216,13 @@ unsafe impl ScriptClass for AudioEventCallbackEventTarget {
 #[repr(C)]
 pub enum EventTargetInner {
     ActionType(EventActionType),
+    HookType(EventHookType),
+}
+
+#[derive(Debug, Clone)]
+#[repr(C)]
+pub enum AssetTargetInner {
+    WwiseId(WwiseId),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -197,4 +231,6 @@ pub enum AnyTarget {
     Id(EntityId),
     EmitterName(CName),
     Type(EventActionType),
+    Hook(EventHookType),
+    Wwise(WwiseId),
 }

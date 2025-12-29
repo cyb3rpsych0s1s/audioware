@@ -15,10 +15,10 @@ use windows::Win32::{
 };
 
 use crate::{
-    AddContainerStreamingPrefetchEvent, AudioEventCallbackEntityTarget,
-    AudioEventCallbackEventTarget, AudioEventCallbackHandler, AudioEventCallbackSystem,
-    AudioEventCallbackTarget, Audioware, EmitterSettings, EngineSoundEvent, Handler,
-    LocalizationPackage, PlayEvent, PlayExternalEvent, PlayOneShotEvent,
+    AddContainerStreamingPrefetchEvent, AudioEventCallbackAssetTarget,
+    AudioEventCallbackEntityTarget, AudioEventCallbackEventTarget, AudioEventCallbackHandler,
+    AudioEventCallbackSystem, AudioEventCallbackTarget, Audioware, EmitterSettings,
+    EngineSoundEvent, Handler, LocalizationPackage, PlayEvent, PlayExternalEvent, PlayOneShotEvent,
     RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent, SetEntityNameEvent,
     SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent, StopTaggedEvent,
     TagEvent, ToTween, Tween, UntagEvent,
@@ -116,7 +116,13 @@ pub fn exports() -> impl Exportable {
                 .base(AudioEventCallbackTarget::NAME)
                 .static_methods(static_methods![
                     c"ActionType" => AudioEventCallbackEventTarget::new_with_action_type,
-                    c"ActionTypeName" => AudioEventCallbackEventTarget::new_with_action_type_name,
+                    c"HookType" => AudioEventCallbackEventTarget::new_with_hook_type,
+                ])
+                .build(),
+        ClassExport::<AudioEventCallbackAssetTarget>::builder()
+                .base(AudioEventCallbackTarget::NAME)
+                .static_methods(static_methods![
+                    c"WwiseID" => AudioEventCallbackAssetTarget::new_with_wwise_id,
                 ])
                 .build(),
         ClassExport::<EngineSoundEvent>::builder()
