@@ -179,10 +179,8 @@ pub mod post_event {
                     let graph_occlusion = oneshot.graph_occlusion();
                     let raycast_occlusion = oneshot.raycast_occlusion();
                     let flags = oneshot.flags();
-                    let position = sound_object.and_then(|x| x.position()).unwrap_or_default();
-                    let has_position = sound_object
-                        .map(|x| x.position().is_some())
-                        .unwrap_or(false);
+                    let position = oneshot.position();
+                    let has_position = true;
 
                     if AudioEventCallbackSystem::any_callback(event_name, event_type) {
                         AudioEventCallbackSystem::dispatch(FireCallback::PlayOneShot(

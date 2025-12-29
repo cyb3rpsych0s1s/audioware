@@ -122,6 +122,9 @@ impl OneShotSound {
     pub fn raycast_occlusion(&self) -> f32 {
         self.raycast_occlusion
     }
+    pub fn position(&self) -> Vector4 {
+        self.position
+    }
     pub fn flags(&self) -> TFlag {
         self.flags
     }
