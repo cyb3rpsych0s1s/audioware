@@ -550,12 +550,8 @@ impl AudioInternalEvent {
         self.name
     }
     pub fn emitter_name(&self) -> Option<CName> {
-        if self
-            .strategy_type
-            .contains(EventApplyStrategyType::APPLY_EMITTER)
-            || self
-                .strategy_type
-                .contains(EventApplyStrategyType::APPLY_POSITION_NAME)
+        if self.strategy_type == EventApplyStrategyType::ApplyEmitter
+            || self.strategy_type == EventApplyStrategyType::ApplyPositionName
         {
             return Some(unsafe { self.strategy.by_emitter_and_position.emitter_name });
         }
@@ -605,112 +601,82 @@ impl std::fmt::Display for AudioInternalEvent {
                 out.push_str(&format!(", param.float: {}", unsafe { self.param.float }));
             }
         };
-        if !self.strategy_type.is_empty() {
-            if self
-                .strategy_type
-                .contains(EventApplyStrategyType::APPLY_EMITTER)
-                || self
-                    .strategy_type
-                    .contains(EventApplyStrategyType::APPLY_POSITION_NAME)
-            {
-                out.push_str(&format!(", extra.emitter_name: {}", unsafe {
-                    self.strategy.by_emitter_and_position.emitter_name
-                }));
-            }
-            if self
-                .strategy_type
-                .contains(EventApplyStrategyType::APPLY_POSITION_NAME)
-            {
-                out.push_str(&format!(", extra.position_name: {}", unsafe {
-                    self.strategy.by_emitter_and_position.position_name
-                }));
-            }
-            if self
-                .strategy_type
-                .contains(EventApplyStrategyType::APPLY_EMITTER_WITH_ID)
-            {
+        if self.strategy_type == EventApplyStrategyType::ApplyEmitter
+            || self.strategy_type == EventApplyStrategyType::ApplyPositionName
+        {
+            out.push_str(&format!(", extra.emitter_name: {}", unsafe {
+                self.strategy.by_emitter_and_position.emitter_name
+            }));
+        }
+        if self.strategy_type == EventApplyStrategyType::ApplyPositionName {
+            out.push_str(&format!(", extra.position_name: {}", unsafe {
+                self.strategy.by_emitter_and_position.position_name
+            }));
+        }
+        if self.strategy_type == EventApplyStrategyType::ApplyEmitterWithId {
+            out.push_str(&format!(
+                ", extra.emitter_id: {}",
+                unsafe { self.strategy.by_emitter_id } // EntityId::from(unsafe { self.strategy.by_emitter_id } as u64) ?
+            ));
+        }
+        if self.strategy_type == EventApplyStrategyType::ApplyPosition {
+            out.push_str(&format!(", extra.position: {}", unsafe {
+                self.strategy.by_position
+            }));
+        }
+        if self.strategy_type == EventApplyStrategyType::ApplyEventId
+            && unsafe { self.strategy.by_event_id.0 } != 0
+        {
+            out.push_str(&format!(", extra.event_id: {}", unsafe {
+                self.strategy.by_event_id
+            }));
+        }
+        if self.strategy_type == EventApplyStrategyType::ApplyTagged
+            && unsafe { self.strategy.by_tags[0] } != CName::new("None")
+        {
+            if unsafe { self.strategy.by_tags[1] } != CName::new("None") {
                 out.push_str(&format!(
-                    ", extra.emitter_id: {}",
-                    unsafe { self.strategy.by_emitter_id } // EntityId::from(unsafe { self.strategy.by_emitter_id } as u64) ?
+                    ", extra.tags: [{}, {}]",
+                    unsafe { self.strategy.by_tags[0] },
+                    unsafe { self.strategy.by_tags[1] },
                 ));
-            }
-            if self
-                .strategy_type
-                .contains(EventApplyStrategyType::APPLY_POSITION)
-            {
-                out.push_str(&format!(", extra.position: {}", unsafe {
-                    self.strategy.by_position
-                }));
-            }
-            if self
-                .strategy_type
-                .contains(EventApplyStrategyType::APPLY_EVENT_ID)
-                && unsafe { self.strategy.by_event_id.0 } != 0
-            {
-                out.push_str(&format!(", extra.event_id: {}", unsafe {
-                    self.strategy.by_event_id
-                }));
-            }
-            if self
-                .strategy_type
-                .contains(EventApplyStrategyType::APPLY_TAGGED)
-                && unsafe { self.strategy.by_tags[0] } != CName::new("None")
-            {
-                if unsafe { self.strategy.by_tags[1] } != CName::new("None") {
-                    out.push_str(&format!(
-                        ", extra.tags: [{}, {}]",
-                        unsafe { self.strategy.by_tags[0] },
-                        unsafe { self.strategy.by_tags[1] },
-                    ));
-                } else {
-                    out.push_str(&format!(", extra.tags: [{}]", unsafe {
-                        self.strategy.by_tags[0]
-                    },));
-                }
+            } else {
+                out.push_str(&format!(", extra.tags: [{}]", unsafe {
+                    self.strategy.by_tags[0]
+                },));
             }
         }
         write!(f, "{}", out)
     }
 }
 
-bitflags! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct EventApplyStrategyType: u8 {
-        const APPLY_ENTITY = 1 << 0;
-        const APPLY_EMITTER = 1 << 1;
-        const APPLY_EMITTER_WITH_ID = 1 << 2;
-        const APPLY_POSITION = 1 << 3;
-        const APPLY_EVENT_ID = 1 << 4;
-        const APPLY_TAGGED = 1 << 5;
-        const APPLY_POSITION_NAME = 1 << 6;
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u8)]
+pub enum EventApplyStrategyType {
+    ApplyEntity = 0,
+    ApplyEmitter = 1,
+    ApplyEmitterWithId = 2,
+    ApplyPosition = 3,
+    ApplyEventId = 4,
+    ApplyTagged = 5,
+    ApplyPositionName = 6,
 }
 
 impl std::fmt::Display for EventApplyStrategyType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut out = Vec::with_capacity(7);
-        if self.contains(Self::APPLY_ENTITY) {
-            out.push("ApplyEntity");
-        }
-        if self.contains(Self::APPLY_EMITTER) {
-            out.push("ApplyEmitter");
-        }
-        if self.contains(Self::APPLY_EMITTER_WITH_ID) {
-            out.push("ApplyEmitterWithID");
-        }
-        if self.contains(Self::APPLY_POSITION) {
-            out.push("ApplyPosition");
-        }
-        if self.contains(Self::APPLY_EVENT_ID) {
-            out.push("ApplyEventID");
-        }
-        if self.contains(Self::APPLY_TAGGED) {
-            out.push("ApplyTagged");
-        }
-        if self.contains(Self::APPLY_POSITION_NAME) {
-            out.push("ApplyPositionName");
-        }
-        write!(f, "[{}]", out.join("|"))
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::ApplyEntity => "ApplyEntity",
+                Self::ApplyEmitter => "ApplyEmitter",
+                Self::ApplyEmitterWithId => "ApplyEmitterWithId",
+                Self::ApplyPosition => "ApplyPosition",
+                Self::ApplyEventId => "ApplyEventId",
+                Self::ApplyTagged => "ApplyTagged",
+                Self::ApplyPositionName => "ApplyPositionName",
+            }
+        )
     }
 }
 
