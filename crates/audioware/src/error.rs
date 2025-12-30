@@ -1,5 +1,7 @@
 //! Plugin errors.
 
+use std::borrow::Cow;
+
 use audioware_manifest::error::ConversionError;
 use kira::{PlaySoundError, ResourceLimitReached, sound::FromFileError};
 use red4ext_rs::types::{CName, EntityId};
@@ -26,6 +28,8 @@ pub enum Error {
 
 #[derive(Debug, Snafu)]
 pub enum InternalError {
+    #[snafu(display("{origin} (driver)"))]
+    Driver { origin: Cow<'static, str> },
     #[snafu(display("{origin} contention"))]
     Contention { origin: &'static str },
     #[snafu(display("{origin} cannot be initialized more than once"))]

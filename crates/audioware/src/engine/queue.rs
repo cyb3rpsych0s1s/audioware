@@ -26,7 +26,7 @@ use crate::{
         callbacks::{Dispatch, Listen},
         tweens::DILATION_EASE_OUT,
     },
-    error::Error,
+    error::{Error, InternalError},
     utils::{fails, lifecycle},
 };
 
@@ -88,7 +88,10 @@ fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
     let mut backend_settings = CpalBackendSettings::default();
     if buffer_size != BufferSize::Auto {
-        backend_settings.buffer_size = cpal::BufferSize::Fixed(buffer_size as u32);
+        backend_settings.config = Some(cpal::StreamConfig {
+            buffer_size: cpal::BufferSize::Fixed(buffer_size as u32),
+            ..default_device_and_config()?
+        });
         log::info!(env, "buffer size read from .ini: {}", buffer_size as u32);
     }
     let manager_settings = AudioManagerSettings::<CpalBackend> {
@@ -489,4 +492,25 @@ pub fn send(command: Command) {
     } else {
         fails!("plugin game loop is not initialized");
     }
+}
+
+/// borrowed from kira's stream manager.
+fn default_device_and_config() -> Result<cpal::StreamConfig, Error> {
+    use cpal::traits::DeviceTrait;
+    use cpal::traits::HostTrait;
+    let host = cpal::default_host();
+    let device = host.default_output_device().ok_or(Error::Internal {
+        source: InternalError::Driver {
+            origin: "missing cpal default output devices".into(),
+        },
+    })?;
+    let config = device
+        .default_output_config()
+        .map_err(|e| Error::Internal {
+            source: InternalError::Driver {
+                origin: format!("cpal device default output config: {e}").into(),
+            },
+        })?
+        .config();
+    Ok(config)
 }
