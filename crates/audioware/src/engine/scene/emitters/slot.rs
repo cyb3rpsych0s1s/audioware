@@ -13,8 +13,6 @@ use crate::engine::{
     traits::{DualHandles, Handle, store::Store},
 };
 
-// use super::handles::Handles;
-
 pub struct EmitterEntryOptions {
     pub affected_by_time_dilation: bool,
 }
