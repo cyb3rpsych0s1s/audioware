@@ -12,6 +12,7 @@ pub mod reclaim;
 pub mod resume;
 pub mod stop;
 pub mod store;
+pub mod volume;
 
 #[derive(Default)]
 pub struct Handles<K, V, O>(Vec<Handle<K, V, O>>);
