@@ -5,13 +5,13 @@ use kira::{
 };
 use red4ext_rs::types::CName;
 
-use crate::engine::traits::stop::Stop;
 use crate::engine::traits::{dilation::SyncDilation, pause::Pause};
 use crate::engine::{AffectedByTimeDilation, traits::resume::Resume};
 use crate::engine::{
     tracks::Spatial,
     traits::{DualHandles, Handle, store::Store},
 };
+use crate::{ControlId, engine::traits::stop::Stop};
 
 pub struct EmitterEntryOptions {
     pub affected_by_time_dilation: bool,
@@ -59,6 +59,7 @@ impl EmitterSlot {
         event_name: CName,
         affected_by_time_dilation: bool,
         data: Either<StaticSoundData, StreamingSoundData<FromFileError>>,
+        control_id: Option<ControlId>,
     ) -> PlayResult {
         match data {
             Either::Left(data) => {
@@ -70,6 +71,7 @@ impl EmitterSlot {
                     EmitterEntryOptions {
                         affected_by_time_dilation,
                     },
+                    control_id,
                 ));
                 Ok((duration, self.emitter_name))
             }
@@ -82,6 +84,7 @@ impl EmitterSlot {
                     EmitterEntryOptions {
                         affected_by_time_dilation,
                     },
+                    control_id,
                 ));
                 Ok((duration, self.emitter_name))
             }

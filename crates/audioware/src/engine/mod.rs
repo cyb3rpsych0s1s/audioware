@@ -28,7 +28,7 @@ use tracks::Tracks;
 use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
 use crate::{
-    AsAudioSystem, AsGameInstance, AsGameObjectExt, GameObject,
+    AsAudioSystem, AsGameInstance, AsGameObjectExt, ControlId, GameObject,
     engine::{
         tracks::TrackEntryOptions,
         traits::{Handle, stop::StopBy, store::Store},
@@ -158,6 +158,7 @@ where
         event_name: CName,
         emitter_name: CName,
         gender: audioware_manifest::PlayerGender,
+        control_id: Option<ControlId>,
     ) {
         let spoken = SpokenLocale::get();
         match self.banks.ids.try_get(&event_name, &spoken, Some(&gender)) {
@@ -178,6 +179,7 @@ where
                                     emitter_name: Some(emitter_name),
                                     affected_by_time_dilation: dilatable,
                                 },
+                                control_id,
                             ));
                         }
                     }
@@ -192,6 +194,7 @@ where
                                     emitter_name: Some(emitter_name),
                                     affected_by_time_dilation: dilatable,
                                 },
+                                control_id,
                             ));
                         }
                     }
@@ -224,6 +227,7 @@ where
         is_holocall: bool,
         is_rewind: bool,
         seek_time: f32,
+        control_id: Option<ControlId>,
     ) {
         if !string_id.is_defined() {
             warns!(
@@ -261,12 +265,18 @@ where
             match data.with(scene_settings) {
                 Either::Left(data) => {
                     if let Ok(handle) = destination.play(data) {
-                        scene.actors.v.store(Handle::new(string_id, handle, ()));
+                        scene
+                            .actors
+                            .v
+                            .store(Handle::new(string_id, handle, (), control_id));
                     }
                 }
                 Either::Right(data) => {
                     if let Ok(handle) = destination.play(data) {
-                        scene.actors.v.store(Handle::new(string_id, handle, ()));
+                        scene
+                            .actors
+                            .v
+                            .store(Handle::new(string_id, handle, (), control_id));
                     }
                 }
             }
@@ -279,7 +289,7 @@ where
                         scene
                             .actors
                             .holocall
-                            .store(Handle::new(string_id, handle, ()));
+                            .store(Handle::new(string_id, handle, (), control_id));
                     }
                 }
                 Either::Right(data) => {
@@ -287,12 +297,12 @@ where
                         scene
                             .actors
                             .holocall
-                            .store(Handle::new(string_id, handle, ()));
+                            .store(Handle::new(string_id, handle, (), control_id));
                     }
                 }
             }
         } else {
-            self.play_on_actor(string_id, entity_id, &key, scene_settings);
+            self.play_on_actor(string_id, entity_id, &key, scene_settings, control_id);
         }
         // red engine handles subtitles automatically
     }
@@ -304,6 +314,7 @@ where
         emitter_name: Option<CName>,
         ext: Option<T>,
         line_type: Option<ScnDialogLineType>,
+        control_id: Option<ControlId>,
     ) where
         StaticSoundData: With<Option<T>>,
         StreamingSoundData<FromFileError>: With<Option<T>>,
@@ -353,6 +364,7 @@ where
                                     emitter_name,
                                     affected_by_time_dilation: dilatable,
                                 },
+                                control_id,
                             ));
                         }
                     }
@@ -367,6 +379,7 @@ where
                                     emitter_name,
                                     affected_by_time_dilation: dilatable,
                                 },
+                                control_id,
                             ));
                         }
                     }
@@ -397,6 +410,7 @@ where
         entity_id: EntityId,
         tag_name: CName,
         ext: Option<T>,
+        control_id: Option<ControlId>,
     ) where
         StaticSoundData: With<Option<T>>,
         StreamingSoundData<FromFileError>: With<Option<T>>,
@@ -423,6 +437,7 @@ where
                         entity_id,
                         tag_name,
                         ext,
+                        control_id,
                     ) {
                         Err(e) => {
                             warns!("cannot play sound on emitter: {e}");
@@ -471,6 +486,7 @@ where
         entity_id: EntityId,
         key: &SceneId,
         scene_settings: SceneDialogSettings,
+        control_id: Option<ControlId>,
     ) {
         if let Some(ref mut scene) = self.scene {
             if !scene.exists_actor(&entity_id)
@@ -495,14 +511,14 @@ where
                     if let Ok(handle) = slot.value_mut().track_mut().play(data) {
                         slot.handles
                             .statics
-                            .store(Handle::new(sound_name, handle, ()));
+                            .store(Handle::new(sound_name, handle, (), control_id));
                     }
                 }
                 Either::Right(data) => {
                     if let Ok(handle) = slot.value_mut().track_mut().play(data) {
                         slot.handles
                             .streams
-                            .store(Handle::new(sound_name, handle, ()));
+                            .store(Handle::new(sound_name, handle, (), control_id));
                     }
                 }
             }
@@ -556,6 +572,7 @@ where
         emitter_name: Option<CName>,
         switch_name_tween: Option<Tween>,
         switch_value_settings: Option<T>,
+        control_id: Option<ControlId>,
     ) where
         StaticSoundData: With<Option<T>>,
         StreamingSoundData<FromFileError>: With<Option<T>>,
@@ -583,6 +600,7 @@ where
                 emitter_name,
                 switch_value_settings,
                 None,
+                control_id,
             );
         } else {
             GameInstance::get_audio_system().play(

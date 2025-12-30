@@ -18,7 +18,7 @@ use slot::EmitterSlot;
 use slots::EmitterSlots;
 
 use crate::{
-    Vector4,
+    ControlId, Vector4,
     engine::{
         tracks::Spatial,
         traits::{clear::Clear, pause::Pause, reclaim::Reclaim, resume::Resume, stop::Stop},
@@ -180,6 +180,7 @@ impl Emitters {
         entity_id: EntityId,
         tag_name: CName,
         ext: Option<T>,
+        control_id: Option<ControlId>,
     ) -> Result<(f32, Option<CName>), Error>
     where
         StaticSoundData: With<Option<T>>,
@@ -201,7 +202,7 @@ impl Emitters {
             .as_ref()
             .map(AffectedByTimeDilation::affected_by_time_dilation)
             .unwrap_or(true);
-        slot.play_and_store(event_name, dilatable, data)
+        slot.play_and_store(event_name, dilatable, data, control_id)
             .map_err(|e| match e {
                 Either::Left(e) => Error::Engine {
                     source: EngineError::Sound { source: e },

@@ -6,11 +6,14 @@ use red4ext_rs::{
     types::{CName, IScriptable},
 };
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ControlId(usize);
+
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
 pub struct DynamicSoundEvent {
     base: IScriptable,
-    pub(crate) id: OnceLock<usize>,
+    pub(crate) id: OnceLock<ControlId>,
     pub(crate) name: Cell<CName>,
 }
 

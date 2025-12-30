@@ -2,7 +2,10 @@ use kira::sound::{
     PlaybackState, static_sound::StaticSoundHandle, streaming::StreamingSoundHandle,
 };
 
-use crate::engine::{traits::stop::Stop, tweens::IMMEDIATELY};
+use crate::{
+    ControlId,
+    engine::{traits::stop::Stop, tweens::IMMEDIATELY},
+};
 
 pub mod clear;
 pub mod dilation;
@@ -45,13 +48,15 @@ impl<K, V> RawHandle<K, V> {
 pub struct Handle<K, V, O> {
     handle: RawHandle<K, V>,
     options: O,
+    control_id: Option<ControlId>,
 }
 
 impl<K, V, O> Handle<K, V, O> {
-    pub fn new(key: K, value: V, options: O) -> Self {
+    pub fn new(key: K, value: V, options: O, control_id: Option<ControlId>) -> Self {
         Self {
             handle: RawHandle::new(key, value),
             options,
+            control_id,
         }
     }
 }
