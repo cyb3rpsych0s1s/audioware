@@ -1,11 +1,13 @@
-use std::fmt;
+use std::{fmt, ops::Deref};
 
 use bitflags::bitflags;
 use red4ext_rs::{
     NativeRepr, ScriptClass,
     class_kind::Native,
-    types::{CName, IScriptable, RedArray},
+    types::{CName, EntityId, IScriptable, RedArray},
 };
+
+use crate::{EventHookType, Vector3, utils::fails};
 
 #[derive(Debug, Clone)]
 #[repr(transparent)]
@@ -205,15 +207,31 @@ impl AsRef<IScriptable> for SoundEvent {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default, Clone, Copy)]
+#[repr(C)]
+pub struct AudParam {
+    pub name: CName, // 0
+    pub value: f32,  // 08
+}
+
+unsafe impl NativeRepr for AudParam {
+    const NAME: &'static str = "Audioware.AudParam";
+}
+
+impl fmt::Display for AudParam {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}: {}", self.name, self.value)
+    }
+}
+
+#[derive(Debug, Default, Clone, Copy)]
 #[repr(C)]
 pub struct AudSwitch {
     pub name: CName,  // 0
     pub value: CName, // 08
 }
 
-unsafe impl ScriptClass for AudSwitch {
-    type Kind = Native;
+unsafe impl NativeRepr for AudSwitch {
     const NAME: &'static str = "audioAudSwitch";
 }
 
@@ -259,12 +277,13 @@ impl fmt::Display for AudParameter {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[repr(u32)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(i32)]
 pub enum ESoundCurveType {
     Log3 = 0,
     Sine = 1,
     InversedSCurve = 3,
+    #[default]
     Linear = 4,
     SCurve = 5,
     Exp1 = 6,
@@ -273,7 +292,7 @@ pub enum ESoundCurveType {
 }
 
 unsafe impl NativeRepr for ESoundCurveType {
-    const NAME: &'static str = "ESoundCurveType";
+    const NAME: &'static str = "audioESoundCurveType";
 }
 
 impl fmt::Display for ESoundCurveType {
@@ -301,13 +320,13 @@ const PADDING_64: usize = 0x68 - 0x64;
 #[repr(C)]
 pub struct AudioEvent {
     base: Event,
-    pub event_name: CName,           // 40
-    pub emitter_name: CName,         // 48
-    pub name_data: CName,            // 50
-    pub float_data: f32,             // 58
-    pub event_type: EventActionType, // 5C
-    pub event_flags: EventFlags,     // 60
-    unk64: [u8; PADDING_64],         // 64
+    pub event_name: CName,            // 40
+    pub emitter_name: CName,          // 48
+    pub name_data: CName,             // 50
+    pub float_data: f32,              // 58
+    pub event_type: EventActionType,  // 5C
+    pub event_flags: AudioEventFlags, // 60
+    unk64: [u8; PADDING_64],          // 64
 }
 
 unsafe impl ScriptClass for AudioEvent {
@@ -328,9 +347,10 @@ impl std::fmt::Display for AudioEvent {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u32)]
 pub enum EventActionType {
+    #[default]
     Play = 0,
     PlayAnimation = 1,
     SetParameter = 2,
@@ -374,64 +394,456 @@ impl fmt::Display for EventActionType {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[repr(u32)]
-pub enum AudioEventFlags {
-    NoEventFlags = 0,
-    SloMoOnly = 1,
-    Music = 2,
-    Unique = 4,
-    Metadata = 8,
+bitflags! {
+    /// # Safety
+    /// do not reorder bits (see below).
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct EventActionTypes: u32 {
+        const NONE = 0;
+        const PLAY = 1 << 0;
+        const PLAY_ANIMATION = 1 << 1;
+        const SET_PARAMETER = 1 << 2;
+        const STOP_SOUND = 1 << 3;
+        const SET_SWITCH = 1 << 4;
+        const STOP_TAGGED = 1 << 5;
+        const PLAY_EXTERNAL = 1 << 6;
+        const TAG = 1 << 7;
+        const UNTAG = 1 << 8;
+        const SET_APPEARANCE_NAME = 1 << 9;
+        const SET_ENTITY_NAME = 1 << 10;
+        const ADD_CONTAINER_STREAMING_PREFETCH = 1 << 11;
+        const REMOVE_CONTAINER_STREAMING_PREFETCH = 1 << 12;
+    }
+}
+
+impl<T> From<T> for EventActionTypes
+where
+    T: AsRef<[EventActionType]>,
+{
+    fn from(value: T) -> Self {
+        let mut out = Self::empty();
+        for v in value.as_ref().iter() {
+            out |= EventActionTypes::from(*v);
+        }
+        out
+    }
+}
+
+impl From<EventActionType> for EventActionTypes {
+    /// # Satefy
+    /// here we're sure that audioEventActionType variants from 0 to 12 always holds.
+    fn from(value: EventActionType) -> Self {
+        Self::from_bits_retain(1 << value as u32)
+    }
+}
+
+impl std::fmt::Display for EventActionTypes {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut out = Vec::new();
+        for (s, _) in self.iter_names().filter(|(_, x)| self.contains(*x)) {
+            out.push(s);
+        }
+        write!(f, "({})", out.join("|"))
+    }
+}
+
+bitflags! {
+    /// # Safety
+    /// do not reorder bits (see below).
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct EventHookTypes: u32 {
+        const NONE = 0;
+        const PLAY = 1 << 0;
+        const PLAY_ONE_SHOT = 1 << 1;
+        const SET_PARAMETER = 1 << 2;
+        const STOP_SOUND = 1 << 3;
+        const SET_SWITCH = 1 << 4;
+        const STOP_TAGGED = 1 << 5;
+        const PLAY_EXTERNAL = 1 << 6;
+        const TAG = 1 << 7;
+        const UNTAG = 1 << 8;
+        const SET_APPEARANCE_NAME = 1 << 9;
+        const SET_ENTITY_NAME = 1 << 10;
+        const ADD_CONTAINER_STREAMING_PREFETCH = 1 << 11;
+        const REMOVE_CONTAINER_STREAMING_PREFETCH = 1 << 12;
+        const SET_GLOBAL_PARAMETER = 1 << 13;
+    }
+}
+
+impl From<EventActionTypes> for EventHookTypes {
+    fn from(value: EventActionTypes) -> Self {
+        let mut out = Self::empty();
+        for (_, v) in value.iter_names().filter(|(_, v)| value.contains(*v)) {
+            out |= match v {
+                EventActionTypes::PLAY | EventActionTypes::PLAY_ANIMATION => {
+                    Self::PLAY | Self::PLAY_EXTERNAL | Self::PLAY_ONE_SHOT
+                }
+                EventActionTypes::SET_PARAMETER => Self::SET_PARAMETER | Self::SET_GLOBAL_PARAMETER,
+                EventActionTypes::STOP_SOUND => Self::STOP_SOUND,
+                EventActionTypes::SET_SWITCH => Self::SET_SWITCH,
+                EventActionTypes::STOP_TAGGED => Self::STOP_TAGGED,
+                EventActionTypes::PLAY_EXTERNAL => Self::PLAY_EXTERNAL,
+                EventActionTypes::TAG => Self::TAG,
+                EventActionTypes::UNTAG => Self::UNTAG,
+                EventActionTypes::SET_APPEARANCE_NAME => Self::SET_APPEARANCE_NAME,
+                EventActionTypes::SET_ENTITY_NAME => Self::SET_ENTITY_NAME,
+                EventActionTypes::ADD_CONTAINER_STREAMING_PREFETCH => {
+                    Self::ADD_CONTAINER_STREAMING_PREFETCH
+                }
+                EventActionTypes::REMOVE_CONTAINER_STREAMING_PREFETCH => {
+                    Self::REMOVE_CONTAINER_STREAMING_PREFETCH
+                }
+                x => {
+                    fails!("missing EventActionTypes flag: {x}");
+                    Self::empty()
+                }
+            };
+        }
+        out
+    }
+}
+
+impl<T> From<T> for EventHookTypes
+where
+    T: AsRef<[EventActionType]>,
+{
+    fn from(value: T) -> Self {
+        let mut out = Self::empty();
+        for v in value.as_ref().iter() {
+            out |= EventHookTypes::from(*v);
+        }
+        out
+    }
+}
+
+impl From<EventActionType> for EventHookTypes {
+    fn from(value: EventActionType) -> Self {
+        Self::from(EventActionTypes::from(value))
+    }
+}
+
+impl From<EventHookType> for EventHookTypes {
+    /// # Satefy
+    /// here we're sure that [EventHookType] variants from 0 to 13 always holds.
+    fn from(value: EventHookType) -> Self {
+        Self::from_bits_retain(1 << value as u32)
+    }
+}
+
+impl std::fmt::Display for EventHookTypes {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut out = Vec::new();
+        for (s, _) in self.iter_names().filter(|(_, x)| self.contains(*x)) {
+            out.push(s);
+        }
+        write!(f, "({})", out.join("|"))
+    }
+}
+
+unsafe impl NativeRepr for EventHookTypes {
+    const NAME: &'static str = u32::NAME;
+}
+
+bitflags! {
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct AudioEventFlags: u32 {
+        const NO_EVENT_FLAGS = 0;
+        const SLO_MO_ONLY = 1 << 0;
+        const MUSIC = 1 << 1;
+        const UNIQUE = 1 << 2;
+        const METADATA = 1 << 3;
+    }
 }
 
 unsafe impl NativeRepr for AudioEventFlags {
-    const NAME: &'static str = "AudioEventFlags";
+    const NAME: &'static str = "audioAudioEventFlags";
 }
 
 impl fmt::Display for AudioEventFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_empty() {
+            write!(f, "none")
+        } else {
+            let mut out = Vec::with_capacity(4);
+            if self.contains(Self::SLO_MO_ONLY) {
+                out.push("SloMoOnly");
+            }
+            if self.contains(Self::MUSIC) {
+                out.push("Music");
+            }
+            if self.contains(Self::UNIQUE) {
+                out.push("Unique");
+            }
+            if self.contains(Self::METADATA) {
+                out.push("Metadata");
+            }
+            if out.is_empty() {
+                return write!(f, "none");
+            }
+            write!(f, "({})", out.join("|"))
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
+pub struct AudioEventId(u32);
+
+impl std::fmt::Display for AudioEventId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "aeid:{}", self.0)
+    }
+}
+
+impl AudioEventId {
+    pub fn invalid() -> Self {
+        Self(0)
+    }
+}
+
+const INVALID_WWISE_ID: u32 = 2166136261;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct WwiseId(u32);
+
+impl WwiseId {
+    pub fn is_null(&self) -> bool {
+        self.0 == INVALID_WWISE_ID
+    }
+    pub fn to_i64(&self) -> i64 {
+        self.0 as i64
+    }
+}
+
+impl Default for WwiseId {
+    fn default() -> Self {
+        Self(INVALID_WWISE_ID)
+    }
+}
+
+impl std::fmt::Display for WwiseId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "wwise:{}", self.0)
+    }
+}
+
+unsafe impl NativeRepr for WwiseId {
+    const NAME: &'static str = u32::NAME;
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct ApplyEmitterStrategy {
+    emitter_name: CName,
+    position_name: CName,
+}
+
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub union AudioStrategyUnion {
+    by_emitter_and_position: ApplyEmitterStrategy,
+    by_emitter_id: u32,
+    by_position: Vector3,
+    by_tags: [CName; 2],
+    by_event_id: AudioEventId,
+}
+
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub union AudioParamUnion {
+    pub name: CName,
+    pub float: f32,
+}
+
+#[derive(Clone)]
+#[repr(C)]
+pub struct AudioInternalEvent {
+    strategy: AudioStrategyUnion,          // 0
+    name: CName,                           // 0x10
+    param: AudioParamUnion,                // 0x18
+    external_source_path: u64,             // 0x20
+    id: AudioEventId,                      // 0x28
+    pub action: EventActionType,           // 0x2C
+    pub flags: AudioEventFlags,            // 0x30
+    strategy_type: EventApplyStrategyType, // 0x34
+}
+
+impl AudioInternalEvent {
+    pub fn event_name(&self) -> CName {
+        self.name
+    }
+    pub fn emitter_name(&self) -> Option<CName> {
+        if self.strategy_type == EventApplyStrategyType::ApplyEmitter
+            || self.strategy_type == EventApplyStrategyType::ApplyPositionName
+        {
+            return Some(unsafe { self.strategy.by_emitter_and_position.emitter_name });
+        }
+        None
+    }
+    pub fn event_flags(&self) -> AudioEventFlags {
+        self.flags
+    }
+    pub fn event_type(&self) -> EventActionType {
+        self.action
+    }
+    pub fn name_data(&self) -> Option<CName> {
+        if self.action == EventActionType::SetSwitch {
+            return Some(unsafe { self.param.name });
+        }
+        None
+    }
+    pub fn float_data(&self) -> Option<f32> {
+        match self.action {
+            EventActionType::PlayExternal if self.external_source_path != 0 => {
+                Some(unsafe { self.param.float })
+            }
+            EventActionType::SetParameter | EventActionType::Play | EventActionType::StopSound => {
+                Some(unsafe { self.param.float })
+            }
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for AudioInternalEvent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut out = format!("name: {}, action: {}", self.name, self.action);
+        out.push_str(&format!(", flags: {}", self.flags));
+        match self.action {
+            EventActionType::SetSwitch => {
+                out.push_str(&format!(", param.name: {}", unsafe { self.param.name }));
+            }
+            EventActionType::PlayExternal => {
+                out.push_str(&format!(
+                    ", param.external_source_path: {}",
+                    self.external_source_path
+                ));
+                out.push_str(&format!(", param.float: {}", unsafe { self.param.float }));
+            }
+            _ => {
+                out.push_str(&format!(", param.float: {}", unsafe { self.param.float }));
+            }
+        };
+        if self.strategy_type == EventApplyStrategyType::ApplyEmitter
+            || self.strategy_type == EventApplyStrategyType::ApplyPositionName
+        {
+            out.push_str(&format!(", extra.emitter_name: {}", unsafe {
+                self.strategy.by_emitter_and_position.emitter_name
+            }));
+        }
+        if self.strategy_type == EventApplyStrategyType::ApplyPositionName {
+            out.push_str(&format!(", extra.position_name: {}", unsafe {
+                self.strategy.by_emitter_and_position.position_name
+            }));
+        }
+        if self.strategy_type == EventApplyStrategyType::ApplyEmitterWithId {
+            out.push_str(&format!(
+                ", extra.emitter_id: {}",
+                unsafe { self.strategy.by_emitter_id } // EntityId::from(unsafe { self.strategy.by_emitter_id } as u64) ?
+            ));
+        }
+        if self.strategy_type == EventApplyStrategyType::ApplyPosition {
+            out.push_str(&format!(", extra.position: {}", unsafe {
+                self.strategy.by_position
+            }));
+        }
+        if self.strategy_type == EventApplyStrategyType::ApplyEventId
+            && unsafe { self.strategy.by_event_id.0 } != 0
+        {
+            out.push_str(&format!(", extra.event_id: {}", unsafe {
+                self.strategy.by_event_id
+            }));
+        }
+        if self.strategy_type == EventApplyStrategyType::ApplyTagged
+            && unsafe { self.strategy.by_tags[0] } != CName::new("None")
+        {
+            if unsafe { self.strategy.by_tags[1] } != CName::new("None") {
+                out.push_str(&format!(
+                    ", extra.tags: [{}, {}]",
+                    unsafe { self.strategy.by_tags[0] },
+                    unsafe { self.strategy.by_tags[1] },
+                ));
+            } else {
+                out.push_str(&format!(", extra.tags: [{}]", unsafe {
+                    self.strategy.by_tags[0]
+                },));
+            }
+        }
+        write!(f, "{}", out)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u8)]
+pub enum EventApplyStrategyType {
+    ApplyEntity = 0,
+    ApplyEmitter = 1,
+    ApplyEmitterWithId = 2,
+    ApplyPosition = 3,
+    ApplyEventId = 4,
+    ApplyTagged = 5,
+    ApplyPositionName = 6,
+}
+
+impl std::fmt::Display for EventApplyStrategyType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                Self::NoEventFlags => "NoEventFlags",
-                Self::SloMoOnly => "SloMoOnly",
-                Self::Music => "Music",
-                Self::Unique => "Unique",
-                Self::Metadata => "Metadata",
+                Self::ApplyEntity => "ApplyEntity",
+                Self::ApplyEmitter => "ApplyEmitter",
+                Self::ApplyEmitterWithId => "ApplyEmitterWithId",
+                Self::ApplyPosition => "ApplyPosition",
+                Self::ApplyEventId => "ApplyEventId",
+                Self::ApplyTagged => "ApplyTagged",
+                Self::ApplyPositionName => "ApplyPositionName",
             }
         )
     }
 }
 
-bitflags! {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-    pub struct EventFlags: u32 {
-        const NONE = AudioEventFlags::NoEventFlags as u32;
-        const SLO_MO_ONLY = AudioEventFlags::SloMoOnly as u32;
-        const MUSIC = AudioEventFlags::Music as u32;
-        const UNIQUE = AudioEventFlags::Unique as u32;
-        const METADATA = AudioEventFlags::Metadata as u32;
-    }
-}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct SoundObjectId(i64);
 
-impl std::fmt::Display for EventFlags {
+impl std::fmt::Display for SoundObjectId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if *self == EventFlags::NONE {
-            write!(f, "none")
-        } else {
-            write!(
-                f,
-                "[slow motion only: {}, music: {}, unique: {}, metadata: {}]",
-                self.contains(EventFlags::SLO_MO_ONLY),
-                self.contains(EventFlags::MUSIC),
-                self.contains(EventFlags::UNIQUE),
-                self.contains(EventFlags::METADATA),
-            )
-        }
+        write!(f, "soid:{}", self.0)
     }
 }
 
-unsafe impl NativeRepr for EventFlags {
-    const NAME: &'static str = AudioEventFlags::NAME;
+#[cfg(test)]
+mod tests {
+    use crate::{EventActionType, EventActionTypes, EventHookTypes};
+
+    #[test]
+    fn bitops() {
+        assert_eq!(
+            EventHookTypes::from(EventActionType::PlayAnimation),
+            EventHookTypes::PLAY | EventHookTypes::PLAY_ONE_SHOT | EventHookTypes::PLAY_EXTERNAL
+        );
+        assert_eq!(
+            EventHookTypes::from(&[
+                EventActionType::SetAppearanceName,
+                EventActionType::PlayAnimation
+            ]),
+            EventHookTypes::SET_APPEARANCE_NAME
+                | EventHookTypes::PLAY
+                | EventHookTypes::PLAY_ONE_SHOT
+                | EventHookTypes::PLAY_EXTERNAL
+        );
+        assert_eq!(
+            EventHookTypes::from(
+                EventActionTypes::ADD_CONTAINER_STREAMING_PREFETCH
+                    | EventActionTypes::REMOVE_CONTAINER_STREAMING_PREFETCH
+                    | EventActionTypes::SET_PARAMETER
+            ),
+            EventHookTypes::ADD_CONTAINER_STREAMING_PREFETCH
+                | EventHookTypes::REMOVE_CONTAINER_STREAMING_PREFETCH
+                | EventHookTypes::SET_PARAMETER
+                | EventHookTypes::SET_GLOBAL_PARAMETER
+        );
+    }
 }

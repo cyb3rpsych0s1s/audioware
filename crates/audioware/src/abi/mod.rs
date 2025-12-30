@@ -6,7 +6,7 @@ use kira::backend::cpal::CpalBackend;
 use lifecycle::{Board, Lifecycle, Session, System};
 use red4ext_rs::{
     ClassExport, Exportable, GameApp, RttiRegistrator, ScriptClass, SdkEnv, StateListener,
-    StateType, exports, methods,
+    StateType, exports, methods, static_methods,
     types::{CName, EntityId, IScriptable, Opt, Ref},
 };
 use windows::Win32::{
@@ -15,12 +15,19 @@ use windows::Win32::{
 };
 
 use crate::{
-    Audioware, EmitterSettings, LocalizationPackage, ToTween, Tween,
-    engine::{Engine, eq::Preset, state},
+    AddContainerStreamingPrefetchEvent, AudioEventCallbackAssetTarget,
+    AudioEventCallbackEntityTarget, AudioEventCallbackEventTarget, AudioEventCallbackHandler,
+    AudioEventCallbackSystem, AudioEventCallbackTarget, Audioware, EmitterSettings,
+    EngineSoundEvent, Handler, LocalizationPackage, PlayEvent, PlayExternalEvent, PlayOneShotEvent,
+    RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent, SetEntityNameEvent,
+    SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent, StopTaggedEvent,
+    TagEvent, ToTween, Tween, UntagEvent,
+    engine::{AudioEventManager, Engine, Mute, eq::Preset, state},
     queue,
     utils::{fails, lifecycle, warns},
 };
 
+pub mod callback;
 pub mod command;
 pub mod lifecycle;
 
@@ -82,6 +89,206 @@ pub fn exports() -> impl Exportable {
                     final c"Duration" => AudioSystemExt::duration,
                     final c"IsDebug" => AudioSystemExt::is_debug,
                     final c"SemanticVersion" => AudioSystemExt::semantic_version,
+                ])
+                .build(),
+        ClassExport::<AudioEventManager>::builder()
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    final c"Mute" => AudioEventManager::mute,
+                    final c"Unmute" => AudioEventManager::unmute,
+                    final c"MuteSpecific" => AudioEventManager::mute_specific,
+                    final c"UnmuteSpecific" => AudioEventManager::unmute_specific,
+                    final c"IsMuted" => AudioEventManager::is_muted,
+                    final c"IsSpecificMuted" => AudioEventManager::is_specific_muted,
+                ])
+                .build(),
+        ClassExport::<AudioEventCallbackTarget>::builder()
+                .base(IScriptable::NAME)
+                .build(),
+        ClassExport::<AudioEventCallbackEntityTarget>::builder()
+                .base(AudioEventCallbackTarget::NAME)
+                .static_methods(static_methods![
+                    c"EntityID" => AudioEventCallbackEntityTarget::new_with_entity_id,
+                    c"EmitterName" => AudioEventCallbackEntityTarget::new_with_emitter_name,
+                ])
+                .build(),
+        ClassExport::<AudioEventCallbackEventTarget>::builder()
+                .base(AudioEventCallbackTarget::NAME)
+                .static_methods(static_methods![
+                    c"ActionType" => AudioEventCallbackEventTarget::new_with_action_type,
+                    c"HookType" => AudioEventCallbackEventTarget::new_with_hook_type,
+                ])
+                .build(),
+        ClassExport::<AudioEventCallbackAssetTarget>::builder()
+                .base(AudioEventCallbackTarget::NAME)
+                .static_methods(static_methods![
+                    c"WwiseID" => AudioEventCallbackAssetTarget::new_with_wwise_id,
+                ])
+                .build(),
+        ClassExport::<EngineSoundEvent>::builder()
+                .base(IScriptable::NAME)
+                .build(),
+        ClassExport::<PlayEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"EventName" => PlayEvent::event_name,
+                    final c"EntityID" => PlayEvent::entity_id,
+                    final c"EmitterName" => PlayEvent::emitter_name,
+                    final c"Position" => PlayEvent::position,
+                    final c"WwiseID" => PlayEvent::wwise_id,
+                    final c"SoundTags" => PlayEvent::sound_tags,
+                    final c"EmitterTags" => PlayEvent::emitter_tags,
+                    final c"Seek" => PlayEvent::seek,
+                ])
+                .build(),
+        ClassExport::<PlayExternalEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"EventName" => PlayExternalEvent::event_name,
+                    final c"EntityID" => PlayExternalEvent::entity_id,
+                    final c"EmitterName" => PlayExternalEvent::emitter_name,
+                    final c"Position" => PlayExternalEvent::position,
+                    final c"WwiseID" => PlayExternalEvent::wwise_id,
+                    final c"SoundTags" => PlayExternalEvent::sound_tags,
+                    final c"EmitterTags" => PlayExternalEvent::emitter_tags,
+                    final c"Seek" => PlayExternalEvent::seek,
+                    final c"ExternalResourcePath" => PlayExternalEvent::external_resource_path,
+                ])
+                .build(),
+        ClassExport::<PlayOneShotEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"EventName" => PlayOneShotEvent::event_name,
+                    final c"EntityID" => PlayOneShotEvent::entity_id,
+                    final c"EmitterName" => PlayOneShotEvent::emitter_name,
+                    final c"Position" => PlayOneShotEvent::position,
+                    final c"WwiseID" => PlayOneShotEvent::wwise_id,
+                    final c"Params" => PlayOneShotEvent::params,
+                    final c"Switches" => PlayOneShotEvent::switches,
+                    final c"GraphOcclusion" => PlayOneShotEvent::graph_occlusion,
+                    final c"RaycastOcclusion" => PlayOneShotEvent::raycast_occlusion,
+                    final c"HasGraphOcclusion" => PlayOneShotEvent::has_graph_occlusion,
+                    final c"HasRaycastOcclusion" => PlayOneShotEvent::has_raycast_occlusion,
+                    final c"IsInDifferentRoom" => PlayOneShotEvent::is_in_different_room,
+                ])
+                .build(),
+        ClassExport::<StopSoundEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"SoundName" => StopSoundEvent::event_name,
+                    final c"EntityID" => StopSoundEvent::entity_id,
+                    final c"WwiseID" => StopSoundEvent::wwise_id,
+                    final c"FadeOut" => StopSoundEvent::float_data,
+                ])
+                .build(),
+        ClassExport::<StopTaggedEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"TagName" => StopTaggedEvent::tag_name,
+                    final c"EntityID" => StopTaggedEvent::entity_id,
+                    final c"WwiseID" => StopTaggedEvent::wwise_id,
+                ])
+                .build(),
+        ClassExport::<SetParameterEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"ParamName" => SetParameterEvent::switch_name,
+                    final c"ParamValue" => SetParameterEvent::switch_value,
+                    final c"EntityID" => SetParameterEvent::entity_id,
+                    final c"EmitterName" => SetParameterEvent::emitter_name,
+                    final c"Position" => SetParameterEvent::position,
+                    final c"WwiseID" => SetParameterEvent::wwise_id,
+                    final c"SoundTags" => SetParameterEvent::sound_tags,
+                    final c"EmitterTags" => SetParameterEvent::emitter_tags,
+                ])
+                .build(),
+        ClassExport::<SetGlobalParameterEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"Name" => SetGlobalParameterEvent::name,
+                    final c"Value" => SetGlobalParameterEvent::value,
+                    final c"Duration" => SetGlobalParameterEvent::duration,
+                    final c"CurveType" => SetGlobalParameterEvent::curve_type,
+                    final c"WwiseID" => SetGlobalParameterEvent::wwise_id,
+                ])
+                .build(),
+        ClassExport::<SetSwitchEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"SwitchName" => SetSwitchEvent::switch_name,
+                    final c"SwitchValue" => SetSwitchEvent::switch_value,
+                    final c"SwitchNameWwiseID" => SetSwitchEvent::switch_name_wwise_id,
+                    final c"SwitchValueWwiseID" => SetSwitchEvent::switch_value_wwise_id,
+                    final c"EntityID" => SetSwitchEvent::entity_id,
+                    final c"EmitterName" => SetSwitchEvent::emitter_name,
+                    final c"Position" => SetSwitchEvent::position,
+                    final c"SoundTags" => SetSwitchEvent::sound_tags,
+                    final c"EmitterTags" => SetSwitchEvent::emitter_tags,
+                ])
+                .build(),
+        ClassExport::<SetAppearanceNameEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"Name" => SetAppearanceNameEvent::event_name,
+                    final c"EntityID" => SetAppearanceNameEvent::entity_id,
+                    final c"WwiseID" => SetAppearanceNameEvent::wwise_id,
+                ])
+                .build(),
+        ClassExport::<SetEntityNameEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"Name" => SetEntityNameEvent::event_name,
+                    final c"EntityID" => SetEntityNameEvent::entity_id,
+                    final c"WwiseID" => SetEntityNameEvent::wwise_id,
+                ])
+                .build(),
+        ClassExport::<TagEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"TagName" => TagEvent::event_name,
+                    final c"EntityID" => TagEvent::entity_id,
+                    final c"WwiseID" => TagEvent::wwise_id,
+                ])
+                .build(),
+        ClassExport::<UntagEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"TagName" => UntagEvent::event_name,
+                    final c"EntityID" => UntagEvent::entity_id,
+                    final c"WwiseID" => UntagEvent::wwise_id,
+                ])
+                .build(),
+        ClassExport::<AddContainerStreamingPrefetchEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"EventName" => AddContainerStreamingPrefetchEvent::event_name,
+                    final c"EntityID" => AddContainerStreamingPrefetchEvent::entity_id,
+                    final c"WwiseID" => AddContainerStreamingPrefetchEvent::wwise_id,
+                ])
+                .build(),
+        ClassExport::<RemoveContainerStreamingPrefetchEvent>::builder()
+                .base(EngineSoundEvent::NAME)
+                .methods(methods![
+                    final c"EventName" => RemoveContainerStreamingPrefetchEvent::event_name,
+                    final c"EntityID" => RemoveContainerStreamingPrefetchEvent::entity_id,
+                    final c"WwiseID" => RemoveContainerStreamingPrefetchEvent::wwise_id,
+                ])
+                .build(),
+        ClassExport::<AudioEventCallbackHandler>::builder()
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    final c"Unregister" => AudioEventCallbackHandler::unregister,
+                    final c"IsRegistered" => AudioEventCallbackHandler::is_registered,
+                    final c"AddTarget" => AudioEventCallbackHandler::add_target,
+                    final c"RemoveTarget" => AudioEventCallbackHandler::remove_target,
+                    final c"SetLifetime" => AudioEventCallbackHandler::set_lifetime,
+                ])
+                .build(),
+        ClassExport::<AudioEventCallbackSystem>::builder()
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    final c"RegisterCallback" => AudioEventCallbackSystem::register_callback,
+                    final c"RegisterStaticCallback" => AudioEventCallbackSystem::register_static_callback,
                 ])
                 .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),

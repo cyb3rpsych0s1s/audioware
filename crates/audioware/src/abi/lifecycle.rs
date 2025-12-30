@@ -3,9 +3,11 @@ use crossbeam::channel::Sender;
 use red4ext_rs::types::{CName, EntityId};
 
 mod board;
+mod replacement;
 mod session;
 mod system;
 pub use board::Board;
+pub use replacement::ReplacementNotification;
 pub use session::Session;
 pub use system::System;
 
@@ -68,6 +70,7 @@ pub enum Lifecycle {
     UIInGameNotificationRemove,
     System(System),
     Board(Board),
+    Replacement(ReplacementNotification),
     ReportInitialization,
     #[cfg(feature = "hot-reload")]
     HotReload,
@@ -93,6 +96,7 @@ impl std::fmt::Display for Lifecycle {
             }
             Lifecycle::Terminate => write!(f, "terminate"),
             Lifecycle::Session(x) => write!(f, "{x}"),
+            Lifecycle::Replacement(x) => write!(f, "{x}"),
             Lifecycle::SwitchToScenario(name) => {
                 write!(f, "on switch to scenario: {}", name.as_str())
             }

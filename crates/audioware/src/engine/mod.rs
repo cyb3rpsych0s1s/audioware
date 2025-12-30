@@ -21,6 +21,7 @@ use kira::{
 };
 use modulators::{Modulators, Parameter};
 use red4ext_rs::types::{CName, Cruid, EntityId, GameInstance, Opt};
+pub use replacement::{AudioEventManager, Mute, Replacements};
 pub use scene::{AffectedByTimeDilation, DilationUpdate, Scene};
 use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
@@ -44,7 +45,9 @@ pub mod queue;
 pub mod state;
 pub mod traits;
 
+mod callbacks;
 mod modulators;
+mod replacement;
 mod scene;
 mod tracks;
 mod tweens;
