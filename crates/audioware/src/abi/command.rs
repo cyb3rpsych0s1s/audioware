@@ -36,6 +36,7 @@ pub enum Command {
         tag_name: TagName,
         ext: Option<Settings>,
     },
+    #[allow(dead_code, reason = "TODO")]
     EnqueueAndPlayOnEmitter {
         event_name: CName,
         entity_id: TargetId,
