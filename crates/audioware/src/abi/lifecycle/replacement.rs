@@ -1,11 +1,11 @@
-use crate::{EventActionType, EventName};
+use crate::{EventHookTypes, EventName};
 
 #[derive(Debug)]
 pub enum ReplacementNotification {
     Mute(EventName),
-    MuteSpecific(EventName, EventActionType),
+    MuteSpecific(EventName, EventHookTypes),
     Unmute(EventName),
-    UnmuteSpecific(EventName, EventActionType),
+    UnmuteSpecific(EventName, EventHookTypes),
 }
 
 impl std::fmt::Display for ReplacementNotification {

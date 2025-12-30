@@ -95,6 +95,8 @@ impl Deref for FunctionName {
     }
 }
 
+/// # Safety
+/// do not reorder the bits (see [EventHookTypes]).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(i64)]
 pub enum EventHookType {

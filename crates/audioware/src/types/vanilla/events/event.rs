@@ -7,7 +7,7 @@ use red4ext_rs::{
     types::{CName, EntityId, IScriptable, RedArray},
 };
 
-use crate::Vector3;
+use crate::{EventHookType, Vector3, utils::fails};
 
 #[derive(Debug, Clone)]
 #[repr(transparent)]
@@ -395,29 +395,153 @@ impl fmt::Display for EventActionType {
 }
 
 bitflags! {
+    /// # Safety
+    /// do not reorder bits (see below).
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct EventActionTypes: u32 {
         const NONE = 0;
-        const PLAY = 1 << 1;
-        const PLAY_ANIMATION = 1 << 2;
-        const SET_PARAMETER = 1 << 3;
-        const STOP_SOUND = 1 << 4;
-        const SET_SWITCH = 1 << 5;
-        const STOP_TAGGED = 1 << 6;
-        const PLAY_EXTERNAL = 1 << 7;
-        const TAG = 1 << 8;
-        const UNTAG = 1 << 9;
-        const SET_APPEARANCE_NAME = 1 << 10;
-        const SET_ENTITY_NAME = 1 << 11;
-        const ADD_CONTAINER_STREAMING_PREFETCH = 1 << 12;
-        const REMOVE_CONTAINER_STREAMING_PREFETCH = 1 << 13;
+        const PLAY = 1 << 0;
+        const PLAY_ANIMATION = 1 << 1;
+        const SET_PARAMETER = 1 << 2;
+        const STOP_SOUND = 1 << 3;
+        const SET_SWITCH = 1 << 4;
+        const STOP_TAGGED = 1 << 5;
+        const PLAY_EXTERNAL = 1 << 6;
+        const TAG = 1 << 7;
+        const UNTAG = 1 << 8;
+        const SET_APPEARANCE_NAME = 1 << 9;
+        const SET_ENTITY_NAME = 1 << 10;
+        const ADD_CONTAINER_STREAMING_PREFETCH = 1 << 11;
+        const REMOVE_CONTAINER_STREAMING_PREFETCH = 1 << 12;
+    }
+}
+
+impl<T> From<T> for EventActionTypes
+where
+    T: AsRef<[EventActionType]>,
+{
+    fn from(value: T) -> Self {
+        let mut out = Self::empty();
+        for v in value.as_ref().iter() {
+            out |= EventActionTypes::from(*v);
+        }
+        out
     }
 }
 
 impl From<EventActionType> for EventActionTypes {
+    /// # Satefy
+    /// here we're sure that audioEventActionType variants from 0 to 12 always holds.
     fn from(value: EventActionType) -> Self {
-        Self::from_bits_truncate(value as u32)
+        Self::from_bits_retain(1 << value as u32)
     }
+}
+
+impl std::fmt::Display for EventActionTypes {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut out = Vec::new();
+        for (s, _) in self.iter_names().filter(|(_, x)| self.contains(*x)) {
+            out.push(s);
+        }
+        write!(f, "({})", out.join("|"))
+    }
+}
+
+bitflags! {
+    /// # Safety
+    /// do not reorder bits (see below).
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct EventHookTypes: u32 {
+        const NONE = 0;
+        const PLAY = 1 << 0;
+        const PLAY_ONE_SHOT = 1 << 1;
+        const SET_PARAMETER = 1 << 2;
+        const STOP_SOUND = 1 << 3;
+        const SET_SWITCH = 1 << 4;
+        const STOP_TAGGED = 1 << 5;
+        const PLAY_EXTERNAL = 1 << 6;
+        const TAG = 1 << 7;
+        const UNTAG = 1 << 8;
+        const SET_APPEARANCE_NAME = 1 << 9;
+        const SET_ENTITY_NAME = 1 << 10;
+        const ADD_CONTAINER_STREAMING_PREFETCH = 1 << 11;
+        const REMOVE_CONTAINER_STREAMING_PREFETCH = 1 << 12;
+        const SET_GLOBAL_PARAMETER = 1 << 13;
+    }
+}
+
+impl From<EventActionTypes> for EventHookTypes {
+    fn from(value: EventActionTypes) -> Self {
+        let mut out = Self::empty();
+        for (_, v) in value.iter_names().filter(|(_, v)| value.contains(*v)) {
+            out |= match v {
+                EventActionTypes::PLAY | EventActionTypes::PLAY_ANIMATION => {
+                    Self::PLAY | Self::PLAY_EXTERNAL | Self::PLAY_ONE_SHOT
+                }
+                EventActionTypes::SET_PARAMETER => Self::SET_PARAMETER | Self::SET_GLOBAL_PARAMETER,
+                EventActionTypes::STOP_SOUND => Self::STOP_SOUND,
+                EventActionTypes::SET_SWITCH => Self::SET_SWITCH,
+                EventActionTypes::STOP_TAGGED => Self::STOP_TAGGED,
+                EventActionTypes::PLAY_EXTERNAL => Self::PLAY_EXTERNAL,
+                EventActionTypes::TAG => Self::TAG,
+                EventActionTypes::UNTAG => Self::UNTAG,
+                EventActionTypes::SET_APPEARANCE_NAME => Self::SET_APPEARANCE_NAME,
+                EventActionTypes::SET_ENTITY_NAME => Self::SET_ENTITY_NAME,
+                EventActionTypes::ADD_CONTAINER_STREAMING_PREFETCH => {
+                    Self::ADD_CONTAINER_STREAMING_PREFETCH
+                }
+                EventActionTypes::REMOVE_CONTAINER_STREAMING_PREFETCH => {
+                    Self::REMOVE_CONTAINER_STREAMING_PREFETCH
+                }
+                x => {
+                    fails!("missing EventActionTypes flag: {x}");
+                    Self::empty()
+                }
+            };
+        }
+        out
+    }
+}
+
+impl<T> From<T> for EventHookTypes
+where
+    T: AsRef<[EventActionType]>,
+{
+    fn from(value: T) -> Self {
+        let mut out = Self::empty();
+        for v in value.as_ref().iter() {
+            out |= EventHookTypes::from(*v);
+        }
+        out
+    }
+}
+
+impl From<EventActionType> for EventHookTypes {
+    fn from(value: EventActionType) -> Self {
+        Self::from(EventActionTypes::from(value))
+    }
+}
+
+impl From<EventHookType> for EventHookTypes {
+    /// # Satefy
+    /// here we're sure that [EventHookType] variants from 0 to 13 always holds.
+    fn from(value: EventHookType) -> Self {
+        Self::from_bits_retain(1 << value as u32)
+    }
+}
+
+impl std::fmt::Display for EventHookTypes {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut out = Vec::new();
+        for (s, _) in self.iter_names().filter(|(_, x)| self.contains(*x)) {
+            out.push(s);
+        }
+        write!(f, "({})", out.join("|"))
+    }
+}
+
+unsafe impl NativeRepr for EventHookTypes {
+    const NAME: &'static str = u32::NAME;
 }
 
 bitflags! {
@@ -687,5 +811,39 @@ pub struct SoundObjectId(i64);
 impl std::fmt::Display for SoundObjectId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "soid:{}", self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{EventActionType, EventActionTypes, EventHookTypes};
+
+    #[test]
+    fn bitops() {
+        assert_eq!(
+            EventHookTypes::from(EventActionType::PlayAnimation),
+            EventHookTypes::PLAY | EventHookTypes::PLAY_ONE_SHOT | EventHookTypes::PLAY_EXTERNAL
+        );
+        assert_eq!(
+            EventHookTypes::from(&[
+                EventActionType::SetAppearanceName,
+                EventActionType::PlayAnimation
+            ]),
+            EventHookTypes::SET_APPEARANCE_NAME
+                | EventHookTypes::PLAY
+                | EventHookTypes::PLAY_ONE_SHOT
+                | EventHookTypes::PLAY_EXTERNAL
+        );
+        assert_eq!(
+            EventHookTypes::from(
+                EventActionTypes::ADD_CONTAINER_STREAMING_PREFETCH
+                    | EventActionTypes::REMOVE_CONTAINER_STREAMING_PREFETCH
+                    | EventActionTypes::SET_PARAMETER
+            ),
+            EventHookTypes::ADD_CONTAINER_STREAMING_PREFETCH
+                | EventHookTypes::REMOVE_CONTAINER_STREAMING_PREFETCH
+                | EventHookTypes::SET_PARAMETER
+                | EventHookTypes::SET_GLOBAL_PARAMETER
+        );
     }
 }
