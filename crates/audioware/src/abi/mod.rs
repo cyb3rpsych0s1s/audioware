@@ -299,6 +299,15 @@ pub fn exports() -> impl Exportable {
                 ])
                 .methods(methods![
                     final c"SetVolume" => DynamicSoundEvent::set_volume,
+                    final c"SetPlaybackRate" => DynamicSoundEvent::set_playback_rate,
+                    final c"SetPanning" => DynamicSoundEvent::set_panning,
+                    final c"Position" => DynamicSoundEvent::position,
+                    final c"Stop" => DynamicSoundEvent::stop,
+                    final c"Pause" => DynamicSoundEvent::pause,
+                    final c"Resume" => DynamicSoundEvent::resume,
+                    final c"ResumeAt" => DynamicSoundEvent::resume_at,
+                    final c"SeekTo" => DynamicSoundEvent::seek_to,
+                    final c"SeekBy" => DynamicSoundEvent::seek_by,
                 ])
                 .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),

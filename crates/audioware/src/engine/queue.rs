@@ -25,7 +25,16 @@ use crate::{
     engine::{
         DilationUpdate, Mute, Replacements,
         callbacks::{Dispatch, Listen},
-        traits::volume::SetVolume,
+        traits::{
+            panning::SetControlledPanning,
+            pause::PauseControlled,
+            playback::SetControlledPlaybackRate,
+            position::PositionControlled,
+            resume::{ResumeControlled, ResumeControlledAt},
+            seek::{SeekControlledBy, SeekControlledTo},
+            stop::StopControlled,
+            volume::SetControlledVolume,
+        },
         tweens::{DILATION_EASE_OUT, IMMEDIATELY},
     },
     error::{Error, InternalError},
@@ -453,6 +462,31 @@ pub fn run(
                 Control::SetVolume { id, value, tween } => {
                     engine.set_controlled_volume(id, value, tween.unwrap_or(IMMEDIATELY));
                 }
+                Control::SetPlaybackRate { id, value, tween } => {
+                    engine.set_controlled_playback_rate(id, value, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::SetPanning { id, value, tween } => {
+                    engine.set_controlled_panning(id, value, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::Pause { id, tween } => {
+                    engine.pause_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::Resume { id, tween } => {
+                    engine.resume_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::ResumeAt { id, value, tween } => {
+                    engine.resume_controlled_at(id, value, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::Stop { id, tween } => {
+                    engine.stop_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::SeekTo { id, value } => {
+                    engine.seek_controlled_to(id, value);
+                }
+                Control::SeekBy { id, value } => {
+                    engine.seek_controlled_by(id, value);
+                }
+                Control::Position { id, output } => engine.position_controlled(id, output),
             }
         }
         for e in re.try_iter() {

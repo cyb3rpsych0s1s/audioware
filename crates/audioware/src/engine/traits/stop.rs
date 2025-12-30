@@ -7,13 +7,20 @@ use kira::{
 };
 use red4ext_rs::types::{CName, Cruid, EntityId};
 
-use crate::engine::{
-    tracks::TrackEntryOptions,
-    traits::{DualHandles, Handle, Handles, RawHandle},
+use crate::{
+    ControlId,
+    engine::{
+        tracks::TrackEntryOptions,
+        traits::{DualHandles, Handle, Handles, RawHandle},
+    },
 };
 
 pub trait Stop {
     fn stop(&mut self, tween: Tween);
+}
+
+pub trait StopControlled {
+    fn stop_controlled(&mut self, id: ControlId, tween: Tween);
 }
 
 pub trait StopBy<K> {
@@ -158,5 +165,30 @@ where
     #[inline]
     fn stop(&mut self, tween: Tween) {
         self.value_mut().stop(tween);
+    }
+}
+
+impl<K, O, E> StopControlled for DualHandles<K, O, E> {
+    fn stop_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.statics.stop_controlled(id, tween);
+        self.streams.stop_controlled(id, tween);
+    }
+}
+
+impl<K, O> StopControlled for Handles<K, StaticSoundHandle, O> {
+    fn stop_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.0
+            .iter_mut()
+            .filter(|x| x.control_id.map(|x| x == id).unwrap_or(false))
+            .for_each(|x| x.handle.value.stop(tween));
+    }
+}
+
+impl<K, O, E> StopControlled for Handles<K, StreamingSoundHandle<E>, O> {
+    fn stop_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.0
+            .iter_mut()
+            .filter(|x| x.control_id.map(|x| x == id).unwrap_or(false))
+            .for_each(|x| x.handle.value.stop(tween));
     }
 }

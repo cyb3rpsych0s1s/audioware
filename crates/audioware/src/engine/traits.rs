@@ -1,6 +1,6 @@
 use audioware_core::Amplitude;
 use kira::{
-    Tween,
+    Panning, PlaybackRate, Tween,
     sound::{PlaybackState, static_sound::StaticSoundHandle, streaming::StreamingSoundHandle},
 };
 
@@ -11,10 +11,13 @@ use crate::{
 
 pub mod clear;
 pub mod dilation;
+pub mod panning;
 pub mod pause;
 pub mod playback;
+pub mod position;
 pub mod reclaim;
 pub mod resume;
+pub mod seek;
 pub mod stop;
 pub mod store;
 pub mod volume;
@@ -67,11 +70,23 @@ impl<K, O> Handle<K, StaticSoundHandle, O> {
     pub fn set_volume(&mut self, value: Amplitude, tween: Tween) {
         self.handle.value.set_volume(value.as_decibels(), tween);
     }
+    pub fn set_playback_rate(&mut self, value: PlaybackRate, tween: Tween) {
+        self.handle.value.set_playback_rate(value, tween);
+    }
+    pub fn set_panning(&mut self, value: Panning, tween: Tween) {
+        self.handle.value.set_panning(value, tween);
+    }
 }
 
 impl<K, O, E> Handle<K, StreamingSoundHandle<E>, O> {
     pub fn set_volume(&mut self, value: Amplitude, tween: Tween) {
         self.handle.value.set_volume(value.as_decibels(), tween);
+    }
+    pub fn set_playback_rate(&mut self, value: PlaybackRate, tween: Tween) {
+        self.handle.value.set_playback_rate(value, tween);
+    }
+    pub fn set_panning(&mut self, value: Panning, tween: Tween) {
+        self.handle.value.set_panning(value, tween);
     }
 }
 

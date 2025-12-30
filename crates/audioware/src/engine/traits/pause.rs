@@ -6,10 +6,17 @@ use kira::{
     sound::{static_sound::StaticSoundHandle, streaming::StreamingSoundHandle},
 };
 
-use crate::engine::traits::{DualHandles, Handle, Handles, RawHandle};
+use crate::{
+    ControlId,
+    engine::traits::{DualHandles, Handle, Handles, RawHandle},
+};
 
 pub trait Pause {
     fn pause(&mut self, tween: Tween);
+}
+
+pub trait PauseControlled {
+    fn pause_controlled(&mut self, id: ControlId, tween: Tween);
 }
 
 impl Pause for StaticSoundHandle {
@@ -83,5 +90,34 @@ where
     #[inline]
     fn pause(&mut self, tween: Tween) {
         self.iter_mut().for_each(|mut x| x.pause(tween));
+    }
+}
+
+impl<K, O, E> PauseControlled for DualHandles<K, O, E> {
+    fn pause_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.statics.pause_controlled(id, tween);
+        self.streams.pause_controlled(id, tween);
+    }
+}
+
+impl<K, O> PauseControlled for Handles<K, StaticSoundHandle, O> {
+    fn pause_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.0
+            .iter_mut()
+            .filter(|x| x.control_id.map(|x| x == id).unwrap_or(false))
+            .for_each(|x| {
+                x.handle.value.pause(tween);
+            });
+    }
+}
+
+impl<K, O, E> PauseControlled for Handles<K, StreamingSoundHandle<E>, O> {
+    fn pause_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.0
+            .iter_mut()
+            .filter(|x| x.control_id.map(|x| x == id).unwrap_or(false))
+            .for_each(|x| {
+                x.handle.value.pause(tween);
+            });
     }
 }
