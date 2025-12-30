@@ -1,5 +1,7 @@
-use kira::sound::{
-    PlaybackState, static_sound::StaticSoundHandle, streaming::StreamingSoundHandle,
+use audioware_core::Amplitude;
+use kira::{
+    Tween,
+    sound::{PlaybackState, static_sound::StaticSoundHandle, streaming::StreamingSoundHandle},
 };
 
 use crate::{
@@ -58,6 +60,18 @@ impl<K, V, O> Handle<K, V, O> {
             options,
             control_id,
         }
+    }
+}
+
+impl<K, O> Handle<K, StaticSoundHandle, O> {
+    pub fn set_volume(&mut self, value: Amplitude, tween: Tween) {
+        self.handle.value.set_volume(value.as_decibels(), tween);
+    }
+}
+
+impl<K, O, E> Handle<K, StreamingSoundHandle<E>, O> {
+    pub fn set_volume(&mut self, value: Amplitude, tween: Tween) {
+        self.handle.value.set_volume(value.as_decibels(), tween);
     }
 }
 

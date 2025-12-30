@@ -172,6 +172,7 @@ impl Emitters {
                 .stop_on_emitter(event_name, tag_name, tween);
         }
     }
+    #[allow(clippy::too_many_arguments)]
     pub fn play_on_emitter<T>(
         &mut self,
         key: &Id,

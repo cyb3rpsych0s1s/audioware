@@ -17,6 +17,7 @@ use crate::{
     abi::{
         callback::Callback,
         command::Command,
+        control::Control,
         is_in_foreground,
         lifecycle::{Board, Lifecycle, ReplacementNotification, Session, System},
     },
@@ -24,7 +25,8 @@ use crate::{
     engine::{
         DilationUpdate, Mute, Replacements,
         callbacks::{Dispatch, Listen},
-        tweens::DILATION_EASE_OUT,
+        traits::volume::SetVolume,
+        tweens::{DILATION_EASE_OUT, IMMEDIATELY},
     },
     error::{Error, InternalError},
     utils::{fails, lifecycle},
@@ -83,6 +85,7 @@ static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
 static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
 static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
+static CONTROLS: OnceLock<RwLock<Option<Sender<Control>>>> = OnceLock::new();
 
 fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
@@ -113,11 +116,13 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
                 let (sl, rl) = bounded::<Lifecycle>(32);
                 let (sc, rc) = bounded::<Command>(capacity);
                 let (se, re) = unbounded::<Callback>();
+                let (sd, rd) = bounded::<Control>(capacity);
                 let _ = LIFECYCLE.set(RwLock::new(Some(sl)));
                 let _ = COMMAND.set(RwLock::new(Some(sc)));
                 let _ = CALLBACKS.set(RwLock::new(Some(se)));
+                let _ = CONTROLS.set(RwLock::new(Some(sd)));
                 lifecycle!("initialized channels");
-                self::run(rl, rc, re, engine);
+                self::run(rl, rc, re, rd, engine);
             })?,
     )));
     lifecycle!("spawned plugin thread");
@@ -128,6 +133,7 @@ pub fn run(
     rl: Receiver<Lifecycle>,
     rc: Receiver<Command>,
     re: Receiver<Callback>,
+    rd: Receiver<Control>,
     mut engine: Engine<CpalBackend>,
 ) {
     crate::utils::lifecycle!("run engine thread");
@@ -337,12 +343,36 @@ pub fn run(
                     ext,
                     line_type,
                 } => engine.play(sound_name, entity_id, emitter_name, ext, line_type, None),
+                Command::EnqueueAndPlay {
+                    event_name: sound_name,
+                    entity_id,
+                    emitter_name,
+                    ext,
+                    line_type,
+                    control_id,
+                } => engine.play(
+                    sound_name,
+                    entity_id,
+                    emitter_name,
+                    ext,
+                    line_type,
+                    Some(control_id),
+                ),
                 Command::PlayOnEmitter {
                     event_name,
                     entity_id,
                     tag_name,
                     ext,
                 } => engine.play_on_emitter(event_name, *entity_id, *tag_name, ext, None),
+                Command::EnqueueAndPlayOnEmitter {
+                    event_name,
+                    entity_id,
+                    tag_name,
+                    ext,
+                    control_id,
+                } => {
+                    engine.play_on_emitter(event_name, *entity_id, *tag_name, ext, Some(control_id))
+                }
                 Command::PlayOverThePhone {
                     event_name,
                     emitter_name,
@@ -415,6 +445,14 @@ pub fn run(
                     None,
                     None,
                 ),
+            }
+        }
+        for d in rd.try_iter().take(8) {
+            lifecycle!("> {d}");
+            match d {
+                Control::SetVolume { id, value, tween } => {
+                    engine.set_controlled_volume(id, value, tween.unwrap_or(IMMEDIATELY));
+                }
             }
         }
         for e in re.try_iter() {
@@ -498,6 +536,23 @@ pub fn send(command: Command) {
             }
         } else {
             fails!("plugin command channel is not initialized");
+        }
+    } else {
+        fails!("plugin game loop is not initialized");
+    }
+}
+
+pub fn control(control: Control) {
+    lifecycle!("{control}");
+    if let Some(x) = CONTROLS.get() {
+        if let Ok(x) = x.try_read() {
+            if let Some(x) = x.as_ref()
+                && let Err(e) = x.try_send(control)
+            {
+                fails!("failed to send plugin control: {e}");
+            }
+        } else {
+            fails!("plugin control channel is not initialized");
         }
     } else {
         fails!("plugin game loop is not initialized");

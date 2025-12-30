@@ -38,6 +38,7 @@ use crate::{
     utils::{fails, lifecycle, success, warns},
 };
 
+pub use controls::next_control_id;
 pub use scene::ToDistances;
 
 pub mod eq;
@@ -46,6 +47,7 @@ pub mod state;
 pub mod traits;
 
 mod callbacks;
+mod controls;
 mod modulators;
 mod replacement;
 mod scene;
@@ -219,6 +221,7 @@ where
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn play_scene_dialog(
         &mut self,
         string_id: Cruid,
@@ -564,6 +567,7 @@ where
         );
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn switch<T>(
         &mut self,
         switch_name: CName,

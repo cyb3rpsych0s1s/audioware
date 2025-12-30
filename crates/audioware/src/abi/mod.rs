@@ -18,10 +18,10 @@ use crate::{
     AddContainerStreamingPrefetchEvent, AudioEventCallbackAssetTarget,
     AudioEventCallbackEntityTarget, AudioEventCallbackEventTarget, AudioEventCallbackHandler,
     AudioEventCallbackSystem, AudioEventCallbackTarget, Audioware, EmitterSettings,
-    EngineSoundEvent, Handler, LocalizationPackage, PlayEvent, PlayExternalEvent, PlayOneShotEvent,
-    RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent, SetEntityNameEvent,
-    SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent, StopTaggedEvent,
-    TagEvent, ToTween, Tween, UntagEvent,
+    EngineSoundEvent, Event, Handler, LocalizationPackage, PlayEvent, PlayExternalEvent,
+    PlayOneShotEvent, RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent,
+    SetEntityNameEvent, SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent,
+    StopTaggedEvent, TagEvent, ToTween, Tween, UntagEvent,
     engine::{AudioEventManager, Engine, Mute, eq::Preset, state},
     queue,
     utils::{fails, lifecycle, warns},
@@ -29,10 +29,11 @@ use crate::{
 
 pub mod callback;
 pub mod command;
+pub mod control;
 pub mod lifecycle;
 
 mod types;
-use types::*;
+pub(crate) use types::*;
 
 /// Register [plugin][super::Plugin] lifecycle listeners.
 pub fn register_listeners(env: &SdkEnv) {
@@ -289,6 +290,15 @@ pub fn exports() -> impl Exportable {
                 .methods(methods![
                     final c"RegisterCallback" => AudioEventCallbackSystem::register_callback,
                     final c"RegisterStaticCallback" => AudioEventCallbackSystem::register_static_callback,
+                ])
+                .build(),
+        ClassExport::<DynamicSoundEvent>::builder()
+                .base(Event::NAME)
+                .static_methods(static_methods![
+                    c"Create" => DynamicSoundEvent::create,
+                ])
+                .methods(methods![
+                    final c"SetVolume" => DynamicSoundEvent::set_volume,
                 ])
                 .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
