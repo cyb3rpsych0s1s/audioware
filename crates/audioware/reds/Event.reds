@@ -229,7 +229,7 @@ public enum AudioEventCallbackLifetime {
 }
 
 public native class DynamicSoundEvent extends Event {
-    public native func SetVolume(value: Float, tween: ref<Tween>);
+    public final native func SetVolume(value: Float, tween: ref<Tween>);
     public native static func Create(name: CName, ext: ref<AudioSettingsExt>) -> ref<DynamicSoundEvent>;
     public static func Create(name: CName) -> ref<DynamicSoundEvent> = DynamicSoundEvent.Create(name, null);
 }
