@@ -9,6 +9,8 @@ use red4ext_rs::{
 
 mod audio_system;
 pub use audio_system::*;
+mod component;
+pub use component::*;
 mod device;
 pub use device::*;
 mod entity;
@@ -21,7 +23,6 @@ mod fixed_point;
 pub use fixed_point::*;
 mod game_object;
 pub use game_object::*;
-mod iplaced_component;
 mod orphans;
 pub use orphans::*;
 mod puppet;

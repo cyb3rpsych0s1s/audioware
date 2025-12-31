@@ -4,7 +4,7 @@ use audioware_core::{Amplitude, Panning};
 use crossbeam::channel::{Sender, bounded};
 use humantime::format_duration;
 use kira::Tween;
-use red4ext_rs::types::Ref;
+use red4ext_rs::types::{CName, EntityId, Ref};
 
 use crate::{
     ControlId, ToTween,
@@ -62,15 +62,19 @@ pub enum Control {
 }
 
 impl DynamicSoundEvent {
-    pub fn enqueue_and_play(&self) -> bool {
+    pub fn enqueue_and_play(
+        &self,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+    ) -> bool {
         if let Err(control_id) = self.id.set(next_control_id()) {
             warns!("dynamic sound already initialized ({control_id})");
             return false;
         }
         queue::send(Command::EnqueueAndPlay {
             event_name: *self.name.get(),
-            entity_id: None,
-            emitter_name: None,
+            entity_id,
+            emitter_name,
             line_type: None,
             ext: self.ext.borrow().clone(),
             control_id: *self.id.get().unwrap(),

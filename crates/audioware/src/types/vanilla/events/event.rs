@@ -241,6 +241,22 @@ impl fmt::Display for AudSwitch {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct AudEventStruct {
+    event: CName, // 0
+}
+
+unsafe impl NativeRepr for AudEventStruct {
+    const NAME: &'static str = "audioAudEventStruct";
+}
+
+impl fmt::Display for AudEventStruct {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.event)
+    }
+}
+
 const PADDING_08: usize = 0x8;
 const PADDING_24: usize = 0x28 - 0x24;
 
