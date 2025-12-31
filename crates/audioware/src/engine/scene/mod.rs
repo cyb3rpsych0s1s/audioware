@@ -18,7 +18,7 @@ use crate::{
         traits::{clear::Clear, pause::Pause, reclaim::Reclaim, resume::Resume, stop::Stop},
     },
     error::{Error, SceneError},
-    get_player,
+    get_player, resolve_any_entity,
 };
 
 use super::{lifecycle, tracks::ambience::Ambience, tweens::IMMEDIATELY};
@@ -412,9 +412,7 @@ pub trait ToDistances {
 
 impl ToDistances for EntityId {
     fn to_distances(&self) -> Option<SpatialTrackDistances> {
-        use crate::types::AsGameInstance;
-        let game = GameInstance::new();
-        let entity = GameInstance::find_entity_by_id(game, *self);
+        let entity = resolve_any_entity(*self);
         entity.get_emitter_distances()
     }
 }

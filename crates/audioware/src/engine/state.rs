@@ -1,9 +1,9 @@
 use std::sync::atomic::{AtomicU8, AtomicU32};
 
 use audioware_manifest::{Locale, LocaleExt};
-use red4ext_rs::types::{EntityId, GameInstance};
+use red4ext_rs::types::EntityId;
 
-use crate::{AsGameInstance, PlayerPuppet, utils::warns};
+use crate::{PlayerPuppet, resolve_any_entity, utils::warns};
 
 use super::scene::AsEntityExt;
 
@@ -88,8 +88,7 @@ pub trait ToGender {
 
 impl ToGender for EntityId {
     fn to_gender(&self) -> Option<audioware_manifest::PlayerGender> {
-        let game = GameInstance::new();
-        let entity = GameInstance::find_entity_by_id(game, *self);
+        let entity = resolve_any_entity(*self);
         if entity.is_null() {
             return None;
         }
