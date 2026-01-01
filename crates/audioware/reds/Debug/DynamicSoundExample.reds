@@ -8,20 +8,19 @@ public class DynamicSoundEvents extends ScriptableSystem {
         if IsDefined(v) 
             && !IsDefined(this.dynamic)
             && !GameInstance.GetSystemRequestsHandler().IsPreGame() {
-            this.dynamic = DynamicSoundEvent.Create(n"faf_la_cavale_instru");
+            // this.dynamic = DynamicSoundEvent.Create(n"faf_la_cavale_instru");
             // "wire" the dynamic sound event first
-            v.QueueEvent(this.dynamic);
+            // v.QueueEvent(this.dynamic);
             // then decrease volume with F7
-            GameInstance.GetCallbackSystem()
-                .RegisterCallback(n"Input/Key", this, n"OnPressF7")
-                .AddTarget(InputTarget.Key(EInputKey.IK_F7));
+            // GameInstance.GetCallbackSystem()
+            //     .RegisterCallback(n"Input/Key", this, n"OnPressF7")
+            //     .AddTarget(InputTarget.Key(EInputKey.IK_F7));
             // or increase volume with F8
-            GameInstance.GetCallbackSystem()
-                .RegisterCallback(n"Input/Key", this, n"OnPressF8")
-                .AddTarget(InputTarget.Key(EInputKey.IK_F8));
+            // GameInstance.GetCallbackSystem()
+            //     .RegisterCallback(n"Input/Key", this, n"OnPressF8")
+            //     .AddTarget(InputTarget.Key(EInputKey.IK_F8));
         }
     }
-    public final func OnPlayerDetach(player: ref<PlayerPuppet>) -> Void {}
     private cb func OnPressF7(evt: ref<KeyInputEvent>) {
         if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }
         if IsDefined(this.dynamic) {
