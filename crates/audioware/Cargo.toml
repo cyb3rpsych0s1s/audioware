@@ -17,11 +17,12 @@ audioware-core.workspace = true
 audioware-bank = { workspace = true }
 audioware-manifest.workspace = true
 bitflags = "2.9.1"
-cpal = "0.15"
+cpal = "0.16.0"
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 dashmap = { version = "6.1.0", features = ["inline", "rayon"] }
 either.workspace = true
 glam = { workspace = true, features = ["mint"] }
+humantime.workspace = true
 kira.workspace = true
 mint = { version = "0.5.9" }
 parking_lot = "0.12.4"

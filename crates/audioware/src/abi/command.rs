@@ -3,6 +3,8 @@ use audioware_manifest::{PlayerGender, ScnDialogLineType, Settings};
 use kira::Tween;
 use red4ext_rs::types::{CName, Cruid, EntityId};
 
+use crate::ControlId;
+
 use super::{TagName, TargetId};
 
 /// Sound inner command.
@@ -20,11 +22,27 @@ pub enum Command {
         line_type: Option<ScnDialogLineType>,
         ext: Option<Settings>,
     },
+    EnqueueAndPlay {
+        event_name: CName,
+        entity_id: Option<EntityId>,
+        emitter_name: Option<CName>,
+        line_type: Option<ScnDialogLineType>,
+        ext: Option<Settings>,
+        control_id: ControlId,
+    },
     PlayOnEmitter {
         event_name: CName,
         entity_id: TargetId,
         tag_name: TagName,
         ext: Option<Settings>,
+    },
+    #[allow(dead_code, reason = "TODO")]
+    EnqueueAndPlayOnEmitter {
+        event_name: CName,
+        entity_id: TargetId,
+        tag_name: TagName,
+        ext: Option<Settings>,
+        control_id: ControlId,
     },
     PlayOverThePhone {
         event_name: CName,
@@ -177,6 +195,8 @@ impl std::fmt::Display for Command {
                 Command::Stop { .. } => "stop",
                 Command::Switch { .. } => "switch",
                 Command::SwitchVanilla { .. } => "switch vanilla",
+                Command::EnqueueAndPlay { .. } => "enqueue and play",
+                Command::EnqueueAndPlayOnEmitter { .. } => "enqueue and play on emitter",
             }
         )
     }

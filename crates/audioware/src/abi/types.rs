@@ -1,7 +1,9 @@
 use std::{
+    cell::{Cell, RefCell},
     hash::{Hash, Hasher},
     num::NonZero,
     ops::{Deref, Not},
+    sync::OnceLock,
     time::Duration,
 };
 
@@ -15,8 +17,9 @@ use red4ext_rs::{
 };
 
 use crate::{
-    AUDIOWARE_VERSION, AsEntity, ElasticTween, EmitterDistances, EmitterSettings, Entity,
-    LinearTween, ToEasing, Tween, abi::fails, engine::Engine, error::ValidationError, get_player,
+    AUDIOWARE_VERSION, AsEntity, ControlId, ElasticTween, EmitterDistances, EmitterSettings,
+    Entity, EventName, LinearTween, ToEasing, Tween, abi::fails, engine::Engine,
+    error::ValidationError, get_player,
 };
 
 /// Represents a region in time.
@@ -417,5 +420,38 @@ impl Deref for TargetFootprint {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct DynamicSoundEvent {
+    base: IScriptable,
+    pub(crate) id: OnceLock<ControlId>,
+    pub(crate) name: Cell<EventName>,
+    pub(crate) ext: RefCell<Option<Settings>>,
+}
+
+unsafe impl ScriptClass for DynamicSoundEvent {
+    type Kind = Native;
+    const NAME: &'static str = "Audioware.DynamicSoundEvent";
+}
+
+impl AsRef<IScriptable> for DynamicSoundEvent {
+    fn as_ref(&self) -> &IScriptable {
+        &self.base
+    }
+}
+
+impl DynamicSoundEvent {
+    pub(crate) fn create(name: CName, ext: Ref<AudioSettingsExt>) -> Ref<Self> {
+        let Ok(name) = EventName::try_from(name) else {
+            return Ref::default();
+        };
+        Ref::<Self>::new_with(|x| {
+            x.name = Cell::new(name);
+            x.ext.replace(Ref::clone(&ext).into_settings());
+        })
+        .unwrap_or_default()
     }
 }

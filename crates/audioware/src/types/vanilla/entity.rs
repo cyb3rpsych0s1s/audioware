@@ -5,6 +5,8 @@ use red4ext_rs::{
     types::{CName, EntityId, IScriptable, Method, NativeGameInstance, RedArray, Ref, ResRef},
 };
 
+use crate::IComponent;
+
 use super::{
     AIActionHelper, ECustomCameraTarget, GameObject, Quaternion, RedTagList, RenderSceneLayerMask,
     Vector4, WorldRuntimeScene, WorldTransform,
@@ -37,7 +39,7 @@ pub struct Entity {
     pub template_path: ResRef,                         // 0x60
     unk68: u64,                                        // 0x68
     component_storage: [u8; 0x30],                     // 0x70
-    pub components: RedArray<Ref<IScriptable>>,        // 0xA0
+    pub components: RedArray<Ref<IComponent>>,         // 0xA0
     transform_component: *const IScriptable,           // 0xB0
     runtime_scene: *const WorldRuntimeScene,           // 0xB8
     game_instance: *const NativeGameInstance,          // 0xC0

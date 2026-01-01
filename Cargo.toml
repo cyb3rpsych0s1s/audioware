@@ -20,7 +20,8 @@ audioware-manifest = { path = "crates/manifest" }
 audioware-bank = { path = "crates/bank" }
 either = "1.15.0"
 glam = "0.30.0"
-kira = { version = "=0.10.7", features = ["serde"] }
+humantime = "2.3"
+kira = { version = "0.11.0", features = ["serde"] }
 rayon = "1.11"
 red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "411ccf1" }
 serde = "1.0"

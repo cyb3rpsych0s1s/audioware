@@ -3,14 +3,13 @@ use red4ext_rs::SdkEnv;
 mod audio;
 mod audio_interface;
 mod audio_system;
+mod entity;
+mod ink_menu_scenario;
 mod sound_component;
 mod sound_engine;
 mod time_dilatable;
 mod time_system;
 
-#[cfg(debug_assertions)]
-mod entity;
-mod ink_menu_scenario;
 #[cfg(debug_assertions)]
 mod save_handling_controller;
 
@@ -36,6 +35,7 @@ pub fn attach(env: &SdkEnv) {
     time_dilatable::attach_hooks(env);
     time_system::attach_hooks(env);
     ink_menu_scenario::attach_hooks(env);
+    entity::attach_hooks(env);
 
     #[cfg(feature = "research")]
     {
@@ -47,8 +47,6 @@ pub fn attach(env: &SdkEnv) {
 
     #[cfg(debug_assertions)]
     save_handling_controller::attach_hook(env);
-    #[cfg(debug_assertions)]
-    entity::attach_hook(env);
 
     #[cfg(feature = "research")]
     {
@@ -72,6 +70,7 @@ mod offsets {
     pub const AUDIOSYSTEM_SWITCH: u32                           = 0x15081DEA;   // 0x140291688 (2.12a)
     #[cfg(debug_assertions)]
     pub const ENTITY_DISPOSE: u32                               = 0x3221A80;    // 0x14232C744 (2.13)
+    pub const ENTITY_QUEUEEVENT: u32                            = 0x5E7D1BB0;   // 0x1404EA45C (2.31)
     pub const TIMEDILATABLE_SETINDIVIDUALTIMEDILATION: u32      = 0x80102488;   // 0x1423AF554 (2.13)
     pub const TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION: u32    = 0xDA20256B;   // 0x14147B424 (2.13)
     pub const TIMESYSTEM_SETTIMEDILATION: u32                   = 0xA1DC1F92;   // 0x140A46EE4 (2.13)

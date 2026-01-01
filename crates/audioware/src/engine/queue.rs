@@ -17,6 +17,7 @@ use crate::{
     abi::{
         callback::Callback,
         command::Command,
+        control::Control,
         is_in_foreground,
         lifecycle::{Board, Lifecycle, ReplacementNotification, Session, System},
     },
@@ -24,9 +25,19 @@ use crate::{
     engine::{
         DilationUpdate, Mute, Replacements,
         callbacks::{Dispatch, Listen},
-        tweens::DILATION_EASE_OUT,
+        traits::{
+            panning::SetControlledPanning,
+            pause::PauseControlled,
+            playback::SetControlledPlaybackRate,
+            position::PositionControlled,
+            resume::{ResumeControlled, ResumeControlledAt},
+            seek::{SeekControlledBy, SeekControlledTo},
+            stop::StopControlled,
+            volume::SetControlledVolume,
+        },
+        tweens::{DILATION_EASE_OUT, IMMEDIATELY},
     },
-    error::Error,
+    error::{Error, InternalError},
     utils::{fails, lifecycle},
 };
 
@@ -83,12 +94,16 @@ static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
 static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
 static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
+static CONTROLS: OnceLock<RwLock<Option<Sender<Control>>>> = OnceLock::new();
 
 fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
     let mut backend_settings = CpalBackendSettings::default();
     if buffer_size != BufferSize::Auto {
-        backend_settings.buffer_size = cpal::BufferSize::Fixed(buffer_size as u32);
+        backend_settings.config = Some(cpal::StreamConfig {
+            buffer_size: cpal::BufferSize::Fixed(buffer_size as u32),
+            ..default_device_and_config()?
+        });
         log::info!(env, "buffer size read from .ini: {}", buffer_size as u32);
     }
     let manager_settings = AudioManagerSettings::<CpalBackend> {
@@ -110,11 +125,13 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
                 let (sl, rl) = bounded::<Lifecycle>(32);
                 let (sc, rc) = bounded::<Command>(capacity);
                 let (se, re) = unbounded::<Callback>();
+                let (sd, rd) = bounded::<Control>(capacity);
                 let _ = LIFECYCLE.set(RwLock::new(Some(sl)));
                 let _ = COMMAND.set(RwLock::new(Some(sc)));
                 let _ = CALLBACKS.set(RwLock::new(Some(se)));
+                let _ = CONTROLS.set(RwLock::new(Some(sd)));
                 lifecycle!("initialized channels");
-                self::run(rl, rc, re, engine);
+                self::run(rl, rc, re, rd, engine);
             })?,
     )));
     lifecycle!("spawned plugin thread");
@@ -125,6 +142,7 @@ pub fn run(
     rl: Receiver<Lifecycle>,
     rc: Receiver<Command>,
     re: Receiver<Callback>,
+    rd: Receiver<Control>,
     mut engine: Engine<CpalBackend>,
 ) {
     crate::utils::lifecycle!("run engine thread");
@@ -319,25 +337,56 @@ pub fn run(
                     event_name,
                     entity_id,
                     emitter_name,
-                } => engine.play::<kira::Tween>(event_name, entity_id, emitter_name, None, None),
+                } => engine.play::<kira::Tween>(
+                    event_name,
+                    entity_id,
+                    emitter_name,
+                    None,
+                    None,
+                    None,
+                ),
                 Command::Play {
                     event_name: sound_name,
                     entity_id,
                     emitter_name,
                     ext,
                     line_type,
-                } => engine.play(sound_name, entity_id, emitter_name, ext, line_type),
+                } => engine.play(sound_name, entity_id, emitter_name, ext, line_type, None),
+                Command::EnqueueAndPlay {
+                    event_name: sound_name,
+                    entity_id,
+                    emitter_name,
+                    ext,
+                    line_type,
+                    control_id,
+                } => engine.play(
+                    sound_name,
+                    entity_id,
+                    emitter_name,
+                    ext,
+                    line_type,
+                    Some(control_id),
+                ),
                 Command::PlayOnEmitter {
                     event_name,
                     entity_id,
                     tag_name,
                     ext,
-                } => engine.play_on_emitter(event_name, *entity_id, *tag_name, ext),
+                } => engine.play_on_emitter(event_name, *entity_id, *tag_name, ext, None),
+                Command::EnqueueAndPlayOnEmitter {
+                    event_name,
+                    entity_id,
+                    tag_name,
+                    ext,
+                    control_id,
+                } => {
+                    engine.play_on_emitter(event_name, *entity_id, *tag_name, ext, Some(control_id))
+                }
                 Command::PlayOverThePhone {
                     event_name,
                     emitter_name,
                     gender,
-                } => engine.play_over_the_phone(event_name, emitter_name, gender),
+                } => engine.play_over_the_phone(event_name, emitter_name, gender, None),
                 Command::PlaySceneDialog {
                     string_id,
                     entity_id,
@@ -352,6 +401,7 @@ pub fn run(
                     is_holocall,
                     is_rewind,
                     seek_time,
+                    None,
                 ),
                 Command::StopSceneDialog {
                     string_id,
@@ -388,6 +438,7 @@ pub fn run(
                     emitter_name,
                     switch_name_tween,
                     switch_value_settings,
+                    None,
                 ),
                 Command::SwitchVanilla {
                     switch_name,
@@ -401,7 +452,41 @@ pub fn run(
                     emitter_name,
                     None,
                     None,
+                    None,
                 ),
+            }
+        }
+        for d in rd.try_iter().take(8) {
+            lifecycle!("> {d}");
+            match d {
+                Control::SetVolume { id, value, tween } => {
+                    engine.set_controlled_volume(id, value, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::SetPlaybackRate { id, value, tween } => {
+                    engine.set_controlled_playback_rate(id, value, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::SetPanning { id, value, tween } => {
+                    engine.set_controlled_panning(id, value, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::Pause { id, tween } => {
+                    engine.pause_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::Resume { id, tween } => {
+                    engine.resume_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::ResumeAt { id, value, tween } => {
+                    engine.resume_controlled_at(id, value, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::Stop { id, tween } => {
+                    engine.stop_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                }
+                Control::SeekTo { id, value } => {
+                    engine.seek_controlled_to(id, value);
+                }
+                Control::SeekBy { id, value } => {
+                    engine.seek_controlled_by(id, value);
+                }
+                Control::Position { id, output } => engine.position_controlled(id, output),
             }
         }
         for e in re.try_iter() {
@@ -489,4 +574,42 @@ pub fn send(command: Command) {
     } else {
         fails!("plugin game loop is not initialized");
     }
+}
+
+pub fn control(control: Control) {
+    lifecycle!("{control}");
+    if let Some(x) = CONTROLS.get() {
+        if let Ok(x) = x.try_read() {
+            if let Some(x) = x.as_ref()
+                && let Err(e) = x.try_send(control)
+            {
+                fails!("failed to send plugin control: {e}");
+            }
+        } else {
+            fails!("plugin control channel is not initialized");
+        }
+    } else {
+        fails!("plugin game loop is not initialized");
+    }
+}
+
+/// borrowed from kira's stream manager.
+fn default_device_and_config() -> Result<cpal::StreamConfig, Error> {
+    use cpal::traits::DeviceTrait;
+    use cpal::traits::HostTrait;
+    let host = cpal::default_host();
+    let device = host.default_output_device().ok_or(Error::Internal {
+        source: InternalError::Driver {
+            origin: "missing cpal default output devices".into(),
+        },
+    })?;
+    let config = device
+        .default_output_config()
+        .map_err(|e| Error::Internal {
+            source: InternalError::Driver {
+                origin: format!("cpal device default output config: {e}").into(),
+            },
+        })?
+        .config();
+    Ok(config)
 }
