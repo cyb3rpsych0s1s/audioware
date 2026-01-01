@@ -5,6 +5,7 @@ use crate::{
     AIActionHelper, AsEntity, AsGameInstance, AsSceneSystem, AsSceneSystemInterface,
     AsTimeDilatable, GameObject, TimeDilatable, Vector4,
     error::{Error, SceneError},
+    resolve_any_entity,
 };
 
 use super::super::AsEntityExt;
@@ -13,8 +14,7 @@ pub struct Emitter;
 
 impl Emitter {
     pub fn infos(entity_id: EntityId) -> Result<(Vector4, bool), Error> {
-        let game = GameInstance::new();
-        let entity = GameInstance::find_entity_by_id(game, entity_id);
+        let entity = resolve_any_entity(entity_id);
         if entity.is_null() {
             return Err(Error::Scene {
                 source: SceneError::MissingEmitter { entity_id },
@@ -34,8 +34,7 @@ impl Emitter {
         entity_id: EntityId,
     ) -> Result<(Vector4, bool, Option<f32>, Option<SpatialTrackDistances>), Error> {
         let (position, busy) = Self::infos(entity_id)?;
-        let game = GameInstance::new();
-        let entity = GameInstance::find_entity_by_id(game, entity_id);
+        let entity = resolve_any_entity(entity_id);
         if entity.is_null() {
             return Err(Error::Scene {
                 source: SceneError::MissingEmitter { entity_id },
@@ -57,8 +56,7 @@ impl Emitter {
     pub fn actor_infos(
         entity_id: EntityId,
     ) -> Result<(Vector4, Option<SpatialTrackDistances>), Error> {
-        let game = GameInstance::new();
-        let entity = GameInstance::find_entity_by_id(game, entity_id);
+        let entity = resolve_any_entity(entity_id);
         if entity.is_null() {
             return Err(Error::Scene {
                 source: SceneError::MissingEmitter { entity_id },
@@ -69,8 +67,7 @@ impl Emitter {
         Ok((position, distances))
     }
     pub fn position(entity_id: EntityId) -> Result<Vector4, Error> {
-        let game = GameInstance::new();
-        let entity = GameInstance::find_entity_by_id(game, entity_id);
+        let entity = resolve_any_entity(entity_id);
         if entity.is_null() {
             return Err(Error::Scene {
                 source: SceneError::MissingEmitter { entity_id },
