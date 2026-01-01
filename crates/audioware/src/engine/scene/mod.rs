@@ -9,9 +9,8 @@ use listener::Listener;
 use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 
 use crate::{
-    AsEntity, AsScriptedPuppet, AsScriptedPuppetExt, AsTimeDilatable, AvObject, BikeObject,
-    CarObject, Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject, TimeDilatable,
-    VehicleObject,
+    AsEntity, AsScriptedPuppet, AsTimeDilatable, AvObject, BikeObject, CarObject, Device, Entity,
+    GamedataNpcType, ScriptedPuppet, TankObject, TimeDilatable, VehicleObject,
     engine::{
         scene::actors::{Actors, slot::ActorSlot},
         tracks::Spatial,
@@ -397,12 +396,13 @@ impl AsEntityExt for Ref<Entity> {
     }
 
     fn get_gender(&self) -> Option<PlayerGender> {
-        if self.is_a::<ScriptedPuppet>() {
-            let puppet = self.clone().cast::<ScriptedPuppet>().unwrap();
-            let gender = puppet.get_template_gender();
-            return Some(gender);
-        }
-        None
+        unsafe { self.fields() }.and_then(|x| {
+            x.visual_tags.tags.iter().find_map(|x| match x {
+                t if *t == CName::new("Female") => Some(PlayerGender::Female),
+                t if *t == CName::new("Male") => Some(PlayerGender::Male),
+                _ => None,
+            })
+        })
     }
 }
 
