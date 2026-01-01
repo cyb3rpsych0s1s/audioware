@@ -22,11 +22,26 @@ public native class AudioEventManager {
 @addMethod(GameInstance)
 public static final func GetAudioEventManager() -> ref<AudioEventManager> = new AudioEventManager();
 
-private func ToBits(variant: audioEventActionType) -> Uint32 = BitShiftL32(1u, EnumInt(variant) + 1);
+private func ToBits(variant: audioEventActionType) -> Uint32 {
+    let bits = 0u;
+    if Equals(variant, audioEventActionType.Play) {
+         bits = BitSet32(bits, EnumInt(EventHookType.Play), true);
+         bits = BitSet32(bits, EnumInt(EventHookType.PlayOneShot), true);
+         bits = BitSet32(bits, EnumInt(EventHookType.PlayExternal), true);
+         return bits;
+    }
+    if Equals(variant, audioEventActionType.SetParameter) {
+         bits = BitSet32(bits, EnumInt(EventHookType.SetParameter), true);
+         bits = BitSet32(bits, EnumInt(EventHookType.SetGlobalParameter), true);
+         return bits;
+    }
+    bits = BitSet32(bits, EnumInt(variant), true);
+    return bits;
+};
 private func ToBits(variants: [audioEventActionType]) -> Uint32 {
     let bits = 0u;
     for variant in variants {
-        BitSet32(bits, EnumInt(variant) + 1, true); 
+        bits |= ToBits(variant); 
     }
     return bits;
 }
@@ -35,7 +50,7 @@ private func ToBits(variant: EventHookType) -> Uint32 = BitShiftL32(1u, EnumInt(
 private func ToBits(variants: [EventHookType]) -> Uint32 {
     let bits = 0u;
     for variant in variants {
-        BitSet32(bits, EnumInt(variant), true); 
+        bits = BitSet32(bits, EnumInt(variant), true); 
     }
     return bits;
 }
