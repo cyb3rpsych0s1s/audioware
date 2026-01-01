@@ -2,10 +2,10 @@ import Audioware.*
 
 public class PlayVoiceOnNPC extends ScriptableSystem {
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {
-        GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnPressF5")
-            .AddTarget(InputTarget.Key(EInputKey.IK_F5));
+        GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnPressF6")
+            .AddTarget(InputTarget.Key(EInputKey.IK_F6));
     }
-    private cb func OnPressF5(evt: ref<KeyInputEvent>) {
+    private cb func OnPressF6(evt: ref<KeyInputEvent>) {
         if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }
         let emitterID: EntityID;
         let emitterCName: CName;
