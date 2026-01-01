@@ -18,19 +18,19 @@ enum EventHookType {
 }
 
 public native class DynamicSoundEvent extends Event {
-    public final native func SetVolume(value: Float, tween: ref<Tween>);
-    public final native func SetPlaybackRate(value: Float, tween: ref<Tween>);
-    public final native func SetPanning(value: Float, tween: ref<Tween>);
+    public final native func SetVolume(value: Float, opt tween: ref<Tween>);
+    public final native func SetPlaybackRate(value: Float, opt tween: ref<Tween>);
+    public final native func SetPanning(value: Float, opt tween: ref<Tween>);
 
     public final native func Position() -> Float;
 
-    public final native func Stop(tween: ref<Tween>);
-    public final native func Pause(tween: ref<Tween>);
-    public final native func Resume(tween: ref<Tween>);
-    public final native func ResumeAt(value: Float, tween: ref<Tween>);
+    public final native func Stop(opt tween: ref<Tween>);
+    public final native func Pause(opt tween: ref<Tween>);
+    public final native func Resume(opt tween: ref<Tween>);
+    public final native func ResumeAt(value: Float, opt tween: ref<Tween>);
     
-    public final native func SeekTo(value: Float, tween: ref<Tween>);
-    public final native func SeekBy(value: Float, tween: ref<Tween>);
+    public final native func SeekTo(value: Float, opt tween: ref<Tween>);
+    public final native func SeekBy(value: Float, opt tween: ref<Tween>);
     
     public native static func Create(name: CName, ext: ref<AudioSettingsExt>) -> ref<DynamicSoundEvent>;
     public static func Create(name: CName) -> ref<DynamicSoundEvent> = DynamicSoundEvent.Create(name, null);
