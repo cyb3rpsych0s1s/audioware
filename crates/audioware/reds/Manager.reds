@@ -24,7 +24,8 @@ public static final func GetAudioEventManager() -> ref<AudioEventManager> = new 
 
 private func ToBits(variant: audioEventActionType) -> Uint32 {
     let bits = 0u;
-    if Equals(variant, audioEventActionType.Play) {
+    if Equals(variant, audioEventActionType.Play)
+    || Equals(variant, IntEnum<audioEventActionType>(Cast<Int32>(EnumValueFromName(n"audioEventActionType", n"PlayAnimation")))) {
          bits = BitSet32(bits, EnumInt(EventHookType.Play), true);
          bits = BitSet32(bits, EnumInt(EventHookType.PlayOneShot), true);
          bits = BitSet32(bits, EnumInt(EventHookType.PlayExternal), true);
