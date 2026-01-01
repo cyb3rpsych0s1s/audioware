@@ -34,7 +34,7 @@ use crate::{
         traits::{Handle, stop::StopBy, store::Store},
     },
     error::{EngineError, Error},
-    propagate_subtitles,
+    propagate_subtitles, resolve_any_entity,
     utils::{fails, lifecycle, success, warns},
 };
 
@@ -449,11 +449,7 @@ where
                             let emitter_name = match emitter_name {
                                 Some(emitter_name) => Some(emitter_name.as_str().to_string()),
                                 None => {
-                                    let go = GameInstance::find_entity_by_id(
-                                        GameInstance::new(),
-                                        entity_id,
-                                    )
-                                    .cast::<GameObject>();
+                                    let go = resolve_any_entity(entity_id).cast::<GameObject>();
 
                                     go.and_then(|x| {
                                         x.is_null().not().then(|| x.resolve_display_name())

@@ -9,16 +9,15 @@ use listener::Listener;
 use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 
 use crate::{
-    AsEntity, AsScriptedPuppet, AsScriptedPuppetExt, AsTimeDilatable, AvObject, BikeObject,
-    CarObject, Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject, TimeDilatable,
-    VehicleObject,
+    AsEntity, AsScriptedPuppet, AsTimeDilatable, AvObject, BikeObject, CarObject, Device, Entity,
+    GamedataNpcType, ScriptedPuppet, TankObject, TimeDilatable, VehicleObject,
     engine::{
         scene::actors::{Actors, slot::ActorSlot},
         tracks::Spatial,
         traits::{clear::Clear, pause::Pause, reclaim::Reclaim, resume::Resume, stop::Stop},
     },
     error::{Error, SceneError},
-    get_player,
+    get_player, resolve_any_entity,
 };
 
 use super::{lifecycle, tracks::ambience::Ambience, tweens::IMMEDIATELY};
@@ -397,12 +396,13 @@ impl AsEntityExt for Ref<Entity> {
     }
 
     fn get_gender(&self) -> Option<PlayerGender> {
-        if self.is_a::<ScriptedPuppet>() {
-            let puppet = self.clone().cast::<ScriptedPuppet>().unwrap();
-            let gender = puppet.get_template_gender();
-            return Some(gender);
-        }
-        None
+        unsafe { self.fields() }.and_then(|x| {
+            x.visual_tags.tags.iter().find_map(|x| match x {
+                t if *t == CName::new("Female") => Some(PlayerGender::Female),
+                t if *t == CName::new("Male") => Some(PlayerGender::Male),
+                _ => None,
+            })
+        })
     }
 }
 
@@ -412,9 +412,7 @@ pub trait ToDistances {
 
 impl ToDistances for EntityId {
     fn to_distances(&self) -> Option<SpatialTrackDistances> {
-        use crate::types::AsGameInstance;
-        let game = GameInstance::new();
-        let entity = GameInstance::find_entity_by_id(game, *self);
+        let entity = resolve_any_entity(*self);
         entity.get_emitter_distances()
     }
 }

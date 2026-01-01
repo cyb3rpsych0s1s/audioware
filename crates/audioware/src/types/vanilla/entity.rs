@@ -46,7 +46,7 @@ pub struct Entity {
     unk_c8: VoidPtr,                                   // 0xC8
     unk_d0: VoidPtr,                                   // 0xD0
     event_manager: [u8; EVENT_MANAGER_PADDING],        // 0xD8
-    visual_tags: RedTagList,                           // 0x138
+    pub visual_tags: RedTagList,                       // 0x138
     unk148: [u8; PADDING_UNK148],                      // 0x148
     pub custom_camera_target: ECustomCameraTarget,     // 0x154
     unk155: u8,                                        // 0x155
