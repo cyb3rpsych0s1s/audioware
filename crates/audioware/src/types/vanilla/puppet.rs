@@ -256,8 +256,34 @@ impl AsRef<Entity> for ScriptedPuppet {
     }
 }
 
+#[repr(C)]
+pub struct ScriptedPuppetPS {
+    base: IScriptable,
+    unk: [u8; 0x68 - 0x40],                    // 40
+    pub gender: CName,                         // 68
+    pub was_quick_hacked: bool,                // 70
+    pub has_quick_hack_begun_upload: bool,     // 71
+    unk72: [u8; 0x74 - 0x72],                  // 72
+    pub has_alternative_name: bool,            // 74
+    pub is_crouch: bool,                       // 75
+    pub allow_vehicle_collision_ragdoll: bool, // 76
+    unk77: [u8; 0x78 - 0x77],                  // 77
+}
+
+unsafe impl ScriptClass for ScriptedPuppetPS {
+    const NAME: &'static str = "ScriptedPuppetPS";
+    type Kind = Scripted;
+}
+
+impl AsRef<IScriptable> for ScriptedPuppetPS {
+    fn as_ref(&self) -> &IScriptable {
+        self.base.as_ref()
+    }
+}
+
 pub trait AsScriptedPuppet {
     fn get_npc_type(&self) -> GamedataNpcType;
+    fn get_puppet_ps(&self) -> Ref<ScriptedPuppetPS>;
     fn get_tweak_db_display_name(&self, use_display_name_as_fallback: bool) -> String;
     fn get_tweak_db_full_display_name(&self, use_display_name_as_fallback: bool) -> String;
 }
@@ -302,6 +328,16 @@ impl AsScriptedPuppet for Ref<ScriptedPuppet> {
                 unsafe { self.instance() }.map(AsRef::as_ref),
                 (use_display_name_as_fallback,),
             )
+            .unwrap()
+    }
+
+    fn get_puppet_ps(&self) -> Ref<ScriptedPuppetPS> {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(ScriptedPuppet::NAME)).unwrap();
+        let method = cls.get_method(CName::new("GetPuppetPS;")).ok().unwrap();
+        method
+            .as_function()
+            .execute::<_, Ref<ScriptedPuppetPS>>(unsafe { self.instance() }.map(AsRef::as_ref), ())
             .unwrap()
     }
 }
