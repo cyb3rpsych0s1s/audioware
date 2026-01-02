@@ -96,7 +96,7 @@ The most disruptive audio events are `SetSwitch`, `SetParameter` and `SetGlobalP
 So experiment freely, but be careful with what you release!
 ```
 
-## Example
+## Going further
 
 Here's a quick demo showing how to replace Cyberpunk intro music with a different song.
 
