@@ -105,4 +105,3 @@ You can find the example's code in `ChangeIntro.reds`.
 ```admonish youtube title="YouTube demo"
 <iframe width="100%" height="420" src="https://www.youtube.com/embed/0ixsBFC8Znw?si=2JF2hDpJVaUy5v0n" title="Change intro music" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 ```
-
