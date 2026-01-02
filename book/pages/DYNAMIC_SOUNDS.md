@@ -33,7 +33,11 @@ public class MySystem extends ScriptableSystem {
 
 ## Going further
 
-Coupled with [Native integration], here's how you can for example change the audio when the player is chased by NCPD, with 2 different instrumentals based on the wanted level and slight volume variations based on context.
+Coupled with [Native integration](./NATIVE_INTEGRATION.md) feature, here's how you can for example change the audio when the player is chased by NCPD based on the wanted level:
+
+- first instrumental slowly fades-in after 2 stars
+- then it gets replaced by a more "punchy" variant instrumental with scratches after 3 stars
+- plus some slight contextual volume variations (player running, crouching, etc).
 
 You can find the example in `ChangeCombatMusic.reds`.
 
