@@ -95,3 +95,14 @@ The most disruptive audio events are `SetSwitch`, `SetParameter` and `SetGlobalP
 
 So experiment freely, but be careful with what you release!
 ```
+
+## Example
+
+Here's a quick demo showing how to replace Cyberpunk intro music with a different song.
+
+You can find the example's code in `ChangeIntro.reds`.
+
+```admonish youtube title="YouTube demo"
+<iframe width="100%" height="420" src="https://www.youtube.com/embed/0ixsBFC8Znw?si=2JF2hDpJVaUy5v0n" title="Change intro music" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+```
+
