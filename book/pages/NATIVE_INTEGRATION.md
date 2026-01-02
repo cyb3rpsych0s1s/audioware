@@ -1,12 +1,22 @@
+{{#include links.md}}
+
 # Native sounds integration
 
 Starting from `1.6.0`, Audioware allows to listen and/or mute _any_ vanilla audio event _at runtime_.
+
+As a matter of fact, this means that you can also _replace_ any vanilla audio, including _temporarily_.
+
+This also means that you can find informations about any event, including the ones that lack some on [SoundDB][sounddb].
 
 ## Audio events callback system
 
 Its callback system, albeit more simplistic, is very similar to [Codeware's CallbackSystem](https://github.com/psiberx/cp2077-codeware/wiki#reference), so you can feel at home.
 
+Both `RegisterCallback` and `RegisterStaticCallback` first parameter is the audio event `name`, which can be found in scripts, assets, or even conveniently [SoundDB][sounddb].
+
 ## Register callbacks
+
+Let's take for examples `game_occlusion` and [Mixing_Output_Cinema](https://sounddb.redmodding.org/events/Mixing_Output_Cinema).
 
 ```swift
 class MyService extends ScriptableService {
@@ -14,7 +24,7 @@ class MyService extends ScriptableService {
     let system = new AudioEventCallbackSystem();
     // listen to any 'game_occlusion' audio events
     system.RegisterCallback(n"game_occlusion", this, n"OnOcclusion");
-    // listen only to 'Mixing_Output_Cinema' audio event of type 'Play'
+    // listen only to 'Mixing_Output_Cinema' audio events of type 'Play'
     system
         .RegisterCallback(n"Mixing_Output_Cinema", this, n"OnMixingOutput")
         .AddTarget(EventTarget.ActionType(audioEventActionType.Play));
