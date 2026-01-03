@@ -85,7 +85,7 @@ public class MyFireSystem extends ScriptableSystem {
         if !IsDefined(this.fire) {
             this.fire = system
                 .RegisterCallback(this.weaponEventName, this, n"OnFireSMG")
-                .AddTarget(EntityTarget.EmitterName(n"firearm_emitter"));
+                .AddTarget(EmitterTarget.EmitterName(n"firearm_emitter"));
         }
         if !IsDefined(this.idle) {
             this.idle = system

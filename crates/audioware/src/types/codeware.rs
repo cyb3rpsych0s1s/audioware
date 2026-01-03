@@ -50,7 +50,7 @@ const PADDING_68: usize = 0x68 - 0x40;
 #[allow(dead_code)]
 #[derive(Debug)]
 #[repr(C)]
-pub struct EntityTarget {
+pub struct EmitterTarget {
     base: CallbackSystemTarget,
     entity_id: EntityId,       // 0x40
     entity_type: *const Class, // 0x48
@@ -58,9 +58,9 @@ pub struct EntityTarget {
     template_path: ResRef,     // 0x58
     appearance_name: CName,    // 0x60
 }
-unsafe impl ScriptClass for EntityTarget {
+unsafe impl ScriptClass for EmitterTarget {
     type Kind = Native;
-    const NAME: &'static str = "EntityTarget";
+    const NAME: &'static str = "EmitterTarget";
 }
 
 pub trait AsNativeSystem {

@@ -194,9 +194,9 @@ public native class AudioEventCallbackHandler {
 }
 
 public abstract native class AudioEventCallbackTarget {}
-public native class EntityTarget extends AudioEventCallbackTarget {
-    public static native func EntityID(entityID: EntityID) -> ref<EntityTarget>;
-    public static native func EmitterName(emitterName: CName) -> ref<EntityTarget>;
+public native class EmitterTarget extends AudioEventCallbackTarget {
+    public static native func EntityID(entityID: EntityID) -> ref<EmitterTarget>;
+    public static native func EmitterName(emitterName: CName) -> ref<EmitterTarget>;
 }
 public native class EventTarget extends AudioEventCallbackTarget {
     public static native func ActionType(eventType: audioEventActionType) -> ref<EventTarget>;

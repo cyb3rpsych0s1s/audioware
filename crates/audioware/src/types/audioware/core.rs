@@ -156,7 +156,7 @@ impl AudioEventCallbackEntityTarget {
 
 unsafe impl ScriptClass for AudioEventCallbackEntityTarget {
     type Kind = Native;
-    const NAME: &'static str = "Audioware.EntityTarget";
+    const NAME: &'static str = "Audioware.EmitterTarget";
 }
 
 #[derive(Debug, Clone, Default)]
