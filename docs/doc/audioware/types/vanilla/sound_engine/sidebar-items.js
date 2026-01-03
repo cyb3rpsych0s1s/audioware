@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["EventApplicationInterface","MetadataManager","SoundEngine","SoundObjectManager"]};
