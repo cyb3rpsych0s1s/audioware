@@ -1,6 +1,10 @@
-use std::sync::{
-    LazyLock,
-    atomic::{AtomicUsize, Ordering},
+use std::{
+    cell::{Cell, UnsafeCell},
+    collections::VecDeque,
+    sync::{
+        LazyLock, OnceLock,
+        atomic::{AtomicPtr, AtomicU64, AtomicUsize, Ordering},
+    },
 };
 
 use dashmap::DashMap;
@@ -12,8 +16,8 @@ use red4ext_rs::{
 
 use crate::{
     AddContainerStreamingPrefetchEvent, AnyTarget, AudioEventCallbackHandler,
-    AudioEventCallbackSystem, ClassName, EngineSoundEvent, EventActionType, EventName,
-    FunctionName, PlayEvent, PlayExternalEvent, PlayOneShotEvent,
+    AudioEventCallbackSystem, ClassName, EngineSoundEvent, EventActionType, EventHookTypes,
+    EventName, FunctionName, PlayEvent, PlayExternalEvent, PlayOneShotEvent,
     RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent, SetEntityNameEvent,
     SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent, StopTaggedEvent,
     TagEvent, UntagEvent,
@@ -26,6 +30,103 @@ static CALLBACKS: LazyLock<DashMap<Key, AudioEventCallback>> =
     LazyLock::new(|| DashMap::with_capacity(128));
 
 static COUNTER: LazyLock<AtomicUsize> = LazyLock::new(|| AtomicUsize::new(0));
+
+#[repr(C, align(64))]
+struct Header {
+    ptr: *const (EventName, EventHookTypes),
+    len: usize,
+    _pad: [u64; 6],
+}
+
+struct Retired {
+    list: UnsafeCell<VecDeque<(*mut Header, u64)>>,
+}
+
+/// Safety: single-writer invariant
+unsafe impl Sync for Header {}
+/// Safety: single-writer invariant
+unsafe impl Send for Header {}
+/// Safety: single-writer invariant
+unsafe impl Sync for Retired {}
+/// Safety: single-writer invariant
+unsafe impl Send for Retired {}
+
+static CURENT: AtomicPtr<Header> = AtomicPtr::new(std::ptr::null_mut());
+static GENERATION: AtomicU64 = AtomicU64::new(0);
+
+static RETIRED: OnceLock<Retired> = OnceLock::new();
+
+thread_local! {
+    static TLS_PTR: Cell<*const (EventName, EventHookTypes)> = const { Cell::new(std::ptr::null_mut()) };
+    static TLS_LEN: Cell<usize> = const { Cell::new(0) };
+    static TLS_GEN: Cell<u64> = const { Cell::new(0) };
+}
+
+fn retired() -> &'static Retired {
+    RETIRED.get_or_init(|| Retired {
+        list: UnsafeCell::new(VecDeque::new()),
+    })
+}
+
+pub(crate) fn with_muted<F: FnOnce(&[(EventName, EventHookTypes)])>(f: F) {
+    TLS_GEN.with(|g| {
+        let generation = GENERATION.load(Ordering::Acquire);
+        if g.get() != generation {
+            let h = CURENT.load(Ordering::Acquire);
+            if !h.is_null() {
+                unsafe {
+                    TLS_PTR.set((*h).ptr);
+                    TLS_LEN.set((*h).len);
+                    g.set(generation);
+                }
+            }
+            let ptr = TLS_PTR.get();
+            let len = TLS_LEN.get();
+            if !ptr.is_null() {
+                unsafe { f(std::slice::from_raw_parts(ptr, len)) }
+            }
+        }
+    });
+}
+
+pub(crate) fn publish_muted(mut data: Vec<(EventName, EventHookTypes)>) {
+    if data.capacity() < data.len() * 2 {
+        data.reserve(data.len());
+    }
+
+    let ptr = data.as_ptr();
+    let len = data.len();
+    std::mem::forget(data);
+    let header = Box::into_raw(Box::new(Header {
+        ptr,
+        len,
+        _pad: [0; 6],
+    }));
+    let prev = CURENT.swap(header, Ordering::Release);
+    let generation = GENERATION.fetch_add(1, Ordering::Release) + 1;
+    if !prev.is_null() {
+        unsafe {
+            let list = &mut *retired().list.get();
+            list.push_back((prev, generation));
+        }
+    }
+}
+
+pub(crate) fn reclaim_muted() {
+    let min_gen = GENERATION.load(Ordering::Acquire);
+    unsafe {
+        let list = &mut *retired().list.get();
+        while let Some(&(hdr, generation)) = list.front() {
+            if generation + 2 < min_gen {
+                let h = Box::from_raw(hdr);
+                let _ = Vec::from_raw_parts(h.ptr as *mut u64, h.len, h.len);
+                list.pop_front();
+            } else {
+                break;
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Key(usize);

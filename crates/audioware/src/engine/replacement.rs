@@ -1,8 +1,4 @@
-use std::{sync::LazyLock, time::Duration};
-
 use bitflags::Flags;
-use dashmap::DashMap;
-use parking_lot::RwLock;
 use red4ext_rs::{
     ScriptClass,
     class_kind::Native,
@@ -12,15 +8,12 @@ use red4ext_rs::{
 use crate::{
     EventHookTypes, EventName,
     abi::lifecycle::{Lifecycle, ReplacementNotification},
-    engine::queue,
+    engine::{
+        callbacks::{publish_muted, with_muted},
+        queue,
+    },
     utils::{fails, warns},
 };
-
-const ALLOWED_CONTENTION: Duration = Duration::from_millis(20);
-
-type Mutes = LazyLock<RwLock<DashMap<EventName, EventHookTypes>>>;
-
-static MUTES: Mutes = LazyLock::new(|| RwLock::new(DashMap::with_capacity(1024)));
 
 pub struct Replacements;
 
@@ -123,80 +116,77 @@ impl Mute for AudioEventManager {
 impl Mute for Replacements {
     type Name = EventName;
     fn mute(&self, event_name: EventName) {
-        if let Some(set) = MUTES.try_write_for(ALLOWED_CONTENTION) {
-            set.entry(event_name)
-                .and_modify(|x| *x = EventHookTypes::all())
-                .or_insert(EventHookTypes::all());
+        let mut len = 0;
+        with_muted(|x| {
+            len = x.len();
+        });
+        let mut new: Vec<(EventName, EventHookTypes)> = Vec::with_capacity(len);
+        with_muted(|x| {
+            new.copy_from_slice(x);
+        });
+        if let Some(x) = new.iter().position(|x| x.0 == event_name) {
+            let x = new.get_mut(x).unwrap();
+            x.1.set(EventHookTypes::all(), true);
         } else {
-            warns!("write contention on muted event names store (mute: {event_name})");
+            new.push((event_name, EventHookTypes::all()));
         }
+        publish_muted(new);
     }
 
     fn is_muted(&self, event_name: EventName) -> bool {
-        if let Some(set) = MUTES.try_read_for(ALLOWED_CONTENTION) {
-            for x in set.iter() {
-                if *x.key() == event_name {
-                    return true;
-                }
-            }
-            return false;
-        }
-        warns!("read contention on muted event names store ({event_name})");
-        false
+        let mut is_muted = false;
+        with_muted(|x| {
+            is_muted = x.contains(&(event_name, EventHookTypes::all()));
+        });
+        is_muted
     }
 
     fn mute_specific(&self, event_name: EventName, event_type: EventHookTypes) {
-        if let Some(ref mut set) = MUTES.try_write_for(ALLOWED_CONTENTION) {
-            set.entry(event_name)
-                .and_modify(|x| x.set(event_type, true))
-                .or_insert(event_type);
+        let mut len = 0;
+        with_muted(|x| {
+            len = x.len();
+        });
+        let mut new: Vec<(EventName, EventHookTypes)> = Vec::with_capacity(len);
+        with_muted(|x| {
+            new.copy_from_slice(x);
+        });
+        if let Some(x) = new.iter().position(|x| x.0 == event_name) {
+            let x = new.get_mut(x).unwrap();
+            x.1.insert(event_type);
         } else {
-            warns!(
-                "write contention on muted event names store (mute: {event_name}, {event_type})"
-            );
+            new.push((event_name, event_type));
         }
+        publish_muted(new);
     }
 
     fn is_specific_muted(&self, event_name: EventName, event_type: EventHookTypes) -> bool {
-        if let Some(set) = MUTES.try_read_for(ALLOWED_CONTENTION) {
-            for x in set.iter() {
-                if *x.key() == event_name && (*x.value()).contains(event_type) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        warns!("read contention on muted event names store ({event_name}, {event_type})");
-        false
+        let mut is_muted = false;
+        with_muted(|x| {
+            is_muted = x.contains(&(event_name, event_type));
+        });
+        is_muted
     }
 
     fn unmute(&self, event_name: EventName) {
-        if let Some(ref mut set) = MUTES.try_write_for(ALLOWED_CONTENTION) {
-            set.remove(&event_name);
-        } else {
-            warns!("write contention on muted event names store (unmute: {event_name})");
+        let mut new: Vec<(EventName, EventHookTypes)> = vec![];
+        with_muted(|x| {
+            new.copy_from_slice(x);
+        });
+        if let Some(x) = new.iter().position(|x| x.0 == event_name) {
+            new.remove(x);
+            publish_muted(new);
         }
     }
 
     fn unmute_specific(&self, event_name: EventName, event_type: EventHookTypes) {
-        if let Some(ref mut set) = MUTES.try_write_for(ALLOWED_CONTENTION) {
-            match set.entry(event_name) {
-                dashmap::Entry::Occupied(mut x) => {
-                    let empty = {
-                        let v = x.get_mut();
-                        v.set(event_type, false);
-                        v.is_empty()
-                    };
-                    if empty {
-                        x.remove_entry();
-                    }
-                }
-                dashmap::Entry::Vacant(_) => {}
-            };
-        } else {
-            warns!(
-                "write contention on muted event names store (unmute: {event_name}, {event_type})"
-            );
+        let mut new: Vec<(EventName, EventHookTypes)> = vec![];
+        with_muted(|x| {
+            new.copy_from_slice(x);
+        });
+        if let Some(x) = new.iter().position(|x| x.0 == event_name) {
+            let x = new.get_mut(x).unwrap();
+            x.1.set(event_type, false);
+            publish_muted(new);
         }
     }
 }
