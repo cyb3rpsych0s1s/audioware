@@ -51,7 +51,7 @@ unsafe impl Sync for Retired {}
 /// Safety: single-writer invariant
 unsafe impl Send for Retired {}
 
-static CURENT: AtomicPtr<Header> = AtomicPtr::new(std::ptr::null_mut());
+static CURRENT: AtomicPtr<Header> = AtomicPtr::new(std::ptr::null_mut());
 static GENERATION: AtomicU64 = AtomicU64::new(0);
 
 static RETIRED: OnceLock<Retired> = OnceLock::new();
@@ -71,8 +71,10 @@ fn retired() -> &'static Retired {
 pub(crate) fn with_muted<F: FnOnce(&[(EventName, EventHookTypes)])>(f: F) {
     TLS_GEN.with(|g| {
         let generation = GENERATION.load(Ordering::Acquire);
+        crate::utils::intercept!("[with] local {} vs global {generation}", g.get());
         if g.get() != generation {
-            let h = CURENT.load(Ordering::Acquire);
+            let h = CURRENT.load(Ordering::Acquire);
+            crate::utils::intercept!("[with] current is defined: {}", !h.is_null());
             if !h.is_null() {
                 unsafe {
                     TLS_PTR.set((*h).ptr);
@@ -80,11 +82,11 @@ pub(crate) fn with_muted<F: FnOnce(&[(EventName, EventHookTypes)])>(f: F) {
                     g.set(generation);
                 }
             }
-            let ptr = TLS_PTR.get();
-            let len = TLS_LEN.get();
-            if !ptr.is_null() {
-                unsafe { f(std::slice::from_raw_parts(ptr, len)) }
-            }
+        }
+        let ptr = TLS_PTR.get();
+        let len = TLS_LEN.get();
+        if !ptr.is_null() {
+            unsafe { f(std::slice::from_raw_parts(ptr, len)) }
         }
     });
 }
@@ -102,8 +104,9 @@ pub(crate) fn publish_muted(mut data: Vec<(EventName, EventHookTypes)>) {
         len,
         _pad: [0; 6],
     }));
-    let prev = CURENT.swap(header, Ordering::Release);
+    let prev = CURRENT.swap(header, Ordering::Release);
     let generation = GENERATION.fetch_add(1, Ordering::Release) + 1;
+    crate::utils::intercept!("[publish] generation: {generation}");
     if !prev.is_null() {
         unsafe {
             let list = &mut *retired().list.get();

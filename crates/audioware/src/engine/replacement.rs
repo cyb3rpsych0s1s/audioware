@@ -116,13 +116,9 @@ impl Mute for AudioEventManager {
 impl Mute for Replacements {
     type Name = EventName;
     fn mute(&self, event_name: EventName) {
-        let mut len = 0;
+        let mut new: Vec<(EventName, EventHookTypes)> = vec![];
         with_muted(|x| {
-            len = x.len();
-        });
-        let mut new: Vec<(EventName, EventHookTypes)> = Vec::with_capacity(len);
-        with_muted(|x| {
-            new.copy_from_slice(x);
+            new = x.iter().cloned().collect();
         });
         if let Some(x) = new.iter().position(|x| x.0 == event_name) {
             let x = new.get_mut(x).unwrap();
@@ -136,19 +132,22 @@ impl Mute for Replacements {
     fn is_muted(&self, event_name: EventName) -> bool {
         let mut is_muted = false;
         with_muted(|x| {
-            is_muted = x.contains(&(event_name, EventHookTypes::all()));
+            is_muted = x.iter().find(|x| x.0 == event_name).is_some();
+            crate::utils::intercept!(
+                "is_muted {event_name} ? {is_muted} [{}]",
+                x.iter()
+                    .map(|x| format!("({}, {})", x.0, x.1))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
         });
         is_muted
     }
 
     fn mute_specific(&self, event_name: EventName, event_type: EventHookTypes) {
-        let mut len = 0;
+        let mut new: Vec<(EventName, EventHookTypes)> = vec![];
         with_muted(|x| {
-            len = x.len();
-        });
-        let mut new: Vec<(EventName, EventHookTypes)> = Vec::with_capacity(len);
-        with_muted(|x| {
-            new.copy_from_slice(x);
+            new = x.iter().cloned().collect();
         });
         if let Some(x) = new.iter().position(|x| x.0 == event_name) {
             let x = new.get_mut(x).unwrap();
@@ -162,7 +161,16 @@ impl Mute for Replacements {
     fn is_specific_muted(&self, event_name: EventName, event_type: EventHookTypes) -> bool {
         let mut is_muted = false;
         with_muted(|x| {
-            is_muted = x.contains(&(event_name, event_type));
+            is_muted = x
+                .iter()
+                .any(|x| x.0 == event_name && x.1.contains(event_type));
+            crate::utils::intercept!(
+                "is_specific_muted ({event_name}, {event_type}) ? {is_muted} [{}]",
+                x.iter()
+                    .map(|x| format!("({}, {})", x.0, x.1))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
         });
         is_muted
     }
@@ -170,7 +178,7 @@ impl Mute for Replacements {
     fn unmute(&self, event_name: EventName) {
         let mut new: Vec<(EventName, EventHookTypes)> = vec![];
         with_muted(|x| {
-            new.copy_from_slice(x);
+            new = x.iter().cloned().collect();
         });
         if let Some(x) = new.iter().position(|x| x.0 == event_name) {
             new.remove(x);
@@ -181,7 +189,7 @@ impl Mute for Replacements {
     fn unmute_specific(&self, event_name: EventName, event_type: EventHookTypes) {
         let mut new: Vec<(EventName, EventHookTypes)> = vec![];
         with_muted(|x| {
-            new.copy_from_slice(x);
+            new = x.iter().cloned().collect();
         });
         if let Some(x) = new.iter().position(|x| x.0 == event_name) {
             let x = new.get_mut(x).unwrap();
