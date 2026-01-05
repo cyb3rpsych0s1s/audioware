@@ -24,7 +24,8 @@ use crate::{
     config::BufferSize,
     engine::{
         DilationUpdate, Mute, Replacements,
-        callbacks::{Dispatch, Listen, reclaim_muted},
+        callbacks::{Dispatch, Listen},
+        mutes::reclaim_muted,
         traits::{
             panning::SetControlledPanning,
             pause::PauseControlled,

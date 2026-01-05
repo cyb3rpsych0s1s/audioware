@@ -1,3 +1,12 @@
+use std::{
+    cell::{Cell, UnsafeCell},
+    collections::VecDeque,
+    sync::{
+        OnceLock,
+        atomic::{AtomicPtr, AtomicU64, Ordering},
+    },
+};
+
 use bitflags::Flags;
 use red4ext_rs::{
     ScriptClass,
@@ -8,12 +17,109 @@ use red4ext_rs::{
 use crate::{
     EventHookTypes, EventName,
     abi::lifecycle::{Lifecycle, ReplacementNotification},
-    engine::{
-        callbacks::{publish_muted, with_muted},
-        queue,
-    },
+    engine::queue,
     utils::{fails, warns},
 };
+
+#[repr(C, align(64))]
+struct Header {
+    ptr: *const (EventName, EventHookTypes),
+    len: usize,
+    _pad: [u64; 6],
+}
+
+struct Retired {
+    list: UnsafeCell<VecDeque<(*mut Header, u64)>>,
+}
+
+/// Safety: single-writer invariant
+unsafe impl Sync for Header {}
+/// Safety: single-writer invariant
+unsafe impl Send for Header {}
+/// Safety: single-writer invariant
+unsafe impl Sync for Retired {}
+/// Safety: single-writer invariant
+unsafe impl Send for Retired {}
+
+static CURRENT: AtomicPtr<Header> = AtomicPtr::new(std::ptr::null_mut());
+static GENERATION: AtomicU64 = AtomicU64::new(0);
+
+static RETIRED: OnceLock<Retired> = OnceLock::new();
+
+thread_local! {
+    static TLS_PTR: Cell<*const (EventName, EventHookTypes)> = const { Cell::new(std::ptr::null_mut()) };
+    static TLS_LEN: Cell<usize> = const { Cell::new(0) };
+    static TLS_GEN: Cell<u64> = const { Cell::new(0) };
+}
+
+fn retired() -> &'static Retired {
+    RETIRED.get_or_init(|| Retired {
+        list: UnsafeCell::new(VecDeque::new()),
+    })
+}
+
+pub(crate) fn with_muted<F: FnOnce(&[(EventName, EventHookTypes)])>(f: F) {
+    TLS_GEN.with(|g| {
+        let generation = GENERATION.load(Ordering::Acquire);
+        crate::utils::intercept!("[with] local {} vs global {generation}", g.get());
+        if g.get() != generation {
+            let h = CURRENT.load(Ordering::Acquire);
+            crate::utils::intercept!("[with] current is defined: {}", !h.is_null());
+            if !h.is_null() {
+                unsafe {
+                    TLS_PTR.set((*h).ptr);
+                    TLS_LEN.set((*h).len);
+                    g.set(generation);
+                }
+            }
+        }
+        let ptr = TLS_PTR.get();
+        let len = TLS_LEN.get();
+        if !ptr.is_null() {
+            unsafe { f(std::slice::from_raw_parts(ptr, len)) }
+        }
+    });
+}
+
+pub(crate) fn publish_muted(mut data: Vec<(EventName, EventHookTypes)>) {
+    if data.capacity() < data.len() * 2 {
+        data.reserve(data.len());
+    }
+
+    let ptr = data.as_ptr();
+    let len = data.len();
+    std::mem::forget(data);
+    let header = Box::into_raw(Box::new(Header {
+        ptr,
+        len,
+        _pad: [0; 6],
+    }));
+    let prev = CURRENT.swap(header, Ordering::Release);
+    let generation = GENERATION.fetch_add(1, Ordering::Release) + 1;
+    crate::utils::intercept!("[publish] generation: {generation}");
+    if !prev.is_null() {
+        unsafe {
+            let list = &mut *retired().list.get();
+            list.push_back((prev, generation));
+        }
+    }
+}
+
+pub(crate) fn reclaim_muted() {
+    let min_gen = GENERATION.load(Ordering::Acquire);
+    unsafe {
+        let list = &mut *retired().list.get();
+        while let Some(&(hdr, generation)) = list.front() {
+            if generation + 2 < min_gen {
+                let h = Box::from_raw(hdr);
+                let _ = Vec::from_raw_parts(h.ptr as *mut u64, h.len, h.len);
+                list.pop_front();
+            } else {
+                break;
+            }
+        }
+    }
+}
 
 pub struct Replacements;
 
@@ -118,7 +224,7 @@ impl Mute for Replacements {
     fn mute(&self, event_name: EventName) {
         let mut new: Vec<(EventName, EventHookTypes)> = vec![];
         with_muted(|x| {
-            new = x.iter().cloned().collect();
+            new = x.to_vec();
         });
         if let Some(x) = new.iter().position(|x| x.0 == event_name) {
             let x = new.get_mut(x).unwrap();
@@ -132,7 +238,7 @@ impl Mute for Replacements {
     fn is_muted(&self, event_name: EventName) -> bool {
         let mut is_muted = false;
         with_muted(|x| {
-            is_muted = x.iter().find(|x| x.0 == event_name).is_some();
+            is_muted = x.iter().any(|x| x.0 == event_name);
             crate::utils::intercept!(
                 "is_muted {event_name} ? {is_muted} [{}]",
                 x.iter()
@@ -147,7 +253,7 @@ impl Mute for Replacements {
     fn mute_specific(&self, event_name: EventName, event_type: EventHookTypes) {
         let mut new: Vec<(EventName, EventHookTypes)> = vec![];
         with_muted(|x| {
-            new = x.iter().cloned().collect();
+            new = x.to_vec();
         });
         if let Some(x) = new.iter().position(|x| x.0 == event_name) {
             let x = new.get_mut(x).unwrap();
@@ -178,7 +284,7 @@ impl Mute for Replacements {
     fn unmute(&self, event_name: EventName) {
         let mut new: Vec<(EventName, EventHookTypes)> = vec![];
         with_muted(|x| {
-            new = x.iter().cloned().collect();
+            new = x.to_vec();
         });
         if let Some(x) = new.iter().position(|x| x.0 == event_name) {
             new.remove(x);
@@ -189,7 +295,7 @@ impl Mute for Replacements {
     fn unmute_specific(&self, event_name: EventName, event_type: EventHookTypes) {
         let mut new: Vec<(EventName, EventHookTypes)> = vec![];
         with_muted(|x| {
-            new = x.iter().cloned().collect();
+            new = x.to_vec();
         });
         if let Some(x) = new.iter().position(|x| x.0 == event_name) {
             let x = new.get_mut(x).unwrap();
