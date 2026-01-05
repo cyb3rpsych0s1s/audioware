@@ -27,7 +27,9 @@ mod script_audio_player;
 mod vo;
 
 pub fn attach(env: &SdkEnv) {
-    audio_interface::attach_hook(env);
+    if cfg!(feature = "research") && cfg!(feature = "redengine") {
+        audio_interface::attach_hook(env);
+    }
     sound_engine::attach_hooks(env);
     sound_component::attach_hook(env);
     audio::attach_hook(env);

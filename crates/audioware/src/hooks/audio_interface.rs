@@ -30,7 +30,7 @@ unsafe extern "C" fn detour(
         let interface = a2.is_null().not().then(|| &*a2);
         let id = a3.is_null().not().then(|| *a3);
         if let (Some(interface), Some(id)) = (interface, id) {
-            crate::utils::intercept!("AudioInterface::PostEvent( {{ {interface} }}, {id} )");
+            crate::utils::inspect!("AudioInterface::PostEvent( {{ {interface} }}, {id} )");
         }
         cb(a1, a2, a3);
     }

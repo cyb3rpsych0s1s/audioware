@@ -61,7 +61,7 @@ build PROFILE='debug' FEATURES='' TO=game_dir: (setup join(TO, red4ext_deploy_di
 
 alias b := build
 
-dev FEATURES='hot-reload,research': (build 'debug' FEATURES) reload
+dev FEATURES='hot-reload,research,redengine': (build 'debug' FEATURES) reload
 
 lldb PROFILE='debug' FEATURES='hot-reload' TO=game_dir: (build PROFILE FEATURES) reload
   @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'

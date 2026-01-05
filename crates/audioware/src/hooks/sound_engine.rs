@@ -116,7 +116,7 @@ pub mod post_event {
                 }
             }
             if !Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
-                crate::utils::intercept!("SoundEngine::PostEvent( {a2}, {sound} ) / {wwise_id}",);
+                crate::utils::inspect!("SoundEngine::PostEvent( {a2}, {sound} ) / {wwise_id}",);
                 return cb(a1, a2, a3);
             }
             PlayingSoundId::invalid()
@@ -214,7 +214,7 @@ pub mod post_event {
                     if Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
                         return PlayingSoundId::invalid();
                     }
-                    crate::utils::intercept!(
+                    crate::utils::inspect!(
                         "SoundEngine::PostEvent_OneShot( {{ {} }}, {{ {} }} ) / {wwise_id}",
                         oneshot,
                         sound_object
@@ -321,7 +321,7 @@ pub mod external_event {
                 if Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
                     return PlayingSoundId::invalid();
                 }
-                crate::utils::intercept!(
+                crate::utils::inspect!(
                     "SoundEngine::ExternalEvent( {{ {a2} }}, .., {{ {} }} ) / {wwise_id}",
                     &*a4,
                 );
@@ -396,7 +396,7 @@ pub mod parameter {
                     if Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
                         return WwiseId::default().to_i64();
                     }
-                    // crate::utils::intercept!(
+                    // crate::utils::inspect!(
                     //     "SoundEngine::SetGlobalParameter( {a1}, {a2}, {a3}, {a4} ) / {wwise_id}"
                     // );
                 }
@@ -473,7 +473,7 @@ pub mod parameter {
                 ));
             }
             if !Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
-                // crate::utils::intercept!(
+                // crate::utils::inspect!(
                 //     "SoundEngine::SetParameter( {a2}, {a3}, {a4} ) / {wwise_id}"
                 // );
                 return cb(a1, a2, a3, a4);
@@ -565,7 +565,7 @@ pub mod set_switch {
                 ));
             }
             if !Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
-                crate::utils::intercept!(
+                crate::utils::inspect!(
                     "SoundEngine::SetSwitch( {a2}, {a3}, {a4} ) / switch_name_wwise_id: {switch_name_wwise_id} switch_value_wwise_id: {switch_value_wwise_id}"
                 );
                 return cb(a1, a2, a3, a4);
@@ -728,7 +728,7 @@ pub mod event {
                 if Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
                     return;
                 }
-                crate::utils::intercept!(
+                crate::utils::inspect!(
                     "AudioInternalEvent::ApplyAction( .. ) / event_name: {name}, event_type: {event_type}, entity_id: {entity_id}"
                 );
             }
