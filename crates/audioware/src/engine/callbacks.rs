@@ -45,38 +45,38 @@ unsafe impl Sync for Retired {}
 /// Safety: single-writer invariant
 unsafe impl Send for Retired {}
 
-static CURRENT: AtomicPtr<Header> = AtomicPtr::new(std::ptr::null_mut());
-static GENERATION: AtomicU64 = AtomicU64::new(0);
+static CURRENT_CB: AtomicPtr<Header> = AtomicPtr::new(std::ptr::null_mut());
+static GENERATION_CB: AtomicU64 = AtomicU64::new(0);
 
-static RETIRED: OnceLock<Retired> = OnceLock::new();
+static RETIRED_CB: OnceLock<Retired> = OnceLock::new();
 
 thread_local! {
-    static TLS_PTR: Cell<*const (Key, AudioEventCallback)> = const { Cell::new(std::ptr::null_mut()) };
-    static TLS_LEN: Cell<usize> = const { Cell::new(0) };
-    static TLS_GEN: Cell<u64> = const { Cell::new(0) };
+    static TLS_PTR_CB: Cell<*const (Key, AudioEventCallback)> = const { Cell::new(std::ptr::null_mut()) };
+    static TLS_LEN_CB: Cell<usize> = const { Cell::new(0) };
+    static TLS_GEN_CB: Cell<u64> = const { Cell::new(0) };
 }
 
 fn retired() -> &'static Retired {
-    RETIRED.get_or_init(|| Retired {
+    RETIRED_CB.get_or_init(|| Retired {
         list: UnsafeCell::new(VecDeque::new()),
     })
 }
 
 pub(crate) fn with_callbacks<F: FnOnce(&[(Key, AudioEventCallback)])>(f: F) {
-    TLS_GEN.with(|g| {
-        let generation = GENERATION.load(Ordering::Acquire);
+    TLS_GEN_CB.with(|g| {
+        let generation = GENERATION_CB.load(Ordering::Acquire);
         if g.get() != generation {
-            let h = CURRENT.load(Ordering::Acquire);
+            let h = CURRENT_CB.load(Ordering::Acquire);
             if !h.is_null() {
                 unsafe {
-                    TLS_PTR.set((*h).ptr);
-                    TLS_LEN.set((*h).len);
+                    TLS_PTR_CB.set((*h).ptr);
+                    TLS_LEN_CB.set((*h).len);
                     g.set(generation);
                 }
             }
         }
-        let ptr = TLS_PTR.get();
-        let len = TLS_LEN.get();
+        let ptr = TLS_PTR_CB.get();
+        let len = TLS_LEN_CB.get();
         if !ptr.is_null() {
             unsafe { f(std::slice::from_raw_parts(ptr, len)) }
         }
@@ -96,8 +96,8 @@ pub(crate) fn publish_callbacks(mut data: Vec<(Key, AudioEventCallback)>) {
         len,
         _pad: [0; 6],
     }));
-    let prev = CURRENT.swap(header, Ordering::Release);
-    let generation = GENERATION.fetch_add(1, Ordering::Release) + 1;
+    let prev = CURRENT_CB.swap(header, Ordering::Release);
+    let generation = GENERATION_CB.fetch_add(1, Ordering::Release) + 1;
     if !prev.is_null() {
         unsafe {
             let list = &mut *retired().list.get();
@@ -108,7 +108,7 @@ pub(crate) fn publish_callbacks(mut data: Vec<(Key, AudioEventCallback)>) {
 
 static COUNTER: LazyLock<AtomicUsize> = LazyLock::new(|| AtomicUsize::new(0));
 pub(crate) fn reclaim_callbacks() {
-    let min_gen = GENERATION.load(Ordering::Acquire);
+    let min_gen = GENERATION_CB.load(Ordering::Acquire);
     unsafe {
         let list = &mut *retired().list.get();
         while let Some(&(hdr, generation)) = list.front() {
