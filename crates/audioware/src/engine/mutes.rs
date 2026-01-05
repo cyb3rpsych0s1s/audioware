@@ -59,7 +59,8 @@ fn retired() -> &'static Retired {
     })
 }
 
-pub(crate) fn with_muted<F: FnOnce(&[(EventName, EventHookTypes)])>(f: F) {
+#[inline]
+pub(crate) fn with_mutes<F: FnOnce(&[(EventName, EventHookTypes)])>(f: F) {
     TLS_GEN.with(|g| {
         let generation = GENERATION.load(Ordering::Acquire);
         if g.get() != generation {
@@ -80,7 +81,7 @@ pub(crate) fn with_muted<F: FnOnce(&[(EventName, EventHookTypes)])>(f: F) {
     });
 }
 
-pub(crate) fn publish_muted(mut data: Vec<(EventName, EventHookTypes)>) {
+pub(crate) fn publish_mutes(mut data: Vec<(EventName, EventHookTypes)>) {
     if data.capacity() < data.len() * 2 {
         data.reserve(data.len());
     }
@@ -103,7 +104,7 @@ pub(crate) fn publish_muted(mut data: Vec<(EventName, EventHookTypes)>) {
     }
 }
 
-pub(crate) fn reclaim_muted() {
+pub(crate) fn reclaim_mutes() {
     let min_gen = GENERATION.load(Ordering::Acquire);
     unsafe {
         let list = &mut *retired().list.get();
@@ -159,7 +160,7 @@ impl Mute for AudioEventManager {
             return false;
         };
         let mut muted = false;
-        with_muted(|x| {
+        with_mutes(|x| {
             muted = x.iter().any(|x| x.0 == event_name);
         });
         muted
@@ -190,7 +191,7 @@ impl Mute for AudioEventManager {
             return false;
         };
         let mut muted = false;
-        with_muted(|x| {
+        with_mutes(|x| {
             muted = x
                 .iter()
                 .any(|x| x.0 == event_name && x.1.contains(event_type));
@@ -231,7 +232,7 @@ impl<B: Backend> Engine<B> {
             return;
         }
         let mut next = vec![];
-        with_muted(|x| {
+        with_mutes(|x| {
             next = x.to_vec();
         });
         let mut should_publish = false;
@@ -286,12 +287,12 @@ impl<B: Backend> Engine<B> {
             }
         }
         if should_publish {
-            publish_muted(next);
+            publish_mutes(next);
         }
     }
     pub fn is_specific_muted(event_name: EventName, event_type: EventHookTypes) -> bool {
         let mut muted = false;
-        with_muted(|x| {
+        with_mutes(|x| {
             muted = x
                 .iter()
                 .any(|x| x.0 == event_name && x.1.contains(event_type));

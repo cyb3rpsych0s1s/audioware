@@ -62,6 +62,7 @@ fn retired() -> &'static Retired {
     })
 }
 
+#[inline]
 pub(crate) fn with_callbacks<F: FnOnce(&[(Key, AudioEventCallback)])>(f: F) {
     TLS_GEN_CB.with(|g| {
         let generation = GENERATION_CB.load(Ordering::Acquire);
@@ -141,11 +142,13 @@ pub trait Call {
 }
 
 impl AudioEventCallbackSystem {
+    #[inline]
     pub fn any_callback(event_name: EventName, event_type: EventActionType) -> bool {
         let mut exists = false;
         with_callbacks(|x| exists = x.iter().any(|x| x.1.matches(event_name, event_type)));
         exists
     }
+    #[inline]
     pub fn is_registered(handler_id: usize) -> bool {
         let mut exists = false;
         with_callbacks(|x| exists = x.iter().any(|x| x.0 == Key(handler_id)));
