@@ -242,7 +242,7 @@ impl<B: Backend> Engine<B> {
                 ReplacementNotification::Mute(event_name) => {
                     let Some(idx) = next.iter().position(|x| x.0 == event_name) else {
                         next.push((event_name, EventHookTypes::all()));
-                        return;
+                        continue;
                     };
                     next.get_mut(idx)
                         .unwrap()
@@ -252,7 +252,7 @@ impl<B: Backend> Engine<B> {
                 ReplacementNotification::MuteSpecific(event_name, event_hook_types) => {
                     let Some(idx) = next.iter().position(|x| x.0 == event_name) else {
                         next.push((event_name, EventHookTypes::all()));
-                        return;
+                        continue;
                     };
                     next.get_mut(idx).unwrap().1.set(event_hook_types, true);
                 }
