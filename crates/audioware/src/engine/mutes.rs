@@ -62,10 +62,8 @@ fn retired() -> &'static Retired {
 pub(crate) fn with_muted<F: FnOnce(&[(EventName, EventHookTypes)])>(f: F) {
     TLS_GEN.with(|g| {
         let generation = GENERATION.load(Ordering::Acquire);
-        crate::utils::intercept!("[with] local {} vs global {generation}", g.get());
         if g.get() != generation {
             let h = CURRENT.load(Ordering::Acquire);
-            crate::utils::intercept!("[with] current is defined: {}", !h.is_null());
             if !h.is_null() {
                 unsafe {
                     TLS_PTR.set((*h).ptr);
@@ -97,7 +95,6 @@ pub(crate) fn publish_muted(mut data: Vec<(EventName, EventHookTypes)>) {
     }));
     let prev = CURRENT.swap(header, Ordering::Release);
     let generation = GENERATION.fetch_add(1, Ordering::Release) + 1;
-    crate::utils::intercept!("[publish] generation: {generation}");
     if !prev.is_null() {
         unsafe {
             let list = &mut *retired().list.get();

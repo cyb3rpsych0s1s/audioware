@@ -29,7 +29,7 @@ use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
 use crate::{
     AsAudioSystem, AsGameInstance, AsGameObjectExt, ControlId, GameObject,
-    abi::lifecycle::ReplacementNotification,
+    abi::{callback::Callback, lifecycle::ReplacementNotification},
     engine::{
         tracks::TrackEntryOptions,
         traits::{Handle, stop::StopBy, store::Store},
@@ -69,6 +69,7 @@ pub struct Engine<B: Backend> {
     pub banks: Banks,
     pub last_volume: Option<Decibels>,
     pub pending_mutes: Vec<ReplacementNotification>,
+    pub pending_callbacks: Vec<Callback>,
 }
 
 #[cfg(debug_assertions)]
@@ -106,7 +107,8 @@ where
             tracks,
             report,
             last_volume: None,
-            pending_mutes: Vec::with_capacity(1024),
+            pending_mutes: Vec::with_capacity(32),
+            pending_callbacks: Vec::with_capacity(32),
         })
     }
 

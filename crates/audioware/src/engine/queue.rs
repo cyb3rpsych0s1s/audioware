@@ -24,7 +24,7 @@ use crate::{
     config::BufferSize,
     engine::{
         DilationUpdate,
-        callbacks::{Dispatch, Listen},
+        callbacks::{Dispatch, reclaim_callbacks},
         mutes::reclaim_muted,
         traits::{
             panning::SetControlledPanning,
@@ -260,7 +260,7 @@ pub fn run(
                         state.set(Flags::IN_GAME, false);
                         engine.scene = None;
                         engine.tracks.clear();
-                        engine.session_reset();
+                        engine.reset_callbacks();
                     }
                 }
                 Lifecycle::UIInGameNotificationRemove => {
@@ -319,6 +319,7 @@ pub fn run(
         if engine.any_handle() && reclamation.try_recv().is_ok() {
             engine.reclaim();
             reclaim_muted();
+            reclaim_callbacks();
         }
         for c in rc.try_iter().take(8) {
             lifecycle!("> {c}");
@@ -482,24 +483,11 @@ pub fn run(
         for e in re.try_iter() {
             lifecycle!("~ {e}");
             match e {
-                Callback::RegisterFunction {
-                    event_name,
-                    target,
-                    function_name,
-                    id,
-                } => engine.register_callback(event_name, target.0, function_name, id),
-                Callback::RegisterStaticFunction {
-                    event_name,
-                    class_name,
-                    function_name,
-                    id,
-                } => engine.register_static_callback(event_name, class_name, function_name, id),
                 Callback::FireCallbacks(x) => engine.dispatch(x),
-                Callback::Unregister { id } => engine.unregister_callback(id),
-                Callback::Filter { add, id, target } => engine.filter_callback(id, add, target),
-                Callback::SetLifetime { id, sticky } => engine.set_callback_lifetime(id, sticky),
+                x => engine.pending_callbacks.push(x),
             }
         }
+        engine.update_callbacks();
     }
     let _ = LIFECYCLE
         .get()
