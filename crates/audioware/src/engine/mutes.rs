@@ -237,7 +237,7 @@ impl<B: Backend> Engine<B> {
         for pending in self.pending_mutes.drain(..) {
             match pending {
                 ReplacementNotification::Mute(event_name) => {
-                    let Some(idx) = next.iter().position(|x| x.0 == event_name) else {
+                    let Some(idx) = next.iter().rposition(|x| x.0 == event_name) else {
                         next.push((event_name, EventHookTypes::all()));
                         continue;
                     };
@@ -247,7 +247,7 @@ impl<B: Backend> Engine<B> {
                         .set(EventHookTypes::all(), true);
                 }
                 ReplacementNotification::MuteSpecific(event_name, event_hook_types) => {
-                    let Some(idx) = next.iter().position(|x| x.0 == event_name) else {
+                    let Some(idx) = next.iter().rposition(|x| x.0 == event_name) else {
                         next.push((event_name, EventHookTypes::all()));
                         continue;
                     };
