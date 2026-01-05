@@ -46,9 +46,8 @@ pub(crate) use intercept;
 #[allow(unused_macros)]
 macro_rules! inspect {
     ($($arg:tt)*) => {{
-        if cfg!(feature = "research") && cfg!(feature = "redengine") {
-            let msg = format!($($arg)*);
-            $crate::utils::silly!("[{:?}] *~ {msg}", std::thread::current().id())
+        if cfg!(debug_assertions) && cfg!(feature = "research") && cfg!(feature = "redengine") {
+            $crate::utils::silly!("[{:?}] *~ {}", std::thread::current().id(), format!($($arg)*))
         }
     }};
 }
