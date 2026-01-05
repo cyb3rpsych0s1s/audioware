@@ -234,40 +234,60 @@ impl<B: Backend> Engine<B> {
         with_muted(|x| {
             next = x.to_vec();
         });
+        let mut should_publish = false;
         for pending in self.pending_mutes.drain(..) {
             match pending {
                 ReplacementNotification::Mute(event_name) => {
                     let Some(idx) = next.iter().rposition(|x| x.0 == event_name) else {
                         next.push((event_name, EventHookTypes::all()));
+                        should_publish = true;
                         continue;
                     };
-                    next.get_mut(idx)
-                        .unwrap()
-                        .1
-                        .set(EventHookTypes::all(), true);
+                    let mute = next.get_mut(idx).unwrap();
+                    if !mute.1.is_all() {
+                        mute.1.set(EventHookTypes::all(), true);
+                        should_publish = true;
+                    }
                 }
                 ReplacementNotification::MuteSpecific(event_name, event_hook_types) => {
                     let Some(idx) = next.iter().rposition(|x| x.0 == event_name) else {
-                        next.push((event_name, EventHookTypes::all()));
+                        next.push((event_name, event_hook_types));
+                        should_publish = true;
                         continue;
                     };
-                    next.get_mut(idx).unwrap().1.set(event_hook_types, true);
+                    let mute = next.get_mut(idx).unwrap();
+                    if !mute.1.contains(event_hook_types) {
+                        mute.1.set(event_hook_types, true);
+                        should_publish = true;
+                    }
                 }
-                ReplacementNotification::Unmute(event_name) => next.retain(|x| x.0 != event_name),
-                ReplacementNotification::UnmuteSpecific(event_name, event_hook_types) => next
-                    .retain_mut(|x| {
+                ReplacementNotification::Unmute(event_name) => {
+                    let before = next.len();
+                    next.retain(|x| x.0 != event_name);
+                    let after = next.len();
+                    should_publish = before != after;
+                }
+                ReplacementNotification::UnmuteSpecific(event_name, event_hook_types) => {
+                    let before = next.len();
+                    next.retain_mut(|x| {
                         if x.0 != event_name {
                             true
                         } else if x.1.intersection(event_hook_types).is_empty() {
                             false
                         } else {
                             x.1.set(event_hook_types, false);
+                            should_publish = true;
                             true
                         }
-                    }),
+                    });
+                    let after = next.len();
+                    should_publish = before != after;
+                }
             }
         }
-        publish_muted(next);
+        if should_publish {
+            publish_muted(next);
+        }
     }
     pub fn is_specific_muted(event_name: EventName, event_type: EventHookTypes) -> bool {
         let mut muted = false;

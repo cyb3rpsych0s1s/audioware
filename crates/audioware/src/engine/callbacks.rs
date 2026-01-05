@@ -436,6 +436,7 @@ impl<B: Backend> Engine<B> {
         with_callbacks(|x| {
             next = x.to_vec();
         });
+        let mut should_publish = false;
         for pending in self.pending_callbacks.drain(..) {
             match pending {
                 Callback::RegisterFunction {
@@ -462,6 +463,7 @@ impl<B: Backend> Engine<B> {
                             sticky: false,
                         },
                     ));
+                    should_publish = true;
                     lifecycle!("{id} registered new callback for {event_name} => {function_name}",);
                 }
                 Callback::RegisterStaticFunction {
@@ -488,6 +490,7 @@ impl<B: Backend> Engine<B> {
                             sticky: false,
                         },
                     ));
+                    should_publish = true;
                     lifecycle!(
                         "{id} registered new static callback for {event_name} => {function_name}",
                     );
@@ -498,6 +501,7 @@ impl<B: Backend> Engine<B> {
                         continue;
                     };
                     next.remove(idx);
+                    should_publish = true;
                 }
                 Callback::Filter { id, target, add } => match add {
                     true => {
@@ -508,6 +512,7 @@ impl<B: Backend> Engine<B> {
                             continue;
                         };
                         x.1.targets.push(target);
+                        should_publish = true;
                     }
                     false => {
                         next.retain_mut(|x| {
@@ -516,6 +521,7 @@ impl<B: Backend> Engine<B> {
                             } else if let Some(idx) = x.1.targets.iter().rposition(|x| *x == target)
                             {
                                 x.1.targets.remove(idx);
+                                should_publish = true;
                                 !x.1.targets.is_empty()
                             } else {
                                 true
@@ -524,13 +530,18 @@ impl<B: Backend> Engine<B> {
                     }
                 },
                 Callback::SetLifetime { id, sticky } => {
-                    if let Some(x) = next.iter_mut().rfind(|x| x.0 == Key(id)) {
+                    if let Some(x) = next.iter_mut().rfind(|x| x.0 == Key(id))
+                        && x.1.sticky != sticky
+                    {
                         x.1.sticky = sticky;
+                        should_publish = true;
                     }
                 }
             }
         }
-        publish_callbacks(next);
+        if should_publish {
+            publish_callbacks(next);
+        }
     }
     pub fn reset_callbacks(&mut self) {
         let mut next = vec![];
