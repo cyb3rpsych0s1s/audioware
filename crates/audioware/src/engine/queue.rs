@@ -19,12 +19,13 @@ use crate::{
         command::Command,
         control::Control,
         is_in_foreground,
-        lifecycle::{Board, Lifecycle, ReplacementNotification, Session, System},
+        lifecycle::{Board, Lifecycle, Session, System},
     },
     config::BufferSize,
     engine::{
-        DilationUpdate, Mute, Replacements,
-        callbacks::{Dispatch, Listen},
+        DilationUpdate,
+        callbacks::{Dispatch, reclaim_callbacks},
+        mutes::reclaim_mutes,
         traits::{
             panning::SetControlledPanning,
             pause::PauseControlled,
@@ -259,7 +260,7 @@ pub fn run(
                         state.set(Flags::IN_GAME, false);
                         engine.scene = None;
                         engine.tracks.clear();
-                        engine.session_reset();
+                        engine.reset_callbacks();
                     }
                 }
                 Lifecycle::UIInGameNotificationRemove => {
@@ -303,24 +304,12 @@ pub fn run(
                         }
                     }
                 }
-                Lifecycle::Replacement(ReplacementNotification::Mute(event_name)) => {
-                    Replacements.mute(event_name)
-                }
-                Lifecycle::Replacement(ReplacementNotification::MuteSpecific(
-                    event_name,
-                    event_type,
-                )) => Replacements.mute_specific(event_name, event_type),
-                Lifecycle::Replacement(ReplacementNotification::Unmute(event_name)) => {
-                    Replacements.unmute(event_name)
-                }
-                Lifecycle::Replacement(ReplacementNotification::UnmuteSpecific(
-                    event_name,
-                    event_type,
-                )) => Replacements.unmute_specific(event_name, event_type),
+                Lifecycle::Replacement(x) => engine.pending_mutes.push(x),
                 Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
             }
         }
+        engine.update_mutes();
         if state.should_sync()
             && (engine.any_emitter() || engine.any_actor())
             && synchronization.try_recv().is_ok()
@@ -329,6 +318,8 @@ pub fn run(
         }
         if engine.any_handle() && reclamation.try_recv().is_ok() {
             engine.reclaim();
+            reclaim_mutes();
+            reclaim_callbacks();
         }
         for c in rc.try_iter().take(8) {
             lifecycle!("> {c}");
@@ -492,24 +483,11 @@ pub fn run(
         for e in re.try_iter() {
             lifecycle!("~ {e}");
             match e {
-                Callback::RegisterFunction {
-                    event_name,
-                    target,
-                    function_name,
-                    id,
-                } => engine.register_callback(event_name, target.0, function_name, id),
-                Callback::RegisterStaticFunction {
-                    event_name,
-                    class_name,
-                    function_name,
-                    id,
-                } => engine.register_static_callback(event_name, class_name, function_name, id),
                 Callback::FireCallbacks(x) => engine.dispatch(x),
-                Callback::Unregister { id } => engine.unregister_callback(id),
-                Callback::Filter { add, id, target } => engine.filter_callback(id, add, target),
-                Callback::SetLifetime { id, sticky } => engine.set_callback_lifetime(id, sticky),
+                x => engine.pending_callbacks.push(x),
             }
         }
+        engine.update_callbacks();
     }
     let _ = LIFECYCLE
         .get()

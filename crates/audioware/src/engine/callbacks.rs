@@ -1,9 +1,12 @@
-use std::sync::{
-    LazyLock,
-    atomic::{AtomicUsize, Ordering},
+use std::{
+    cell::{Cell, UnsafeCell},
+    collections::VecDeque,
+    sync::{
+        LazyLock, OnceLock,
+        atomic::{AtomicPtr, AtomicU64, AtomicUsize, Ordering},
+    },
 };
 
-use dashmap::DashMap;
 use kira::backend::Backend;
 use red4ext_rs::{
     InvokeError, RttiSystem, ScriptClass, ScriptClassOps,
@@ -22,10 +25,104 @@ use crate::{
     utils::{fails, lifecycle, warns},
 };
 
-static CALLBACKS: LazyLock<DashMap<Key, AudioEventCallback>> =
-    LazyLock::new(|| DashMap::with_capacity(128));
+#[repr(C, align(64))]
+struct Header {
+    ptr: *const (Key, AudioEventCallback),
+    len: usize,
+    _pad: [u64; 6],
+}
+
+struct Retired {
+    list: UnsafeCell<VecDeque<(*mut Header, u64)>>,
+}
+
+/// Safety: single-writer invariant
+unsafe impl Sync for Header {}
+/// Safety: single-writer invariant
+unsafe impl Send for Header {}
+/// Safety: single-writer invariant
+unsafe impl Sync for Retired {}
+/// Safety: single-writer invariant
+unsafe impl Send for Retired {}
+
+static CURRENT_CB: AtomicPtr<Header> = AtomicPtr::new(std::ptr::null_mut());
+static GENERATION_CB: AtomicU64 = AtomicU64::new(0);
+
+static RETIRED_CB: OnceLock<Retired> = OnceLock::new();
+
+thread_local! {
+    static TLS_PTR_CB: Cell<*const (Key, AudioEventCallback)> = const { Cell::new(std::ptr::null_mut()) };
+    static TLS_LEN_CB: Cell<usize> = const { Cell::new(0) };
+    static TLS_GEN_CB: Cell<u64> = const { Cell::new(0) };
+}
+
+fn retired() -> &'static Retired {
+    RETIRED_CB.get_or_init(|| Retired {
+        list: UnsafeCell::new(VecDeque::new()),
+    })
+}
+
+#[inline]
+pub(crate) fn with_callbacks<F: FnOnce(&[(Key, AudioEventCallback)])>(f: F) {
+    TLS_GEN_CB.with(|g| {
+        let generation = GENERATION_CB.load(Ordering::Acquire);
+        if g.get() != generation {
+            let h = CURRENT_CB.load(Ordering::Acquire);
+            if !h.is_null() {
+                unsafe {
+                    TLS_PTR_CB.set((*h).ptr);
+                    TLS_LEN_CB.set((*h).len);
+                    g.set(generation);
+                }
+            }
+        }
+        let ptr = TLS_PTR_CB.get();
+        let len = TLS_LEN_CB.get();
+        if !ptr.is_null() {
+            unsafe { f(std::slice::from_raw_parts(ptr, len)) }
+        }
+    });
+}
+
+pub(crate) fn publish_callbacks(mut data: Vec<(Key, AudioEventCallback)>) {
+    if data.capacity() < data.len() * 2 {
+        data.reserve(data.len());
+    }
+
+    let ptr = data.as_ptr();
+    let len = data.len();
+    std::mem::forget(data);
+    let header = Box::into_raw(Box::new(Header {
+        ptr,
+        len,
+        _pad: [0; 6],
+    }));
+    let prev = CURRENT_CB.swap(header, Ordering::Release);
+    let generation = GENERATION_CB.fetch_add(1, Ordering::Release) + 1;
+    if !prev.is_null() {
+        unsafe {
+            let list = &mut *retired().list.get();
+            list.push_back((prev, generation));
+        }
+    }
+}
 
 static COUNTER: LazyLock<AtomicUsize> = LazyLock::new(|| AtomicUsize::new(0));
+pub(crate) fn reclaim_callbacks() {
+    let min_gen = GENERATION_CB.load(Ordering::Acquire);
+    unsafe {
+        let list = &mut *retired().list.get();
+        while let Some(&(hdr, generation)) = list.front() {
+            if generation + 2 < min_gen {
+                let h = Box::from_raw(hdr);
+                let _ = Vec::from_raw_parts(h.ptr as *mut u64, h.len, h.len);
+                list.pop_front();
+            } else {
+                break;
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Key(usize);
@@ -34,27 +131,6 @@ impl std::fmt::Display for Key {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "cb:{}", self.0)
     }
-}
-
-pub trait Listen {
-    fn register_callback(
-        &self,
-        event_name: EventName,
-        target: WeakRef<IScriptable>,
-        function_name: FunctionName,
-        id: usize,
-    );
-    fn register_static_callback(
-        &self,
-        event_name: EventName,
-        class_name: ClassName,
-        function_name: FunctionName,
-        id: usize,
-    );
-    fn unregister_callback(&self, id: usize);
-    fn filter_callback(&mut self, id: usize, add: bool, target: AnyTarget);
-    fn session_reset(&mut self);
-    fn set_callback_lifetime(&mut self, id: usize, sticky: bool);
 }
 
 pub trait Dispatch {
@@ -66,13 +142,17 @@ pub trait Call {
 }
 
 impl AudioEventCallbackSystem {
+    #[inline]
     pub fn any_callback(event_name: EventName, event_type: EventActionType) -> bool {
-        CALLBACKS
-            .iter()
-            .any(|x| x.value().matches(event_name, event_type))
+        let mut exists = false;
+        with_callbacks(|x| exists = x.iter().any(|x| x.1.matches(event_name, event_type)));
+        exists
     }
+    #[inline]
     pub fn is_registered(handler_id: usize) -> bool {
-        CALLBACKS.contains_key(&Key(handler_id))
+        let mut exists = false;
+        with_callbacks(|x| exists = x.iter().any(|x| x.0 == Key(handler_id)));
+        exists
     }
     pub fn dispatch<T: Into<FireCallback>>(event: T) {
         queue::forward(Callback::FireCallbacks(event.into()));
@@ -148,6 +228,7 @@ impl Dispatch for CallbackFunction {
     }
 }
 
+#[derive(Clone)]
 pub struct AudioEventCallback {
     callback: CallbackFunction,
     targets: Vec<AnyTarget>,
@@ -161,16 +242,19 @@ impl Dispatch for AudioEventCallback {
     }
 }
 
+#[derive(Clone)]
 pub enum CallbackFunction {
     Member(MemberFunc),
     Static(StaticFunc),
 }
 
+#[derive(Clone)]
 pub struct MemberFunc {
     target: WeakRef<IScriptable>,
     function_name: FunctionName,
 }
 
+#[derive(Clone)]
 pub struct StaticFunc {
     class_name: ClassName,
     function_name: FunctionName,
@@ -287,96 +371,15 @@ fn inner_call<T: ScriptClass>(
     }
 }
 
-impl<B: Backend> Listen for Engine<B> {
-    fn register_callback(
-        &self,
-        event_name: EventName,
-        target: WeakRef<IScriptable>,
-        function_name: FunctionName,
-        id: usize,
-    ) {
-        let callback = CallbackFunction::Member(MemberFunc {
-            target,
-            function_name,
-        });
-        let value = AudioEventCallback {
-            callback,
-            targets: Vec::with_capacity(5),
-            event_name,
-            sticky: false,
-        };
-        let id = Key(id);
-        if CALLBACKS.get(&id).is_some() {
-            warns!("{id} callback already registered for {event_name} => {function_name}");
-        } else {
-            let _ = CALLBACKS.insert(id, value);
-            lifecycle!("{id} registered new callback for {event_name} => {function_name}",);
-        }
-    }
-
-    fn register_static_callback(
-        &self,
-        event_name: EventName,
-        class_name: ClassName,
-        function_name: FunctionName,
-        id: usize,
-    ) {
-        let callback = CallbackFunction::Static(StaticFunc {
-            class_name,
-            function_name,
-        });
-        let value = AudioEventCallback {
-            callback,
-            targets: Vec::with_capacity(5),
-            event_name,
-            sticky: false,
-        };
-        let id = Key(id);
-        if CALLBACKS.get(&id).is_some() {
-            warns!(
-                "{id} static callback already registered for {event_name} => {class_name} {function_name}"
-            );
-        } else {
-            let _ = CALLBACKS.insert(id, value);
-            lifecycle!(
-                "{id} registered new static callback for {event_name} => {class_name} {function_name}",
-            );
-        }
-    }
-
-    fn unregister_callback(&self, id: usize) {
-        CALLBACKS.remove(&Key(id));
-    }
-
-    fn filter_callback(&mut self, id: usize, add: bool, target: AnyTarget) {
-        if let Some(mut cb) = CALLBACKS.get_mut(&Key(id)) {
-            if add && !cb.targets.contains(&target) {
-                cb.targets.push(target);
-            } else if !add && let Some(idx) = cb.targets.iter().position(|x| *x == target) {
-                cb.targets.remove(idx);
-            }
-        }
-    }
-
-    fn session_reset(&mut self) {
-        CALLBACKS.retain(|_, v| v.sticky);
-    }
-
-    fn set_callback_lifetime(&mut self, id: usize, sticky: bool) {
-        if let Some(mut cb) = CALLBACKS.get_mut(&Key(id)) {
-            cb.sticky = sticky;
-        }
-    }
-}
-
 impl<B: Backend> Dispatch for Engine<B> {
     fn dispatch(&self, fire: FireCallback) {
-        for cb in CALLBACKS
-            .iter()
-            .filter(|x| x.value().matches_filters(&fire))
-        {
-            cb.dispatch(fire.clone());
-        }
+        with_callbacks(|x| {
+            x.iter()
+                .filter(|x| x.1.matches_filters(&fire))
+                .for_each(|x| {
+                    x.1.dispatch(fire.clone());
+                });
+        });
     }
 }
 
@@ -424,5 +427,135 @@ impl AudioEventCallback {
             };
         }
         false
+    }
+}
+
+impl<B: Backend> Engine<B> {
+    pub fn update_callbacks(&mut self) {
+        if self.pending_callbacks.is_empty() {
+            return;
+        }
+        let mut next = vec![];
+        with_callbacks(|x| {
+            next = x.to_vec();
+        });
+        let mut should_publish = false;
+        for pending in self.pending_callbacks.drain(..) {
+            match pending {
+                Callback::RegisterFunction {
+                    event_name,
+                    target,
+                    function_name,
+                    id,
+                } => {
+                    if next.iter().any(|x| x.0 == Key(id)) {
+                        warns!(
+                            "{id} callback already registered for {event_name} => {function_name}"
+                        );
+                        continue;
+                    }
+                    next.push((
+                        Key(id),
+                        AudioEventCallback {
+                            callback: CallbackFunction::Member(MemberFunc {
+                                target: target.0,
+                                function_name,
+                            }),
+                            targets: Vec::with_capacity(5),
+                            event_name,
+                            sticky: false,
+                        },
+                    ));
+                    should_publish = true;
+                    lifecycle!("{id} registered new callback for {event_name} => {function_name}",);
+                }
+                Callback::RegisterStaticFunction {
+                    event_name,
+                    class_name,
+                    function_name,
+                    id,
+                } => {
+                    if next.iter().any(|x| x.0 == Key(id)) {
+                        warns!(
+                            "{id} static callback already registered for {event_name} => {function_name}"
+                        );
+                        continue;
+                    }
+                    next.push((
+                        Key(id),
+                        AudioEventCallback {
+                            callback: CallbackFunction::Static(StaticFunc {
+                                class_name,
+                                function_name,
+                            }),
+                            targets: Vec::with_capacity(5),
+                            event_name,
+                            sticky: false,
+                        },
+                    ));
+                    should_publish = true;
+                    lifecycle!(
+                        "{id} registered new static callback for {event_name} => {function_name}",
+                    );
+                }
+                Callback::FireCallbacks(_) => continue,
+                Callback::Unregister { id } => {
+                    let Some(idx) = next.iter().position(|x| x.0 == Key(id)) else {
+                        continue;
+                    };
+                    next.remove(idx);
+                    should_publish = true;
+                }
+                Callback::Filter { id, target, add } => match add {
+                    true => {
+                        let Some(x) = next
+                            .iter_mut()
+                            .rfind(|x| x.0 == Key(id) && !x.1.targets.contains(&target))
+                        else {
+                            continue;
+                        };
+                        x.1.targets.push(target);
+                        should_publish = true;
+                    }
+                    false => {
+                        next.retain_mut(|x| {
+                            if x.0 != Key(id) {
+                                true
+                            } else if let Some(idx) = x.1.targets.iter().rposition(|x| *x == target)
+                            {
+                                x.1.targets.remove(idx);
+                                should_publish = true;
+                                !x.1.targets.is_empty()
+                            } else {
+                                true
+                            }
+                        });
+                    }
+                },
+                Callback::SetLifetime { id, sticky } => {
+                    if let Some(x) = next.iter_mut().rfind(|x| x.0 == Key(id))
+                        && x.1.sticky != sticky
+                    {
+                        x.1.sticky = sticky;
+                        should_publish = true;
+                    }
+                }
+            }
+        }
+        if should_publish {
+            publish_callbacks(next);
+        }
+    }
+    pub fn reset_callbacks(&mut self) {
+        let mut next = vec![];
+        with_callbacks(|x| {
+            next = x.to_vec();
+        });
+        let before = next.len();
+        next.retain(|x| x.1.sticky);
+        let after = next.len();
+        if before != after {
+            publish_callbacks(next);
+        }
     }
 }

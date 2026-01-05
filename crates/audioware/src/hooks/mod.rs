@@ -1,7 +1,6 @@
 use red4ext_rs::SdkEnv;
 
 mod audio;
-mod audio_interface;
 mod audio_system;
 mod entity;
 mod ink_menu_scenario;
@@ -9,6 +8,9 @@ mod sound_component;
 mod sound_engine;
 mod time_dilatable;
 mod time_system;
+
+#[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
+mod audio_interface;
 
 #[cfg(debug_assertions)]
 mod save_handling_controller;
@@ -27,6 +29,7 @@ mod script_audio_player;
 mod vo;
 
 pub fn attach(env: &SdkEnv) {
+    #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
     audio_interface::attach_hook(env);
     sound_engine::attach_hooks(env);
     sound_component::attach_hook(env);
@@ -82,7 +85,7 @@ mod offsets {
     pub const INKMENUSCENARIO_SWITCH_TO_SCENARIO: u32           = 0xE9B92059;   // 0x1409CF068 (2.3)
     pub const INKMENUSCENARIO_QUEUE_EVENT: u32                  = 0x56A9218A;   // 0x14130F6B8 (2.3)
     pub const SOUNDCOMPONENT_ONSTOPDIALOGLINE: u32              = 0xD4F11D73;   // 0x1405FCB28 (2.3)
-    #[allow(dead_code)]
+    #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
     pub const AUDIOINTERFACE_POST_EVENT: u32                    = 0xB6131578;   // 0x140130B84 (2.31)
     pub const SOUNDENGINE_POST_EVENT: u32                       = 0x594613D5;   // 0x140A30218 (2.31)
     pub const SOUNDENGINE_POST_EVENT_ONESHOT: u32               = 0xEF7F1A37;   // 0x140A2F80C (2.31)

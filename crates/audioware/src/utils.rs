@@ -43,6 +43,17 @@ macro_rules! intercept {
 #[allow(unused_imports)]
 pub(crate) use intercept;
 
+#[allow(unused_macros)]
+macro_rules! inspect {
+    ($($arg:tt)*) => {{
+        if cfg!(debug_assertions) && cfg!(feature = "research") && cfg!(feature = "redengine") {
+            $crate::utils::silly!("[{:?}] *~ {}", std::thread::current().id(), format!($($arg)*))
+        }
+    }};
+}
+#[allow(unused_imports)]
+pub(crate) use inspect;
+
 macro_rules! reports {
     ([$fn:ident];[$($red4ext:tt)*];[$($reds:tt)*]) => {{
         use ::red4ext_rs::PluginOps;

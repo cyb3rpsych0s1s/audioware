@@ -20,8 +20,8 @@ use kira::{
     track::TrackHandle,
 };
 use modulators::{Modulators, Parameter};
+pub use mutes::{AudioEventManager, Mute};
 use red4ext_rs::types::{CName, Cruid, EntityId, GameInstance, Opt};
-pub use replacement::{AudioEventManager, Mute, Replacements};
 pub use scene::{AffectedByTimeDilation, DilationUpdate, Scene};
 use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
@@ -29,6 +29,7 @@ use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
 use crate::{
     AsAudioSystem, AsGameInstance, AsGameObjectExt, ControlId, GameObject,
+    abi::{callback::Callback, lifecycle::ReplacementNotification},
     engine::{
         tracks::TrackEntryOptions,
         traits::{Handle, stop::StopBy, store::Store},
@@ -49,7 +50,7 @@ pub mod traits;
 mod callbacks;
 mod controls;
 mod modulators;
-mod replacement;
+mod mutes;
 mod scene;
 mod tracks;
 mod tweens;
@@ -67,6 +68,8 @@ pub struct Engine<B: Backend> {
     pub report: Initialization,
     pub banks: Banks,
     pub last_volume: Option<Decibels>,
+    pub pending_mutes: Vec<ReplacementNotification>,
+    pub pending_callbacks: Vec<Callback>,
 }
 
 #[cfg(debug_assertions)]
@@ -104,6 +107,8 @@ where
             tracks,
             report,
             last_volume: None,
+            pending_mutes: Vec::with_capacity(32),
+            pending_callbacks: Vec::with_capacity(32),
         })
     }
 
