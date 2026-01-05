@@ -8,6 +8,7 @@ use std::{
 };
 
 use bitflags::Flags;
+use kira::backend::Backend;
 use red4ext_rs::{
     ScriptClass,
     class_kind::Native,
@@ -17,7 +18,7 @@ use red4ext_rs::{
 use crate::{
     EventHookTypes, EventName,
     abi::lifecycle::{Lifecycle, ReplacementNotification},
-    engine::queue,
+    engine::{Engine, queue},
     utils::{fails, warns},
 };
 
@@ -121,8 +122,6 @@ pub(crate) fn reclaim_muted() {
     }
 }
 
-pub struct Replacements;
-
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
 pub struct AudioEventManager {
@@ -162,7 +161,11 @@ impl Mute for AudioEventManager {
         let Ok(event_name) = event_name.try_into() else {
             return false;
         };
-        Replacements.is_muted(event_name)
+        let mut muted = false;
+        with_muted(|x| {
+            muted = x.iter().any(|x| x.0 == event_name);
+        });
+        muted
     }
 
     #[inline]
@@ -189,7 +192,13 @@ impl Mute for AudioEventManager {
         let Ok(event_name) = event_name.try_into() else {
             return false;
         };
-        Replacements.is_specific_muted(event_name, event_type)
+        let mut muted = false;
+        with_muted(|x| {
+            muted = x
+                .iter()
+                .any(|x| x.0 == event_name && x.1.contains(event_type));
+        });
+        muted
     }
 
     #[inline]
@@ -219,88 +228,57 @@ impl Mute for AudioEventManager {
     }
 }
 
-impl Mute for Replacements {
-    type Name = EventName;
-    fn mute(&self, event_name: EventName) {
-        let mut new: Vec<(EventName, EventHookTypes)> = vec![];
-        with_muted(|x| {
-            new = x.to_vec();
-        });
-        if let Some(x) = new.iter().position(|x| x.0 == event_name) {
-            let x = new.get_mut(x).unwrap();
-            x.1.set(EventHookTypes::all(), true);
-        } else {
-            new.push((event_name, EventHookTypes::all()));
+impl<B: Backend> Engine<B> {
+    pub fn update_mutes(&mut self) {
+        if self.pending_mutes.is_empty() {
+            return;
         }
-        publish_muted(new);
-    }
-
-    fn is_muted(&self, event_name: EventName) -> bool {
-        let mut is_muted = false;
+        let mut next = vec![];
         with_muted(|x| {
-            is_muted = x.iter().any(|x| x.0 == event_name);
-            crate::utils::intercept!(
-                "is_muted {event_name} ? {is_muted} [{}]",
-                x.iter()
-                    .map(|x| format!("({}, {})", x.0, x.1))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            );
+            next = x.to_vec();
         });
-        is_muted
-    }
-
-    fn mute_specific(&self, event_name: EventName, event_type: EventHookTypes) {
-        let mut new: Vec<(EventName, EventHookTypes)> = vec![];
-        with_muted(|x| {
-            new = x.to_vec();
-        });
-        if let Some(x) = new.iter().position(|x| x.0 == event_name) {
-            let x = new.get_mut(x).unwrap();
-            x.1.insert(event_type);
-        } else {
-            new.push((event_name, event_type));
+        for pending in self.pending_mutes.drain(..) {
+            match pending {
+                ReplacementNotification::Mute(event_name) => {
+                    let Some(idx) = next.iter().position(|x| x.0 == event_name) else {
+                        next.push((event_name, EventHookTypes::all()));
+                        return;
+                    };
+                    next.get_mut(idx)
+                        .unwrap()
+                        .1
+                        .set(EventHookTypes::all(), true);
+                }
+                ReplacementNotification::MuteSpecific(event_name, event_hook_types) => {
+                    let Some(idx) = next.iter().position(|x| x.0 == event_name) else {
+                        next.push((event_name, EventHookTypes::all()));
+                        return;
+                    };
+                    next.get_mut(idx).unwrap().1.set(event_hook_types, true);
+                }
+                ReplacementNotification::Unmute(event_name) => next.retain(|x| x.0 != event_name),
+                ReplacementNotification::UnmuteSpecific(event_name, event_hook_types) => next
+                    .retain_mut(|x| {
+                        if x.0 != event_name {
+                            true
+                        } else if x.1.intersection(event_hook_types).is_empty() {
+                            false
+                        } else {
+                            x.1.set(event_hook_types, false);
+                            true
+                        }
+                    }),
+            }
         }
-        publish_muted(new);
+        publish_muted(next);
     }
-
-    fn is_specific_muted(&self, event_name: EventName, event_type: EventHookTypes) -> bool {
-        let mut is_muted = false;
+    pub fn is_specific_muted(event_name: EventName, event_type: EventHookTypes) -> bool {
+        let mut muted = false;
         with_muted(|x| {
-            is_muted = x
+            muted = x
                 .iter()
                 .any(|x| x.0 == event_name && x.1.contains(event_type));
-            crate::utils::intercept!(
-                "is_specific_muted ({event_name}, {event_type}) ? {is_muted} [{}]",
-                x.iter()
-                    .map(|x| format!("({}, {})", x.0, x.1))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            );
         });
-        is_muted
-    }
-
-    fn unmute(&self, event_name: EventName) {
-        let mut new: Vec<(EventName, EventHookTypes)> = vec![];
-        with_muted(|x| {
-            new = x.to_vec();
-        });
-        if let Some(x) = new.iter().position(|x| x.0 == event_name) {
-            new.remove(x);
-            publish_muted(new);
-        }
-    }
-
-    fn unmute_specific(&self, event_name: EventName, event_type: EventHookTypes) {
-        let mut new: Vec<(EventName, EventHookTypes)> = vec![];
-        with_muted(|x| {
-            new = x.to_vec();
-        });
-        if let Some(x) = new.iter().position(|x| x.0 == event_name) {
-            let x = new.get_mut(x).unwrap();
-            x.1.set(event_type, false);
-            publish_muted(new);
-        }
+        muted
     }
 }

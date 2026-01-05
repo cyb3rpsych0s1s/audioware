@@ -19,11 +19,11 @@ use crate::{
         command::Command,
         control::Control,
         is_in_foreground,
-        lifecycle::{Board, Lifecycle, ReplacementNotification, Session, System},
+        lifecycle::{Board, Lifecycle, Session, System},
     },
     config::BufferSize,
     engine::{
-        DilationUpdate, Mute, Replacements,
+        DilationUpdate,
         callbacks::{Dispatch, Listen},
         mutes::reclaim_muted,
         traits::{
@@ -304,24 +304,12 @@ pub fn run(
                         }
                     }
                 }
-                Lifecycle::Replacement(ReplacementNotification::Mute(event_name)) => {
-                    Replacements.mute(event_name)
-                }
-                Lifecycle::Replacement(ReplacementNotification::MuteSpecific(
-                    event_name,
-                    event_type,
-                )) => Replacements.mute_specific(event_name, event_type),
-                Lifecycle::Replacement(ReplacementNotification::Unmute(event_name)) => {
-                    Replacements.unmute(event_name)
-                }
-                Lifecycle::Replacement(ReplacementNotification::UnmuteSpecific(
-                    event_name,
-                    event_type,
-                )) => Replacements.unmute_specific(event_name, event_type),
+                Lifecycle::Replacement(x) => engine.pending_mutes.push(x),
                 Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
             }
         }
+        engine.update_mutes();
         if state.should_sync()
             && (engine.any_emitter() || engine.any_actor())
             && synchronization.try_recv().is_ok()

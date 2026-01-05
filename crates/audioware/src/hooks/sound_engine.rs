@@ -12,10 +12,12 @@ pub fn attach_hooks(env: &SdkEnv) {
 }
 
 pub mod post_event {
+    use kira::DefaultBackend;
+
     use crate::{
         AudioEventCallbackSystem, PlayingSoundId, Sound, SoundEngine,
         abi::callback::{FireCallback, FirePlayCallback, FirePlayExternalCallback},
-        engine::{Mute, Replacements},
+        engine::Engine,
     };
 
     use super::*;
@@ -113,7 +115,7 @@ pub mod post_event {
                     }));
                 }
             }
-            if !Replacements.is_specific_muted(event_name, event_type.into()) {
+            if !Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
                 crate::utils::intercept!("SoundEngine::PostEvent( {a2}, {sound} ) / {wwise_id}",);
                 return cb(a1, a2, a3);
             }
@@ -125,7 +127,11 @@ pub mod post_event {
 
         use std::ops::Not;
 
-        use crate::{OneShotSound, SoundObject, abi::callback::FirePlayOneShotCallback};
+        use kira::DefaultBackend;
+
+        use crate::{
+            OneShotSound, SoundObject, abi::callback::FirePlayOneShotCallback, engine::Engine,
+        };
 
         use super::*;
 
@@ -205,7 +211,7 @@ pub mod post_event {
                             },
                         ));
                     }
-                    if Replacements.is_specific_muted(event_name, event_type.into()) {
+                    if Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
                         return PlayingSoundId::invalid();
                     }
                     crate::utils::intercept!(
@@ -225,12 +231,13 @@ pub mod post_event {
 pub mod external_event {
     use std::ops::Not;
 
+    use kira::DefaultBackend;
     use red4ext_rs::types::ResRef;
 
     use crate::{
         AudioEventCallbackSystem, EventName, PlayingSoundId, Sound, SoundEngine,
         abi::callback::{FireCallback, FirePlayCallback, FirePlayExternalCallback},
-        engine::{Mute, Replacements},
+        engine::Engine,
     };
 
     use super::*;
@@ -311,7 +318,7 @@ pub mod external_event {
                         },
                     ));
                 }
-                if Replacements.is_specific_muted(event_name, event_type.into()) {
+                if Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
                     return PlayingSoundId::invalid();
                 }
                 crate::utils::intercept!(
@@ -325,10 +332,12 @@ pub mod external_event {
 }
 
 pub mod parameter {
+    use kira::DefaultBackend;
+
     use crate::{
         AudioEventCallbackSystem, EventName, SoundEngine, SoundObjectId,
         abi::callback::{FireCallback, FirePlayCallback, FireSetParameterCallback},
-        engine::{Mute, Replacements},
+        engine::Engine,
     };
 
     use super::*;
@@ -384,7 +393,7 @@ pub mod parameter {
                             },
                         ));
                     }
-                    if Replacements.is_specific_muted(event_name, event_type.into()) {
+                    if Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
                         return WwiseId::default().to_i64();
                     }
                     // crate::utils::intercept!(
@@ -463,7 +472,7 @@ pub mod parameter {
                     },
                 ));
             }
-            if !Replacements.is_specific_muted(event_name, event_type.into()) {
+            if !Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
                 // crate::utils::intercept!(
                 //     "SoundEngine::SetParameter( {a2}, {a3}, {a4} ) / {wwise_id}"
                 // );
@@ -475,10 +484,12 @@ pub mod parameter {
 }
 
 pub mod set_switch {
+    use kira::DefaultBackend;
+
     use crate::{
         AudioEventCallbackSystem, EventName, SoundEngine, SoundObjectId,
         abi::callback::{FireCallback, FirePlayCallback, FireSetSwitchCallback},
-        engine::{Mute, Replacements},
+        engine::Engine,
     };
 
     use super::*;
@@ -553,7 +564,7 @@ pub mod set_switch {
                     },
                 ));
             }
-            if !Replacements.is_specific_muted(event_name, event_type.into()) {
+            if !Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
                 crate::utils::intercept!(
                     "SoundEngine::SetSwitch( {a2}, {a3}, {a4} ) / switch_name_wwise_id: {switch_name_wwise_id} switch_value_wwise_id: {switch_value_wwise_id}"
                 );
@@ -565,6 +576,7 @@ pub mod set_switch {
 }
 
 pub mod event {
+    use kira::DefaultBackend;
     use red4ext_rs::VoidPtr;
 
     use crate::{
@@ -576,7 +588,7 @@ pub mod event {
             FireSetEntityNameCallback, FireStopCallback, FireStopTaggedCallback, FireTagCallback,
             FireUntagCallback,
         },
-        engine::{Mute, Replacements},
+        engine::Engine,
     };
 
     ::red4ext_rs::hooks! {
@@ -713,7 +725,7 @@ pub mod event {
                         _ => {}
                     };
                 };
-                if Replacements.is_specific_muted(event_name, event_type.into()) {
+                if Engine::<DefaultBackend>::is_specific_muted(event_name, event_type.into()) {
                     return;
                 }
                 crate::utils::intercept!(
