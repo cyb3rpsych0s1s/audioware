@@ -73,12 +73,12 @@ mod offsets {
     pub const AUDIOSYSTEM_SWITCH: u32                           = 0x15081DEA;   // 0x140291688 (2.12a)
     #[cfg(debug_assertions)]
     pub const ENTITY_DISPOSE: u32                               = 0x3221A80;    // 0x14232C744 (2.13)
-    pub const ENTITY_QUEUEEVENT: u32                            = 0x5E7D1BB0;   // 0x1404EA45C (2.31)
     pub const UISYSTEM_QUEUEEVENT: u32                          = 0x90231F41;   // 0x14062D454 (2.31)
     // note: inkIGameController.QueueEvent
     // and inkLogicController.QueueEvent share same underlying address
     pub const INKIGAMECONTROLLER_QUEUEEVENT: u32                = 0x5BEB21A4;   // 0x1408A7E88 (2.31)
     pub const INKMENUSCENARIO_QUEUEEVENT: u32                   = 0x56A9218A;   // 0x14130F7E8 (2.31)
+    pub const ENTITY_QUEUE_EVENT: u32                           = 0x5E7D1BB0;   // 0x1404EA45C (2.31)
     pub const TIMEDILATABLE_SETINDIVIDUALTIMEDILATION: u32      = 0x80102488;   // 0x1423AF554 (2.13)
     pub const TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION: u32    = 0xDA20256B;   // 0x14147B424 (2.13)
     pub const TIMESYSTEM_SETTIMEDILATION: u32                   = 0xA1DC1F92;   // 0x140A46EE4 (2.13)
