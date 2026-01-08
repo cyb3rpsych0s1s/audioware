@@ -57,7 +57,7 @@ mod queue_event {
 
     attach_native_func!(
         "Entity::QueueEvent",
-        super::super::offsets::ENTITY_QUEUEEVENT
+        super::super::offsets::ENTITY_QUEUE_EVENT
     );
 
     unsafe extern "C" fn detour(

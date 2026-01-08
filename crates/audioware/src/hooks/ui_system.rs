@@ -1,15 +1,13 @@
-use std::mem;
-
 use red4ext_rs::{
-    ScriptClass, VoidPtr,
+    VoidPtr,
     types::{IScriptable, Ref, StackFrame},
 };
 
-use crate::{Event, VORequestEvt, abi::DynamicSoundEvent, attach_native_func, utils::intercept};
+use crate::{Event, abi::DynamicSoundEvent, attach_native_func, utils::intercept};
 
 attach_native_func!(
-    "inkLogicController::QueueEvent",
-    super::offsets::INKIWIDGETCONTROLLER_QUEUE_EVENT // not a mistake, see comments
+    "gameuiGameSystemUI::QueueEvent",
+    super::offsets::UISYSTEM_QUEUE_EVENT
 );
 
 unsafe extern "C" fn detour(
@@ -24,29 +22,19 @@ unsafe extern "C" fn detour(
         let state = frame.args_state();
 
         let event: Ref<Event> = StackFrame::get_arg(frame);
+
         let mut passthru = true;
-        if event.is_a::<VORequestEvt>() {
-            let vo: Ref<VORequestEvt> = mem::transmute(event.clone());
-            if let Some(vo) = vo.fields() {
-                intercept!(
-                    "inkLogicController::QueueEvent: {}
-- vo_id: {:?}
-- speaker_name: {}",
-                    VORequestEvt::NAME,
-                    vo.vo_id,
-                    vo.speaker_name.to_string().as_str(),
-                );
-            }
-        } else if event.is_a::<DynamicSoundEvent>() {
+        if event.is_a::<DynamicSoundEvent>() {
             let dynamic: Ref<DynamicSoundEvent> = std::mem::transmute(event);
             if let Some(dynamic) = dynamic.fields() {
                 passthru = !dynamic.enqueue_and_play(None, None);
                 intercept!(
-                    "inkMenuScenario::QueueEvent for DynamicSoundEvent ({})",
+                    "gameuiGameSystemUI::QueueEvent for DynamicSoundEvent ({})",
                     dynamic.name.get()
                 );
             }
         }
+
         frame.restore_args(state);
         if passthru {
             cb(i, frame as *mut _, a3, a4);
