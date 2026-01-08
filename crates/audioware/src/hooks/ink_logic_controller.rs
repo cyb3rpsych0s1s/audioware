@@ -8,8 +8,8 @@ use red4ext_rs::{
 use crate::{Event, VORequestEvt, abi::DynamicSoundEvent, attach_native_func, utils::intercept};
 
 attach_native_func!(
-    "inkLogicController::QueueEvent",
-    super::offsets::INKIGAMECONTROLLER_QUEUE_EVENT // not a mistake, see comments
+    "inkLogicController/::QueueEvent",
+    super::offsets::INKIWIDGETCONTROLLER_QUEUE_EVENT // not a mistake, see comments
 );
 
 unsafe extern "C" fn detour(
