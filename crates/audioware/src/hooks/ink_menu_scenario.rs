@@ -43,11 +43,14 @@ mod switch_to_scenario {
 
 mod queue_event {
     use red4ext_rs::{
-        ScriptClass, VoidPtr,
+        VoidPtr,
         types::{IScriptable, Ref, StackFrame},
     };
 
-    use crate::{Event, UIInGameNotificationRemoveEvent, attach_native_func, utils::intercept};
+    use crate::{
+        Event, UIInGameNotificationRemoveEvent, abi::DynamicSoundEvent, attach_native_func,
+        utils::intercept,
+    };
 
     attach_native_func!(
         "inkMenuScenario::QueueEvent",
@@ -66,16 +69,27 @@ mod queue_event {
             let state = frame.args_state();
 
             let event: Ref<Event> = StackFrame::get_arg(frame);
-            frame.restore_args(state);
 
-            let classname = event
-                .fields()
-                .map(|x| x.as_ref().class().name().as_str())
-                .unwrap_or("unknown class");
-            let dispatch = classname == UIInGameNotificationRemoveEvent::NAME;
-            intercept!("inkMenuScenario::QueueEvent: {classname}",);
-            cb(i, frame as *mut _, a3, a4);
-            if dispatch {
+            let mut passthru = true;
+            let mut late_dispatch = false;
+            if event.is_a::<DynamicSoundEvent>() {
+                let dynamic: Ref<DynamicSoundEvent> = std::mem::transmute(event);
+                if let Some(dynamic) = dynamic.fields() {
+                    passthru = !dynamic.enqueue_and_play(None, None);
+                    intercept!(
+                        "inkMenuScenario::QueueEvent for DynamicSoundEvent ({})",
+                        dynamic.name.get()
+                    );
+                }
+            } else if event.is_a::<UIInGameNotificationRemoveEvent>() {
+                late_dispatch = true;
+            }
+
+            frame.restore_args(state);
+            if passthru {
+                cb(i, frame as *mut _, a3, a4);
+            }
+            if late_dispatch {
                 crate::engine::queue::notify(
                     crate::abi::lifecycle::Lifecycle::UIInGameNotificationRemove,
                 );

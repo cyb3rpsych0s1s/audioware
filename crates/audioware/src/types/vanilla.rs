@@ -23,6 +23,8 @@ mod fixed_point;
 pub use fixed_point::*;
 mod game_object;
 pub use game_object::*;
+mod menu;
+pub use menu::*;
 mod orphans;
 pub use orphans::*;
 mod puppet;

@@ -3,11 +3,13 @@ use red4ext_rs::SdkEnv;
 mod audio;
 mod audio_system;
 mod entity;
+mod ink_logic_controller;
 mod ink_menu_scenario;
 mod sound_component;
 mod sound_engine;
 mod time_dilatable;
 mod time_system;
+mod ui_system;
 
 #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
 mod audio_interface;
@@ -17,8 +19,6 @@ mod save_handling_controller;
 
 #[cfg(feature = "research")]
 mod events;
-#[cfg(feature = "research")]
-mod ink_logic_controller;
 #[cfg(feature = "research")]
 mod localization_manager;
 #[cfg(feature = "research")]
@@ -39,12 +39,13 @@ pub fn attach(env: &SdkEnv) {
     time_system::attach_hooks(env);
     ink_menu_scenario::attach_hooks(env);
     entity::attach_hooks(env);
+    ui_system::attach_hook(env);
+    ink_logic_controller::attach_hook(env);
 
     #[cfg(feature = "research")]
     {
         onscreen_vo::attach_hook(env);
         localization_manager::attach_hook(env);
-        ink_logic_controller::attach_hook(env);
         script_audio_player::attach_hooks(env);
     }
 
@@ -73,20 +74,19 @@ mod offsets {
     pub const AUDIOSYSTEM_SWITCH: u32                           = 0x15081DEA;   // 0x140291688 (2.12a)
     #[cfg(debug_assertions)]
     pub const ENTITY_DISPOSE: u32                               = 0x3221A80;    // 0x14232C744 (2.13)
-    pub const UISYSTEM_QUEUEEVENT: u32                          = 0x90231F41;   // 0x14062D454 (2.31)
-    // note: inkIGameController.QueueEvent
-    // and inkLogicController.QueueEvent share same underlying address
-    pub const INKIGAMECONTROLLER_QUEUEEVENT: u32                = 0x5BEB21A4;   // 0x1408A7E88 (2.31)
-    pub const INKMENUSCENARIO_QUEUEEVENT: u32                   = 0x56A9218A;   // 0x14130F7E8 (2.31)
     pub const ENTITY_QUEUE_EVENT: u32                           = 0x5E7D1BB0;   // 0x1404EA45C (2.31)
     pub const TIMEDILATABLE_SETINDIVIDUALTIMEDILATION: u32      = 0x80102488;   // 0x1423AF554 (2.13)
     pub const TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION: u32    = 0xDA20256B;   // 0x14147B424 (2.13)
     pub const TIMESYSTEM_SETTIMEDILATION: u32                   = 0xA1DC1F92;   // 0x140A46EE4 (2.13)
     pub const TIMESYSTEM_UNSETTIMEDILATION: u32                 = 0xF0652075;   // 0x1409BAD34 (2.13)
-    // gameuiSaveHandlingController
-    // note: LoadSaveInGame and LoadModdedSave share same underlying address
+    /// gameuiSaveHandlingController
+    /// note: LoadSaveInGame and LoadModdedSave share same underlying address
     #[cfg(debug_assertions)]
     pub const SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME: u32     = 0x9AB824D9;   // 0x14083FB6C (2.13)
+    pub const UISYSTEM_QUEUE_EVENT: u32                         = 0x90231F41;   // 0x14062D454 (2.31)
+    /// note: inkIGameController.QueueEvent
+    /// and inkLogicController.QueueEvent share same underlying address
+    pub const INKIGAMECONTROLLER_QUEUE_EVENT: u32               = 0x5BEB21A4;   // 0x1408A7E88 (2.31)
     pub const INKMENUSCENARIO_SWITCH_TO_SCENARIO: u32           = 0xE9B92059;   // 0x1409CF068 (2.3)
     pub const INKMENUSCENARIO_QUEUE_EVENT: u32                  = 0x56A9218A;   // 0x14130F6B8 (2.3)
     pub const SOUNDCOMPONENT_ONSTOPDIALOGLINE: u32              = 0xD4F11D73;   // 0x1405FCB28 (2.3)
@@ -102,6 +102,7 @@ mod offsets {
 
     #[cfg(feature = "research")]
     mod natives {
+        #[allow(dead_code, reason = "in 2.31, 0xC87F2007 actually points out to 0x1408A7E88 (see above)")]
         pub const INKLOGICCONTROLLER_QUEUE_EVENT: u32               = 0xC87F2007;   // 0x1408663B0 (2.3)
         pub const VO_STORAGE_GET_VO_FILE: u32                       = 0x899C28D0;   // 0x140A93F84 (2.31)
         pub const LOCALIZATIONMANAGER_RESOLVEFILENAME: u32          = 0x8D2C2B6E;   // 0x142045B38 (2.3)
