@@ -1,7 +1,5 @@
-use std::sync::{
-    LazyLock,
-    atomic::{AtomicUsize, Ordering},
-};
+use portable_atomic::AtomicUsize;
+use std::sync::{LazyLock, atomic::Ordering};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ControlId(usize);

@@ -1,18 +1,15 @@
-use std::{
-    cell::{Cell, UnsafeCell},
-    collections::VecDeque,
-    sync::{
-        OnceLock,
-        atomic::{AtomicPtr, AtomicU64, Ordering},
-    },
-};
-
 use bitflags::Flags;
 use kira::backend::Backend;
+use portable_atomic::{AtomicPtr, AtomicU64};
 use red4ext_rs::{
     ScriptClass,
     class_kind::Native,
     types::{CName, IScriptable},
+};
+use std::{
+    cell::{Cell, UnsafeCell},
+    collections::VecDeque,
+    sync::{OnceLock, atomic::Ordering},
 };
 
 use crate::{

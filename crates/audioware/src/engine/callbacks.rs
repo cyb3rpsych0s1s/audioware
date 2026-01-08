@@ -1,16 +1,13 @@
-use std::{
-    cell::{Cell, UnsafeCell},
-    collections::VecDeque,
-    sync::{
-        LazyLock, OnceLock,
-        atomic::{AtomicPtr, AtomicU64, AtomicUsize, Ordering},
-    },
-};
-
 use kira::backend::Backend;
+use portable_atomic::{AtomicPtr, AtomicU64, AtomicUsize};
 use red4ext_rs::{
     InvokeError, RttiSystem, ScriptClass, ScriptClassOps,
     types::{CName, Function, IScriptable, Ref, TaggedType, WeakRef},
+};
+use std::{
+    cell::{Cell, UnsafeCell},
+    collections::VecDeque,
+    sync::{LazyLock, OnceLock, atomic::Ordering},
 };
 
 use crate::{

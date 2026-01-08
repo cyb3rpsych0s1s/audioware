@@ -26,6 +26,7 @@ humantime.workspace = true
 kira.workspace = true
 mint = { version = "0.5.9" }
 parking_lot = "0.12.4"
+portable-atomic = { version = "1", default-features = false }
 red4ext-rs.workspace = true
 rust-ini = "0.21.1"
 snafu.workspace = true

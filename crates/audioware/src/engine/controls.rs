@@ -1,7 +1,7 @@
-use std::sync::{LazyLock, atomic::AtomicUsize};
-
 use audioware_core::Amplitude;
 use kira::{Tween, backend::Backend};
+use portable_atomic::AtomicUsize;
+use std::sync::LazyLock;
 
 use crate::{
     ControlId,
