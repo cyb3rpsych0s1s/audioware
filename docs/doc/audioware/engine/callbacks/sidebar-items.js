@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["TLS_GEN_CB","TLS_LEN_CB","TLS_PTR_CB"],"enum":["CallbackFunction"],"fn":["inner_call","publish_callbacks","reclaim_callbacks","retired","with_callbacks"],"static":["COUNTER","CURRENT_CB","GENERATION_CB","RETIRED_CB"],"struct":["AudioEventCallback","Header","Key","MemberFunc","Retired","StaticFunc"],"trait":["Call","Dispatch"]};

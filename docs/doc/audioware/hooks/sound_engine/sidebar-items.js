@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["attach_hooks"],"mod":["event","external_event","parameter","post_event","set_switch"]};

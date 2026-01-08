@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["control","default_device_and_config","forward","load","notify","run","send","spawn"],"static":["CALLBACKS","COMMAND","CONTROLS","LIFECYCLE","THREAD"],"struct":["Flags"]};

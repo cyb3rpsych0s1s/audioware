@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["EVENT_MANAGER_PADDING","PADDING_UNK00","PADDING_UNK148","PADDING_UNK157"],"enum":["EntityStatus"],"struct":["Entity","EntityGameInterface"],"trait":["AsEntity"]};
