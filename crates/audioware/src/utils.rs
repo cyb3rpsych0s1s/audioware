@@ -180,5 +180,11 @@ fn console(msg: impl Into<String>, func_name: &str) {
 }
 
 pub fn get_base_offset() -> HMODULE {
-    unsafe { GetModuleHandleW(w!("Cyberpunk2077.exe")) }.unwrap()
+    match unsafe { GetModuleHandleW(w!("Cyberpunk2077.exe")) } {
+        Ok(x) => x,
+        Err(e) => {
+            fails!("unable to determine Cyberpunk2077.exe base address: {e}");
+            HMODULE(std::ptr::null_mut())
+        }
+    }
 }
