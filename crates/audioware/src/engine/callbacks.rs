@@ -65,9 +65,9 @@ fn retired() -> &'static Retired {
 #[inline]
 pub(crate) fn with_callbacks<F: FnOnce(&[(Key, AudioEventCallback)])>(f: F) {
     TLS_GEN_CB.with(|g| {
-        let generation = GENERATION_CB.load(Ordering::Acquire);
+        let generation = GENERATION_CB.load(Ordering::SeqCst);
         if g.get() != generation {
-            let h = CURRENT_CB.load(Ordering::Acquire);
+            let h = CURRENT_CB.load(Ordering::SeqCst);
             if !h.is_null() {
                 unsafe {
                     TLS_PTR_CB.set((*h).ptr);
@@ -97,8 +97,8 @@ pub(crate) fn publish_callbacks(mut data: Vec<(Key, AudioEventCallback)>) {
         len,
         _pad: [0; 6],
     }));
-    let prev = CURRENT_CB.swap(header, Ordering::Release);
-    let generation = GENERATION_CB.fetch_add(1, Ordering::Release) + 1;
+    let prev = CURRENT_CB.swap(header, Ordering::SeqCst);
+    let generation = GENERATION_CB.fetch_add(1, Ordering::SeqCst) + 1;
     if !prev.is_null() {
         unsafe {
             let list = &mut *retired().list.get();
@@ -109,7 +109,7 @@ pub(crate) fn publish_callbacks(mut data: Vec<(Key, AudioEventCallback)>) {
 
 static COUNTER: LazyLock<AtomicUsize> = LazyLock::new(|| AtomicUsize::new(0));
 pub(crate) fn reclaim_callbacks() {
-    let min_gen = GENERATION_CB.load(Ordering::Acquire);
+    let min_gen = GENERATION_CB.load(Ordering::SeqCst);
     unsafe {
         let list = &mut *retired().list.get();
         while let Some(&(hdr, generation)) = list.front() {
@@ -175,7 +175,7 @@ impl AudioEventCallbackSystem {
             warns!("target is null");
             return Ref::default();
         }
-        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let id = COUNTER.fetch_add(1, Ordering::SeqCst);
         queue::forward(Callback::RegisterFunction {
             event_name,
             target: target.downgrade().into(),
@@ -205,7 +205,7 @@ impl AudioEventCallbackSystem {
             warns!("function_name is invalid ({})", function_name.as_str());
             return Ref::default();
         };
-        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let id = COUNTER.fetch_add(1, Ordering::SeqCst);
         queue::forward(Callback::RegisterStaticFunction {
             event_name,
             class_name,

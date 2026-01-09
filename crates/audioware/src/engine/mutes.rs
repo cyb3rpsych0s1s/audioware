@@ -62,9 +62,9 @@ fn retired() -> &'static Retired {
 #[inline]
 pub(crate) fn with_mutes<F: FnOnce(&[(EventName, EventHookTypes)])>(f: F) {
     TLS_GEN.with(|g| {
-        let generation = GENERATION.load(Ordering::Acquire);
+        let generation = GENERATION.load(Ordering::SeqCst);
         if g.get() != generation {
-            let h = CURRENT.load(Ordering::Acquire);
+            let h = CURRENT.load(Ordering::SeqCst);
             if !h.is_null() {
                 unsafe {
                     TLS_PTR.set((*h).ptr);
@@ -94,8 +94,8 @@ pub(crate) fn publish_mutes(mut data: Vec<(EventName, EventHookTypes)>) {
         len,
         _pad: [0; 6],
     }));
-    let prev = CURRENT.swap(header, Ordering::Release);
-    let generation = GENERATION.fetch_add(1, Ordering::Release) + 1;
+    let prev = CURRENT.swap(header, Ordering::SeqCst);
+    let generation = GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
     if !prev.is_null() {
         unsafe {
             let list = &mut *retired().list.get();
@@ -105,7 +105,7 @@ pub(crate) fn publish_mutes(mut data: Vec<(EventName, EventHookTypes)>) {
 }
 
 pub(crate) fn reclaim_mutes() {
-    let min_gen = GENERATION.load(Ordering::Acquire);
+    let min_gen = GENERATION.load(Ordering::SeqCst);
     unsafe {
         let list = &mut *retired().list.get();
         while let Some(&(hdr, generation)) = list.front() {
