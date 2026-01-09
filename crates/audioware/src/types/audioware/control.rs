@@ -8,7 +8,7 @@ pub struct ControlId(usize);
 
 impl ControlId {
     pub(crate) fn new(generator: &LazyLock<AtomicUsize>) -> Self {
-        Self(generator.fetch_add(1, Ordering::Relaxed))
+        Self(generator.fetch_add(1, Ordering::SeqCst))
     }
 }
 
