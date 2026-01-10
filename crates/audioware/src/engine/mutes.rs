@@ -1,12 +1,3 @@
-use std::{
-    cell::{Cell, UnsafeCell},
-    collections::VecDeque,
-    sync::{
-        OnceLock,
-        atomic::{AtomicPtr, AtomicU64, Ordering},
-    },
-};
-
 use bitflags::Flags;
 use kira::backend::Backend;
 use red4ext_rs::{
@@ -18,107 +9,16 @@ use red4ext_rs::{
 use crate::{
     EventHookTypes, EventName,
     abi::lifecycle::{Lifecycle, ReplacementNotification},
-    engine::{Engine, queue},
+    cache::cache,
+    engine::{
+        Engine,
+        mutes::cache::{publish_entries, reclaim_entries, with_entries},
+        queue,
+    },
     utils::{fails, warns},
 };
 
-#[repr(C, align(64))]
-struct Header {
-    ptr: *const (EventName, EventHookTypes),
-    len: usize,
-    _pad: [u64; 6],
-}
-
-struct Retired {
-    list: UnsafeCell<VecDeque<(*mut Header, u64)>>,
-}
-
-/// Safety: single-writer invariant
-unsafe impl Sync for Header {}
-/// Safety: single-writer invariant
-unsafe impl Send for Header {}
-/// Safety: single-writer invariant
-unsafe impl Sync for Retired {}
-/// Safety: single-writer invariant
-unsafe impl Send for Retired {}
-
-static CURRENT: AtomicPtr<Header> = AtomicPtr::new(std::ptr::null_mut());
-static GENERATION: AtomicU64 = AtomicU64::new(0);
-
-static RETIRED: OnceLock<Retired> = OnceLock::new();
-
-thread_local! {
-    static TLS_PTR: Cell<*const (EventName, EventHookTypes)> = const { Cell::new(std::ptr::null_mut()) };
-    static TLS_LEN: Cell<usize> = const { Cell::new(0) };
-    static TLS_GEN: Cell<u64> = const { Cell::new(0) };
-}
-
-fn retired() -> &'static Retired {
-    RETIRED.get_or_init(|| Retired {
-        list: UnsafeCell::new(VecDeque::new()),
-    })
-}
-
-#[inline]
-pub(crate) fn with_mutes<F: FnOnce(&[(EventName, EventHookTypes)])>(f: F) {
-    TLS_GEN.with(|g| {
-        let generation = GENERATION.load(Ordering::Acquire);
-        if g.get() != generation {
-            let h = CURRENT.load(Ordering::Acquire);
-            if !h.is_null() {
-                unsafe {
-                    TLS_PTR.set((*h).ptr);
-                    TLS_LEN.set((*h).len);
-                    g.set(generation);
-                }
-            }
-        }
-        let ptr = TLS_PTR.get();
-        let len = TLS_LEN.get();
-        if !ptr.is_null() {
-            unsafe { f(std::slice::from_raw_parts(ptr, len)) }
-        }
-    });
-}
-
-pub(crate) fn publish_mutes(mut data: Vec<(EventName, EventHookTypes)>) {
-    if data.capacity() < data.len() * 2 {
-        data.reserve(data.len());
-    }
-
-    let ptr = data.as_ptr();
-    let len = data.len();
-    std::mem::forget(data);
-    let header = Box::into_raw(Box::new(Header {
-        ptr,
-        len,
-        _pad: [0; 6],
-    }));
-    let prev = CURRENT.swap(header, Ordering::Release);
-    let generation = GENERATION.fetch_add(1, Ordering::Release) + 1;
-    if !prev.is_null() {
-        unsafe {
-            let list = &mut *retired().list.get();
-            list.push_back((prev, generation));
-        }
-    }
-}
-
-pub(crate) fn reclaim_mutes() {
-    let min_gen = GENERATION.load(Ordering::Acquire);
-    unsafe {
-        let list = &mut *retired().list.get();
-        while let Some(&(hdr, generation)) = list.front() {
-            if generation + 2 < min_gen {
-                let h = Box::from_raw(hdr);
-                let _ = Vec::from_raw_parts(h.ptr as *mut u64, h.len, h.len);
-                list.pop_front();
-            } else {
-                break;
-            }
-        }
-    }
-}
+cache!(crate::EventName, crate::EventHookTypes);
 
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
@@ -160,7 +60,7 @@ impl Mute for AudioEventManager {
             return false;
         };
         let mut muted = false;
-        with_mutes(|x| {
+        with_entries(|x| {
             muted = x.iter().any(|x| x.0 == event_name);
         });
         muted
@@ -191,7 +91,7 @@ impl Mute for AudioEventManager {
             return false;
         };
         let mut muted = false;
-        with_mutes(|x| {
+        with_entries(|x| {
             muted = x
                 .iter()
                 .any(|x| x.0 == event_name && x.1.contains(event_type));
@@ -232,7 +132,7 @@ impl<B: Backend> Engine<B> {
             return;
         }
         let mut next = vec![];
-        with_mutes(|x| {
+        with_entries(|x| {
             next = x.to_vec();
         });
         let mut should_publish = false;
@@ -287,16 +187,19 @@ impl<B: Backend> Engine<B> {
             }
         }
         if should_publish {
-            publish_mutes(next);
+            publish_entries(next);
         }
     }
     pub fn is_specific_muted(event_name: EventName, event_type: EventHookTypes) -> bool {
         let mut muted = false;
-        with_mutes(|x| {
+        with_entries(|x| {
             muted = x
                 .iter()
                 .any(|x| x.0 == event_name && x.1.contains(event_type));
         });
         muted
+    }
+    pub fn reclaim_mutes(&mut self) {
+        reclaim_entries();
     }
 }
