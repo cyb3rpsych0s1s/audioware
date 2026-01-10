@@ -24,7 +24,7 @@ use crate::{
     config::BufferSize,
     engine::{
         DilationUpdate,
-        callbacks::{Dispatch, reclaim_callbacks},
+        callbacks::Dispatch,
         mutes::reclaim_mutes,
         traits::{
             panning::SetControlledPanning,
@@ -319,7 +319,7 @@ pub fn run(
         if engine.any_handle() && reclamation.try_recv().is_ok() {
             engine.reclaim();
             reclaim_mutes();
-            reclaim_callbacks();
+            engine.reclaim_callbacks();
         }
         for c in rc.try_iter().take(8) {
             lifecycle!("> {c}");
