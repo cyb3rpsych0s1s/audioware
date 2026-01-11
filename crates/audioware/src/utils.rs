@@ -5,10 +5,7 @@ use red4ext_rs::{
     IntoRepr, RttiSystem, log,
     types::{CName, ScriptRef},
 };
-use windows::{
-    Win32::{Foundation::HMODULE, System::LibraryLoader::GetModuleHandleW},
-    core::w,
-};
+use windows::Win32::{Foundation::HMODULE, System::LibraryLoader::GetModuleHandleW};
 
 use crate::Audioware;
 
@@ -180,5 +177,10 @@ fn console(msg: impl Into<String>, func_name: &str) {
 }
 
 pub fn get_base_offset() -> HMODULE {
-    unsafe { GetModuleHandleW(w!("Cyberpunk2077.exe")) }.unwrap()
+    match unsafe { GetModuleHandleW(None) } {
+        Ok(x) => x,
+        Err(e) => {
+            panic!("unable to determine Cyberpunk base address: {e}");
+        }
+    }
 }

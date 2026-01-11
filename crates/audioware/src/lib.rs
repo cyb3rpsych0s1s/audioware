@@ -13,6 +13,7 @@ pub use types::*;
 pub mod debug;
 
 mod abi;
+mod cache;
 mod config;
 mod engine;
 mod error;
