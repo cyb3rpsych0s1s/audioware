@@ -184,8 +184,7 @@ impl Emitters {
         control_id: Option<ControlId>,
     ) -> Result<(f32, Option<CName>), Error>
     where
-        StaticSoundData: With<Option<T>>,
-        StreamingSoundData<FromFileError>: With<Option<T>>,
+        Either<StaticSoundData, StreamingSoundData<FromFileError>>: With<Option<T>>,
         T: AffectedByTimeDilation
             + ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>>,
     {
@@ -203,7 +202,7 @@ impl Emitters {
             .as_ref()
             .map(AffectedByTimeDilation::affected_by_time_dilation)
             .unwrap_or(true);
-        slot.play_and_store(event_name, dilatable, data, control_id)
+        slot.play_and_store(event_name, dilatable, data.with(ext), control_id)
             .map_err(|e| match e {
                 Either::Left(e) => Error::Engine {
                     source: EngineError::Sound { source: e },
