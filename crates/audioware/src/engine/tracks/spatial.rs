@@ -36,7 +36,7 @@ impl Spatial {
             .attenuation_function(attenuation_function.unwrap_or(kira::Easing::Linear));
         // sum used to have to be 1.0 otherwise sounds crackled, what now?
         if affected_by_reverb_mix {
-            builder = builder.with_send(ambience.reverb(), amplitude!(0.15).as_decibels());
+            builder = builder.with_send(ambience.reverb(), amplitude!(0.5).as_decibels());
         }
         if affected_by_environmental_preset {
             builder = builder.with_send(ambience.environmental(), amplitude!(0.5).as_decibels());

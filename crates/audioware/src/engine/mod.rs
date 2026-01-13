@@ -420,8 +420,7 @@ where
         ext: Option<T>,
         control_id: Option<ControlId>,
     ) where
-        StaticSoundData: With<Option<T>>,
-        StreamingSoundData<FromFileError>: With<Option<T>>,
+        Either<StaticSoundData, StreamingSoundData<FromFileError>>: With<Option<T>>,
         T: AffectedByTimeDilation
             + ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>>,
     {
