@@ -18,7 +18,7 @@ use red4ext_rs::{
 
 use crate::{
     AUDIOWARE_VERSION, AsEntity, ControlId, ElasticTween, EmitterDistances, EmitterSettings,
-    Entity, EventName, LinearTween, ToEasing, Tween, abi::fails, engine::Engine,
+    Entity, Event, EventName, LinearTween, ToEasing, Tween, abi::fails, engine::Engine,
     error::ValidationError, get_player,
 };
 
@@ -347,7 +347,7 @@ unsafe impl ScriptClass for AudioSystemExt {
     const NAME: &'static str = "AudioSystemExt";
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Default, Copy)]
 pub struct TagName(CName);
 
 impl TagName {
@@ -359,6 +359,12 @@ impl TagName {
     }
     pub fn as_str(&self) -> &str {
         self.0.as_str()
+    }
+}
+
+impl std::fmt::Display for TagName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "tag:{}", self.0)
     }
 }
 
@@ -426,7 +432,7 @@ impl Deref for TargetFootprint {
 #[derive(Debug, Default, Clone)]
 #[repr(C)]
 pub struct DynamicSoundEvent {
-    base: IScriptable,
+    base: Event,
     pub(crate) id: OnceLock<ControlId>,
     pub(crate) name: Cell<EventName>,
     pub(crate) ext: RefCell<Option<Settings>>,
@@ -439,7 +445,7 @@ unsafe impl ScriptClass for DynamicSoundEvent {
 
 impl AsRef<IScriptable> for DynamicSoundEvent {
     fn as_ref(&self) -> &IScriptable {
-        &self.base
+        self.base.as_ref()
     }
 }
 
@@ -450,6 +456,38 @@ impl DynamicSoundEvent {
         };
         Ref::<Self>::new_with(|x| {
             x.name = Cell::new(name);
+            x.ext.replace(Ref::clone(&ext).into_settings());
+        })
+        .unwrap_or_default()
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct DynamicEmitterEvent {
+    base: Event,
+    pub(crate) id: OnceLock<ControlId>,
+    pub(crate) name: Cell<EventName>,
+    pub(crate) tag_name: Cell<TagName>,
+    pub(crate) ext: RefCell<Option<Settings>>,
+}
+
+unsafe impl ScriptClass for DynamicEmitterEvent {
+    type Kind = Native;
+    const NAME: &'static str = "Audioware.DynamicEmitterEvent";
+}
+
+impl DynamicEmitterEvent {
+    pub(crate) fn create(name: CName, tag_name: CName, ext: Ref<AudioSettingsExt>) -> Ref<Self> {
+        let Ok(name) = EventName::try_from(name) else {
+            return Ref::default();
+        };
+        let Ok(tag_name) = TagName::try_new(tag_name) else {
+            return Ref::default();
+        };
+        Ref::<Self>::new_with(|x| {
+            x.name = Cell::new(name);
+            x.tag_name = Cell::new(tag_name);
             x.ext.replace(Ref::clone(&ext).into_settings());
         })
         .unwrap_or_default()

@@ -15,16 +15,22 @@ pub use spatial::Spatial;
 use v::V;
 
 use crate::{
+    ControlId,
     engine::{
         AffectedByTimeDilation,
         traits::{
             DualHandles,
             clear::Clear,
             dilation::{Comparable, SyncDilationBy},
-            pause::Pause,
+            panning::SetControlledPanning,
+            pause::{Pause, PauseControlled},
+            playback::SetControlledPlaybackRate,
+            position::PositionControlled,
             reclaim::Reclaim,
-            resume::Resume,
-            stop::{Stop, StopBy},
+            resume::{Resume, ResumeControlled, ResumeControlledAt},
+            seek::{SeekControlledBy, SeekControlledTo},
+            stop::{Stop, StopBy, StopControlled},
+            volume::SetControlledVolume,
         },
     },
     error::Error,
@@ -131,5 +137,70 @@ impl Tracks {
     pub fn clear(&mut self) {
         self.stop(IMMEDIATELY);
         self.handles.clear();
+    }
+}
+
+impl SetControlledVolume for Tracks {
+    fn set_controlled_volume(
+        &mut self,
+        id: crate::ControlId,
+        amplitude: audioware_core::Amplitude,
+        tween: Tween,
+    ) {
+        self.handles.set_controlled_volume(id, amplitude, tween);
+    }
+}
+
+impl SetControlledPlaybackRate for Tracks {
+    fn set_controlled_playback_rate(&mut self, id: ControlId, rate: f64, tween: Tween) {
+        self.handles.set_controlled_playback_rate(id, rate, tween);
+    }
+}
+
+impl SetControlledPanning for Tracks {
+    fn set_controlled_panning(&mut self, id: ControlId, panning: kira::Panning, tween: Tween) {
+        self.handles.set_controlled_panning(id, panning, tween);
+    }
+}
+
+impl PositionControlled for Tracks {
+    fn position_controlled(&mut self, id: ControlId, sender: crossbeam::channel::Sender<f32>) {
+        self.handles.position_controlled(id, sender);
+    }
+}
+
+impl StopControlled for Tracks {
+    fn stop_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.handles.stop_controlled(id, tween);
+    }
+}
+
+impl PauseControlled for Tracks {
+    fn pause_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.handles.pause_controlled(id, tween);
+    }
+}
+
+impl ResumeControlled for Tracks {
+    fn resume_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.handles.resume_controlled(id, tween);
+    }
+}
+
+impl ResumeControlledAt for Tracks {
+    fn resume_controlled_at(&mut self, id: ControlId, delay: f64, tween: Tween) {
+        self.handles.resume_controlled_at(id, delay, tween);
+    }
+}
+
+impl SeekControlledTo for Tracks {
+    fn seek_controlled_to(&mut self, id: ControlId, position: f64) {
+        self.handles.seek_controlled_to(id, position);
+    }
+}
+
+impl SeekControlledBy for Tracks {
+    fn seek_controlled_by(&mut self, id: ControlId, amount: f64) {
+        self.handles.seek_controlled_by(id, amount);
     }
 }

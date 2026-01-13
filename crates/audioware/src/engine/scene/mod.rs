@@ -9,12 +9,22 @@ use listener::Listener;
 use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 
 use crate::{
-    AsEntity, AsScriptedPuppet, AsTimeDilatable, AvObject, BikeObject, CarObject, Device, Entity,
-    GamedataNpcType, ScriptedPuppet, TankObject, TimeDilatable, VehicleObject,
+    AsEntity, AsScriptedPuppet, AsTimeDilatable, AvObject, BikeObject, CarObject, ControlId,
+    Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject, TimeDilatable, VehicleObject,
     engine::{
         scene::actors::{Actors, slot::ActorSlot},
         tracks::Spatial,
-        traits::{clear::Clear, pause::Pause, reclaim::Reclaim, resume::Resume, stop::Stop},
+        traits::{
+            clear::Clear,
+            pause::{Pause, PauseControlled},
+            playback::SetControlledPlaybackRate,
+            position::PositionControlled,
+            reclaim::Reclaim,
+            resume::{Resume, ResumeControlled, ResumeControlledAt},
+            seek::{SeekControlledBy, SeekControlledTo},
+            stop::{Stop, StopControlled},
+            volume::SetControlledVolume,
+        },
     },
     error::{Error, SceneError},
     get_player, resolve_any_entity,
@@ -414,5 +424,64 @@ impl ToDistances for EntityId {
     fn to_distances(&self) -> Option<SpatialTrackDistances> {
         let entity = resolve_any_entity(*self);
         entity.get_emitter_distances()
+    }
+}
+
+impl SetControlledVolume for Scene {
+    fn set_controlled_volume(
+        &mut self,
+        id: crate::ControlId,
+        amplitude: audioware_core::Amplitude,
+        tween: Tween,
+    ) {
+        self.emitters.set_controlled_volume(id, amplitude, tween);
+    }
+}
+
+impl SetControlledPlaybackRate for Scene {
+    fn set_controlled_playback_rate(&mut self, id: ControlId, rate: f64, tween: Tween) {
+        self.emitters.set_controlled_playback_rate(id, rate, tween);
+    }
+}
+
+impl PositionControlled for Scene {
+    fn position_controlled(&mut self, id: ControlId, sender: crossbeam::channel::Sender<f32>) {
+        self.emitters.position_controlled(id, sender);
+    }
+}
+
+impl StopControlled for Scene {
+    fn stop_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.emitters.stop_controlled(id, tween);
+    }
+}
+
+impl PauseControlled for Scene {
+    fn pause_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.emitters.pause_controlled(id, tween);
+    }
+}
+
+impl ResumeControlled for Scene {
+    fn resume_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.emitters.resume_controlled(id, tween);
+    }
+}
+
+impl ResumeControlledAt for Scene {
+    fn resume_controlled_at(&mut self, id: ControlId, delay: f64, tween: Tween) {
+        self.emitters.resume_controlled_at(id, delay, tween);
+    }
+}
+
+impl SeekControlledTo for Scene {
+    fn seek_controlled_to(&mut self, id: ControlId, position: f64) {
+        self.emitters.seek_controlled_to(id, position);
+    }
+}
+
+impl SeekControlledBy for Scene {
+    fn seek_controlled_by(&mut self, id: ControlId, amount: f64) {
+        self.emitters.seek_controlled_by(id, amount);
     }
 }

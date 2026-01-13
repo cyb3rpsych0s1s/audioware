@@ -8,13 +8,13 @@ use red4ext_rs::types::{CName, EntityId, Ref};
 
 use crate::{
     ControlId, ToTween,
-    abi::{command::Command, types::DynamicSoundEvent},
+    abi::{DynamicEmitterEvent, TargetId, command::Command, types::DynamicSoundEvent},
     engine::{next_control_id, queue},
     utils::warns,
 };
 
 #[derive(Debug)]
-pub enum Control {
+pub enum DynamicSound {
     SetVolume {
         id: ControlId,
         value: Amplitude,
@@ -61,6 +61,36 @@ pub enum Control {
     },
 }
 
+#[derive(Debug)]
+pub enum DynamicEmitter {
+    SetVolume {
+        id: ControlId,
+        value: Amplitude,
+        tween: Option<Tween>,
+    },
+    Position {
+        id: ControlId,
+        output: Sender<f32>,
+    },
+    Stop {
+        id: ControlId,
+        tween: Option<Tween>,
+    },
+    Pause {
+        id: ControlId,
+        tween: Option<Tween>,
+    },
+    Resume {
+        id: ControlId,
+        tween: Option<Tween>,
+    },
+    ResumeAt {
+        id: ControlId,
+        value: f64,
+        tween: Option<Tween>,
+    },
+}
+
 impl DynamicSoundEvent {
     pub fn enqueue_and_play(
         &self,
@@ -89,7 +119,7 @@ impl DynamicSoundEvent {
         if self.id.get().is_none() {
             return;
         }
-        queue::control(Control::SetVolume {
+        queue::control_sound(DynamicSound::SetVolume {
             id: *self.id.get().unwrap(),
             value,
             tween: tween.into_tween(),
@@ -99,7 +129,7 @@ impl DynamicSoundEvent {
         if self.id.get().is_none() {
             return;
         }
-        queue::control(Control::SetPlaybackRate {
+        queue::control_sound(DynamicSound::SetPlaybackRate {
             id: *self.id.get().unwrap(),
             value: value as f64,
             tween: tween.into_tween(),
@@ -113,7 +143,7 @@ impl DynamicSoundEvent {
         if self.id.get().is_none() {
             return;
         }
-        queue::control(Control::SetPanning {
+        queue::control_sound(DynamicSound::SetPanning {
             id: *self.id.get().unwrap(),
             value: *value,
             tween: tween.into_tween(),
@@ -124,7 +154,7 @@ impl DynamicSoundEvent {
             return -1.;
         }
         let (s, r) = bounded(0);
-        queue::control(Control::Position {
+        queue::control_sound(DynamicSound::Position {
             id: *self.id.get().unwrap(),
             output: s,
         });
@@ -134,7 +164,7 @@ impl DynamicSoundEvent {
         if self.id.get().is_none() {
             return;
         }
-        queue::control(Control::Stop {
+        queue::control_sound(DynamicSound::Stop {
             id: *self.id.get().unwrap(),
             tween: tween.into_tween(),
         });
@@ -143,7 +173,7 @@ impl DynamicSoundEvent {
         if self.id.get().is_none() {
             return;
         }
-        queue::control(Control::Pause {
+        queue::control_sound(DynamicSound::Pause {
             id: *self.id.get().unwrap(),
             tween: tween.into_tween(),
         });
@@ -152,7 +182,7 @@ impl DynamicSoundEvent {
         if self.id.get().is_none() {
             return;
         }
-        queue::control(Control::Resume {
+        queue::control_sound(DynamicSound::Resume {
             id: *self.id.get().unwrap(),
             tween: tween.into_tween(),
         });
@@ -161,7 +191,7 @@ impl DynamicSoundEvent {
         if self.id.get().is_none() {
             return;
         }
-        queue::control(Control::ResumeAt {
+        queue::control_sound(DynamicSound::ResumeAt {
             id: *self.id.get().unwrap(),
             tween: tween.into_tween(),
             value: value.into(),
@@ -171,7 +201,7 @@ impl DynamicSoundEvent {
         if self.id.get().is_none() {
             return;
         }
-        queue::control(Control::SeekTo {
+        queue::control_sound(DynamicSound::SeekTo {
             id: *self.id.get().unwrap(),
             value: value.into(),
         });
@@ -180,48 +210,157 @@ impl DynamicSoundEvent {
         if self.id.get().is_none() {
             return;
         }
-        queue::control(Control::SeekBy {
+        queue::control_sound(DynamicSound::SeekBy {
             id: *self.id.get().unwrap(),
             value: value.into(),
         });
     }
 }
 
-impl std::fmt::Display for Control {
+impl std::fmt::Display for DynamicSound {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Control::SetVolume { id, .. } => write!(f, "set dynamic sound volume ({id})"),
-            Control::SetPlaybackRate { id, .. } => {
+            DynamicSound::SetVolume { id, .. } => write!(f, "set dynamic sound volume ({id})"),
+            DynamicSound::SetPlaybackRate { id, .. } => {
                 write!(f, "set dynamic sound playback rate ({id})")
             }
-            Control::SetPanning { id, .. } => {
+            DynamicSound::SetPanning { id, .. } => {
                 write!(f, "set dynamic sound panning ({id})")
             }
-            Control::Pause { id, .. } => {
+            DynamicSound::Pause { id, .. } => {
                 write!(f, "pause dynamic sound ({id})")
             }
-            Control::Resume { id, .. } => {
+            DynamicSound::Resume { id, .. } => {
                 write!(f, "resume dynamic sound ({id})")
             }
-            Control::ResumeAt { id, value, .. } => {
+            DynamicSound::ResumeAt { id, value, .. } => {
                 write!(
                     f,
                     "resume dynamic sound at {} ({id})",
                     format_duration(Duration::from_secs_f64(*value))
                 )
             }
-            Control::Stop { id, .. } => write!(f, "stop dynamic sound ({id})"),
-            Control::SeekTo { id, value } => write!(
+            DynamicSound::Stop { id, .. } => write!(f, "stop dynamic sound ({id})"),
+            DynamicSound::SeekTo { id, value } => write!(
                 f,
                 "seek dynamic sound to {} ({id})",
                 format_duration(Duration::from_secs_f64(*value))
             ),
-            Control::SeekBy { id, value } => write!(
+            DynamicSound::SeekBy { id, value } => write!(
                 f,
                 "seek dynamic sound by {} ({id})",
                 format_duration(Duration::from_secs_f64(*value))
             ),
-            Control::Position { id, .. } => write!(f, "get dynamic sound position ({id})"),
+            DynamicSound::Position { id, .. } => write!(f, "get dynamic sound position ({id})"),
+        }
+    }
+}
+
+impl DynamicEmitterEvent {
+    pub fn enqueue_and_play(&self, entity_id: EntityId) -> bool {
+        if let Err(control_id) = self.id.set(next_control_id()) {
+            warns!(
+                "dynamic emitter already initialized for {} ({control_id})",
+                self.tag_name.get()
+            );
+            return false;
+        }
+        let Ok(entity_id) = TargetId::try_new(entity_id) else {
+            warns!("invalid entity id: {entity_id}");
+            return false;
+        };
+        queue::send(Command::EnqueueAndPlayOnEmitter {
+            event_name: *self.name.get(),
+            entity_id,
+            tag_name: self.tag_name.get(),
+            ext: self.ext.borrow().clone(),
+            control_id: *self.id.get().unwrap(),
+        });
+        true
+    }
+    pub fn set_volume(&self, value: f32, tween: Ref<crate::Tween>) {
+        let Ok(value) = Amplitude::try_from(value) else {
+            warns!("invalid amplitude ({value})");
+            return;
+        };
+        if self.id.get().is_none() {
+            return;
+        }
+        queue::control_emitter(DynamicEmitter::SetVolume {
+            id: *self.id.get().unwrap(),
+            value,
+            tween: tween.into_tween(),
+        });
+    }
+    pub fn stop(&self, tween: Ref<crate::Tween>) {
+        if self.id.get().is_none() {
+            return;
+        }
+        queue::control_emitter(DynamicEmitter::Stop {
+            id: *self.id.get().unwrap(),
+            tween: tween.into_tween(),
+        });
+    }
+    pub fn pause(&self, tween: Ref<crate::Tween>) {
+        if self.id.get().is_none() {
+            return;
+        }
+        queue::control_emitter(DynamicEmitter::Pause {
+            id: *self.id.get().unwrap(),
+            tween: tween.into_tween(),
+        });
+    }
+    pub fn resume(&self, tween: Ref<crate::Tween>) {
+        if self.id.get().is_none() {
+            return;
+        }
+        queue::control_emitter(DynamicEmitter::Resume {
+            id: *self.id.get().unwrap(),
+            tween: tween.into_tween(),
+        });
+    }
+    pub fn resume_at(&self, value: f32, tween: Ref<crate::Tween>) {
+        if self.id.get().is_none() {
+            return;
+        }
+        queue::control_emitter(DynamicEmitter::ResumeAt {
+            id: *self.id.get().unwrap(),
+            tween: tween.into_tween(),
+            value: value.into(),
+        });
+    }
+    pub fn position(&self) -> f32 {
+        if self.id.get().is_none() {
+            return -1.;
+        }
+        let (s, r) = bounded(0);
+        queue::control_emitter(DynamicEmitter::Position {
+            id: *self.id.get().unwrap(),
+            output: s,
+        });
+        r.recv_timeout(Duration::from_millis(30)).unwrap_or(-1.)
+    }
+}
+
+impl std::fmt::Display for DynamicEmitter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DynamicEmitter::SetVolume { id, .. } => write!(f, "set dynamic emitter volume ({id})"),
+            DynamicEmitter::Pause { id, .. } => {
+                write!(f, "pause dynamic emitter ({id})")
+            }
+            DynamicEmitter::Resume { id, .. } => {
+                write!(f, "resume dynamic emitter ({id})")
+            }
+            DynamicEmitter::ResumeAt { id, value, .. } => {
+                write!(
+                    f,
+                    "resume dynamic emitter at {} ({id})",
+                    format_duration(Duration::from_secs_f64(*value))
+                )
+            }
+            DynamicEmitter::Stop { id, .. } => write!(f, "stop dynamic emitter ({id})"),
+            DynamicEmitter::Position { id, .. } => write!(f, "get dynamic emitter position ({id})"),
         }
     }
 }

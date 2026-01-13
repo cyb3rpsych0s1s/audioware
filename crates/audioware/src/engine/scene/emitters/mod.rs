@@ -21,7 +21,17 @@ use crate::{
     ControlId, Vector4,
     engine::{
         tracks::Spatial,
-        traits::{clear::Clear, pause::Pause, reclaim::Reclaim, resume::Resume, stop::Stop},
+        traits::{
+            clear::Clear,
+            pause::{Pause, PauseControlled},
+            playback::SetControlledPlaybackRate,
+            position::PositionControlled,
+            reclaim::Reclaim,
+            resume::{Resume, ResumeControlled, ResumeControlledAt},
+            seek::{SeekControlledBy, SeekControlledTo},
+            stop::{Stop, StopControlled},
+            volume::SetControlledVolume,
+        },
         tweens::IMMEDIATELY,
     },
     error::{EngineError, Error, SceneError},
@@ -265,6 +275,83 @@ impl Reclaim for Emitters {
 impl Drop for Emitters {
     fn drop(&mut self) {
         EMITTERS.write().clear();
+    }
+}
+
+impl SetControlledVolume for Emitters {
+    fn set_controlled_volume(
+        &mut self,
+        id: ControlId,
+        amplitude: audioware_core::Amplitude,
+        tween: Tween,
+    ) {
+        self.0.iter_mut().for_each(|mut x| {
+            x.set_controlled_volume(id, amplitude, tween);
+        })
+    }
+}
+
+impl SetControlledPlaybackRate for Emitters {
+    fn set_controlled_playback_rate(&mut self, id: ControlId, rate: f64, tween: Tween) {
+        self.0.iter_mut().for_each(|mut x| {
+            x.set_controlled_playback_rate(id, rate, tween);
+        })
+    }
+}
+
+impl PositionControlled for Emitters {
+    fn position_controlled(&mut self, id: ControlId, sender: crossbeam::channel::Sender<f32>) {
+        self.0.iter_mut().for_each(|mut x| {
+            x.position_controlled(id, sender.clone());
+        })
+    }
+}
+
+impl StopControlled for Emitters {
+    fn stop_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.0.iter_mut().for_each(|mut x| {
+            x.stop_controlled(id, tween);
+        })
+    }
+}
+
+impl PauseControlled for Emitters {
+    fn pause_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.0.iter_mut().for_each(|mut x| {
+            x.pause_controlled(id, tween);
+        })
+    }
+}
+
+impl ResumeControlled for Emitters {
+    fn resume_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.0.iter_mut().for_each(|mut x| {
+            x.resume_controlled(id, tween);
+        })
+    }
+}
+
+impl ResumeControlledAt for Emitters {
+    fn resume_controlled_at(&mut self, id: ControlId, delay: f64, tween: Tween) {
+        self.0.iter_mut().for_each(|mut x| {
+            x.resume_controlled_at(id, delay, tween);
+        })
+    }
+}
+
+impl SeekControlledTo for Emitters {
+    fn seek_controlled_to(&mut self, id: ControlId, position: f64) {
+        self.0.iter_mut().for_each(|mut x| {
+            x.seek_controlled_to(id, position);
+        })
+    }
+}
+
+impl SeekControlledBy for Emitters {
+    fn seek_controlled_by(&mut self, id: ControlId, amount: f64) {
+        self.0.iter_mut().for_each(|mut x| {
+            x.seek_controlled_by(id, amount);
+        })
     }
 }
 
