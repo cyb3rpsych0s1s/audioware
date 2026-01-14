@@ -68,6 +68,11 @@ pub enum DynamicEmitter {
         value: Amplitude,
         tween: Option<Tween>,
     },
+    SetPlaybackRate {
+        id: ControlId,
+        value: f64,
+        tween: Option<Tween>,
+    },
     Position {
         id: ControlId,
         output: Sender<f32>,
@@ -88,6 +93,14 @@ pub enum DynamicEmitter {
         id: ControlId,
         value: f64,
         tween: Option<Tween>,
+    },
+    SeekTo {
+        id: ControlId,
+        value: f64,
+    },
+    SeekBy {
+        id: ControlId,
+        value: f64,
     },
 }
 
@@ -292,6 +305,16 @@ impl DynamicEmitterEvent {
             tween: tween.into_tween(),
         });
     }
+    pub fn set_playback_rate(&self, value: f32, tween: Ref<crate::Tween>) {
+        if self.id.get().is_none() {
+            return;
+        }
+        queue::control_emitter(DynamicEmitter::SetPlaybackRate {
+            id: *self.id.get().unwrap(),
+            value: value as f64,
+            tween: tween.into_tween(),
+        });
+    }
     pub fn stop(&self, tween: Ref<crate::Tween>) {
         if self.id.get().is_none() {
             return;
@@ -340,12 +363,33 @@ impl DynamicEmitterEvent {
         });
         r.recv_timeout(Duration::from_millis(30)).unwrap_or(-1.)
     }
+    pub fn seek_to(&self, value: f32) {
+        if self.id.get().is_none() {
+            return;
+        }
+        queue::control_emitter(DynamicEmitter::SeekTo {
+            id: *self.id.get().unwrap(),
+            value: value.into(),
+        });
+    }
+    pub fn seek_by(&self, value: f32) {
+        if self.id.get().is_none() {
+            return;
+        }
+        queue::control_emitter(DynamicEmitter::SeekBy {
+            id: *self.id.get().unwrap(),
+            value: value.into(),
+        });
+    }
 }
 
 impl std::fmt::Display for DynamicEmitter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             DynamicEmitter::SetVolume { id, .. } => write!(f, "set dynamic emitter volume ({id})"),
+            DynamicEmitter::SetPlaybackRate { id, .. } => {
+                write!(f, "set dynamic emitter playback rate ({id})")
+            }
             DynamicEmitter::Pause { id, .. } => {
                 write!(f, "pause dynamic emitter ({id})")
             }
@@ -360,6 +404,16 @@ impl std::fmt::Display for DynamicEmitter {
                 )
             }
             DynamicEmitter::Stop { id, .. } => write!(f, "stop dynamic emitter ({id})"),
+            DynamicEmitter::SeekTo { id, value } => write!(
+                f,
+                "seek dynamic emitter to {} ({id})",
+                format_duration(Duration::from_secs_f64(*value))
+            ),
+            DynamicEmitter::SeekBy { id, value } => write!(
+                f,
+                "seek dynamic emitter by {} ({id})",
+                format_duration(Duration::from_secs_f64(*value))
+            ),
             DynamicEmitter::Position { id, .. } => write!(f, "get dynamic emitter position ({id})"),
         }
     }

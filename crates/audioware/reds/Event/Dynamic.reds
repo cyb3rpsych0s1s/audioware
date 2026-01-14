@@ -38,11 +38,17 @@ public native class DynamicSoundEvent extends Event {
 
 public native class DynamicEmitterEvent extends Event {
     public final native func SetVolume(value: Float, opt tween: ref<Tween>);
+    public final native func SetPlaybackRate(value: Float, opt tween: ref<Tween>);
+    
+    public final native func Position() -> Float;
     
     public final native func Stop(opt tween: ref<Tween>);
     public final native func Pause(opt tween: ref<Tween>);
     public final native func Resume(opt tween: ref<Tween>);
     public final native func ResumeAt(value: Float, opt tween: ref<Tween>);
+    
+    public final native func SeekTo(value: Float, opt tween: ref<Tween>);
+    public final native func SeekBy(value: Float, opt tween: ref<Tween>);
     
     public native static func Create(name: CName, tagName: CName, ext: ref<AudioSettingsExt>) -> ref<DynamicEmitterEvent>;
     public static func Create(name: CName, tagName: CName) -> ref<DynamicEmitterEvent> = DynamicEmitterEvent.Create(name, tagName, null);

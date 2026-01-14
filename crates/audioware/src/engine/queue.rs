@@ -508,6 +508,9 @@ pub fn run(
                     DynamicEmitter::SetVolume { id, value, tween } => {
                         scene.set_controlled_volume(id, value, tween.unwrap_or(IMMEDIATELY));
                     }
+                    DynamicEmitter::SetPlaybackRate { id, value, tween } => {
+                        scene.set_controlled_playback_rate(id, value, tween.unwrap_or(IMMEDIATELY));
+                    }
                     DynamicEmitter::Pause { id, tween } => {
                         scene.pause_controlled(id, tween.unwrap_or(IMMEDIATELY));
                     }
@@ -522,6 +525,12 @@ pub fn run(
                     }
                     DynamicEmitter::Position { id, output } => {
                         scene.position_controlled(id, output);
+                    }
+                    DynamicEmitter::SeekTo { id, value } => {
+                        scene.seek_controlled_to(id, value);
+                    }
+                    DynamicEmitter::SeekBy { id, value } => {
+                        scene.seek_controlled_by(id, value);
                     }
                 }
             }
