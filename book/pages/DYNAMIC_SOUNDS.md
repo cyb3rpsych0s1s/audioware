@@ -31,6 +31,10 @@ public class MySystem extends ScriptableSystem {
 }
 ```
 
+```admonish tip
+Note that once a dynamic sound event has effectively been stopped, it cannot be restarted or further controlled.
+```
+
 ## Going further
 
 Coupled with [Native integration](./NATIVE_INTEGRATION.md) feature, here's how you can for example change the audio when the player is chased by NCPD based on the wanted level:

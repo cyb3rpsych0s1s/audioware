@@ -35,3 +35,7 @@ public class MySystem extends ScriptableSystem {
     }
 }
 ```
+
+```admonish tip
+Note that once a dynamic emitter event has effectively been stopped, it cannot be restarted or further controlled.
+```
