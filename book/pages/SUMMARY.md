@@ -21,6 +21,7 @@ It's built with emphasis on getting you going fast, providing sensible defaults 
       - [AudioSystemExt](./AUDIO_SYSTEM_EXT.md)
       - [Dynamic Settings](./AUDIO_SETTINGS_EXT.md)
       - [Dynamic Sounds](./DYNAMIC_SOUNDS.md)
+      - [Dynamic Emitters](./DYNAMIC_EMITTERS.md)
       - [Parameters](./PARAMETERS.md)
       - [Spatialization](./SPATIALIZATION.md)
       - [Scene Dialog Lines](./SCENE_DIALOG_LINES.md)
