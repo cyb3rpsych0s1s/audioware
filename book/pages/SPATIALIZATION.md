@@ -11,6 +11,10 @@ You must provide a `tag_name` which Audioware uses to track emitters internally.
 GameInstance.GetAudioSystemExt(game).RegisterEmitter(emitterID, n"MyMod");
 ```
 
+```admonish warning title="Lifecycle"
+When registering spatial emitters with Codeware, use `n"Entity/AfterAttach"` instead of [deprecated `n"Entity/Attached"`](https://github.com/psiberx/cp2077-codeware/blob/5e3b71757d6633d30363de0e0bb570a72df33f18/src/App/Callback/Controllers/EntityAttachHook.hpp#L18) which can cause issues with Audioware.
+```
+
 ```admonish warning title="Types"
 Audio emitter have to be positioned so they can only be [Entity](https://nativedb.red4ext.com/Entity) or classes inheriting from it like [GameObject](https://nativedb.red4ext.com/GameObject), devices, vehicles, NPCs, etc.
 ```
