@@ -7,6 +7,9 @@ public native class AudioEventCallbackSystem {
     public native final func RegisterStaticCallback(eventName: CName, className: CName, functionName: CName) -> ref<AudioEventCallbackHandler>;
 }
 
+@addMethod(GameInstance)
+public static final func GetAudioEventCallbackSystem() -> ref<AudioEventCallbackSystem> = new AudioEventCallbackSystem();
+
 public abstract native class SoundEvent {
     public func PrimaryName() -> CName;
     public final static func InvalidWwiseID() -> Uint32 = 2166136261u;
