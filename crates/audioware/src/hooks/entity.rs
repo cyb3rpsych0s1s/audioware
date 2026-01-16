@@ -51,7 +51,9 @@ mod queue_event {
     };
 
     use crate::{
-        AudioEmitterComponent, Entity, Event, abi::DynamicSoundEvent, attach_native_func,
+        AudioEmitterComponent, Entity, Event,
+        abi::{DynamicEmitterEvent, DynamicSoundEvent},
+        attach_native_func,
         utils::intercept,
     };
 
@@ -91,6 +93,18 @@ mod queue_event {
                     intercept!(
                         "Entity::QueueEvent for DynamicSoundEvent ({})",
                         dynamic.name.get()
+                    );
+                }
+            } else if event.is_a::<DynamicEmitterEvent>() {
+                let dynamic: Ref<DynamicEmitterEvent> = mem::transmute(event);
+                if let Some(dynamic) = dynamic.fields() {
+                    let entity = std::mem::transmute::<&IScriptable, &Entity>(&*i);
+                    let entity_id = entity.entity_id;
+                    passthru = !dynamic.enqueue_and_play(entity_id);
+                    intercept!(
+                        "Entity::QueueEvent for DynamicEmitterEvent ({}: {})",
+                        dynamic.name.get(),
+                        dynamic.tag_name.get(),
                     );
                 }
             }

@@ -96,7 +96,7 @@ impl Deref for FunctionName {
 }
 
 /// # Safety
-/// do not reorder the bits (see [EventHookTypes]).
+/// do not reorder the bits (see [EventHookTypes](crate::EventHookTypes)).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(i64)]
 pub enum EventHookType {

@@ -23,6 +23,7 @@ It's built with emphasis on getting you going fast, providing sensible defaults 
       - [Dynamic Sounds](./DYNAMIC_SOUNDS.md)
       - [Parameters](./PARAMETERS.md)
       - [Spatialization](./SPATIALIZATION.md)
+      - [Dynamic Emitters](./DYNAMIC_EMITTERS.md)
       - [Scene Dialog Lines](./SCENE_DIALOG_LINES.md)
       - [Native Audio Integration](./NATIVE_INTEGRATION.md)
     - [Internal docs](./DOCS.md)

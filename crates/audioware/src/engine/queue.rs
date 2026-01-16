@@ -17,7 +17,7 @@ use crate::{
     abi::{
         callback::Callback,
         command::Command,
-        control::Control,
+        control::{DynamicEmitter, DynamicSound},
         is_in_foreground,
         lifecycle::{Board, Lifecycle, Session, System},
     },
@@ -94,7 +94,8 @@ static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
 static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
 static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
-static CONTROLS: OnceLock<RwLock<Option<Sender<Control>>>> = OnceLock::new();
+static DYNAMIC_SOUNDS: OnceLock<RwLock<Option<Sender<DynamicSound>>>> = OnceLock::new();
+static DYNAMIC_EMITTERS: OnceLock<RwLock<Option<Sender<DynamicEmitter>>>> = OnceLock::new();
 
 fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
@@ -122,16 +123,18 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
             .name("audioware".into())
             .spawn(move || {
                 lifecycle!("initialize channels...");
-                let (sl, rl) = bounded::<Lifecycle>(32);
+                let (sl, rl) = bounded::<Lifecycle>(capacity * 4);
                 let (sc, rc) = bounded::<Command>(capacity);
                 let (se, re) = unbounded::<Callback>();
-                let (sd, rd) = bounded::<Control>(capacity);
+                let (sds, rds) = bounded::<DynamicSound>(capacity);
+                let (sde, rde) = bounded::<DynamicEmitter>(capacity);
                 let _ = LIFECYCLE.set(RwLock::new(Some(sl)));
                 let _ = COMMAND.set(RwLock::new(Some(sc)));
                 let _ = CALLBACKS.set(RwLock::new(Some(se)));
-                let _ = CONTROLS.set(RwLock::new(Some(sd)));
+                let _ = DYNAMIC_SOUNDS.set(RwLock::new(Some(sds)));
+                let _ = DYNAMIC_EMITTERS.set(RwLock::new(Some(sde)));
                 lifecycle!("initialized channels");
-                self::run(rl, rc, re, rd, engine);
+                self::run(rl, rc, re, rds, rde, engine);
             })?,
     )));
     lifecycle!("spawned plugin thread");
@@ -142,7 +145,8 @@ pub fn run(
     rl: Receiver<Lifecycle>,
     rc: Receiver<Command>,
     re: Receiver<Callback>,
-    rd: Receiver<Control>,
+    rds: Receiver<DynamicSound>,
+    rde: Receiver<DynamicEmitter>,
     mut engine: Engine<CpalBackend>,
 ) {
     crate::utils::lifecycle!("run engine thread");
@@ -215,6 +219,9 @@ pub fn run(
                         ease_out_curve,
                     },
                 ),
+                Lifecycle::SetEmitterOcclusion { entity_id, value } => {
+                    engine.set_emitter_occlusion(entity_id, value)
+                }
                 Lifecycle::RegisterEmitter {
                     entity_id,
                     tag_name,
@@ -446,37 +453,89 @@ pub fn run(
                 ),
             }
         }
-        for d in rd.try_iter().take(8) {
+        for d in rds.try_iter().take(8) {
             lifecycle!("> {d}");
             match d {
-                Control::SetVolume { id, value, tween } => {
-                    engine.set_controlled_volume(id, value, tween.unwrap_or(IMMEDIATELY));
+                DynamicSound::SetVolume { id, value, tween } => {
+                    engine
+                        .tracks
+                        .set_controlled_volume(id, value, tween.unwrap_or(IMMEDIATELY));
                 }
-                Control::SetPlaybackRate { id, value, tween } => {
-                    engine.set_controlled_playback_rate(id, value, tween.unwrap_or(IMMEDIATELY));
+                DynamicSound::SetPlaybackRate { id, value, tween } => {
+                    engine.tracks.set_controlled_playback_rate(
+                        id,
+                        value,
+                        tween.unwrap_or(IMMEDIATELY),
+                    );
                 }
-                Control::SetPanning { id, value, tween } => {
-                    engine.set_controlled_panning(id, value, tween.unwrap_or(IMMEDIATELY));
+                DynamicSound::SetPanning { id, value, tween } => {
+                    engine
+                        .tracks
+                        .set_controlled_panning(id, value, tween.unwrap_or(IMMEDIATELY));
                 }
-                Control::Pause { id, tween } => {
-                    engine.pause_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                DynamicSound::Pause { id, tween } => {
+                    engine
+                        .tracks
+                        .pause_controlled(id, tween.unwrap_or(IMMEDIATELY));
                 }
-                Control::Resume { id, tween } => {
-                    engine.resume_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                DynamicSound::Resume { id, tween } => {
+                    engine
+                        .tracks
+                        .resume_controlled(id, tween.unwrap_or(IMMEDIATELY));
                 }
-                Control::ResumeAt { id, value, tween } => {
-                    engine.resume_controlled_at(id, value, tween.unwrap_or(IMMEDIATELY));
+                DynamicSound::ResumeAt { id, value, tween } => {
+                    engine
+                        .tracks
+                        .resume_controlled_at(id, value, tween.unwrap_or(IMMEDIATELY));
                 }
-                Control::Stop { id, tween } => {
-                    engine.stop_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                DynamicSound::Stop { id, tween } => {
+                    engine
+                        .tracks
+                        .stop_controlled(id, tween.unwrap_or(IMMEDIATELY));
                 }
-                Control::SeekTo { id, value } => {
-                    engine.seek_controlled_to(id, value);
+                DynamicSound::SeekTo { id, value } => {
+                    engine.tracks.seek_controlled_to(id, value);
                 }
-                Control::SeekBy { id, value } => {
-                    engine.seek_controlled_by(id, value);
+                DynamicSound::SeekBy { id, value } => {
+                    engine.tracks.seek_controlled_by(id, value);
                 }
-                Control::Position { id, output } => engine.position_controlled(id, output),
+                DynamicSound::Position { id, output } => {
+                    engine.tracks.position_controlled(id, output)
+                }
+            }
+        }
+        for de in rde.try_iter().take(8) {
+            lifecycle!("> {de}");
+            if let Some(scene) = engine.scene.as_mut() {
+                match de {
+                    DynamicEmitter::SetVolume { id, value, tween } => {
+                        scene.set_controlled_volume(id, value, tween.unwrap_or(IMMEDIATELY));
+                    }
+                    DynamicEmitter::SetPlaybackRate { id, value, tween } => {
+                        scene.set_controlled_playback_rate(id, value, tween.unwrap_or(IMMEDIATELY));
+                    }
+                    DynamicEmitter::Pause { id, tween } => {
+                        scene.pause_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                    }
+                    DynamicEmitter::Resume { id, tween } => {
+                        scene.resume_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                    }
+                    DynamicEmitter::ResumeAt { id, value, tween } => {
+                        scene.resume_controlled_at(id, value, tween.unwrap_or(IMMEDIATELY));
+                    }
+                    DynamicEmitter::Stop { id, tween } => {
+                        scene.stop_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                    }
+                    DynamicEmitter::Position { id, output } => {
+                        scene.position_controlled(id, output);
+                    }
+                    DynamicEmitter::SeekTo { id, value } => {
+                        scene.seek_controlled_to(id, value);
+                    }
+                    DynamicEmitter::SeekBy { id, value } => {
+                        scene.seek_controlled_by(id, value);
+                    }
+                }
             }
         }
         for e in re.try_iter() {
@@ -553,9 +612,26 @@ pub fn send(command: Command) {
     }
 }
 
-pub fn control(control: Control) {
+pub fn control_sound(control: DynamicSound) {
     lifecycle!("{control}");
-    if let Some(x) = CONTROLS.get() {
+    if let Some(x) = DYNAMIC_SOUNDS.get() {
+        if let Ok(x) = x.try_read() {
+            if let Some(x) = x.as_ref()
+                && let Err(e) = x.try_send(control)
+            {
+                fails!("failed to send plugin control: {e}");
+            }
+        } else {
+            fails!("plugin control channel is not initialized");
+        }
+    } else {
+        fails!("plugin game loop is not initialized");
+    }
+}
+
+pub fn control_emitter(control: DynamicEmitter) {
+    lifecycle!("{control}");
+    if let Some(x) = DYNAMIC_EMITTERS.get() {
         if let Ok(x) = x.try_read() {
             if let Some(x) = x.as_ref()
                 && let Err(e) = x.try_send(control)

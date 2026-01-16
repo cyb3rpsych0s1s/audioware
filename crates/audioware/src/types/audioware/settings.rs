@@ -16,6 +16,7 @@ pub struct EmitterSettings {
     pub persist_until_sounds_finish: bool,
     pub affected_by_reverb_mix: bool,
     pub affected_by_environmental_preset: bool,
+    pub enable_occlusion: bool,
 }
 
 impl Default for EmitterSettings {
@@ -27,6 +28,7 @@ impl Default for EmitterSettings {
             persist_until_sounds_finish: false,
             affected_by_reverb_mix: true,
             affected_by_environmental_preset: false,
+            enable_occlusion: false,
         }
     }
 }
@@ -113,6 +115,7 @@ impl Clone for EmitterSettings {
             persist_until_sounds_finish: self.persist_until_sounds_finish,
             affected_by_reverb_mix: self.affected_by_reverb_mix,
             affected_by_environmental_preset: self.affected_by_environmental_preset,
+            enable_occlusion: self.enable_occlusion,
         }
     }
 }

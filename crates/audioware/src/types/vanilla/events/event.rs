@@ -9,7 +9,7 @@ use red4ext_rs::{
 
 use crate::{EventHookType, Vector3, utils::fails};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 #[repr(transparent)]
 pub struct Event(IScriptable);
 

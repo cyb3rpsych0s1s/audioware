@@ -163,8 +163,13 @@ public class AutoEmittersSystem extends ScriptableSystem {
         let eventName = this.RandomSong();
         let emitterID: EntityID;
         let emitterCName: CName = evt.IsShiftDown() ? n"None" : n"DummyTest";
+        
+        let ext: ref<AudioSettingsExt>;
+        
+        let settings = new EmitterSettings();
+        settings.enableOcclusion = true;
 
-        this.PlayOnEmitter(eventName, emitterID, emitterCName);
+        this.PlayOnEmitter(eventName, emitterID, emitterCName, ext, settings);
     }
     private cb func OnPressF2(evt: ref<KeyInputEvent>) {
         if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }

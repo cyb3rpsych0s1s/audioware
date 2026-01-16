@@ -13,6 +13,7 @@ pub struct SpatialTrackSettings {
     pub spatialization_strength: f32,
     pub affected_by_reverb_mix: bool,
     pub affected_by_environmental_preset: bool,
+    pub enable_occlusion: bool,
 }
 
 impl Default for SpatialTrackSettings {
@@ -24,6 +25,7 @@ impl Default for SpatialTrackSettings {
             spatialization_strength: 0.75,
             affected_by_reverb_mix: true,
             affected_by_environmental_preset: false,
+            enable_occlusion: false,
         }
     }
 }

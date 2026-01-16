@@ -2,10 +2,19 @@ use kira::Tween;
 use red4ext_rs::types::CName;
 
 use crate::{
-    Vector4,
+    ControlId, Vector4,
     engine::{
         scene::dilation::Dilation,
-        traits::{reclaim::Reclaim, stop::StopBy},
+        traits::{
+            pause::PauseControlled,
+            playback::SetControlledPlaybackRate,
+            position::PositionControlled,
+            reclaim::Reclaim,
+            resume::{ResumeControlled, ResumeControlledAt},
+            seek::{SeekControlledBy, SeekControlledTo},
+            stop::{StopBy, StopControlled},
+            volume::SetControlledVolume,
+        },
         tweens::IMMEDIATELY,
     },
 };
@@ -49,6 +58,11 @@ impl EmitterSlots {
     pub fn set_emitter_position(&mut self, position: Vector4) {
         self.slots.iter_mut().for_each(|x| {
             x.handle.set_position(position, IMMEDIATELY);
+        });
+    }
+    pub fn set_emitter_occlusion(&mut self, factor: f32) {
+        self.slots.iter_mut().for_each(|x| {
+            x.handle.set_occlusion(factor);
         });
     }
     pub fn is_empty(&self) -> bool {
@@ -96,10 +110,90 @@ impl EmitterSlots {
             x.sync_dilation(rate, tween);
         });
     }
+    pub fn any_occluded(&self) -> bool {
+        self.slots.iter().any(|x| x.occluded())
+    }
 }
 
 impl Reclaim for EmitterSlots {
     fn reclaim(&mut self) {
         self.slots.iter_mut().for_each(|x| x.handles.reclaim());
+    }
+}
+
+impl SetControlledVolume for EmitterSlots {
+    fn set_controlled_volume(
+        &mut self,
+        id: ControlId,
+        amplitude: audioware_core::Amplitude,
+        tween: Tween,
+    ) {
+        self.slots
+            .iter_mut()
+            .for_each(|x| x.handles.set_controlled_volume(id, amplitude, tween));
+    }
+}
+
+impl SetControlledPlaybackRate for EmitterSlots {
+    fn set_controlled_playback_rate(&mut self, id: ControlId, rate: f64, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.handles.set_controlled_playback_rate(id, rate, tween);
+        })
+    }
+}
+
+impl PositionControlled for EmitterSlots {
+    fn position_controlled(&mut self, id: ControlId, sender: crossbeam::channel::Sender<f32>) {
+        self.slots.iter_mut().for_each(|x| {
+            x.handles.position_controlled(id, sender.clone());
+        })
+    }
+}
+
+impl StopControlled for EmitterSlots {
+    fn stop_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.handles.stop_controlled(id, tween);
+        })
+    }
+}
+
+impl PauseControlled for EmitterSlots {
+    fn pause_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.handles.pause_controlled(id, tween);
+        })
+    }
+}
+
+impl ResumeControlled for EmitterSlots {
+    fn resume_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.handles.resume_controlled(id, tween);
+        })
+    }
+}
+
+impl ResumeControlledAt for EmitterSlots {
+    fn resume_controlled_at(&mut self, id: ControlId, delay: f64, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.handles.resume_controlled_at(id, delay, tween);
+        })
+    }
+}
+
+impl SeekControlledTo for EmitterSlots {
+    fn seek_controlled_to(&mut self, id: ControlId, position: f64) {
+        self.slots.iter_mut().for_each(|x| {
+            x.handles.seek_controlled_to(id, position);
+        })
+    }
+}
+
+impl SeekControlledBy for EmitterSlots {
+    fn seek_controlled_by(&mut self, id: ControlId, amount: f64) {
+        self.slots.iter_mut().for_each(|x| {
+            x.handles.seek_controlled_by(id, amount);
+        })
     }
 }

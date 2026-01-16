@@ -13,6 +13,12 @@ pub const IMMEDIATELY: Tween = Tween {
     easing: Easing::Linear,
 };
 
+pub const OCCLUDED: Tween = Tween {
+    start_time: StartTime::Immediate,
+    duration: Duration::from_millis(10),
+    easing: Easing::Linear,
+};
+
 pub const LAST_BREATH: Tween = Tween {
     start_time: StartTime::Immediate,
     duration: Duration::from_millis(2300),

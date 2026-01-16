@@ -3,18 +3,28 @@ use std::num::NonZero;
 use audioware_core::SpatialTrackSettings;
 use audioware_manifest::PlayerGender;
 use dilation::Dilation;
-use emitters::{EMITTERS, Emitter, Emitters};
+use emitters::{Emitter, Emitters};
 use kira::{AudioManager, Easing, Tween, backend::Backend, track::SpatialTrackDistances};
 use listener::Listener;
 use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
 
 use crate::{
-    AsEntity, AsScriptedPuppet, AsTimeDilatable, AvObject, BikeObject, CarObject, Device, Entity,
-    GamedataNpcType, ScriptedPuppet, TankObject, TimeDilatable, VehicleObject,
+    AsEntity, AsScriptedPuppet, AsTimeDilatable, AvObject, BikeObject, CarObject, ControlId,
+    Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject, TimeDilatable, VehicleObject,
     engine::{
         scene::actors::{Actors, slot::ActorSlot},
         tracks::Spatial,
-        traits::{clear::Clear, pause::Pause, reclaim::Reclaim, resume::Resume, stop::Stop},
+        traits::{
+            clear::Clear,
+            pause::{Pause, PauseControlled},
+            playback::SetControlledPlaybackRate,
+            position::PositionControlled,
+            reclaim::Reclaim,
+            resume::{Resume, ResumeControlled, ResumeControlledAt},
+            seek::{SeekControlledBy, SeekControlledTo},
+            stop::{Stop, StopControlled},
+            volume::SetControlledVolume,
+        },
     },
     error::{Error, SceneError},
     get_player, resolve_any_entity,
@@ -105,6 +115,7 @@ impl Scene {
             tag_name,
             emitter_name,
             dilation,
+            Some(0.),
             position,
             busy,
             settings
@@ -203,10 +214,7 @@ impl Scene {
     }
 
     pub fn is_registered_emitter(entity_id: EntityId, tag_name: Option<CName>) -> bool {
-        EMITTERS
-            .read()
-            .iter()
-            .any(|(id, tag)| *id == entity_id && tag_name.map(|x| x == *tag).unwrap_or(true))
+        Emitters::is_registered_emitter(entity_id, tag_name)
     }
 
     pub fn unregister_emitter(&mut self, entity_id: &EntityId, tag_name: &CName) -> bool {
@@ -328,7 +336,11 @@ impl Scene {
     }
 
     pub fn emitters_count() -> i32 {
-        EMITTERS.read().len() as i32
+        Emitters::emitters_count()
+    }
+
+    pub fn update_pending_occlusions(&mut self, entity_id: EntityId, factor: f32) {
+        self.emitters.update_pending_occlusions(entity_id, factor);
     }
 }
 
@@ -414,5 +426,64 @@ impl ToDistances for EntityId {
     fn to_distances(&self) -> Option<SpatialTrackDistances> {
         let entity = resolve_any_entity(*self);
         entity.get_emitter_distances()
+    }
+}
+
+impl SetControlledVolume for Scene {
+    fn set_controlled_volume(
+        &mut self,
+        id: crate::ControlId,
+        amplitude: audioware_core::Amplitude,
+        tween: Tween,
+    ) {
+        self.emitters.set_controlled_volume(id, amplitude, tween);
+    }
+}
+
+impl SetControlledPlaybackRate for Scene {
+    fn set_controlled_playback_rate(&mut self, id: ControlId, rate: f64, tween: Tween) {
+        self.emitters.set_controlled_playback_rate(id, rate, tween);
+    }
+}
+
+impl PositionControlled for Scene {
+    fn position_controlled(&mut self, id: ControlId, sender: crossbeam::channel::Sender<f32>) {
+        self.emitters.position_controlled(id, sender);
+    }
+}
+
+impl StopControlled for Scene {
+    fn stop_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.emitters.stop_controlled(id, tween);
+    }
+}
+
+impl PauseControlled for Scene {
+    fn pause_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.emitters.pause_controlled(id, tween);
+    }
+}
+
+impl ResumeControlled for Scene {
+    fn resume_controlled(&mut self, id: ControlId, tween: Tween) {
+        self.emitters.resume_controlled(id, tween);
+    }
+}
+
+impl ResumeControlledAt for Scene {
+    fn resume_controlled_at(&mut self, id: ControlId, delay: f64, tween: Tween) {
+        self.emitters.resume_controlled_at(id, delay, tween);
+    }
+}
+
+impl SeekControlledTo for Scene {
+    fn seek_controlled_to(&mut self, id: ControlId, position: f64) {
+        self.emitters.seek_controlled_to(id, position);
+    }
+}
+
+impl SeekControlledBy for Scene {
+    fn seek_controlled_by(&mut self, id: ControlId, amount: f64) {
+        self.emitters.seek_controlled_by(id, amount);
     }
 }

@@ -2,15 +2,21 @@ use audioware_core::{Amplitude, SpatialTrackSettings, amplitude};
 use kira::{
     AudioManager, Value,
     backend::Backend,
+    effect::filter::{FilterBuilder, FilterHandle},
     listener::ListenerId,
     track::{SpatialTrackBuilder, SpatialTrackHandle},
 };
 
-use crate::error::Error;
+use crate::{engine::tweens::OCCLUDED, error::Error};
 
 use super::ambience::Ambience;
 
-pub struct Spatial(SpatialTrackHandle);
+pub const DEFAULT_CUTOFF: f64 = 18_000.0;
+
+pub struct Spatial {
+    track: SpatialTrackHandle,
+    occlusion: Option<FilterHandle>,
+}
 
 impl Spatial {
     pub fn try_new<B: Backend>(
@@ -27,6 +33,7 @@ impl Spatial {
             spatialization_strength,
             affected_by_reverb_mix,
             affected_by_environmental_preset,
+            enable_occlusion,
         } = settings;
         let mut builder = SpatialTrackBuilder::new()
             .distances(distances)
@@ -41,8 +48,21 @@ impl Spatial {
         if affected_by_environmental_preset {
             builder = builder.with_send(ambience.environmental(), amplitude!(0.5).as_decibels());
         }
+        let mut occlusion = None;
+        if enable_occlusion {
+            occlusion = Some(builder.add_effect(FilterBuilder::new().cutoff(DEFAULT_CUTOFF)));
+        }
         let track = manager.add_spatial_sub_track(listener, position, builder)?;
-        Ok(Self(track))
+        Ok(Self { track, occlusion })
+    }
+    pub fn set_occlusion(&mut self, factor: f32) {
+        let normalized = (DEFAULT_CUTOFF * (1. - factor as f64)).clamp(600.0, DEFAULT_CUTOFF);
+        if let Some(x) = self.occlusion.as_mut() {
+            x.set_cutoff(normalized, OCCLUDED);
+        }
+    }
+    pub fn occluded(&self) -> bool {
+        self.occlusion.is_some()
     }
 }
 
@@ -50,12 +70,12 @@ impl std::ops::Deref for Spatial {
     type Target = SpatialTrackHandle;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.track
     }
 }
 
 impl std::ops::DerefMut for Spatial {
     fn deref_mut(&mut self) -> &mut SpatialTrackHandle {
-        &mut self.0
+        &mut self.track
     }
 }

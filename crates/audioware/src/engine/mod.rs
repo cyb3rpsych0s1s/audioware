@@ -741,6 +741,12 @@ where
         }
     }
 
+    pub fn set_emitter_occlusion(&mut self, entity_id: EntityId, factor: f32) {
+        if let Some(x) = self.scene.as_mut() {
+            x.update_pending_occlusions(entity_id, factor);
+        }
+    }
+
     pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId) {
         if let Some(x) = self.scene.as_mut() {
             x.on_emitter_incapacitated(entity_id, LAST_BREATH)

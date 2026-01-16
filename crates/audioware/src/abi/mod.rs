@@ -310,6 +310,23 @@ pub fn exports() -> impl Exportable {
                     final c"SeekBy" => DynamicSoundEvent::seek_by,
                 ])
                 .build(),
+        ClassExport::<DynamicEmitterEvent>::builder()
+                .base(Event::NAME)
+                .static_methods(static_methods![
+                    c"Create" => DynamicEmitterEvent::create,
+                ])
+                .methods(methods![
+                    final c"SetVolume" => DynamicEmitterEvent::set_volume,
+                    final c"SetPlaybackRate" => DynamicEmitterEvent::set_playback_rate,
+                    final c"Position" => DynamicEmitterEvent::position,
+                    final c"Stop" => DynamicEmitterEvent::stop,
+                    final c"Pause" => DynamicEmitterEvent::pause,
+                    final c"Resume" => DynamicEmitterEvent::resume,
+                    final c"ResumeAt" => DynamicEmitterEvent::resume_at,
+                    final c"SeekTo" => DynamicEmitterEvent::seek_to,
+                    final c"SeekBy" => DynamicEmitterEvent::seek_by,
+                ])
+                .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
         g!(c"Audioware.OnGameSessionStart",         Audioware::on_game_session_start),
         g!(c"Audioware.OnGameSessionReady",         Audioware::on_game_session_ready),
