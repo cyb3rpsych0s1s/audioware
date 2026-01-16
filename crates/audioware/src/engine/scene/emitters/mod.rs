@@ -324,13 +324,13 @@ impl Resume for Emitters {
 
 impl Clear for Emitters {
     fn clear(&mut self) {
+        self.entries.clear();
         let mut next = vec![];
         with_entries(|x| {
             next = x.to_vec();
         });
         next.clear();
         publish_entries(next);
-        self.entries.clear();
     }
 }
 
