@@ -54,7 +54,7 @@ macro_rules! cache {
                     }
                     let ptr = TLS_PTR.get();
                     let len = TLS_LEN.get();
-                    if !ptr.is_null() {
+                    if !ptr.is_null() && len > 0 {
                         unsafe { f(std::slice::from_raw_parts(ptr, len)) }
                     }
                 });
