@@ -15,7 +15,7 @@ pub const IMMEDIATELY: Tween = Tween {
 
 pub const OCCLUDED: Tween = Tween {
     start_time: StartTime::Immediate,
-    duration: Duration::from_millis(30),
+    duration: Duration::from_millis(10),
     easing: Easing::Linear,
 };
 
