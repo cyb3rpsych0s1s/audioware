@@ -122,7 +122,7 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
             .name("audioware".into())
             .spawn(move || {
                 lifecycle!("initialize channels...");
-                let (sl, rl) = bounded::<Lifecycle>(32);
+                let (sl, rl) = bounded::<Lifecycle>(256);
                 let (sc, rc) = bounded::<Command>(capacity);
                 let (se, re) = unbounded::<Callback>();
                 let (sd, rd) = bounded::<Control>(capacity);
