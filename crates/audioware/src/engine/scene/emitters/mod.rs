@@ -1,5 +1,3 @@
-use std::{collections::HashSet, sync::LazyLock};
-
 use audioware_bank::{BankData, Banks, Id};
 use audioware_core::With;
 use audioware_manifest::ValidateFor;
@@ -12,14 +10,15 @@ use kira::{
     Tween,
     sound::{FromFileError, static_sound::StaticSoundData, streaming::StreamingSoundData},
 };
-use parking_lot::RwLock;
 use red4ext_rs::types::{CName, EntityId};
 use slot::EmitterSlot;
 use slots::EmitterSlots;
 
 use crate::{
     ControlId, Vector4,
+    cache::cache,
     engine::{
+        scene::emitters::cache::{publish_entries, reclaim_entries, with_entries},
         tracks::Spatial,
         traits::{
             clear::Clear,
@@ -46,15 +45,13 @@ pub use emitter::Emitter;
 
 use super::AffectedByTimeDilation;
 
-#[allow(clippy::type_complexity)]
-pub static EMITTERS: LazyLock<RwLock<HashSet<(EntityId, CName)>>> =
-    LazyLock::new(|| RwLock::new(HashSet::new()));
+cache!(red4ext_rs::types::EntityId, red4ext_rs::types::CName);
 
 pub struct Emitters(DashMap<EntityId, EmitterSlots>);
 
 impl Emitters {
     pub fn with_capacity(capacity: usize) -> Self {
-        *EMITTERS.write() = HashSet::with_capacity(capacity);
+        publish_entries(Vec::with_capacity(capacity));
         Self(Default::default())
     }
     pub fn exists_tag(&self, entity_id: &EntityId, tag_name: &CName) -> bool {
@@ -91,7 +88,12 @@ impl Emitters {
                 EmitterSlots::new(slot, dilation, busy, last_known_position),
             );
         }
-        EMITTERS.write().insert((entity_id, tag_name));
+        let mut next = vec![];
+        with_entries(|x| {
+            next = x.to_vec();
+        });
+        next.push((entity_id, tag_name));
+        publish_entries(next);
         lifecycle!(
             "added emitter {entity_id} with tag name {}",
             tag_name.as_str()
@@ -102,13 +104,17 @@ impl Emitters {
         if self.0.is_empty() {
             return Ok(());
         }
+        let mut next = vec![];
+        with_entries(|x| {
+            next = x.to_vec();
+        });
         self.0.retain(|k, v| {
             if v.marked_for_death && !v.any_playing_handle() {
-                EMITTERS.write().retain(|(id, _)| id != k);
+                next.retain(|(id, _)| id != k);
                 return false;
             }
             let Ok((position, busy)) = Emitter::infos(*k) else {
-                EMITTERS.write().retain(|(id, _)| id != k);
+                next.retain(|(id, _)| id != k);
                 return false;
             };
             v.busy = busy;
@@ -118,6 +124,7 @@ impl Emitters {
             v.set_emitter_position(position);
             true
         });
+        publish_entries(next);
         Ok(())
     }
     pub fn unregister_emitter(&mut self, entity_id: &EntityId, tag_name: &CName) -> bool {
@@ -131,9 +138,12 @@ impl Emitters {
             self.0.remove(entity_id);
         }
         if removed {
-            EMITTERS
-                .write()
-                .retain(|(id, name)| id != entity_id || name != tag_name);
+            let mut next = vec![];
+            with_entries(|x| {
+                next = x.to_vec();
+            });
+            next.retain(|(id, name)| id != entity_id || name != tag_name);
+            publish_entries(next);
         }
         removed
     }
@@ -158,7 +168,16 @@ impl Emitters {
                 true
             }
         });
-        EMITTERS.write().retain(|(id, _)| id != entity_id);
+        let mut next = vec![];
+        let before = next.len();
+        with_entries(|x| {
+            next = x.to_vec();
+        });
+        next.retain(|(id, _)| id != entity_id);
+        let after = next.len();
+        if before != after {
+            publish_entries(next);
+        }
     }
     pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId, tween: Tween) {
         if let Some(mut slots) = self.0.get_mut(&entity_id) {
@@ -231,6 +250,22 @@ impl Emitters {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+    pub fn is_registered_emitter(entity_id: EntityId, tag_name: Option<CName>) -> bool {
+        let mut registered = false;
+        with_entries(|x| {
+            registered = x
+                .iter()
+                .any(|(id, tag)| *id == entity_id && tag_name.map(|x| x == *tag).unwrap_or(true))
+        });
+        registered
+    }
+    pub fn emitters_count() -> i32 {
+        let mut len = 0;
+        with_entries(|x| {
+            len = x.len() as i32;
+        });
+        len
+    }
 }
 
 impl Stop for Emitters {
@@ -259,7 +294,12 @@ impl Resume for Emitters {
 
 impl Clear for Emitters {
     fn clear(&mut self) {
-        EMITTERS.write().clear();
+        let mut next = vec![];
+        with_entries(|x| {
+            next = x.to_vec();
+        });
+        next.clear();
+        publish_entries(next);
         self.0.clear();
     }
 }
@@ -269,12 +309,18 @@ impl Reclaim for Emitters {
         self.0
             .iter_mut()
             .for_each(|mut x| x.slots.iter_mut().for_each(|x| x.handles.reclaim()));
+        reclaim_entries();
     }
 }
 
 impl Drop for Emitters {
     fn drop(&mut self) {
-        EMITTERS.write().clear();
+        let mut next = vec![];
+        with_entries(|x| {
+            next = x.to_vec();
+        });
+        next.clear();
+        publish_entries(next);
     }
 }
 

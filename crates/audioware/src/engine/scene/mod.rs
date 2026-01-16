@@ -3,7 +3,7 @@ use std::num::NonZero;
 use audioware_core::SpatialTrackSettings;
 use audioware_manifest::PlayerGender;
 use dilation::Dilation;
-use emitters::{EMITTERS, Emitter, Emitters};
+use emitters::{Emitter, Emitters};
 use kira::{AudioManager, Easing, Tween, backend::Backend, track::SpatialTrackDistances};
 use listener::Listener;
 use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
@@ -213,10 +213,7 @@ impl Scene {
     }
 
     pub fn is_registered_emitter(entity_id: EntityId, tag_name: Option<CName>) -> bool {
-        EMITTERS
-            .read()
-            .iter()
-            .any(|(id, tag)| *id == entity_id && tag_name.map(|x| x == *tag).unwrap_or(true))
+        Emitters::is_registered_emitter(entity_id, tag_name)
     }
 
     pub fn unregister_emitter(&mut self, entity_id: &EntityId, tag_name: &CName) -> bool {
@@ -338,7 +335,7 @@ impl Scene {
     }
 
     pub fn emitters_count() -> i32 {
-        EMITTERS.read().len() as i32
+        Emitters::emitters_count()
     }
 }
 
