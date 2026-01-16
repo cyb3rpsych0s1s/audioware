@@ -37,7 +37,7 @@ public class ChangeMenuSounds extends ScriptableService {
         GameInstance.GetAudioEventCallbackSystem()
             .RegisterCallback(n"ui_menu_onpress", this, n"OnUIMenuOnPress");
         
-        if !IsDefined(this.mainMenuMusic) { return; }
+        if IsDefined(this.mainMenuMusic) { return; }
             
         // pick another theme :)
         let settings = new AudioSettingsExt();

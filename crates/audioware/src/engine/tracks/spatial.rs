@@ -54,7 +54,7 @@ impl Spatial {
         Ok(Self { track, occlusion })
     }
     pub fn set_occlusion(&mut self, factor: f32) {
-        let normalized = (20_000.0 * factor).clamp(600.0, 20_000.);
+        let normalized = (20_000.0 * (1. - factor)).clamp(600.0, 20_000.);
         if let Some(x) = self.occlusion.as_mut() {
             x.set_cutoff(normalized as f64, OCCLUDED);
         }
