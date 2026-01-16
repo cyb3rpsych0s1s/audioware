@@ -11,6 +11,8 @@ use crate::{engine::tweens::OCCLUDED, error::Error};
 
 use super::ambience::Ambience;
 
+pub const DEFAULT_CUTOFF: f64 = 18_000.0;
+
 pub struct Spatial {
     track: SpatialTrackHandle,
     occlusion: Option<FilterHandle>,
@@ -48,15 +50,15 @@ impl Spatial {
         }
         let mut occlusion = None;
         if enable_occlusion {
-            occlusion = Some(builder.add_effect(FilterBuilder::new().cutoff(20_000.)));
+            occlusion = Some(builder.add_effect(FilterBuilder::new().cutoff(DEFAULT_CUTOFF)));
         }
         let track = manager.add_spatial_sub_track(listener, position, builder)?;
         Ok(Self { track, occlusion })
     }
     pub fn set_occlusion(&mut self, factor: f32) {
-        let normalized = (20_000.0 * (1. - factor)).clamp(600.0, 20_000.);
+        let normalized = (DEFAULT_CUTOFF * (1. - factor as f64)).clamp(600.0, DEFAULT_CUTOFF);
         if let Some(x) = self.occlusion.as_mut() {
-            x.set_cutoff(normalized as f64, OCCLUDED);
+            x.set_cutoff(normalized, OCCLUDED);
         }
     }
     pub fn occluded(&self) -> bool {
