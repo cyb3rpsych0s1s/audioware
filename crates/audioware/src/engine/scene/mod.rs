@@ -115,6 +115,7 @@ impl Scene {
             tag_name,
             emitter_name,
             dilation,
+            Some(0.),
             position,
             busy,
             settings
@@ -336,6 +337,10 @@ impl Scene {
 
     pub fn emitters_count() -> i32 {
         Emitters::emitters_count()
+    }
+
+    pub fn update_pending_occlusions(&mut self, entity_id: EntityId, factor: f32) {
+        self.emitters.update_pending_occlusions(entity_id, factor);
     }
 }
 

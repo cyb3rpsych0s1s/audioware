@@ -60,6 +60,11 @@ impl EmitterSlots {
             x.handle.set_position(position, IMMEDIATELY);
         });
     }
+    pub fn set_emitter_occlusion(&mut self, factor: f32) {
+        self.slots.iter_mut().for_each(|x| {
+            x.handle.set_occlusion(factor);
+        });
+    }
     pub fn is_empty(&self) -> bool {
         self.slots.is_empty()
     }
@@ -104,6 +109,9 @@ impl EmitterSlots {
         self.slots.iter_mut().for_each(|x| {
             x.sync_dilation(rate, tween);
         });
+    }
+    pub fn any_occluded(&self) -> bool {
+        self.slots.iter().any(|x| x.occluded())
     }
 }
 

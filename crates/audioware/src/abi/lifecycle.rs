@@ -64,6 +64,10 @@ pub enum Lifecycle {
         entity_id: EntityId,
         ease_out_curve: CName,
     },
+    SetEmitterOcclusion {
+        entity_id: EntityId,
+        value: f32,
+    },
     Session(Session),
     EngagementScreen,
     SwitchToScenario(CName),
@@ -147,6 +151,10 @@ impl std::fmt::Display for Lifecycle {
                     "unset emitter dilation, curve: {ease_out_curve} [{entity_id}]"
                 )
             }
+            Lifecycle::SetEmitterOcclusion {
+                entity_id,
+                value: occlusion,
+            } => write!(f, "set emitter occlusion {occlusion} [{entity_id}]"),
             Lifecycle::ReportInitialization => write!(f, "report initialization"),
             #[cfg(feature = "hot-reload")]
             Lifecycle::HotReload => write!(f, "hot-reload"),

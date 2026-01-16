@@ -102,4 +102,7 @@ impl EmitterSlot {
     pub fn sync_dilation(&mut self, rate: f64, tween: Tween) {
         self.handles.sync_dilation(rate, tween);
     }
+    pub fn occluded(&self) -> bool {
+        self.handle.occluded()
+    }
 }

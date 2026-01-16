@@ -28,4 +28,5 @@ public class EmitterSettings {
     public let persistUntilSoundsFinish: Bool = false;
     public let affectedByReverbMix: Bool = true;
     public let affectedByEnvironmentalPreset: Bool = false;
+    public let enableOcclusion: Bool = false;
 }

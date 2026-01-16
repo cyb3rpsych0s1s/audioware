@@ -123,7 +123,7 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
             .name("audioware".into())
             .spawn(move || {
                 lifecycle!("initialize channels...");
-                let (sl, rl) = bounded::<Lifecycle>(32);
+                let (sl, rl) = bounded::<Lifecycle>(capacity * 4);
                 let (sc, rc) = bounded::<Command>(capacity);
                 let (se, re) = unbounded::<Callback>();
                 let (sds, rds) = bounded::<DynamicSound>(capacity);
@@ -219,6 +219,9 @@ pub fn run(
                         ease_out_curve,
                     },
                 ),
+                Lifecycle::SetEmitterOcclusion { entity_id, value } => {
+                    engine.set_emitter_occlusion(entity_id, value)
+                }
                 Lifecycle::RegisterEmitter {
                     entity_id,
                     tag_name,

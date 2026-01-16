@@ -45,17 +45,26 @@ pub use emitter::Emitter;
 
 use super::AffectedByTimeDilation;
 
-cache!(red4ext_rs::types::EntityId, red4ext_rs::types::CName);
+cache!(
+    red4ext_rs::types::EntityId,
+    (red4ext_rs::types::CName, Option<f32>)
+);
 
-pub struct Emitters(DashMap<EntityId, EmitterSlots>);
+pub struct Emitters {
+    entries: DashMap<EntityId, EmitterSlots>,
+    pending_occlusions: Vec<(EntityId, f32)>,
+}
 
 impl Emitters {
     pub fn with_capacity(capacity: usize) -> Self {
         publish_entries(Vec::with_capacity(capacity));
-        Self(Default::default())
+        Self {
+            entries: Default::default(),
+            pending_occlusions: Vec::with_capacity(capacity),
+        }
     }
     pub fn exists_tag(&self, entity_id: &EntityId, tag_name: &CName) -> bool {
-        self.0
+        self.entries
             .get(entity_id)
             .map(|x| x.exists_tag(tag_name))
             .unwrap_or(false)
@@ -68,6 +77,7 @@ impl Emitters {
         tag_name: CName,
         emitter_name: Option<CName>,
         dilation: Option<f32>,
+        occlusion: Option<f32>,
         last_known_position: Vector4,
         busy: bool,
         persist_until_sounds_finish: bool,
@@ -80,10 +90,10 @@ impl Emitters {
             return Ok(());
         }
         let slot = EmitterSlot::new(handle, tag_name, emitter_name, persist_until_sounds_finish);
-        if let Some(mut slots) = self.0.get_mut(&entity_id) {
+        if let Some(mut slots) = self.entries.get_mut(&entity_id) {
             slots.value_mut().insert(slot);
         } else {
-            self.0.insert(
+            self.entries.insert(
                 entity_id,
                 EmitterSlots::new(slot, dilation, busy, last_known_position),
             );
@@ -92,7 +102,7 @@ impl Emitters {
         with_entries(|x| {
             next = x.to_vec();
         });
-        next.push((entity_id, tag_name));
+        next.push((entity_id, (tag_name, occlusion)));
         publish_entries(next);
         lifecycle!(
             "added emitter {entity_id} with tag name {}",
@@ -101,14 +111,14 @@ impl Emitters {
         Ok(())
     }
     pub fn sync_emitters(&mut self) -> Result<(), Error> {
-        if self.0.is_empty() {
+        if self.entries.is_empty() {
             return Ok(());
         }
         let mut next = vec![];
         with_entries(|x| {
             next = x.to_vec();
         });
-        self.0.retain(|k, v| {
+        self.entries.retain(|k, v| {
             if v.marked_for_death && !v.any_playing_handle() {
                 next.retain(|(id, _)| id != k);
                 return false;
@@ -122,6 +132,9 @@ impl Emitters {
             // weirdly enough if emitter is not updated, sound(s) won't update as expected.
             // e.g. when listener moves but emitter stands still.
             v.set_emitter_position(position);
+            if let Some((_, (_, Some(occlusion)))) = next.iter().find(|x| x.0 == *k) {
+                v.set_emitter_occlusion(*occlusion);
+            }
             true
         });
         publish_entries(next);
@@ -130,25 +143,25 @@ impl Emitters {
     pub fn unregister_emitter(&mut self, entity_id: &EntityId, tag_name: &CName) -> bool {
         let mut last = false;
         let mut removed = false;
-        if let Some(mut slots) = self.0.get_mut(entity_id) {
+        if let Some(mut slots) = self.entries.get_mut(entity_id) {
             removed = slots.value_mut().unregister_emitter(tag_name);
             last = slots.is_empty();
         }
         if removed && last {
-            self.0.remove(entity_id);
+            self.entries.remove(entity_id);
         }
         if removed {
             let mut next = vec![];
             with_entries(|x| {
                 next = x.to_vec();
             });
-            next.retain(|(id, name)| id != entity_id || name != tag_name);
+            next.retain(|(id, (name, _))| id != entity_id || name != tag_name);
             publish_entries(next);
         }
         removed
     }
     pub fn on_emitter_dies(&mut self, entity_id: &EntityId) {
-        self.0.retain(|k, v| {
+        self.entries.retain(|k, v| {
             if k == entity_id {
                 let mut retain = false;
                 v.slots.retain_mut(|x| {
@@ -180,7 +193,7 @@ impl Emitters {
         }
     }
     pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId, tween: Tween) {
-        if let Some(mut slots) = self.0.get_mut(&entity_id) {
+        if let Some(mut slots) = self.entries.get_mut(&entity_id) {
             for ref mut slot in slots.slots.iter_mut() {
                 if !slot.persist_until_sounds_finish {
                     slot.stop(tween);
@@ -195,7 +208,7 @@ impl Emitters {
         tag_name: CName,
         tween: Tween,
     ) {
-        if let Some(mut slots) = self.0.get_mut(&entity_id) {
+        if let Some(mut slots) = self.entries.get_mut(&entity_id) {
             slots
                 .value_mut()
                 .stop_on_emitter(event_name, tag_name, tween);
@@ -242,20 +255,20 @@ impl Emitters {
             })
     }
     pub fn get_mut(&mut self, entity_id: &EntityId) -> Option<RefMut<'_, EntityId, EmitterSlots>> {
-        self.0.get_mut(entity_id)
+        self.entries.get_mut(entity_id)
     }
     pub fn iter_mut(&mut self) -> impl Iterator<Item = RefMutMulti<'_, EntityId, EmitterSlots>> {
-        self.0.iter_mut()
+        self.entries.iter_mut()
     }
     pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
+        self.entries.is_empty()
     }
     pub fn is_registered_emitter(entity_id: EntityId, tag_name: Option<CName>) -> bool {
         let mut registered = false;
         with_entries(|x| {
-            registered = x
-                .iter()
-                .any(|(id, tag)| *id == entity_id && tag_name.map(|x| x == *tag).unwrap_or(true))
+            registered = x.iter().any(|(id, (tag, _))| {
+                *id == entity_id && tag_name.map(|x| x == *tag).unwrap_or(true)
+            })
         });
         registered
     }
@@ -266,11 +279,28 @@ impl Emitters {
         });
         len
     }
+    pub fn update_pending_occlusions(&mut self, entity_id: EntityId, factor: f32) {
+        if !self
+            .entries
+            .get(&entity_id)
+            .map(|x| x.any_occluded())
+            .unwrap_or(false)
+        {
+            return;
+        }
+        for x in self.pending_occlusions.iter_mut() {
+            if x.0 == entity_id {
+                x.1 = factor;
+                return;
+            }
+        }
+        self.pending_occlusions.push((entity_id, factor));
+    }
 }
 
 impl Stop for Emitters {
     fn stop(&mut self, tween: Tween) {
-        self.0.iter_mut().for_each(|mut x| {
+        self.entries.iter_mut().for_each(|mut x| {
             x.stop(tween);
         });
     }
@@ -278,7 +308,7 @@ impl Stop for Emitters {
 
 impl Pause for Emitters {
     fn pause(&mut self, tween: Tween) {
-        self.0.iter_mut().for_each(|mut x| {
+        self.entries.iter_mut().for_each(|mut x| {
             x.pause(tween);
         });
     }
@@ -286,7 +316,7 @@ impl Pause for Emitters {
 
 impl Resume for Emitters {
     fn resume(&mut self, tween: Tween) {
-        self.0.iter_mut().for_each(|mut x| {
+        self.entries.iter_mut().for_each(|mut x| {
             x.resume(tween);
         });
     }
@@ -300,13 +330,13 @@ impl Clear for Emitters {
         });
         next.clear();
         publish_entries(next);
-        self.0.clear();
+        self.entries.clear();
     }
 }
 
 impl Reclaim for Emitters {
     fn reclaim(&mut self) {
-        self.0
+        self.entries
             .iter_mut()
             .for_each(|mut x| x.slots.iter_mut().for_each(|x| x.handles.reclaim()));
         reclaim_entries();
@@ -331,7 +361,7 @@ impl SetControlledVolume for Emitters {
         amplitude: audioware_core::Amplitude,
         tween: Tween,
     ) {
-        self.0.iter_mut().for_each(|mut x| {
+        self.entries.iter_mut().for_each(|mut x| {
             x.set_controlled_volume(id, amplitude, tween);
         })
     }
@@ -339,7 +369,7 @@ impl SetControlledVolume for Emitters {
 
 impl SetControlledPlaybackRate for Emitters {
     fn set_controlled_playback_rate(&mut self, id: ControlId, rate: f64, tween: Tween) {
-        self.0.iter_mut().for_each(|mut x| {
+        self.entries.iter_mut().for_each(|mut x| {
             x.set_controlled_playback_rate(id, rate, tween);
         })
     }
@@ -347,7 +377,7 @@ impl SetControlledPlaybackRate for Emitters {
 
 impl PositionControlled for Emitters {
     fn position_controlled(&mut self, id: ControlId, sender: crossbeam::channel::Sender<f32>) {
-        self.0.iter_mut().for_each(|mut x| {
+        self.entries.iter_mut().for_each(|mut x| {
             x.position_controlled(id, sender.clone());
         })
     }
@@ -355,7 +385,7 @@ impl PositionControlled for Emitters {
 
 impl StopControlled for Emitters {
     fn stop_controlled(&mut self, id: ControlId, tween: Tween) {
-        self.0.iter_mut().for_each(|mut x| {
+        self.entries.iter_mut().for_each(|mut x| {
             x.stop_controlled(id, tween);
         })
     }
@@ -363,7 +393,7 @@ impl StopControlled for Emitters {
 
 impl PauseControlled for Emitters {
     fn pause_controlled(&mut self, id: ControlId, tween: Tween) {
-        self.0.iter_mut().for_each(|mut x| {
+        self.entries.iter_mut().for_each(|mut x| {
             x.pause_controlled(id, tween);
         })
     }
@@ -371,7 +401,7 @@ impl PauseControlled for Emitters {
 
 impl ResumeControlled for Emitters {
     fn resume_controlled(&mut self, id: ControlId, tween: Tween) {
-        self.0.iter_mut().for_each(|mut x| {
+        self.entries.iter_mut().for_each(|mut x| {
             x.resume_controlled(id, tween);
         })
     }
@@ -379,7 +409,7 @@ impl ResumeControlled for Emitters {
 
 impl ResumeControlledAt for Emitters {
     fn resume_controlled_at(&mut self, id: ControlId, delay: f64, tween: Tween) {
-        self.0.iter_mut().for_each(|mut x| {
+        self.entries.iter_mut().for_each(|mut x| {
             x.resume_controlled_at(id, delay, tween);
         })
     }
@@ -387,7 +417,7 @@ impl ResumeControlledAt for Emitters {
 
 impl SeekControlledTo for Emitters {
     fn seek_controlled_to(&mut self, id: ControlId, position: f64) {
-        self.0.iter_mut().for_each(|mut x| {
+        self.entries.iter_mut().for_each(|mut x| {
             x.seek_controlled_to(id, position);
         })
     }
@@ -395,7 +425,7 @@ impl SeekControlledTo for Emitters {
 
 impl SeekControlledBy for Emitters {
     fn seek_controlled_by(&mut self, id: ControlId, amount: f64) {
-        self.0.iter_mut().for_each(|mut x| {
+        self.entries.iter_mut().for_each(|mut x| {
             x.seek_controlled_by(id, amount);
         })
     }
