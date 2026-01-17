@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["ENGLISH","NO_PLAYER_GENDER"],"static":["PLAYER_GENDER","SPOKEN_LOCALE","WRITTEN_LOCALE"],"struct":["PlayerGender","SpokenLocale","WrittenLocale"],"trait":["ToGender"]};

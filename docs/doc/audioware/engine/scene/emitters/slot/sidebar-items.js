@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["EmitterEntryOptions","EmitterSlot"],"type":["PlayResult"]};

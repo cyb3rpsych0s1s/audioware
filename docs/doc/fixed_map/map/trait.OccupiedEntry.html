@@ -1,0 +1,248 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A view into an occupied entry in a `Map`. It is part of the `Entry` enum."><title>OccupiedEntry in fixed_map::map - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="fixed_map" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0 (ded5c06cf 2025-12-08)" data-channel="1.92.0" data-search-js="search-d69d8955.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">OccupiedEntry</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../fixed_map/index.html">fixed_<wbr>map</a><span class="version">0.9.5</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Occupied<wbr>Entry</a></h2><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.get" title="get">get</a></li><li><a href="#tymethod.get_mut" title="get_mut">get_mut</a></li><li><a href="#tymethod.insert" title="insert">insert</a></li><li><a href="#tymethod.into_mut" title="into_mut">into_mut</a></li><li><a href="#tymethod.key" title="key">key</a></li><li><a href="#tymethod.remove" title="remove">remove</a></li></ul><h3><a href="#foreign-impls">Implementations on Foreign Types</a></h3><ul class="block"><li><a href="#impl-OccupiedEntry%3C'a,+K,+V%3E-for-OccupiedEntry%3C'a,+K,+V,+BuildHasherDefault%3CAHasher%3E%3E" title="OccupiedEntry&#60;&#39;a, K, V, DefaultHashBuilder&#62;">OccupiedEntry&#60;&#39;a, K, V, DefaultHashBuilder&#62;</a></li></ul><h3><a href="#implementors">Implementors</a></h3></section><div id="rustdoc-modnav"><h2><a href="index.html">In fixed_<wbr>map::<wbr>map</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">fixed_map</a>::<wbr><a href="index.html">map</a></div><h1>Trait <span class="trait">Occupied<wbr>Entry</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/fixed_map/map/storage.rs.html#124-422">Source</a> </span></div><pre class="rust item-decl"><code>pub trait OccupiedEntry&lt;'a, K, V&gt; {
+    // Required methods
+    fn <a href="#tymethod.key" class="fn">key</a>(&amp;self) -&gt; K;
+<span class="item-spacer"></span>    fn <a href="#tymethod.get" class="fn">get</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.92.0/std/primitive.reference.html">&amp;V</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.get_mut" class="fn">get_mut</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.92.0/std/primitive.reference.html">&amp;mut V</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.into_mut" class="fn">into_mut</a>(self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.92.0/std/primitive.reference.html">&amp;'a mut V</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.insert" class="fn">insert</a>(&amp;mut self, value: V) -&gt; V;
+<span class="item-spacer"></span>    fn <a href="#tymethod.remove" class="fn">remove</a>(self) -&gt; V;
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A view into an occupied entry in a <a href="../struct.Map.html" title="struct fixed_map::Map"><code>Map</code></a>. It is part of the
+<a href="enum.Entry.html" title="enum fixed_map::map::Entry"><code>Entry</code></a> enum.</p>
+</div></details><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.key" class="method"><a class="src rightside" href="../../src/fixed_map/map/storage.rs.html#172">Source</a><h4 class="code-header">fn <a href="#tymethod.key" class="fn">key</a>(&amp;self) -&gt; K</h4></section></summary><div class="docblock"><p>Gets a copy of the key in the entry.</p>
+<h5 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fixed_map::{Key, Map};
+<span class="kw">use </span>fixed_map::map::{Entry, OccupiedEntry};
+
+<span class="attr">#[derive(Clone, Copy, Key, Debug, PartialEq)]
+</span><span class="kw">enum </span>MyKey {
+    First,
+    Second,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>map: Map&lt;MyKey, i32&gt; = Map::new();
+map.insert(MyKey::First, <span class="number">12</span>);
+
+<span class="kw">let </span>occupied = <span class="kw">match </span>map.entry(MyKey::First) {
+    Entry::Occupied(entry) =&gt; entry,
+    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
+};
+
+<span class="macro">assert_eq!</span>(occupied.key(), MyKey::First);</code></pre></div>
+<p>Using a composite key:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fixed_map::{Key, Map};
+<span class="kw">use </span>fixed_map::map::{Entry, OccupiedEntry};
+
+<span class="attr">#[derive(Clone, Copy, Key, Debug, PartialEq)]
+</span><span class="kw">enum </span>MyKey {
+    First(bool),
+    Second,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>map: Map&lt;MyKey, i32&gt; = Map::new();
+map.insert(MyKey::First(<span class="bool-val">false</span>), <span class="number">12</span>);
+
+<span class="kw">let </span>occupied = <span class="kw">match </span>map.entry(MyKey::First(<span class="bool-val">false</span>)) {
+    Entry::Occupied(entry) =&gt; entry,
+    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
+};
+
+<span class="macro">assert_eq!</span>(occupied.key(), MyKey::First(<span class="bool-val">false</span>));</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="tymethod.get" class="method"><a class="src rightside" href="../../src/fixed_map/map/storage.rs.html#221">Source</a><h4 class="code-header">fn <a href="#tymethod.get" class="fn">get</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.92.0/std/primitive.reference.html">&amp;V</a></h4></section></summary><div class="docblock"><p>Gets a reference to the value in the entry.</p>
+<h5 id="examples-1"><a class="doc-anchor" href="#examples-1">§</a>Examples</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fixed_map::{Key, Map};
+<span class="kw">use </span>fixed_map::map::{Entry, OccupiedEntry};
+
+<span class="attr">#[derive(Clone, Copy, Key)]
+</span><span class="kw">enum </span>MyKey {
+    First,
+    Second,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>map: Map&lt;MyKey, i32&gt; = Map::new();
+map.insert(MyKey::First, <span class="number">12</span>);
+
+<span class="kw">let </span>occupied = <span class="kw">match </span>map.entry(MyKey::First) {
+    Entry::Occupied(entry) =&gt; entry,
+    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
+};
+
+<span class="macro">assert_eq!</span>(occupied.get(), <span class="kw-2">&amp;</span><span class="number">12</span>);</code></pre></div>
+<p>Using a composite key:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fixed_map::{Key, Map};
+<span class="kw">use </span>fixed_map::map::{Entry, OccupiedEntry};
+
+<span class="attr">#[derive(Clone, Copy, Key)]
+</span><span class="kw">enum </span>MyKey {
+    First(bool),
+    Second,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>map: Map&lt;MyKey, i32&gt; = Map::new();
+map.insert(MyKey::First(<span class="bool-val">false</span>), <span class="number">12</span>);
+
+<span class="kw">let </span>occupied = <span class="kw">match </span>map.entry(MyKey::First(<span class="bool-val">false</span>)) {
+    Entry::Occupied(entry) =&gt; entry,
+    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
+};
+
+<span class="macro">assert_eq!</span>(occupied.get(), <span class="kw-2">&amp;</span><span class="number">12</span>);</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="tymethod.get_mut" class="method"><a class="src rightside" href="../../src/fixed_map/map/storage.rs.html#277">Source</a><h4 class="code-header">fn <a href="#tymethod.get_mut" class="fn">get_mut</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.92.0/std/primitive.reference.html">&amp;mut V</a></h4></section></summary><div class="docblock"><p>Gets a mutable reference to the value in the entry.</p>
+<p>If you need a reference to the <code>OccupiedEntry</code> which may
+outlive the destruction of the <code>Entry</code> value, see <a href="trait.OccupiedEntry.html#tymethod.into_mut"><code>into_mut</code></a>.</p>
+<h5 id="examples-2"><a class="doc-anchor" href="#examples-2">§</a>Examples</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fixed_map::{Key, Map};
+<span class="kw">use </span>fixed_map::map::{Entry, OccupiedEntry};
+
+<span class="attr">#[derive(Clone, Copy, Key)]
+</span><span class="kw">enum </span>MyKey {
+    First,
+    Second,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>map: Map&lt;MyKey, i32&gt; = Map::new();
+map.insert(MyKey::First, <span class="number">12</span>);
+
+<span class="kw">let </span><span class="kw-2">mut </span>occupied = <span class="kw">match </span>map.entry(MyKey::First) {
+    Entry::Occupied(entry) =&gt; entry,
+    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
+};
+
+<span class="macro">assert_eq!</span>(occupied.get_mut(), <span class="kw-2">&amp;</span><span class="number">12</span>);</code></pre></div>
+<p>Using a composite key:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fixed_map::{Key, Map};
+<span class="kw">use </span>fixed_map::map::{Entry, OccupiedEntry};
+
+<span class="attr">#[derive(Clone, Copy, Key)]
+</span><span class="kw">enum </span>MyKey {
+    First(bool),
+    Second,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>map: Map&lt;MyKey, i32&gt; = Map::new();
+map.insert(MyKey::First(<span class="bool-val">false</span>), <span class="number">12</span>);
+
+<span class="kw">let </span><span class="kw-2">mut </span>occupied = <span class="kw">match </span>map.entry(MyKey::First(<span class="bool-val">false</span>)) {
+    Entry::Occupied(entry) =&gt; entry,
+    <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
+};
+
+<span class="kw-2">*</span>occupied.get_mut() <span class="kw-2">*</span>= <span class="number">2</span>;
+<span class="macro">assert_eq!</span>(occupied.get(), <span class="kw-2">&amp;</span><span class="number">24</span>);
+<span class="comment">// We can use the same Entry multiple times.
+</span><span class="kw-2">*</span>occupied.get_mut() -= <span class="number">10</span>;
+<span class="macro">assert_eq!</span>(occupied.get(), <span class="kw-2">&amp;</span><span class="number">14</span>);</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="tymethod.into_mut" class="method"><a class="src rightside" href="../../src/fixed_map/map/storage.rs.html#327">Source</a><h4 class="code-header">fn <a href="#tymethod.into_mut" class="fn">into_mut</a>(self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.92.0/std/primitive.reference.html">&amp;'a mut V</a></h4></section></summary><div class="docblock"><p>Converts the <code>OccupiedEntry</code> into a mutable reference to the value in the entry
+with a lifetime bound to the map itself.</p>
+<p>If you need multiple references to the <code>OccupiedEntry</code>, see <a href="trait.OccupiedEntry.html#tymethod.get_mut"><code>get_mut</code></a>.</p>
+<h5 id="examples-3"><a class="doc-anchor" href="#examples-3">§</a>Examples</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fixed_map::{Key, Map};
+<span class="kw">use </span>fixed_map::map::{Entry, OccupiedEntry};
+
+<span class="attr">#[derive(Clone, Copy, Key)]
+</span><span class="kw">enum </span>MyKey {
+    First,
+    Second,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>map: Map&lt;MyKey, i32&gt; = Map::new();
+map.insert(MyKey::First, <span class="number">12</span>);
+
+<span class="kw">if let </span>Entry::Occupied(occupied) = map.entry(MyKey::First) {
+    <span class="kw-2">*</span>occupied.into_mut() += <span class="number">10</span>;
+};
+
+<span class="macro">assert_eq!</span>(map.get(MyKey::First), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="number">22</span>));</code></pre></div>
+<p>Using a composite key:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fixed_map::{Key, Map};
+<span class="kw">use </span>fixed_map::map::{Entry, OccupiedEntry};
+
+<span class="attr">#[derive(Clone, Copy, Key)]
+</span><span class="kw">enum </span>MyKey {
+    First(bool),
+    Second,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>map: Map&lt;MyKey, i32&gt; = Map::new();
+map.insert(MyKey::First(<span class="bool-val">false</span>), <span class="number">12</span>);
+
+<span class="kw">if let </span>Entry::Occupied(occupied) = map.entry(MyKey::First(<span class="bool-val">false</span>)) {
+    <span class="kw-2">*</span>occupied.into_mut() += <span class="number">10</span>;
+};
+
+<span class="macro">assert_eq!</span>(map.get(MyKey::First(<span class="bool-val">false</span>)), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="number">22</span>));</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="tymethod.insert" class="method"><a class="src rightside" href="../../src/fixed_map/map/storage.rs.html#374">Source</a><h4 class="code-header">fn <a href="#tymethod.insert" class="fn">insert</a>(&amp;mut self, value: V) -&gt; V</h4></section></summary><div class="docblock"><p>Sets the value of the entry, and returns the entry’s old value.</p>
+<h5 id="examples-4"><a class="doc-anchor" href="#examples-4">§</a>Examples</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fixed_map::{Key, Map};
+<span class="kw">use </span>fixed_map::map::{Entry, OccupiedEntry};
+
+<span class="attr">#[derive(Clone, Copy, Key)]
+</span><span class="kw">enum </span>MyKey {
+    First,
+    Second,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>map: Map&lt;MyKey, i32&gt; = Map::new();
+map.insert(MyKey::First, <span class="number">12</span>);
+
+<span class="kw">if let </span>Entry::Occupied(<span class="kw-2">mut </span>occupied) = map.entry(MyKey::First) {
+    <span class="macro">assert_eq!</span>(occupied.insert(<span class="number">10</span>), <span class="number">12</span>);
+};
+
+<span class="macro">assert_eq!</span>(map.get(MyKey::First), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="number">10</span>));</code></pre></div>
+<p>Using a composite key:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fixed_map::{Key, Map};
+<span class="kw">use </span>fixed_map::map::{Entry, OccupiedEntry};
+
+<span class="attr">#[derive(Clone, Copy, Key)]
+</span><span class="kw">enum </span>MyKey {
+    First(bool),
+    Second,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>map: Map&lt;MyKey, i32&gt; = Map::new();
+map.insert(MyKey::First(<span class="bool-val">false</span>), <span class="number">12</span>);
+
+<span class="kw">if let </span>Entry::Occupied(<span class="kw-2">mut </span>occupied) = map.entry(MyKey::First(<span class="bool-val">false</span>)) {
+    <span class="macro">assert_eq!</span>(occupied.insert(<span class="number">10</span>), <span class="number">12</span>);
+};
+
+<span class="macro">assert_eq!</span>(map.get(MyKey::First(<span class="bool-val">false</span>)), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="number">10</span>));</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="tymethod.remove" class="method"><a class="src rightside" href="../../src/fixed_map/map/storage.rs.html#421">Source</a><h4 class="code-header">fn <a href="#tymethod.remove" class="fn">remove</a>(self) -&gt; V</h4></section></summary><div class="docblock"><p>Takes the value out of the entry, and returns it.</p>
+<h5 id="examples-5"><a class="doc-anchor" href="#examples-5">§</a>Examples</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fixed_map::{Key, Map};
+<span class="kw">use </span>fixed_map::map::{Entry, OccupiedEntry};
+
+<span class="attr">#[derive(Clone, Copy, Key)]
+</span><span class="kw">enum </span>MyKey {
+    First,
+    Second,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>map: Map&lt;MyKey, i32&gt; = Map::new();
+map.insert(MyKey::First, <span class="number">12</span>);
+
+<span class="kw">if let </span>Entry::Occupied(occupied) = map.entry(MyKey::First) {
+    <span class="macro">assert_eq!</span>(occupied.remove(), <span class="number">12</span>);
+};
+
+<span class="macro">assert_eq!</span>(map.contains_key(MyKey::First), <span class="bool-val">false</span>);</code></pre></div>
+<p>Using a composite key:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>fixed_map::{Key, Map};
+<span class="kw">use </span>fixed_map::map::{Entry, OccupiedEntry};
+
+<span class="attr">#[derive(Clone, Copy, Key)]
+</span><span class="kw">enum </span>MyKey {
+    First(bool),
+    Second,
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>map: Map&lt;MyKey, i32&gt; = Map::new();
+map.insert(MyKey::First(<span class="bool-val">true</span>), <span class="number">12</span>);
+
+<span class="kw">if let </span>Entry::Occupied(occupied) = map.entry(MyKey::First(<span class="bool-val">true</span>)) {
+    <span class="macro">assert_eq!</span>(occupied.remove(), <span class="number">12</span>);
+};
+
+<span class="macro">assert_eq!</span>(map.contains_key(MyKey::First(<span class="bool-val">true</span>)), <span class="bool-val">false</span>);</code></pre></div></div></details></div><h2 id="foreign-impls" class="section-header">Implementations on Foreign Types<a href="#foreign-impls" class="anchor">§</a></h2><details class="toggle implementors-toggle"><summary><section id="impl-OccupiedEntry%3C'a,+K,+V%3E-for-OccupiedEntry%3C'a,+K,+V,+BuildHasherDefault%3CAHasher%3E%3E" class="impl"><a class="src rightside" href="../../src/fixed_map/map\storage/hashbrown.rs.html#69-102">Source</a><a href="#impl-OccupiedEntry%3C'a,+K,+V%3E-for-OccupiedEntry%3C'a,+K,+V,+BuildHasherDefault%3CAHasher%3E%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'a, K, V&gt; <a class="trait" href="trait.OccupiedEntry.html" title="trait fixed_map::map::OccupiedEntry">OccupiedEntry</a>&lt;'a, K, V&gt; for <a class="struct" href="../../hashbrown/map/struct.OccupiedEntry.html" title="struct hashbrown::map::OccupiedEntry">OccupiedEntry</a>&lt;'a, K, V, <a class="type" href="../../hashbrown/map/type.DefaultHashBuilder.html" title="type hashbrown::map::DefaultHashBuilder">DefaultHashBuilder</a>&gt;<div class="where">where
+    K: <a class="trait" href="https://doc.rust-lang.org/1.92.0/core/marker/trait.Copy.html" title="trait core::marker::Copy">Copy</a>,</div></h3></section></summary><div class="impl-items"><section id="method.key" class="method trait-impl"><a class="src rightside" href="../../src/fixed_map/map\storage/hashbrown.rs.html#74-76">Source</a><a href="#method.key" class="anchor">§</a><h4 class="code-header">fn <a href="#tymethod.key" class="fn">key</a>(&amp;self) -&gt; K</h4></section><section id="method.get" class="method trait-impl"><a class="src rightside" href="../../src/fixed_map/map\storage/hashbrown.rs.html#79-81">Source</a><a href="#method.get" class="anchor">§</a><h4 class="code-header">fn <a href="#tymethod.get" class="fn">get</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.92.0/std/primitive.reference.html">&amp;V</a></h4></section><section id="method.get_mut" class="method trait-impl"><a class="src rightside" href="../../src/fixed_map/map\storage/hashbrown.rs.html#84-86">Source</a><a href="#method.get_mut" class="anchor">§</a><h4 class="code-header">fn <a href="#tymethod.get_mut" class="fn">get_mut</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.92.0/std/primitive.reference.html">&amp;mut V</a></h4></section><section id="method.into_mut" class="method trait-impl"><a class="src rightside" href="../../src/fixed_map/map\storage/hashbrown.rs.html#89-91">Source</a><a href="#method.into_mut" class="anchor">§</a><h4 class="code-header">fn <a href="#tymethod.into_mut" class="fn">into_mut</a>(self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.92.0/std/primitive.reference.html">&amp;'a mut V</a></h4></section><section id="method.insert" class="method trait-impl"><a class="src rightside" href="../../src/fixed_map/map\storage/hashbrown.rs.html#94-96">Source</a><a href="#method.insert" class="anchor">§</a><h4 class="code-header">fn <a href="#tymethod.insert" class="fn">insert</a>(&amp;mut self, value: V) -&gt; V</h4></section><section id="method.remove" class="method trait-impl"><a class="src rightside" href="../../src/fixed_map/map\storage/hashbrown.rs.html#99-101">Source</a><a href="#method.remove" class="anchor">§</a><h4 class="code-header">fn <a href="#tymethod.remove" class="fn">remove</a>(self) -&gt; V</h4></section></div></details><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"></div><script src="../../trait.impl/fixed_map/map/storage/trait.OccupiedEntry.js" data-ignore-extern-crates="hashbrown" async></script></section></div></main></body></html>

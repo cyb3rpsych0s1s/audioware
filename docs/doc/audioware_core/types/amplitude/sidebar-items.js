@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["AmplitudeError"],"fn":["amplitude_to_decibels"],"struct":["Amplitude","CannotBeNegativeSnafu"]};

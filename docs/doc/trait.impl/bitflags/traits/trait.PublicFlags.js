@@ -1,0 +1,9 @@
+(function() {
+    var implementors = Object.fromEntries([["audioware",[["impl <a class=\"trait\" href=\"bitflags/traits/trait.PublicFlags.html\" title=\"trait bitflags::traits::PublicFlags\">PublicFlags</a> for <a class=\"struct\" href=\"audioware/engine/queue/struct.Flags.html\" title=\"struct audioware::engine::queue::Flags\">Flags</a>"],["impl <a class=\"trait\" href=\"bitflags/traits/trait.PublicFlags.html\" title=\"trait bitflags::traits::PublicFlags\">PublicFlags</a> for <a class=\"struct\" href=\"audioware/struct.AudioEventFlags.html\" title=\"struct audioware::AudioEventFlags\">AudioEventFlags</a>"],["impl <a class=\"trait\" href=\"bitflags/traits/trait.PublicFlags.html\" title=\"trait bitflags::traits::PublicFlags\">PublicFlags</a> for <a class=\"struct\" href=\"audioware/struct.EventActionTypes.html\" title=\"struct audioware::EventActionTypes\">EventActionTypes</a>"],["impl <a class=\"trait\" href=\"bitflags/traits/trait.PublicFlags.html\" title=\"trait bitflags::traits::PublicFlags\">PublicFlags</a> for <a class=\"struct\" href=\"audioware/struct.EventHookTypes.html\" title=\"struct audioware::EventHookTypes\">EventHookTypes</a>"],["impl <a class=\"trait\" href=\"bitflags/traits/trait.PublicFlags.html\" title=\"trait bitflags::traits::PublicFlags\">PublicFlags</a> for <a class=\"struct\" href=\"audioware/struct.PEFlag.html\" title=\"struct audioware::PEFlag\">PEFlag</a>"],["impl <a class=\"trait\" href=\"bitflags/traits/trait.PublicFlags.html\" title=\"trait bitflags::traits::PublicFlags\">PublicFlags</a> for <a class=\"struct\" href=\"audioware/struct.TFlag.html\" title=\"struct audioware::TFlag\">TFlag</a>"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[1594]}

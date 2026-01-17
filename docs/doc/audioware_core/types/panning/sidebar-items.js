@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["PanningError"],"struct":["OutOfRangeSnafu","Panning"]};

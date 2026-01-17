@@ -1,0 +1,332 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `C:\Users\runneradmin\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\symphonia-format-ogg-0.5.5\src\mappings\flac.rs`."><title>flac.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="symphonia_format_ogg" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0 (ded5c06cf 2025-12-08)" data-channel="1.92.0" data-search-js="search-d69d8955.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../../static.files/storage-e2aeef58.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">symphonia_format_ogg\mappings/</div>flac.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// Symphonia
+<a href=#2 id=2 data-nosnippet>2</a>// Copyright (c) 2019-2022 The Project Symphonia Developers.
+<a href=#3 id=3 data-nosnippet>3</a>//
+<a href=#4 id=4 data-nosnippet>4</a>// This Source Code Form is subject to the terms of the Mozilla Public
+<a href=#5 id=5 data-nosnippet>5</a>// License, v. 2.0. If a copy of the MPL was not distributed with this
+<a href=#6 id=6 data-nosnippet>6</a>// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+<a href=#7 id=7 data-nosnippet>7</a>
+<a href=#8 id=8 data-nosnippet>8</a></span><span class="kw">use </span><span class="kw">crate</span>::common::SideData;
+<a href=#9 id=9 data-nosnippet>9</a>
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use super</span>::{MapResult, Mapper, PacketParser};
+<a href=#11 id=11 data-nosnippet>11</a>
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span>symphonia_core::checksum::Crc8Ccitt;
+<a href=#13 id=13 data-nosnippet>13</a><span class="kw">use </span>symphonia_core::codecs::{CodecParameters, VerificationCheck, CODEC_TYPE_FLAC};
+<a href=#14 id=14 data-nosnippet>14</a><span class="kw">use </span>symphonia_core::errors::{decode_error, <span class="prelude-ty">Result</span>};
+<a href=#15 id=15 data-nosnippet>15</a><span class="kw">use </span>symphonia_core::io::{BufReader, MonitorStream, ReadBytes};
+<a href=#16 id=16 data-nosnippet>16</a><span class="kw">use </span>symphonia_core::meta::MetadataBuilder;
+<a href=#17 id=17 data-nosnippet>17</a><span class="kw">use </span>symphonia_core::units::TimeBase;
+<a href=#18 id=18 data-nosnippet>18</a>
+<a href=#19 id=19 data-nosnippet>19</a><span class="kw">use </span>symphonia_utils_xiph::flac::metadata::{read_comment_block, read_picture_block};
+<a href=#20 id=20 data-nosnippet>20</a><span class="kw">use </span>symphonia_utils_xiph::flac::metadata::{MetadataBlockHeader, MetadataBlockType, StreamInfo};
+<a href=#21 id=21 data-nosnippet>21</a>
+<a href=#22 id=22 data-nosnippet>22</a><span class="kw">use </span>log::warn;
+<a href=#23 id=23 data-nosnippet>23</a>
+<a href=#24 id=24 data-nosnippet>24</a><span class="doccomment">/// The expected size of the first FLAC header packet.
+<a href=#25 id=25 data-nosnippet>25</a></span><span class="kw">const </span>OGG_FLAC_HEADER_PACKET_SIZE: usize = <span class="number">51</span>;
+<a href=#26 id=26 data-nosnippet>26</a>
+<a href=#27 id=27 data-nosnippet>27</a><span class="doccomment">/// The major version number of the supported OGG-FLAC mapping.
+<a href=#28 id=28 data-nosnippet>28</a></span><span class="kw">const </span>OGG_FLAC_MAPPING_MAJOR_VERSION: u8 = <span class="number">1</span>;
+<a href=#29 id=29 data-nosnippet>29</a>
+<a href=#30 id=30 data-nosnippet>30</a><span class="doccomment">/// The OGG-FLAC header packet signature.
+<a href=#31 id=31 data-nosnippet>31</a></span><span class="kw">const </span>OGG_FLAC_HEADER_SIGNATURE: <span class="kw-2">&amp;</span>[u8] = <span class="string">b"FLAC"</span>;
+<a href=#32 id=32 data-nosnippet>32</a>
+<a href=#33 id=33 data-nosnippet>33</a><span class="doccomment">/// The OGG-FLAC header packet type value.
+<a href=#34 id=34 data-nosnippet>34</a></span><span class="kw">const </span>OGG_FLAC_PACKET_TYPE: u8 = <span class="number">0x7f</span>;
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a><span class="doccomment">/// The native FLAC signature.
+<a href=#37 id=37 data-nosnippet>37</a></span><span class="kw">const </span>FLAC_SIGNATURE: <span class="kw-2">&amp;</span>[u8] = <span class="string">b"fLaC"</span>;
+<a href=#38 id=38 data-nosnippet>38</a>
+<a href=#39 id=39 data-nosnippet>39</a><span class="kw">pub fn </span>detect(buf: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Box&lt;<span class="kw">dyn </span>Mapper&gt;&gt;&gt; {
+<a href=#40 id=40 data-nosnippet>40</a>    <span class="comment">// The packet shall be exactly the expected length.
+<a href=#41 id=41 data-nosnippet>41</a>    </span><span class="kw">if </span>buf.len() != OGG_FLAC_HEADER_PACKET_SIZE {
+<a href=#42 id=42 data-nosnippet>42</a>        <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+<a href=#43 id=43 data-nosnippet>43</a>    }
+<a href=#44 id=44 data-nosnippet>44</a>
+<a href=#45 id=45 data-nosnippet>45</a>    <span class="kw">let </span><span class="kw-2">mut </span>reader = BufReader::new(buf);
+<a href=#46 id=46 data-nosnippet>46</a>
+<a href=#47 id=47 data-nosnippet>47</a>    <span class="comment">// The first byte indicates the packet type and must be 0x7f.
+<a href=#48 id=48 data-nosnippet>48</a>    </span><span class="kw">if </span>reader.read_u8()<span class="question-mark">? </span>!= OGG_FLAC_PACKET_TYPE {
+<a href=#49 id=49 data-nosnippet>49</a>        <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+<a href=#50 id=50 data-nosnippet>50</a>    }
+<a href=#51 id=51 data-nosnippet>51</a>
+<a href=#52 id=52 data-nosnippet>52</a>    <span class="comment">// Next, the OGG FLAC signature, in ASCII, must be "FLAC".
+<a href=#53 id=53 data-nosnippet>53</a>    </span><span class="kw">if </span>reader.read_quad_bytes()<span class="question-mark">? </span>!= OGG_FLAC_HEADER_SIGNATURE {
+<a href=#54 id=54 data-nosnippet>54</a>        <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+<a href=#55 id=55 data-nosnippet>55</a>    }
+<a href=#56 id=56 data-nosnippet>56</a>
+<a href=#57 id=57 data-nosnippet>57</a>    <span class="comment">// Next, a one-byte binary major version number for the mapping, only version 1 is supported.
+<a href=#58 id=58 data-nosnippet>58</a>    </span><span class="kw">if </span>reader.read_u8()<span class="question-mark">? </span>!= OGG_FLAC_MAPPING_MAJOR_VERSION {
+<a href=#59 id=59 data-nosnippet>59</a>        <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+<a href=#60 id=60 data-nosnippet>60</a>    }
+<a href=#61 id=61 data-nosnippet>61</a>
+<a href=#62 id=62 data-nosnippet>62</a>    <span class="comment">// Next, a one-byte minor version number for the mapping. This is ignored because we support all
+<a href=#63 id=63 data-nosnippet>63</a>    // version 1 features.
+<a href=#64 id=64 data-nosnippet>64</a>    </span><span class="kw">let </span>_minor = reader.read_u8()<span class="question-mark">?</span>;
+<a href=#65 id=65 data-nosnippet>65</a>
+<a href=#66 id=66 data-nosnippet>66</a>    <span class="comment">// Next, a two-byte, big-endian number signifying the number of header (non-audio) packets, not
+<a href=#67 id=67 data-nosnippet>67</a>    // including the identification packet. This number may be 0 to signify it is unknown.
+<a href=#68 id=68 data-nosnippet>68</a>    </span><span class="kw">let _ </span>= reader.read_be_u16()<span class="question-mark">?</span>;
+<a href=#69 id=69 data-nosnippet>69</a>
+<a href=#70 id=70 data-nosnippet>70</a>    <span class="comment">// Last, the four-byte ASCII native FLAC signature "fLaC".
+<a href=#71 id=71 data-nosnippet>71</a>    </span><span class="kw">if </span>reader.read_quad_bytes()<span class="question-mark">? </span>!= FLAC_SIGNATURE {
+<a href=#72 id=72 data-nosnippet>72</a>        <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+<a href=#73 id=73 data-nosnippet>73</a>    }
+<a href=#74 id=74 data-nosnippet>74</a>
+<a href=#75 id=75 data-nosnippet>75</a>    <span class="comment">// Following the previous OGG FLAC identification data is the stream information block as a
+<a href=#76 id=76 data-nosnippet>76</a>    // native FLAC metadata block.
+<a href=#77 id=77 data-nosnippet>77</a>    </span><span class="kw">let </span>header = MetadataBlockHeader::read(<span class="kw-2">&amp;mut </span>reader)<span class="question-mark">?</span>;
+<a href=#78 id=78 data-nosnippet>78</a>
+<a href=#79 id=79 data-nosnippet>79</a>    <span class="kw">if </span>header.block_type != MetadataBlockType::StreamInfo {
+<a href=#80 id=80 data-nosnippet>80</a>        <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+<a href=#81 id=81 data-nosnippet>81</a>    }
+<a href=#82 id=82 data-nosnippet>82</a>
+<a href=#83 id=83 data-nosnippet>83</a>    <span class="comment">// Ensure the block length is correct for a stream information block before allocating a buffer
+<a href=#84 id=84 data-nosnippet>84</a>    // for it.
+<a href=#85 id=85 data-nosnippet>85</a>    </span><span class="kw">if </span>!StreamInfo::is_valid_size(u64::from(header.block_len)) {
+<a href=#86 id=86 data-nosnippet>86</a>        <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+<a href=#87 id=87 data-nosnippet>87</a>    }
+<a href=#88 id=88 data-nosnippet>88</a>
+<a href=#89 id=89 data-nosnippet>89</a>    <span class="kw">let </span>extra_data = reader.read_boxed_slice_exact(header.block_len <span class="kw">as </span>usize)<span class="question-mark">?</span>;
+<a href=#90 id=90 data-nosnippet>90</a>    <span class="kw">let </span>stream_info = StreamInfo::read(<span class="kw-2">&amp;mut </span>BufReader::new(<span class="kw-2">&amp;</span>extra_data))<span class="question-mark">?</span>;
+<a href=#91 id=91 data-nosnippet>91</a>
+<a href=#92 id=92 data-nosnippet>92</a>    <span class="comment">// Populate the codec parameters with the information read from the stream information block.
+<a href=#93 id=93 data-nosnippet>93</a>    </span><span class="kw">let </span><span class="kw-2">mut </span>codec_params = CodecParameters::new();
+<a href=#94 id=94 data-nosnippet>94</a>
+<a href=#95 id=95 data-nosnippet>95</a>    codec_params
+<a href=#96 id=96 data-nosnippet>96</a>        .for_codec(CODEC_TYPE_FLAC)
+<a href=#97 id=97 data-nosnippet>97</a>        .with_packet_data_integrity(<span class="bool-val">true</span>)
+<a href=#98 id=98 data-nosnippet>98</a>        .with_extra_data(extra_data)
+<a href=#99 id=99 data-nosnippet>99</a>        .with_sample_rate(stream_info.sample_rate)
+<a href=#100 id=100 data-nosnippet>100</a>        .with_time_base(TimeBase::new(<span class="number">1</span>, stream_info.sample_rate))
+<a href=#101 id=101 data-nosnippet>101</a>        .with_bits_per_sample(stream_info.bits_per_sample)
+<a href=#102 id=102 data-nosnippet>102</a>        .with_channels(stream_info.channels);
+<a href=#103 id=103 data-nosnippet>103</a>
+<a href=#104 id=104 data-nosnippet>104</a>    <span class="kw">if let </span><span class="prelude-val">Some</span>(md5) = stream_info.md5 {
+<a href=#105 id=105 data-nosnippet>105</a>        codec_params.with_verification_code(VerificationCheck::Md5(md5));
+<a href=#106 id=106 data-nosnippet>106</a>    }
+<a href=#107 id=107 data-nosnippet>107</a>
+<a href=#108 id=108 data-nosnippet>108</a>    <span class="kw">if let </span><span class="prelude-val">Some</span>(n_frames) = stream_info.n_samples {
+<a href=#109 id=109 data-nosnippet>109</a>        codec_params.with_n_frames(n_frames);
+<a href=#110 id=110 data-nosnippet>110</a>    }
+<a href=#111 id=111 data-nosnippet>111</a>
+<a href=#112 id=112 data-nosnippet>112</a>    <span class="comment">// Instantiate the FLAC mapper.
+<a href=#113 id=113 data-nosnippet>113</a>    </span><span class="kw">let </span>mapper = Box::new(FlacMapper { codec_params });
+<a href=#114 id=114 data-nosnippet>114</a>
+<a href=#115 id=115 data-nosnippet>115</a>    <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(mapper))
+<a href=#116 id=116 data-nosnippet>116</a>}
+<a href=#117 id=117 data-nosnippet>117</a>
+<a href=#118 id=118 data-nosnippet>118</a><span class="doccomment">/// Decodes a big-endian unsigned integer encoded via extended UTF8.
+<a href=#119 id=119 data-nosnippet>119</a></span><span class="kw">fn </span>utf8_decode_be_u64&lt;B: ReadBytes&gt;(src: <span class="kw-2">&amp;mut </span>B) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;u64&gt;&gt; {
+<a href=#120 id=120 data-nosnippet>120</a>    <span class="comment">// NOTE: See the symphonia-bundle-flac crate for a detailed description of this function.
+<a href=#121 id=121 data-nosnippet>121</a>    </span><span class="kw">let </span><span class="kw-2">mut </span>state = u64::from(src.read_u8()<span class="question-mark">?</span>);
+<a href=#122 id=122 data-nosnippet>122</a>
+<a href=#123 id=123 data-nosnippet>123</a>    <span class="kw">let </span>mask: u8 = <span class="kw">match </span>state {
+<a href=#124 id=124 data-nosnippet>124</a>        <span class="number">0x00</span>..=<span class="number">0x7f </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(state)),
+<a href=#125 id=125 data-nosnippet>125</a>        <span class="number">0xc0</span>..=<span class="number">0xdf </span>=&gt; <span class="number">0x1f</span>,
+<a href=#126 id=126 data-nosnippet>126</a>        <span class="number">0xe0</span>..=<span class="number">0xef </span>=&gt; <span class="number">0x0f</span>,
+<a href=#127 id=127 data-nosnippet>127</a>        <span class="number">0xf0</span>..=<span class="number">0xf7 </span>=&gt; <span class="number">0x07</span>,
+<a href=#128 id=128 data-nosnippet>128</a>        <span class="number">0xf8</span>..=<span class="number">0xfb </span>=&gt; <span class="number">0x03</span>,
+<a href=#129 id=129 data-nosnippet>129</a>        <span class="number">0xfc</span>..=<span class="number">0xfd </span>=&gt; <span class="number">0x01</span>,
+<a href=#130 id=130 data-nosnippet>130</a>        <span class="number">0xfe </span>=&gt; <span class="number">0x00</span>,
+<a href=#131 id=131 data-nosnippet>131</a>        <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+<a href=#132 id=132 data-nosnippet>132</a>    };
+<a href=#133 id=133 data-nosnippet>133</a>
+<a href=#134 id=134 data-nosnippet>134</a>    state &amp;= u64::from(mask);
+<a href=#135 id=135 data-nosnippet>135</a>
+<a href=#136 id=136 data-nosnippet>136</a>    <span class="kw">for _ in </span><span class="number">2</span>..mask.leading_zeros() {
+<a href=#137 id=137 data-nosnippet>137</a>        state = (state &lt;&lt; <span class="number">6</span>) | u64::from(src.read_u8()<span class="question-mark">? </span>&amp; <span class="number">0x3f</span>);
+<a href=#138 id=138 data-nosnippet>138</a>    }
+<a href=#139 id=139 data-nosnippet>139</a>
+<a href=#140 id=140 data-nosnippet>140</a>    <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(state))
+<a href=#141 id=141 data-nosnippet>141</a>}
+<a href=#142 id=142 data-nosnippet>142</a>
+<a href=#143 id=143 data-nosnippet>143</a><span class="attr">#[allow(dead_code)]
+<a href=#144 id=144 data-nosnippet>144</a></span><span class="kw">struct </span>FrameHeader {
+<a href=#145 id=145 data-nosnippet>145</a>    ts: u64,
+<a href=#146 id=146 data-nosnippet>146</a>    dur: u64,
+<a href=#147 id=147 data-nosnippet>147</a>}
+<a href=#148 id=148 data-nosnippet>148</a>
+<a href=#149 id=149 data-nosnippet>149</a><span class="doccomment">/// Try to decode a FLAC frame header from the provided buffer.
+<a href=#150 id=150 data-nosnippet>150</a></span><span class="kw">fn </span>decode_frame_header(buf: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;FrameHeader&gt; {
+<a href=#151 id=151 data-nosnippet>151</a>    <span class="comment">// The FLAC frame header is checksummed with a CRC-8 hash.
+<a href=#152 id=152 data-nosnippet>152</a>    </span><span class="kw">let </span><span class="kw-2">mut </span>reader_crc8 = MonitorStream::new(BufReader::new(buf), Crc8Ccitt::new(<span class="number">0</span>));
+<a href=#153 id=153 data-nosnippet>153</a>
+<a href=#154 id=154 data-nosnippet>154</a>    <span class="comment">// Read the sync word.
+<a href=#155 id=155 data-nosnippet>155</a>    </span><span class="kw">let </span>sync = reader_crc8.read_be_u16()<span class="question-mark">?</span>;
+<a href=#156 id=156 data-nosnippet>156</a>
+<a href=#157 id=157 data-nosnippet>157</a>    <span class="comment">// Within an OGG packet the frame should be synchronized.
+<a href=#158 id=158 data-nosnippet>158</a>    </span><span class="kw">if </span>sync &amp; <span class="number">0xfffc </span>!= <span class="number">0xfff8 </span>{
+<a href=#159 id=159 data-nosnippet>159</a>        <span class="kw">return </span>decode_error(<span class="string">"ogg (flac): header is not synchronized"</span>);
+<a href=#160 id=160 data-nosnippet>160</a>    }
+<a href=#161 id=161 data-nosnippet>161</a>
+<a href=#162 id=162 data-nosnippet>162</a>    <span class="comment">// Read all the standard frame description fields as one 16-bit value and extract the fields.
+<a href=#163 id=163 data-nosnippet>163</a>    </span><span class="kw">let </span>desc = reader_crc8.read_be_u16()<span class="question-mark">?</span>;
+<a href=#164 id=164 data-nosnippet>164</a>
+<a href=#165 id=165 data-nosnippet>165</a>    <span class="comment">// Reserved bit field.
+<a href=#166 id=166 data-nosnippet>166</a>    </span><span class="kw">if </span>desc &amp; <span class="number">0x0001 </span>== <span class="number">1 </span>{
+<a href=#167 id=167 data-nosnippet>167</a>        <span class="kw">return </span>decode_error(<span class="string">"ogg (flac): frame header reserved bit is not set to 1"</span>);
+<a href=#168 id=168 data-nosnippet>168</a>    }
+<a href=#169 id=169 data-nosnippet>169</a>
+<a href=#170 id=170 data-nosnippet>170</a>    <span class="comment">// Extract the blocking strategy from the sync word.
+<a href=#171 id=171 data-nosnippet>171</a>    </span><span class="kw">let </span>is_fixed_block_size = sync &amp; <span class="number">0x1 </span>== <span class="number">0</span>;
+<a href=#172 id=172 data-nosnippet>172</a>
+<a href=#173 id=173 data-nosnippet>173</a>    <span class="kw">let </span>block_sequence = <span class="kw">if </span>is_fixed_block_size {
+<a href=#174 id=174 data-nosnippet>174</a>        <span class="comment">// Fixed block size stream sequence blocks by a frame number.
+<a href=#175 id=175 data-nosnippet>175</a>        </span><span class="kw">let </span>frame = <span class="kw">match </span>utf8_decode_be_u64(<span class="kw-2">&amp;mut </span>reader_crc8)<span class="question-mark">? </span>{
+<a href=#176 id=176 data-nosnippet>176</a>            <span class="prelude-val">Some</span>(frame) =&gt; frame,
+<a href=#177 id=177 data-nosnippet>177</a>            <span class="prelude-val">None </span>=&gt; <span class="kw">return </span>decode_error(<span class="string">"ogg (flac): frame sequence number is not valid"</span>),
+<a href=#178 id=178 data-nosnippet>178</a>        };
+<a href=#179 id=179 data-nosnippet>179</a>
+<a href=#180 id=180 data-nosnippet>180</a>        <span class="comment">// The frame number should only be 31-bits.
+<a href=#181 id=181 data-nosnippet>181</a>        </span><span class="kw">if </span>frame &gt; <span class="number">0x7fff_ffff </span>{
+<a href=#182 id=182 data-nosnippet>182</a>            <span class="kw">return </span>decode_error(<span class="string">"ogg (flac): frame sequence number exceeds 31-bits"</span>);
+<a href=#183 id=183 data-nosnippet>183</a>        }
+<a href=#184 id=184 data-nosnippet>184</a>
+<a href=#185 id=185 data-nosnippet>185</a>        frame
+<a href=#186 id=186 data-nosnippet>186</a>    }
+<a href=#187 id=187 data-nosnippet>187</a>    <span class="kw">else </span>{
+<a href=#188 id=188 data-nosnippet>188</a>        <span class="comment">// Variable block size streams sequence blocks by a sample number.
+<a href=#189 id=189 data-nosnippet>189</a>        </span><span class="kw">let </span>sample = <span class="kw">match </span>utf8_decode_be_u64(<span class="kw-2">&amp;mut </span>reader_crc8)<span class="question-mark">? </span>{
+<a href=#190 id=190 data-nosnippet>190</a>            <span class="prelude-val">Some</span>(sample) =&gt; sample,
+<a href=#191 id=191 data-nosnippet>191</a>            <span class="prelude-val">None </span>=&gt; <span class="kw">return </span>decode_error(<span class="string">"ogg: sample sequence number is not valid"</span>),
+<a href=#192 id=192 data-nosnippet>192</a>        };
+<a href=#193 id=193 data-nosnippet>193</a>
+<a href=#194 id=194 data-nosnippet>194</a>        <span class="comment">// The sample number should only be 36-bits.
+<a href=#195 id=195 data-nosnippet>195</a>        </span><span class="kw">if </span>sample &gt; <span class="number">0xff_ffff_ffff </span>{
+<a href=#196 id=196 data-nosnippet>196</a>            <span class="kw">return </span>decode_error(<span class="string">"ogg (flac): sample sequence number exceeds 36-bits"</span>);
+<a href=#197 id=197 data-nosnippet>197</a>        }
+<a href=#198 id=198 data-nosnippet>198</a>
+<a href=#199 id=199 data-nosnippet>199</a>        sample
+<a href=#200 id=200 data-nosnippet>200</a>    };
+<a href=#201 id=201 data-nosnippet>201</a>
+<a href=#202 id=202 data-nosnippet>202</a>    <span class="comment">// The block size provides the duration in samples.
+<a href=#203 id=203 data-nosnippet>203</a>    </span><span class="kw">let </span>block_size_enc = u32::from((desc &amp; <span class="number">0xf000</span>) &gt;&gt; <span class="number">12</span>);
+<a href=#204 id=204 data-nosnippet>204</a>
+<a href=#205 id=205 data-nosnippet>205</a>    <span class="kw">let </span>block_size = <span class="kw">match </span>block_size_enc {
+<a href=#206 id=206 data-nosnippet>206</a>        <span class="number">0x1 </span>=&gt; <span class="number">192</span>,
+<a href=#207 id=207 data-nosnippet>207</a>        <span class="number">0x2</span>..=<span class="number">0x5 </span>=&gt; <span class="number">576 </span>* (<span class="number">1 </span>&lt;&lt; (block_size_enc - <span class="number">2</span>)),
+<a href=#208 id=208 data-nosnippet>208</a>        <span class="number">0x6 </span>=&gt; u64::from(reader_crc8.read_u8()<span class="question-mark">?</span>) + <span class="number">1</span>,
+<a href=#209 id=209 data-nosnippet>209</a>        <span class="number">0x7 </span>=&gt; {
+<a href=#210 id=210 data-nosnippet>210</a>            <span class="kw">let </span>block_size = reader_crc8.read_be_u16()<span class="question-mark">?</span>;
+<a href=#211 id=211 data-nosnippet>211</a>            <span class="kw">if </span>block_size == <span class="number">0xffff </span>{
+<a href=#212 id=212 data-nosnippet>212</a>                <span class="kw">return </span>decode_error(<span class="string">"ogg (flac): block size not allowed to be greater than 65535"</span>);
+<a href=#213 id=213 data-nosnippet>213</a>            }
+<a href=#214 id=214 data-nosnippet>214</a>
+<a href=#215 id=215 data-nosnippet>215</a>            u64::from(block_size) + <span class="number">1
+<a href=#216 id=216 data-nosnippet>216</a>        </span>}
+<a href=#217 id=217 data-nosnippet>217</a>        <span class="number">0x8</span>..=<span class="number">0xf </span>=&gt; <span class="number">256 </span>* (<span class="number">1 </span>&lt;&lt; (block_size_enc - <span class="number">8</span>)),
+<a href=#218 id=218 data-nosnippet>218</a>        <span class="kw">_ </span>=&gt; <span class="kw">return </span>decode_error(<span class="string">"ogg (flac): block size set to reserved value"</span>),
+<a href=#219 id=219 data-nosnippet>219</a>    };
+<a href=#220 id=220 data-nosnippet>220</a>
+<a href=#221 id=221 data-nosnippet>221</a>    <span class="comment">// The sample rate is not required but should be read so checksum verification of the header
+<a href=#222 id=222 data-nosnippet>222</a>    // can be performed.
+<a href=#223 id=223 data-nosnippet>223</a>    </span><span class="kw">let </span>sample_rate_enc = u32::from((desc &amp; <span class="number">0x0f00</span>) &gt;&gt; <span class="number">8</span>);
+<a href=#224 id=224 data-nosnippet>224</a>
+<a href=#225 id=225 data-nosnippet>225</a>    <span class="kw">match </span>sample_rate_enc {
+<a href=#226 id=226 data-nosnippet>226</a>        <span class="number">0xc </span>=&gt; {
+<a href=#227 id=227 data-nosnippet>227</a>            reader_crc8.read_u8()<span class="question-mark">?</span>;
+<a href=#228 id=228 data-nosnippet>228</a>        }
+<a href=#229 id=229 data-nosnippet>229</a>        <span class="number">0xd </span>=&gt; {
+<a href=#230 id=230 data-nosnippet>230</a>            reader_crc8.read_be_u16()<span class="question-mark">?</span>;
+<a href=#231 id=231 data-nosnippet>231</a>        }
+<a href=#232 id=232 data-nosnippet>232</a>        <span class="number">0xe </span>=&gt; {
+<a href=#233 id=233 data-nosnippet>233</a>            reader_crc8.read_be_u16()<span class="question-mark">?</span>;
+<a href=#234 id=234 data-nosnippet>234</a>        }
+<a href=#235 id=235 data-nosnippet>235</a>        <span class="kw">_ </span>=&gt; (),
+<a href=#236 id=236 data-nosnippet>236</a>    }
+<a href=#237 id=237 data-nosnippet>237</a>
+<a href=#238 id=238 data-nosnippet>238</a>    <span class="comment">// End of frame header, get the computed CRC-8 checksum.
+<a href=#239 id=239 data-nosnippet>239</a>    </span><span class="kw">let </span>crc8_computed = reader_crc8.monitor().crc();
+<a href=#240 id=240 data-nosnippet>240</a>
+<a href=#241 id=241 data-nosnippet>241</a>    <span class="comment">// Read the expected CRC-8 checksum from the frame header.
+<a href=#242 id=242 data-nosnippet>242</a>    </span><span class="kw">let </span>crc8_expected = reader_crc8.into_inner().read_u8()<span class="question-mark">?</span>;
+<a href=#243 id=243 data-nosnippet>243</a>
+<a href=#244 id=244 data-nosnippet>244</a>    <span class="kw">if </span>crc8_expected != crc8_computed &amp;&amp; <span class="macro">cfg!</span>(not(fuzzing)) {
+<a href=#245 id=245 data-nosnippet>245</a>        <span class="kw">return </span>decode_error(<span class="string">"ogg (flac): computed frame header CRC does not match expected CRC"</span>);
+<a href=#246 id=246 data-nosnippet>246</a>    }
+<a href=#247 id=247 data-nosnippet>247</a>
+<a href=#248 id=248 data-nosnippet>248</a>    <span class="kw">let </span>ts = <span class="kw">if </span>is_fixed_block_size { block_sequence * block_size } <span class="kw">else </span>{ block_sequence };
+<a href=#249 id=249 data-nosnippet>249</a>
+<a href=#250 id=250 data-nosnippet>250</a>    <span class="prelude-val">Ok</span>(FrameHeader { ts, dur: block_size })
+<a href=#251 id=251 data-nosnippet>251</a>}
+<a href=#252 id=252 data-nosnippet>252</a>
+<a href=#253 id=253 data-nosnippet>253</a><span class="kw">struct </span>FlacPacketParser {}
+<a href=#254 id=254 data-nosnippet>254</a>
+<a href=#255 id=255 data-nosnippet>255</a><span class="kw">impl </span>PacketParser <span class="kw">for </span>FlacPacketParser {
+<a href=#256 id=256 data-nosnippet>256</a>    <span class="kw">fn </span>parse_next_packet_dur(<span class="kw-2">&amp;mut </span><span class="self">self</span>, packet: <span class="kw-2">&amp;</span>[u8]) -&gt; u64 {
+<a href=#257 id=257 data-nosnippet>257</a>        <span class="kw">match </span>decode_frame_header(packet).ok() {
+<a href=#258 id=258 data-nosnippet>258</a>            <span class="prelude-val">Some</span>(header) =&gt; header.dur,
+<a href=#259 id=259 data-nosnippet>259</a>            <span class="kw">_ </span>=&gt; <span class="number">0</span>,
+<a href=#260 id=260 data-nosnippet>260</a>        }
+<a href=#261 id=261 data-nosnippet>261</a>    }
+<a href=#262 id=262 data-nosnippet>262</a>}
+<a href=#263 id=263 data-nosnippet>263</a>
+<a href=#264 id=264 data-nosnippet>264</a><span class="kw">struct </span>FlacMapper {
+<a href=#265 id=265 data-nosnippet>265</a>    codec_params: CodecParameters,
+<a href=#266 id=266 data-nosnippet>266</a>}
+<a href=#267 id=267 data-nosnippet>267</a>
+<a href=#268 id=268 data-nosnippet>268</a><span class="kw">impl </span>Mapper <span class="kw">for </span>FlacMapper {
+<a href=#269 id=269 data-nosnippet>269</a>    <span class="kw">fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
+<a href=#270 id=270 data-nosnippet>270</a>        <span class="string">"flac"
+<a href=#271 id=271 data-nosnippet>271</a>    </span>}
+<a href=#272 id=272 data-nosnippet>272</a>
+<a href=#273 id=273 data-nosnippet>273</a>    <span class="kw">fn </span>codec_params(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>CodecParameters {
+<a href=#274 id=274 data-nosnippet>274</a>        <span class="kw-2">&amp;</span><span class="self">self</span>.codec_params
+<a href=#275 id=275 data-nosnippet>275</a>    }
+<a href=#276 id=276 data-nosnippet>276</a>
+<a href=#277 id=277 data-nosnippet>277</a>    <span class="kw">fn </span>codec_params_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>CodecParameters {
+<a href=#278 id=278 data-nosnippet>278</a>        <span class="kw-2">&amp;mut </span><span class="self">self</span>.codec_params
+<a href=#279 id=279 data-nosnippet>279</a>    }
+<a href=#280 id=280 data-nosnippet>280</a>
+<a href=#281 id=281 data-nosnippet>281</a>    <span class="kw">fn </span>make_parser(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Box&lt;<span class="kw">dyn </span><span class="kw">super</span>::PacketParser&gt;&gt; {
+<a href=#282 id=282 data-nosnippet>282</a>        <span class="prelude-val">Some</span>(Box::new(FlacPacketParser {}))
+<a href=#283 id=283 data-nosnippet>283</a>    }
+<a href=#284 id=284 data-nosnippet>284</a>
+<a href=#285 id=285 data-nosnippet>285</a>    <span class="kw">fn </span>reset(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#286 id=286 data-nosnippet>286</a>        <span class="comment">// Nothing to do.
+<a href=#287 id=287 data-nosnippet>287</a>    </span>}
+<a href=#288 id=288 data-nosnippet>288</a>
+<a href=#289 id=289 data-nosnippet>289</a>    <span class="kw">fn </span>map_packet(<span class="kw-2">&amp;mut </span><span class="self">self</span>, packet: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;MapResult&gt; {
+<a href=#290 id=290 data-nosnippet>290</a>        <span class="kw">let </span>packet_type = BufReader::new(packet).read_u8()<span class="question-mark">?</span>;
+<a href=#291 id=291 data-nosnippet>291</a>
+<a href=#292 id=292 data-nosnippet>292</a>        <span class="comment">// A packet type of 0xff is an audio packet.
+<a href=#293 id=293 data-nosnippet>293</a>        </span><span class="kw">if </span>packet_type == <span class="number">0xff </span>{
+<a href=#294 id=294 data-nosnippet>294</a>            <span class="comment">// Parse the packet duration.
+<a href=#295 id=295 data-nosnippet>295</a>            </span><span class="kw">let </span>dur = <span class="kw">match </span>decode_frame_header(packet).ok() {
+<a href=#296 id=296 data-nosnippet>296</a>                <span class="prelude-val">Some</span>(header) =&gt; header.dur,
+<a href=#297 id=297 data-nosnippet>297</a>                <span class="kw">_ </span>=&gt; <span class="number">0</span>,
+<a href=#298 id=298 data-nosnippet>298</a>            };
+<a href=#299 id=299 data-nosnippet>299</a>
+<a href=#300 id=300 data-nosnippet>300</a>            <span class="prelude-val">Ok</span>(MapResult::StreamData { dur })
+<a href=#301 id=301 data-nosnippet>301</a>        }
+<a href=#302 id=302 data-nosnippet>302</a>        <span class="kw">else if </span>packet_type == <span class="number">0x00 </span>|| packet_type == <span class="number">0x80 </span>{
+<a href=#303 id=303 data-nosnippet>303</a>            <span class="comment">// Packet types 0x00 and 0x80 are invalid.
+<a href=#304 id=304 data-nosnippet>304</a>            </span><span class="macro">warn!</span>(<span class="string">"ogg (flac): flac packet type {} unexpected"</span>, packet_type);
+<a href=#305 id=305 data-nosnippet>305</a>            <span class="prelude-val">Ok</span>(MapResult::Unknown)
+<a href=#306 id=306 data-nosnippet>306</a>        }
+<a href=#307 id=307 data-nosnippet>307</a>        <span class="kw">else </span>{
+<a href=#308 id=308 data-nosnippet>308</a>            <span class="kw">let </span><span class="kw-2">mut </span>reader = BufReader::new(packet);
+<a href=#309 id=309 data-nosnippet>309</a>
+<a href=#310 id=310 data-nosnippet>310</a>            <span class="comment">// Packet types in the range 0x01 thru 0x7f, and 0x81 thru 0xfe are metadata blocks.
+<a href=#311 id=311 data-nosnippet>311</a>            </span><span class="kw">let </span>header = MetadataBlockHeader::read(<span class="kw-2">&amp;mut </span>reader)<span class="question-mark">?</span>;
+<a href=#312 id=312 data-nosnippet>312</a>
+<a href=#313 id=313 data-nosnippet>313</a>            <span class="kw">match </span>header.block_type {
+<a href=#314 id=314 data-nosnippet>314</a>                MetadataBlockType::VorbisComment =&gt; {
+<a href=#315 id=315 data-nosnippet>315</a>                    <span class="kw">let </span><span class="kw-2">mut </span>builder = MetadataBuilder::new();
+<a href=#316 id=316 data-nosnippet>316</a>
+<a href=#317 id=317 data-nosnippet>317</a>                    read_comment_block(<span class="kw-2">&amp;mut </span>reader, <span class="kw-2">&amp;mut </span>builder)<span class="question-mark">?</span>;
+<a href=#318 id=318 data-nosnippet>318</a>
+<a href=#319 id=319 data-nosnippet>319</a>                    <span class="prelude-val">Ok</span>(MapResult::SideData { data: SideData::Metadata(builder.metadata()) })
+<a href=#320 id=320 data-nosnippet>320</a>                }
+<a href=#321 id=321 data-nosnippet>321</a>                MetadataBlockType::Picture =&gt; {
+<a href=#322 id=322 data-nosnippet>322</a>                    <span class="kw">let </span><span class="kw-2">mut </span>builder = MetadataBuilder::new();
+<a href=#323 id=323 data-nosnippet>323</a>
+<a href=#324 id=324 data-nosnippet>324</a>                    read_picture_block(<span class="kw-2">&amp;mut </span>reader, <span class="kw-2">&amp;mut </span>builder)<span class="question-mark">?</span>;
+<a href=#325 id=325 data-nosnippet>325</a>
+<a href=#326 id=326 data-nosnippet>326</a>                    <span class="prelude-val">Ok</span>(MapResult::SideData { data: SideData::Metadata(builder.metadata()) })
+<a href=#327 id=327 data-nosnippet>327</a>                }
+<a href=#328 id=328 data-nosnippet>328</a>                <span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(MapResult::Unknown),
+<a href=#329 id=329 data-nosnippet>329</a>            }
+<a href=#330 id=330 data-nosnippet>330</a>        }
+<a href=#331 id=331 data-nosnippet>331</a>    }
+<a href=#332 id=332 data-nosnippet>332</a>}</code></pre></div></section></main></body></html>

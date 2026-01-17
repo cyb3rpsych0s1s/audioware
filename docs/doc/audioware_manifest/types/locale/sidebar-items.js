@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Locale","LocaleExt","ScnDialogLineLanguage"],"struct":["LocaleExtIter","LocaleIter","ScnDialogLineLanguageIter","SpokenLocale","WrittenLocale"]};

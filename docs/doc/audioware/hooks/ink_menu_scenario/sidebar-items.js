@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["attach_hooks"],"mod":["queue_event","switch_to_scenario"]};

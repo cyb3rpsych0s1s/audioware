@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["attach_hook","detour"],"mod":["oneshot"],"static":["HOOK"]};

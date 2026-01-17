@@ -1,0 +1,47 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+      - "rc*"
+      - "beta*"
+      - "alpha*"
+
+env:
+  CARGO_TERM_COLOR: always
+  IS_DRAFT: ${{ startsWith(github.ref_name, 'beta') || startsWith(github.ref_name, 'alpha') }}
+  IS_PRERELEASE: true
+  BIN-NAME: Audioware-windows-latest-${{ github.ref_name }}
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+jobs:
+  gaming:
+    uses: ./.github/workflows/bundle.yml
+    with:
+      tag: ${{ github.ref_name }}
+      release: true
+  modding:
+    uses: ./.github/workflows/bundle.yml
+    with:
+      tag: ${{ github.ref_name }}
+      release: false
+  release:
+    if: ${{ startsWith(github.event.ref, 'refs/tags') }}
+    runs-on: windows-2025
+    needs: [gaming, modding]
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+      - name: Create release ${{ github.ref_name }}
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "release/${{ env.BIN-NAME }}.zip,release/${{ env.BIN-NAME }}-DEV_ONLY.zip"
+          draft: ${{ env.IS_DRAFT }}
+          prerelease: ${{ env.IS_PRERELEASE }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifactErrorsFailBuild: true

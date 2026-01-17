@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["PADDING_41","PADDING_48","PADDING_64"],"struct":["EmitterEvent","PlaySoundOnEmitter","SetListenerOverride","SetParameterOnEmitter","StopSoundOnEmitter"]};

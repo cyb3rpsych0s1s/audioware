@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["resolve_any_entity"],"mod":["audio_system","component","device","entity","events","fixed_point","game_object","helper","maths","menu","orphans","puppet","quaternion","scene_system","sound","sound_component","sound_engine","time_dilatable","world_position","world_transform"],"trait":["AsGameInstance"]};

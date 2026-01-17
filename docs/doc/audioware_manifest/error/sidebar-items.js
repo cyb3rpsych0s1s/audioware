@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ConversionError","Error"],"struct":["BinaryLocationSnafu","CannotParseManifest","CannotReadDepotSnafu","CannotReadManifest","InvalidBufferSizeSnafu","InvalidGenderSnafu","InvalidLocaleSnafu","MissingBufferSizeSnafu","NoFolderSnafu","UnsupportedLocaleSnafu","ValidationError","ValidationSnafu"]};

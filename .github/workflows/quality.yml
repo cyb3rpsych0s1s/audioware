@@ -1,0 +1,33 @@
+name: CI
+on: push
+
+env:
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+jobs:
+  quality:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Prepare Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+          components: clippy, rustfmt
+      - name: Additional tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-machete,just
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: debug
+      - name: Check
+        run: just check
+      - name: QA
+        run: just qa
+      - name: Unit-tests
+        run: just test
+      - name: Unused dependencies
+        run: cargo machete
