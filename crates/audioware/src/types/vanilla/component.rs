@@ -137,3 +137,93 @@ pub struct AudioSyncs {
 unsafe impl NativeRepr for AudioSyncs {
     const NAME: &'static str = "gameAudioSyncs";
 }
+
+const PADDING_1E0: usize = 0x1E8 - 0x1E0;
+const PADDING_288: usize = 0x2AC - 0x288;
+const PADDING_2B4: usize = 0x320 - 0x2B4;
+
+#[derive(Debug)]
+#[repr(C, align(16))]
+pub struct CameraComponent {
+    base: BaseCameraComponent,                     // 0
+    unk1e0: [u8; PADDING_1E0],                     // 1E0
+    anim_param_fov_override_weight: CName,         // 1E8
+    anim_param_fov_override_value: CName,          // 1F0
+    anim_param_zoom_override_weight: CName,        // 1F8
+    anim_param_zoom_override_value: CName,         // 200
+    anim_param_zoom_weapon_override_weight: CName, // 208
+    anim_param_zoom_weapon_override_value: CName,  // 210
+    anim_paramdof_intensity: CName,                // 218
+    anim_paramdof_near_blur: CName,                // 220
+    anim_paramdof_near_focus: CName,               // 228
+    anim_paramdof_far_blur: CName,                 // 230
+    anim_paramdof_far_focus: CName,                // 238
+    anim_param_weapon_near_plane_cm: CName,        // 240
+    anim_param_weapon_far_plane_cm: CName,         // 248
+    anim_param_weapon_edges_sharpness: CName,      // 250
+    anim_param_weapon_vignette_intensity: CName,   // 258
+    anim_param_weapon_vignette_radius: CName,      // 260
+    anim_param_weapon_vignette_circular: CName,    // 268
+    anim_param_weapon_blur_intensity: CName,       // 270
+    zoom_override_weight: f32,                     // 278
+    zoom_override_value: f32,                      // 27C
+    zoom_weapon_override_weight: f32,              // 280
+    zoom_weapon_override_value: f32,               // 284
+    unk288: [u8; PADDING_288],                     // 288
+    fov_override_weight: f32,                      // 2AC
+    fov_override_value: f32,                       // 2B0
+    unk2b4: [u8; PADDING_2B4],                     // 2B4
+}
+
+unsafe impl ScriptClass for CameraComponent {
+    type Kind = Native;
+    const NAME: &'static str = "gameCameraComponent";
+}
+
+impl AsRef<IScriptable> for CameraComponent {
+    fn as_ref(&self) -> &IScriptable {
+        &self.base.base.base.base
+    }
+}
+
+const PADDING_120: usize = 0x128 - 0x120;
+const PADDING_12C: usize = 0x15C - 0x12C;
+const PADDING_160: usize = 0x168 - 0x160;
+const PADDING_174: usize = 0x178 - 0x174;
+const PADDING_194: usize = 0x1E0 - 0x194;
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct BaseCameraComponent {
+    base: IPlacedComponent,
+    unk120: [u8; PADDING_120],        // 120
+    fov: f32,                         // 128
+    unk12c: [u8; PADDING_12C],        // 12C
+    zoom: f32,                        // 15C
+    unk160: [u8; PADDING_160],        // 160
+    near_plane_override: f32,         // 168
+    far_plane_override: f32,          // 16C
+    motion_blur_scale: f32,           // 170
+    unk174: [u8; PADDING_174],        // 174
+    weapon_plane: SWeaponPlaneParams, // 178
+    unk194: [u8; PADDING_194],        // 194
+}
+
+unsafe impl ScriptClass for BaseCameraComponent {
+    type Kind = Native;
+    const NAME: &'static str = "entBaseCameraComponent";
+}
+
+const PADDING_04: usize = 0x18 - 0x4;
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct SWeaponPlaneParams {
+    weapon_near_plane_cm: f32, // 00
+    unk04: [u8; PADDING_04],   // 4
+    blur_intensity: f32,       // 18
+}
+
+unsafe impl NativeRepr for SWeaponPlaneParams {
+    const NAME: &'static str = "SWeaponPlaneParams";
+}
