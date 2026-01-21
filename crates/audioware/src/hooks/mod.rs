@@ -99,6 +99,7 @@ mod offsets {
     pub const SOUNDENGINE_SET_PARAMETER: u32                    = 0xEB171218;   // 0x1409E88E0 (2.31)
     pub const SOUNDENGINE_SET_GLOBAL_PARAMETER: u32             = 0x2D61ABB;    // 0x1409DA450 (2.31)
     pub const AUDIOINTERNALEVENT_APPLY_ACTION: u32              = 0x3ECF1E9E;   // 0x1404418B0 (2.31)
+    pub const CAMERACOMPONENT_OVERRIDE_AUDIO_LISTENERS: u32     = 0x519A1468;   // 0x14248078C (2.31)
 
     #[cfg(feature = "research")]
     mod natives {
