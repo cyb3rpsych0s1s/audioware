@@ -2,6 +2,7 @@ use red4ext_rs::SdkEnv;
 
 mod audio;
 mod audio_system;
+mod camera_component;
 mod entity;
 mod ink_logic_controller;
 mod ink_menu_scenario;
@@ -33,6 +34,7 @@ pub fn attach(env: &SdkEnv) {
     audio_interface::attach_hook(env);
     sound_engine::attach_hooks(env);
     sound_component::attach_hook(env);
+    camera_component::attach_hook(env);
     audio::attach_hook(env);
     audio_system::attach_hooks(env);
     time_dilatable::attach_hooks(env);
