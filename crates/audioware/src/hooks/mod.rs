@@ -2,6 +2,7 @@ use red4ext_rs::SdkEnv;
 
 mod audio;
 mod audio_system;
+mod camera_component;
 mod entity;
 mod ink_logic_controller;
 mod ink_menu_scenario;
@@ -33,6 +34,7 @@ pub fn attach(env: &SdkEnv) {
     audio_interface::attach_hook(env);
     sound_engine::attach_hooks(env);
     sound_component::attach_hook(env);
+    camera_component::attach_hooks(env);
     audio::attach_hook(env);
     audio_system::attach_hooks(env);
     time_dilatable::attach_hooks(env);
@@ -99,6 +101,9 @@ mod offsets {
     pub const SOUNDENGINE_SET_PARAMETER: u32                    = 0xEB171218;   // 0x1409E88E0 (2.31)
     pub const SOUNDENGINE_SET_GLOBAL_PARAMETER: u32             = 0x2D61ABB;    // 0x1409DA450 (2.31)
     pub const AUDIOINTERNALEVENT_APPLY_ACTION: u32              = 0x3ECF1E9E;   // 0x1404418B0 (2.31)
+    pub const CAMERACOMPONENT_OVERRIDE_AUDIO_LISTENERS: u32     = 0x519A1468;   // 0x14248078C (2.31)
+    pub const CAMERACOMPONENT_ACTIVATE: u32                     = 0x55F51EAC;   // 0x1424808D8 (2.31)
+    pub const CAMERACOMPONENT_DEACTIVATE: u32                   = 0x9A531F75;   // 0x142480994 (2.31)
 
     #[cfg(feature = "research")]
     mod natives {

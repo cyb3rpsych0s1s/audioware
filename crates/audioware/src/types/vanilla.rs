@@ -9,6 +9,8 @@ use red4ext_rs::{
 
 mod audio_system;
 pub use audio_system::*;
+mod camera_system;
+pub use camera_system::*;
 mod component;
 pub use component::*;
 mod device;
@@ -43,6 +45,8 @@ mod sound_component;
 pub use sound_component::*;
 mod time_dilatable;
 pub use time_dilatable::*;
+mod transform;
+pub use transform::*;
 mod world_position;
 pub use world_position::*;
 mod world_transform;
@@ -61,6 +65,7 @@ pub trait AsGameInstance {
     fn get_world_state_system() -> Ref<WorldStateSystem>;
     fn get_static_entity_system() -> Ref<StaticEntitySystem>;
     fn get_dynamic_entity_system() -> Ref<DynamicEntitySystem>;
+    fn get_camera_system() -> Ref<CameraSystem>;
 }
 
 impl AsGameInstance for GameInstance {
@@ -129,6 +134,16 @@ impl AsGameInstance for GameInstance {
         let game = engine.game_instance();
         game.get_system(class.as_type())
             .cast::<DynamicEntitySystem>()
+            .unwrap_or_default()
+    }
+
+    fn get_camera_system() -> Ref<CameraSystem> {
+        let rtti = RttiSystem::get();
+        let class = rtti.get_class(CName::new(CameraSystem::NAME)).unwrap();
+        let engine = GameEngine::get();
+        let game = engine.game_instance();
+        game.get_system(class.as_type())
+            .cast::<CameraSystem>()
             .unwrap_or_default()
     }
 }
