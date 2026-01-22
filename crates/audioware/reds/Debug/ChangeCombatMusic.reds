@@ -12,6 +12,7 @@ public class ChangeCombatMusic extends ScriptableSystem {
     private let volume: Float = 1.;
     private let playing: CName = n"None";
     private final func OnPlayerAttach(request: ref<PlayerAttachRequest>) -> Void {
+        if !EnableAudiowareChangeCombatMusic() { return; }
         let manager = new AudioEventManager();
         // mute vanilla combat music
         manager.Mute(n"gmp_ui_prevention_player_commit_crime");
@@ -101,6 +102,7 @@ public class ChangeCombatMusic extends ScriptableSystem {
 @wrapMethod(PreventionSystem)
 private final func OnHeatChanged(previousHeat: EPreventionHeatStage) -> Void {
     wrappedMethod(previousHeat);
+    if !EnableAudiowareChangeCombatMusic() { return; }
     if NotEquals(previousHeat, this.m_heatStage) {
         ChangeCombatMusic
             .GetInstance(this.GetGame())
@@ -111,6 +113,8 @@ private final func OnHeatChanged(previousHeat: EPreventionHeatStage) -> Void {
 // notify how many agents can or cannot see player
 @wrapMethod(PreventionSystem)
 private final func HasViewersChanged(currentViewerState: Bool) -> Void {
+    wrappedMethod(currentViewerState);
+    if !EnableAudiowareChangeCombatMusic() { return; }
     if NotEquals(currentViewerState, this.m_hasViewers) {
         ChangeCombatMusic
             .GetInstance(this.GetGame())
@@ -121,6 +125,7 @@ private final func HasViewersChanged(currentViewerState: Bool) -> Void {
 // notify when player starts sprinting or crouching
 @wrapMethod(PlayerPuppet)
 protected cb func OnLocomotionStateChanged(newState: Int32) -> Bool {
+    if !EnableAudiowareChangeCombatMusic() { return wrappedMethod(newState); }
     let previous = this.m_locomotionState;
 
     let out = wrappedMethod(newState);
@@ -137,6 +142,7 @@ protected cb func OnLocomotionStateChanged(newState: Int32) -> Bool {
 // notify when player is about to die
 @wrapMethod(PlayerPuppet)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
+    if !EnableAudiowareChangeCombatMusic() { return wrappedMethod(evt); }
     ChangeCombatMusic
         .GetInstance(this.GetGame())
         .OnDeath();
