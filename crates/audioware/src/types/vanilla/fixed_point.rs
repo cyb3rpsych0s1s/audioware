@@ -17,3 +17,11 @@ impl fmt::Display for FixedPoint {
         write!(f, "{}", self.bits)
     }
 }
+
+impl From<f32> for FixedPoint {
+    fn from(value: f32) -> Self {
+        Self {
+            bits: value.round() as i32,
+        }
+    }
+}

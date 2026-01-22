@@ -2,11 +2,11 @@ use debug_ignore::DebugIgnore;
 use red4ext_rs::{
     NativeRepr, RttiSystem, ScriptClass,
     class_kind::Native,
-    types::{CName, Cruid, IScriptable, RedArray, Ref, WeakRef},
+    types::{CName, Cruid, IScriptable, Method, RedArray, Ref, WeakRef},
 };
 use std::mem;
 
-use crate::{AudEventStruct, AudParameter, AudSwitch, RedTagList};
+use crate::{AudEventStruct, AudParameter, AudSwitch, Quaternion, RedTagList, Vector4};
 
 use super::{Entity, WorldTransform};
 
@@ -56,6 +56,11 @@ impl AsIComponent for Ref<IPlacedComponent> {
     }
 }
 
+pub trait AsIPlacedComponent {
+    fn get_local_orientation(&self) -> Quaternion;
+    fn get_local_position(&self) -> Vector4;
+}
+
 #[derive(Debug)]
 #[repr(C)]
 pub struct IPlacedComponent {
@@ -82,6 +87,37 @@ impl AsRef<IScriptable> for IPlacedComponent {
     #[inline]
     fn as_ref(&self) -> &IScriptable {
         self.base.as_ref()
+    }
+}
+
+impl AsIPlacedComponent for Ref<IPlacedComponent> {
+    fn get_local_orientation(&self) -> Quaternion {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(Entity::NAME)).unwrap();
+        let method: &Method = cls
+            .get_method(CName::new("GetLocalOrientation"))
+            .ok()
+            .unwrap();
+        match unsafe { self.instance() } {
+            Some(x) => method
+                .as_function()
+                .execute::<_, Quaternion>(Some(x.as_ref()), ())
+                .unwrap(),
+            _ => Quaternion::default(),
+        }
+    }
+
+    fn get_local_position(&self) -> Vector4 {
+        let rtti = RttiSystem::get();
+        let cls = rtti.get_class(CName::new(Entity::NAME)).unwrap();
+        let method: &Method = cls.get_method(CName::new("GetLocalPosition")).ok().unwrap();
+        match unsafe { self.instance() } {
+            Some(x) => method
+                .as_function()
+                .execute::<_, Vector4>(Some(x.as_ref()), ())
+                .unwrap(),
+            _ => Vector4::default(),
+        }
     }
 }
 
