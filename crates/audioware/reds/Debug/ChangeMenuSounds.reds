@@ -4,6 +4,7 @@ public class ChangeMenuSounds extends ScriptableService {
     private let mainMenuMusic: ref<DynamicSoundEvent>;
     private let isPreGame: Bool = false;
     private cb func OnLoad() {
+        if !EnableAudiowareChangeMenuSounds() { return; }
         let manager = new AudioEventManager();
         // mute main menu ambience music (once clicked Press to Start)
         manager.Mute(n"mus_game_menus_00_title_screen_START");

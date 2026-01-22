@@ -4,6 +4,7 @@ public class ChangeIntroService extends ScriptableService {
     private let replaced: Bool;
     private let handler: ref<AudioEventCallbackHandler>;
     private cb func OnLoad() {
+        if !EnableAudiowareChangeIntro() { return; }
         FTLog(s"ChangeIntroService.OnLoad");
         let system = new AudioEventCallbackSystem();
         this.handler = system
