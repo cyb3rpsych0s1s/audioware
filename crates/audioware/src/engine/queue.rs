@@ -250,6 +250,10 @@ pub fn run(
                     engine.on_emitter_incapacitated(entity_id)
                 }
                 Lifecycle::OnEmitterDefeated { .. } => {}
+                Lifecycle::ActivateCamera { triggered_by, .. } => {
+                    engine.override_listener(Some(triggered_by))
+                }
+                Lifecycle::DeactivateCamera { .. } => engine.override_listener(None),
                 Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
                 Lifecycle::SetMuteInBackground { value } => {
                     if value != state.contains(Flags::MUTE_IN_BACKGROUND) {
