@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use audioware_core::Amplitude;
 use audioware_manifest::{Locale, PlayerGender, ScnDialogLineType, Validate};
 use command::Command;
@@ -373,6 +375,7 @@ unsafe extern "C" fn on_exit_initialization(_: &GameApp) {
 /// Unload [Plugin][super::Plugin].
 unsafe extern "C" fn on_exit_running(_: &GameApp) {
     queue::notify(Lifecycle::Terminate);
+    std::thread::sleep(Duration::from_millis(300));
     if let Some(thread) = THREAD.get() {
         loop {
             if let Ok(mut x) = thread.try_lock() {
