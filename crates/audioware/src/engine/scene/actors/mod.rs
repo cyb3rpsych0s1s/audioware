@@ -10,6 +10,7 @@ use crate::{
         scene::{actors::slot::ActorSlot, emitters::Emitter},
         traits::{
             DualHandles, clear::Clear, pause::Pause, reclaim::Reclaim, resume::Resume, stop::Stop,
+            terminate::Terminate,
         },
     },
     error::Error,
@@ -98,5 +99,15 @@ impl Reclaim for Actors {
         self.v.reclaim();
         self.emitters.iter_mut().for_each(|mut x| x.reclaim());
         self.holocall.reclaim();
+    }
+}
+
+impl Terminate for Actors {
+    fn terminate(&mut self) {
+        self.v.terminate();
+        self.holocall.terminate();
+        self.emitters
+            .iter_mut()
+            .for_each(|mut x| x.value_mut().terminate());
     }
 }

@@ -20,6 +20,7 @@ pub mod resume;
 pub mod seek;
 pub mod stop;
 pub mod store;
+pub mod terminate;
 pub mod volume;
 
 #[derive(Default)]

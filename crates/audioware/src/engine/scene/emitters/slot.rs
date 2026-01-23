@@ -5,7 +5,7 @@ use kira::{
 };
 use red4ext_rs::types::CName;
 
-use crate::engine::traits::{dilation::SyncDilation, pause::Pause};
+use crate::engine::traits::{dilation::SyncDilation, pause::Pause, terminate::Terminate};
 use crate::engine::{AffectedByTimeDilation, traits::resume::Resume};
 use crate::engine::{
     tracks::Spatial,
@@ -104,5 +104,11 @@ impl EmitterSlot {
     }
     pub fn occluded(&self) -> bool {
         self.handle.occluded()
+    }
+}
+
+impl Terminate for EmitterSlot {
+    fn terminate(&mut self) {
+        self.handles.terminate();
     }
 }

@@ -13,6 +13,7 @@ use crate::{
             resume::{ResumeControlled, ResumeControlledAt},
             seek::{SeekControlledBy, SeekControlledTo},
             stop::{StopBy, StopControlled},
+            terminate::Terminate,
             volume::SetControlledVolume,
         },
         tweens::IMMEDIATELY,
@@ -195,5 +196,11 @@ impl SeekControlledBy for EmitterSlots {
         self.slots.iter_mut().for_each(|x| {
             x.handles.seek_controlled_by(id, amount);
         })
+    }
+}
+
+impl Terminate for EmitterSlots {
+    fn terminate(&mut self) {
+        self.slots.iter_mut().for_each(Terminate::terminate);
     }
 }

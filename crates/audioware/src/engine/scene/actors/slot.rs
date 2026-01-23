@@ -11,6 +11,7 @@ use crate::{
             reclaim::Reclaim,
             resume::Resume,
             stop::{Stop, StopBy},
+            terminate::Terminate,
         },
         tweens::IMMEDIATELY,
     },
@@ -83,5 +84,11 @@ impl Resume for ActorSlot {
 impl Reclaim for ActorSlot {
     fn reclaim(&mut self) {
         self.handles.reclaim();
+    }
+}
+
+impl Terminate for ActorSlot {
+    fn terminate(&mut self) {
+        self.handles.terminate();
     }
 }

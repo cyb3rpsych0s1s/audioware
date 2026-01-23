@@ -32,7 +32,7 @@ use crate::{
     abi::{callback::Callback, lifecycle::ReplacementNotification},
     engine::{
         tracks::TrackEntryOptions,
-        traits::{Handle, stop::StopBy, store::Store},
+        traits::{Handle, stop::StopBy, store::Store, terminate::Terminate},
     },
     error::{EngineError, Error},
     propagate_subtitles, resolve_any_entity,
@@ -908,5 +908,14 @@ impl ToOutputDestination for SceneId {
     #[inline(always)]
     fn to_output_destination<'b>(&self, tracks: &'b mut Tracks) -> &'b mut TrackHandle {
         &mut tracks.dialogue
+    }
+}
+
+impl<B: Backend> Terminate for Engine<B> {
+    fn terminate(&mut self) {
+        self.tracks.terminate();
+        if let Some(scene) = self.scene.as_mut() {
+            scene.terminate();
+        }
     }
 }

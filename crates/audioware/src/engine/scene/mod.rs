@@ -23,6 +23,7 @@ use crate::{
             resume::{Resume, ResumeControlled, ResumeControlledAt},
             seek::{SeekControlledBy, SeekControlledTo},
             stop::{Stop, StopControlled},
+            terminate::Terminate,
             volume::SetControlledVolume,
         },
     },
@@ -485,5 +486,12 @@ impl SeekControlledTo for Scene {
 impl SeekControlledBy for Scene {
     fn seek_controlled_by(&mut self, id: ControlId, amount: f64) {
         self.emitters.seek_controlled_by(id, amount);
+    }
+}
+
+impl Terminate for Scene {
+    fn terminate(&mut self) {
+        self.actors.terminate();
+        self.emitters.terminate();
     }
 }

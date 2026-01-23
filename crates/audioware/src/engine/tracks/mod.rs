@@ -30,6 +30,7 @@ use crate::{
             resume::{Resume, ResumeControlled, ResumeControlledAt},
             seek::{SeekControlledBy, SeekControlledTo},
             stop::{Stop, StopBy, StopControlled},
+            terminate::Terminate,
             volume::SetControlledVolume,
         },
     },
@@ -202,5 +203,11 @@ impl SeekControlledTo for Tracks {
 impl SeekControlledBy for Tracks {
     fn seek_controlled_by(&mut self, id: ControlId, amount: f64) {
         self.handles.seek_controlled_by(id, amount);
+    }
+}
+
+impl Terminate for Tracks {
+    fn terminate(&mut self) {
+        self.handles.terminate();
     }
 }

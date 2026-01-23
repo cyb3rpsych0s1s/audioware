@@ -33,6 +33,7 @@ use crate::{
             resume::{ResumeControlled, ResumeControlledAt},
             seek::{SeekControlledBy, SeekControlledTo},
             stop::StopControlled,
+            terminate::Terminate,
             volume::SetControlledVolume,
         },
         tweens::{DILATION_EASE_OUT, IMMEDIATELY},
@@ -171,10 +172,7 @@ pub fn run(
             lifecycle!("> {l}");
             match l {
                 Lifecycle::Terminate => {
-                    engine.tracks.clear();
-                    if let Some(scene) = engine.scene.as_mut() {
-                        scene.clear();
-                    }
+                    engine.terminate();
                     break 'game;
                 }
                 Lifecycle::ReportInitialization => engine.report_initialization(false),
@@ -565,13 +563,6 @@ pub fn run(
     let _ = DYNAMIC_EMITTERS
         .get()
         .and_then(|x| x.write().ok().map(|mut x| x.take()));
-    if let Some(handle) = THREAD
-        .get()
-        .and_then(|x| x.lock().ok().and_then(|mut x| x.take()))
-        && let Err(e) = handle.join()
-    {
-        fails!("error joining thread handle: {e:?}");
-    }
     lifecycle!("closed engine");
 }
 
