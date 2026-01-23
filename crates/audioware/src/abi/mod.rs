@@ -22,7 +22,7 @@ use crate::{
     PlayOneShotEvent, RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent,
     SetEntityNameEvent, SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent,
     StopTaggedEvent, TagEvent, ToTween, Tween, UntagEvent,
-    engine::{AudioEventManager, Engine, Mute, eq::Preset, state},
+    engine::{AudioEventManager, Engine, Mute, eq::Preset, queue::THREAD, state},
     queue,
     utils::{fails, lifecycle, warns},
 };
@@ -373,6 +373,16 @@ unsafe extern "C" fn on_exit_initialization(_: &GameApp) {
 /// Unload [Plugin][super::Plugin].
 unsafe extern "C" fn on_exit_running(_: &GameApp) {
     queue::notify(Lifecycle::Terminate);
+    if let Some(thread) = THREAD.get() {
+        loop {
+            if let Ok(mut x) = thread.try_lock() {
+                if let Some(x) = x.take() {
+                    let _ = x.join();
+                }
+                break;
+            }
+        }
+    }
 }
 
 pub trait GameSessionLifecycle {
