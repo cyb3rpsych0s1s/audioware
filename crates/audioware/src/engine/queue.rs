@@ -556,6 +556,20 @@ pub fn run(
     let _ = COMMAND
         .get()
         .and_then(|x| x.write().ok().map(|mut x| x.take()));
+    let _ = DYNAMIC_SOUNDS
+        .get()
+        .and_then(|x| x.write().ok().map(|mut x| x.take()));
+    let _ = DYNAMIC_EMITTERS
+        .get()
+        .and_then(|x| x.write().ok().map(|mut x| x.take()));
+    if let Some(handle) = THREAD
+        .get()
+        .and_then(|x| x.lock().ok().and_then(|mut x| x.take()))
+    {
+        if let Err(e) = handle.join() {
+            fails!("error joining thread handle: {e:?}");
+        }
+    }
     lifecycle!("closed engine");
 }
 
