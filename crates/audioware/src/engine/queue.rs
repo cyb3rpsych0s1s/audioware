@@ -172,6 +172,9 @@ pub fn run(
             match l {
                 Lifecycle::Terminate => {
                     engine.tracks.clear();
+                    if let Some(scene) = engine.scene.as_mut() {
+                        scene.clear();
+                    }
                     break 'game;
                 }
                 Lifecycle::ReportInitialization => engine.report_initialization(false),
@@ -565,10 +568,9 @@ pub fn run(
     if let Some(handle) = THREAD
         .get()
         .and_then(|x| x.lock().ok().and_then(|mut x| x.take()))
+        && let Err(e) = handle.join()
     {
-        if let Err(e) = handle.join() {
-            fails!("error joining thread handle: {e:?}");
-        }
+        fails!("error joining thread handle: {e:?}");
     }
     lifecycle!("closed engine");
 }
