@@ -8,7 +8,7 @@ public class AudioCallbackService extends ScriptableService {
         let system = new AudioEventCallbackSystem();
         system.RegisterCallback(n"game_occlusion", this, n"OnOcclusion");
         system.RegisterStaticCallback(n"veh_tyre_condition", n"AudioCallbackService", n"OnTyreCondition");
-        system.RegisterStaticCallback(n"game_window_in_focus", n"AudioCallbackService", n"OnWindowsInFocus");
+        //system.RegisterStaticCallback(n"game_window_in_focus", n"AudioCallbackService", n"OnWindowsInFocus");
         system.RegisterStaticCallback(n"default", n"AudioCallbackService", n"OnSetDefaultAppearance")
             .SetLifetime(AudioEventCallbackLifetime.Forever);
         system.RegisterStaticCallback(n"ph_metal_car", n"AudioCallbackService", n"OnMetalCar");
