@@ -171,7 +171,6 @@ pub fn run(
             lifecycle!("> {l}");
             match l {
                 Lifecycle::Terminate => {
-                    engine.tracks.clear();
                     break 'game;
                 }
                 Lifecycle::ReportInitialization => engine.report_initialization(false),
