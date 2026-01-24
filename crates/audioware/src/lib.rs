@@ -3,8 +3,7 @@
 
 include!(concat!(env!("OUT_DIR"), "/version.rs"));
 
-use std::time::Instant;
-
+use crossbeam::channel::{bounded, unbounded};
 use red4ext_rs::{
     Exportable, Plugin, SdkEnv, SemVer, U16CStr, export_plugin_symbols, log::error, wcstr,
 };
@@ -25,7 +24,19 @@ mod utils;
 
 use engine::queue;
 
-use crate::{abi::lifecycle::Lifecycle, engine::queue::THREAD, hooks::detach, utils::fails};
+use crate::{
+    abi::{
+        callback::Callback,
+        command::Command,
+        control::{DynamicEmitter, DynamicSound},
+        lifecycle::Lifecycle,
+    },
+    engine::queue::{
+        CALLBACKS, COMMAND, DYNAMIC_EMITTERS, DYNAMIC_SOUNDS, LIFECYCLE, THREAD, load,
+    },
+    hooks::detach,
+    utils::{fails, lifecycle},
+};
 
 /// Audio [Plugin] for Cyberpunk 2077.
 pub struct Audioware;
@@ -37,8 +48,25 @@ impl Plugin for Audioware {
 
     /// Initialize plugin.
     fn on_init(env: &SdkEnv) {
+        lifecycle!("load plugin env");
+        let Ok((engine, capacity)) = load(env) else {
+            fails!("nooooooooooooooooooooo");
+            return;
+        };
+        lifecycle!("initialize channels...");
+        let (sl, rl) = bounded::<Lifecycle>(capacity * 4);
+        let (sc, rc) = bounded::<Command>(capacity);
+        let (se, re) = unbounded::<Callback>();
+        let (sds, rds) = bounded::<DynamicSound>(capacity);
+        let (sde, rde) = bounded::<DynamicEmitter>(capacity);
+        let _ = LIFECYCLE.set(std::sync::RwLock::new(Some(sl)));
+        let _ = COMMAND.set(std::sync::RwLock::new(Some(sc)));
+        let _ = CALLBACKS.set(std::sync::RwLock::new(Some(se)));
+        let _ = DYNAMIC_SOUNDS.set(std::sync::RwLock::new(Some(sds)));
+        let _ = DYNAMIC_EMITTERS.set(std::sync::RwLock::new(Some(sde)));
+        lifecycle!("initialized channels");
         abi::register_listeners(env);
-        if let Err(e) = queue::spawn(env) {
+        if let Err(e) = queue::spawn(env, rl, rc, re, rds, rde, engine) {
             error!(env, "Error: {e}");
         }
     }

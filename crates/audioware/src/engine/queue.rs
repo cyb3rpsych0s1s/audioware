@@ -1,7 +1,7 @@
 use std::{sync::OnceLock, thread::JoinHandle, time::Duration};
 
 use bitflags::bitflags;
-use crossbeam::channel::{Receiver, Sender, bounded, tick, unbounded};
+use crossbeam::channel::{Receiver, Sender, tick};
 use kira::{
     AudioManagerSettings,
     backend::cpal::{CpalBackend, CpalBackendSettings},
@@ -91,13 +91,13 @@ impl std::fmt::Display for Flags {
 }
 
 pub static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
-static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
-static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
-static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
-static DYNAMIC_SOUNDS: OnceLock<RwLock<Option<Sender<DynamicSound>>>> = OnceLock::new();
-static DYNAMIC_EMITTERS: OnceLock<RwLock<Option<Sender<DynamicEmitter>>>> = OnceLock::new();
+pub static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
+pub static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
+pub static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
+pub static DYNAMIC_SOUNDS: OnceLock<RwLock<Option<Sender<DynamicSound>>>> = OnceLock::new();
+pub static DYNAMIC_EMITTERS: OnceLock<RwLock<Option<Sender<DynamicEmitter>>>> = OnceLock::new();
 
-fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
+pub fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
     let mut backend_settings = CpalBackendSettings::default();
     if buffer_size != BufferSize::Auto {
@@ -115,25 +115,20 @@ fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     Ok((Engine::try_new(manager_settings)?, capacity))
 }
 
-pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
+pub fn spawn(
+    _env: &SdkEnv,
+    rl: Receiver<Lifecycle>,
+    rc: Receiver<Command>,
+    re: Receiver<Callback>,
+    rds: Receiver<DynamicSound>,
+    rde: Receiver<DynamicEmitter>,
+    engine: Engine<CpalBackend>,
+) -> Result<(), Error> {
     lifecycle!("spawn plugin thread");
-    let (engine, capacity) = load(env)?;
     let _ = THREAD.set(Mutex::new(Some(
         std::thread::Builder::new()
             .name("audioware".into())
             .spawn(move || {
-                lifecycle!("initialize channels...");
-                let (sl, rl) = bounded::<Lifecycle>(capacity * 4);
-                let (sc, rc) = bounded::<Command>(capacity);
-                let (se, re) = unbounded::<Callback>();
-                let (sds, rds) = bounded::<DynamicSound>(capacity);
-                let (sde, rde) = bounded::<DynamicEmitter>(capacity);
-                let _ = LIFECYCLE.set(RwLock::new(Some(sl)));
-                let _ = COMMAND.set(RwLock::new(Some(sc)));
-                let _ = CALLBACKS.set(RwLock::new(Some(se)));
-                let _ = DYNAMIC_SOUNDS.set(RwLock::new(Some(sds)));
-                let _ = DYNAMIC_EMITTERS.set(RwLock::new(Some(sde)));
-                lifecycle!("initialized channels");
                 self::run(rl, rc, re, rds, rde, engine);
             })?,
     )));
