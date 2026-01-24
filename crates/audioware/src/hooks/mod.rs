@@ -29,8 +29,8 @@ mod script_audio_player;
 mod vo;
 
 pub fn attach(env: &SdkEnv) {
-    #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
-    audio_interface::attach_hook(env);
+    // #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
+    // audio_interface::attach_hook(env);
     sound_engine::attach_hooks(env);
     sound_component::attach_hook(env);
     audio::attach_hook(env);
@@ -42,27 +42,40 @@ pub fn attach(env: &SdkEnv) {
     ui_system::attach_hook(env);
     ink_logic_controller::attach_hook(env);
 
-    #[cfg(feature = "research")]
-    {
-        onscreen_vo::attach_hook(env);
-        localization_manager::attach_hook(env);
-        script_audio_player::attach_hooks(env);
-    }
+    // #[cfg(feature = "research")]
+    // {
+    //     onscreen_vo::attach_hook(env);
+    //     localization_manager::attach_hook(env);
+    //     script_audio_player::attach_hooks(env);
+    // }
 
-    #[cfg(debug_assertions)]
-    save_handling_controller::attach_hook(env);
+    // #[cfg(debug_assertions)]
+    // save_handling_controller::attach_hook(env);
 
-    #[cfg(feature = "research")]
-    {
-        // events::audio::attach_hook(env); // 🌊
-        events::vehicle_audio::attach_hook(env);
-        // events::dialog_line_end::attach_hook(env);
-        // events::dialog_line::attach_hook(env);
-        events::weapon::attach_hook(env);
-        events::trigger::attach_hooks(env);
-        events::ink::attach_hook(env);
-        events::ent::attach_hook(env);
-    }
+    // #[cfg(feature = "research")]
+    // {
+    //     // events::audio::attach_hook(env); // 🌊
+    //     events::vehicle_audio::attach_hook(env);
+    //     // events::dialog_line_end::attach_hook(env);
+    //     // events::dialog_line::attach_hook(env);
+    //     events::weapon::attach_hook(env);
+    //     events::trigger::attach_hooks(env);
+    //     events::ink::attach_hook(env);
+    //     events::ent::attach_hook(env);
+    // }
+}
+
+pub fn detach(env: &SdkEnv) {
+    sound_engine::detach_hooks(env);
+    sound_component::detach_hook(env);
+    audio::detach_hook(env);
+    audio_system::detach_hooks(env);
+    time_dilatable::detach_hooks(env);
+    time_system::detach_hooks(env);
+    ink_menu_scenario::detach_hooks(env);
+    entity::detach_hooks(env);
+    ui_system::detach_hook(env);
+    ink_logic_controller::detach_hook(env);
 }
 
 #[rustfmt::skip]
@@ -137,7 +150,7 @@ mod offsets {
 
 #[macro_export]
 macro_rules! attach_native_func {
-    ($name:literal, $offset:path, $hook: ident, $me:ident, $to:ident $(, $v:vis)?) => {
+    ($name:literal, $offset:path, $hook: ident, $me:ident, $em:ident, $to:ident $(, $v:vis)?) => {
         ::red4ext_rs::hooks! {
             static $hook: fn(
                 i: *mut ::red4ext_rs::types::IScriptable,
@@ -153,9 +166,18 @@ macro_rules! attach_native_func {
             unsafe { env.attach_hook($hook, addr, $to) };
             $crate::utils::intercept!("attached native func hook for {}", $name);
         }
+        $($v)? fn $em(env: &::red4ext_rs::SdkEnv) {
+            let addr = ::red4ext_rs::addr_hashes::resolve($offset);
+            let addr: unsafe extern "C" fn(
+                i: *mut ::red4ext_rs::types::IScriptable,
+                f: *mut ::red4ext_rs::types::StackFrame,
+                a3: ::red4ext_rs::VoidPtr,
+                a4: ::red4ext_rs::VoidPtr) -> () = unsafe { ::std::mem::transmute(addr) };
+            unsafe { env.detach_hook(addr) };
+        }
     };
     ($name:literal, $offset:path) => {
-        attach_native_func!($name, $offset, HOOK, attach_hook, detour, pub);
+        attach_native_func!($name, $offset, HOOK, attach_hook, detach_hook, detour, pub);
     };
 }
 

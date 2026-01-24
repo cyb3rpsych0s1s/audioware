@@ -25,7 +25,7 @@ mod utils;
 
 use engine::queue;
 
-use crate::abi::lifecycle::Lifecycle;
+use crate::{abi::lifecycle::Lifecycle, hooks::detach};
 
 /// Audio [Plugin] for Cyberpunk 2077.
 pub struct Audioware;
@@ -44,7 +44,7 @@ impl Plugin for Audioware {
     }
 
     /// Terminate plugin.
-    fn on_exit(_: &SdkEnv) {
+    fn on_exit(env: &SdkEnv) {
         queue::notify(Lifecycle::Terminate);
         let now = Instant::now();
         loop {
@@ -52,6 +52,7 @@ impl Plugin for Audioware {
                 break;
             }
         }
+        detach(env);
     }
 
     /// Register types in [RTTI][red4ext_rs::RttiSystem].
