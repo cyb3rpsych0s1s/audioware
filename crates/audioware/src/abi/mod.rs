@@ -371,9 +371,7 @@ unsafe extern "C" fn on_exit_initialization(_: &GameApp) {
 }
 
 /// Unload [Plugin][super::Plugin].
-unsafe extern "C" fn on_exit_running(_: &GameApp) {
-    queue::notify(Lifecycle::Terminate);
-}
+unsafe extern "C" fn on_exit_running(_: &GameApp) {}
 
 pub trait GameSessionLifecycle {
     fn on_game_session_before_start();

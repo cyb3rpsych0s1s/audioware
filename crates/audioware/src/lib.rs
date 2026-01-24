@@ -3,6 +3,8 @@
 
 include!(concat!(env!("OUT_DIR"), "/version.rs"));
 
+use std::time::Instant;
+
 use red4ext_rs::{
     Exportable, Plugin, SdkEnv, SemVer, U16CStr, export_plugin_symbols, log::error, wcstr,
 };
@@ -23,6 +25,8 @@ mod utils;
 
 use engine::queue;
 
+use crate::abi::lifecycle::Lifecycle;
+
 /// Audio [Plugin] for Cyberpunk 2077.
 pub struct Audioware;
 
@@ -36,6 +40,17 @@ impl Plugin for Audioware {
         abi::register_listeners(env);
         if let Err(e) = queue::spawn(env) {
             error!(env, "Error: {e}");
+        }
+    }
+
+    /// Terminate plugin.
+    fn on_exit(_: &SdkEnv) {
+        queue::notify(Lifecycle::Terminate);
+        let now = Instant::now();
+        loop {
+            if now.elapsed() > std::time::Duration::from_millis(50) {
+                break;
+            }
         }
     }
 
