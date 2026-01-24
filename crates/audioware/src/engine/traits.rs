@@ -119,6 +119,6 @@ impl<K, O, E> DualHandles<K, O, E> {
 impl<K, O, E> Drop for DualHandles<K, O, E> {
     fn drop(&mut self) {
         // bug in kira DecodeScheduler NextStep::Wait
-        self.streams.stop(IMMEDIATELY);
+        let _ = self.streams.0.drain(..);
     }
 }
