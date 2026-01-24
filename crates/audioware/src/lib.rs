@@ -25,7 +25,7 @@ mod utils;
 
 use engine::queue;
 
-use crate::{abi::lifecycle::Lifecycle, hooks::detach};
+use crate::{abi::lifecycle::Lifecycle, engine::queue::THREAD, hooks::detach, utils::fails};
 
 /// Audio [Plugin] for Cyberpunk 2077.
 pub struct Audioware;
@@ -46,10 +46,19 @@ impl Plugin for Audioware {
     /// Terminate plugin.
     fn on_exit(env: &SdkEnv) {
         queue::notify(Lifecycle::Terminate);
-        let now = Instant::now();
-        loop {
-            if now.elapsed() > std::time::Duration::from_millis(50) {
-                break;
+        if let Some(thread) = THREAD.get() {
+            loop {
+                if let Ok(mut guard) = thread.try_lock() {
+                    if let Some(thread) = guard.take() {
+                        while !thread.is_finished() {
+                            continue;
+                        }
+                        if let Err(e) = thread.join() {
+                            fails!("unable to join thread: {e:?}");
+                        }
+                    }
+                    break;
+                }
             }
         }
         detach(env);

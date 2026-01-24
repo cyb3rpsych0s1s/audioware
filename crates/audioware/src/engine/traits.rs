@@ -4,7 +4,10 @@ use kira::{
     sound::{PlaybackState, static_sound::StaticSoundHandle, streaming::StreamingSoundHandle},
 };
 
-use crate::ControlId;
+use crate::{
+    ControlId,
+    engine::{traits::stop::Stop, tweens::IMMEDIATELY},
+};
 
 pub mod clear;
 pub mod dilation;
@@ -116,6 +119,6 @@ impl<K, O, E> DualHandles<K, O, E> {
 impl<K, O, E> Drop for DualHandles<K, O, E> {
     fn drop(&mut self) {
         // bug in kira DecodeScheduler NextStep::Wait
-        let _ = self.streams.0.drain(..);
+        self.streams.stop(IMMEDIATELY);
     }
 }

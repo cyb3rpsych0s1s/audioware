@@ -90,7 +90,7 @@ impl std::fmt::Display for Flags {
     }
 }
 
-static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
+pub static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
 static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
 static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
