@@ -74,6 +74,7 @@ impl Plugin for Audioware {
     /// Terminate plugin.
     fn on_exit(env: &SdkEnv) {
         queue::notify(Lifecycle::Terminate);
+        detach(env);
         if let Some(thread) = THREAD.get() {
             loop {
                 if let Ok(mut guard) = thread.try_lock() {
@@ -89,7 +90,6 @@ impl Plugin for Audioware {
                 }
             }
         }
-        detach(env);
     }
 
     /// Register types in [RTTI][red4ext_rs::RttiSystem].

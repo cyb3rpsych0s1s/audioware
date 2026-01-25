@@ -374,7 +374,10 @@ unsafe extern "C" fn on_exit_initialization(_: &GameApp) -> StateHandlerResult {
 
 /// Unload [Plugin][super::Plugin].
 unsafe extern "C" fn on_exit_running(_: &GameApp) -> StateHandlerResult {
-    StateHandlerResult::Finished
+    if THREAD.get().is_none() {
+        return StateHandlerResult::Finished;
+    }
+    StateHandlerResult::Running
 }
 
 pub trait GameSessionLifecycle {
