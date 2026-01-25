@@ -97,7 +97,7 @@ static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
 static DYNAMIC_SOUNDS: OnceLock<RwLock<Option<Sender<DynamicSound>>>> = OnceLock::new();
 static DYNAMIC_EMITTERS: OnceLock<RwLock<Option<Sender<DynamicEmitter>>>> = OnceLock::new();
 
-pub fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
+fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
     let mut backend_settings = CpalBackendSettings::default();
     if buffer_size != BufferSize::Auto {
