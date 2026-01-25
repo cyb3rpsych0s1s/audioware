@@ -128,11 +128,11 @@ pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
                 let (se, re) = unbounded::<Callback>();
                 let (sds, rds) = bounded::<DynamicSound>(capacity);
                 let (sde, rde) = bounded::<DynamicEmitter>(capacity);
-                let _ = LIFECYCLE.set(std::sync::RwLock::new(Some(sl)));
-                let _ = COMMAND.set(std::sync::RwLock::new(Some(sc)));
-                let _ = CALLBACKS.set(std::sync::RwLock::new(Some(se)));
-                let _ = DYNAMIC_SOUNDS.set(std::sync::RwLock::new(Some(sds)));
-                let _ = DYNAMIC_EMITTERS.set(std::sync::RwLock::new(Some(sde)));
+                let _ = LIFECYCLE.set(RwLock::new(Some(sl)));
+                let _ = COMMAND.set(RwLock::new(Some(sc)));
+                let _ = CALLBACKS.set(RwLock::new(Some(se)));
+                let _ = DYNAMIC_SOUNDS.set(RwLock::new(Some(sds)));
+                let _ = DYNAMIC_EMITTERS.set(RwLock::new(Some(sde)));
                 lifecycle!("initialized channels");
                 self::run(rl, rc, re, rds, rde, engine);
             })?,
