@@ -91,11 +91,11 @@ impl std::fmt::Display for Flags {
 }
 
 pub static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
-pub static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
-pub static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
-pub static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
-pub static DYNAMIC_SOUNDS: OnceLock<RwLock<Option<Sender<DynamicSound>>>> = OnceLock::new();
-pub static DYNAMIC_EMITTERS: OnceLock<RwLock<Option<Sender<DynamicEmitter>>>> = OnceLock::new();
+static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
+static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
+static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
+static DYNAMIC_SOUNDS: OnceLock<RwLock<Option<Sender<DynamicSound>>>> = OnceLock::new();
+static DYNAMIC_EMITTERS: OnceLock<RwLock<Option<Sender<DynamicEmitter>>>> = OnceLock::new();
 
 pub fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
