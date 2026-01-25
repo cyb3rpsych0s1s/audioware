@@ -1,7 +1,7 @@
 use std::{sync::OnceLock, thread::JoinHandle, time::Duration};
 
 use bitflags::bitflags;
-use crossbeam::channel::{Receiver, Sender, tick};
+use crossbeam::channel::{Receiver, Sender, bounded, tick, unbounded};
 use kira::{
     AudioManagerSettings,
     backend::cpal::{CpalBackend, CpalBackendSettings},
@@ -115,20 +115,25 @@ pub fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     Ok((Engine::try_new(manager_settings)?, capacity))
 }
 
-pub fn spawn(
-    _env: &SdkEnv,
-    rl: Receiver<Lifecycle>,
-    rc: Receiver<Command>,
-    re: Receiver<Callback>,
-    rds: Receiver<DynamicSound>,
-    rde: Receiver<DynamicEmitter>,
-    engine: Engine<CpalBackend>,
-) -> Result<(), Error> {
+pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
     lifecycle!("spawn plugin thread");
+    let (engine, capacity) = load(env)?;
     let _ = THREAD.set(Mutex::new(Some(
         std::thread::Builder::new()
             .name("audioware".into())
             .spawn(move || {
+                lifecycle!("initialize channels...");
+                let (sl, rl) = bounded::<Lifecycle>(capacity * 4);
+                let (sc, rc) = bounded::<Command>(capacity);
+                let (se, re) = unbounded::<Callback>();
+                let (sds, rds) = bounded::<DynamicSound>(capacity);
+                let (sde, rde) = bounded::<DynamicEmitter>(capacity);
+                let _ = LIFECYCLE.set(std::sync::RwLock::new(Some(sl)));
+                let _ = COMMAND.set(std::sync::RwLock::new(Some(sc)));
+                let _ = CALLBACKS.set(std::sync::RwLock::new(Some(se)));
+                let _ = DYNAMIC_SOUNDS.set(std::sync::RwLock::new(Some(sds)));
+                let _ = DYNAMIC_EMITTERS.set(std::sync::RwLock::new(Some(sde)));
+                lifecycle!("initialized channels");
                 self::run(rl, rc, re, rds, rde, engine);
             })?,
     )));
