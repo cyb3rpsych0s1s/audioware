@@ -5,8 +5,8 @@ use crossbeam::channel::bounded;
 use kira::backend::cpal::CpalBackend;
 use lifecycle::{Board, Lifecycle, Session, System};
 use red4ext_rs::{
-    ClassExport, Exportable, GameApp, RttiRegistrator, ScriptClass, SdkEnv, StateListener,
-    StateType, exports, methods, static_methods,
+    ClassExport, Exportable, GameApp, RttiRegistrator, ScriptClass, SdkEnv, StateHandlerResult,
+    StateListener, StateType, exports, methods, static_methods,
     types::{CName, EntityId, IScriptable, Opt, Ref},
 };
 use windows::Win32::{
@@ -22,7 +22,8 @@ use crate::{
     PlayOneShotEvent, RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent,
     SetEntityNameEvent, SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent,
     StopTaggedEvent, TagEvent, ToTween, Tween, UntagEvent,
-    engine::{AudioEventManager, Engine, Mute, eq::Preset, state},
+    engine::{AudioEventManager, Engine, Mute, eq::Preset, queue::THREAD, state},
+    hooks::detach,
     queue,
     utils::{fails, lifecycle, warns},
 };
@@ -365,13 +366,16 @@ unsafe extern "C" fn post_register() {
 }
 
 /// Once plugin initialized.
-unsafe extern "C" fn on_exit_initialization(_: &GameApp) {
+unsafe extern "C" fn on_exit_initialization(_: &GameApp) -> StateHandlerResult {
     lifecycle!("on plugin exit initialization");
     Audioware::once_exit_initialization();
+    StateHandlerResult::Finished
 }
 
 /// Unload [Plugin][super::Plugin].
-unsafe extern "C" fn on_exit_running(_: &GameApp) {}
+unsafe extern "C" fn on_exit_running(_: &GameApp) -> StateHandlerResult {
+    StateHandlerResult::Finished
+}
 
 pub trait GameSessionLifecycle {
     fn on_game_session_before_start();
