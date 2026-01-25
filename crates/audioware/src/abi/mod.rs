@@ -23,7 +23,6 @@ use crate::{
     SetEntityNameEvent, SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent,
     StopTaggedEvent, TagEvent, ToTween, Tween, UntagEvent,
     engine::{AudioEventManager, Engine, Mute, eq::Preset, queue::THREAD, state},
-    hooks::detach,
     queue,
     utils::{fails, lifecycle, warns},
 };

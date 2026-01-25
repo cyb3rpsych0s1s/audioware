@@ -29,8 +29,8 @@ mod script_audio_player;
 mod vo;
 
 pub fn attach(env: &SdkEnv) {
-    // #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
-    // audio_interface::attach_hook(env);
+    #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
+    audio_interface::attach_hook(env);
     sound_engine::attach_hooks(env);
     sound_component::attach_hook(env);
     audio::attach_hook(env);
@@ -42,30 +42,32 @@ pub fn attach(env: &SdkEnv) {
     ui_system::attach_hook(env);
     ink_logic_controller::attach_hook(env);
 
-    // #[cfg(feature = "research")]
-    // {
-    //     onscreen_vo::attach_hook(env);
-    //     localization_manager::attach_hook(env);
-    //     script_audio_player::attach_hooks(env);
-    // }
+    #[cfg(feature = "research")]
+    {
+        onscreen_vo::attach_hook(env);
+        localization_manager::attach_hook(env);
+        script_audio_player::attach_hooks(env);
+    }
 
-    // #[cfg(debug_assertions)]
-    // save_handling_controller::attach_hook(env);
+    #[cfg(debug_assertions)]
+    save_handling_controller::attach_hook(env);
 
-    // #[cfg(feature = "research")]
-    // {
-    //     // events::audio::attach_hook(env); // 🌊
-    //     events::vehicle_audio::attach_hook(env);
-    //     // events::dialog_line_end::attach_hook(env);
-    //     // events::dialog_line::attach_hook(env);
-    //     events::weapon::attach_hook(env);
-    //     events::trigger::attach_hooks(env);
-    //     events::ink::attach_hook(env);
-    //     events::ent::attach_hook(env);
-    // }
+    #[cfg(feature = "research")]
+    {
+        // events::audio::attach_hook(env); // 🌊
+        events::vehicle_audio::attach_hook(env);
+        // events::dialog_line_end::attach_hook(env);
+        // events::dialog_line::attach_hook(env);
+        events::weapon::attach_hook(env);
+        events::trigger::attach_hooks(env);
+        events::ink::attach_hook(env);
+        events::ent::attach_hook(env);
+    }
 }
 
 pub fn detach(env: &SdkEnv) {
+    #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
+    audio_interface::detach_hook(env);
     sound_engine::detach_hooks(env);
     sound_component::detach_hook(env);
     audio::detach_hook(env);
@@ -76,6 +78,28 @@ pub fn detach(env: &SdkEnv) {
     entity::detach_hooks(env);
     ui_system::detach_hook(env);
     ink_logic_controller::detach_hook(env);
+
+    #[cfg(feature = "research")]
+    {
+        onscreen_vo::detach_hook(env);
+        localization_manager::detach_hook(env);
+        script_audio_player::detach_hooks(env);
+    }
+
+    #[cfg(debug_assertions)]
+    save_handling_controller::detach_hook(env);
+
+    #[cfg(feature = "research")]
+    {
+        // events::audio::detach_hook(env); // 🌊
+        events::vehicle_audio::detach_hook(env);
+        // events::dialog_line_end::detach_hook(env);
+        // events::dialog_line::detach_hook(env);
+        events::weapon::detach_hook(env);
+        events::trigger::detach_hooks(env);
+        events::ink::detach_hook(env);
+        events::ent::detach_hook(env);
+    }
 }
 
 #[rustfmt::skip]
@@ -174,6 +198,7 @@ macro_rules! attach_native_func {
                 a3: ::red4ext_rs::VoidPtr,
                 a4: ::red4ext_rs::VoidPtr) -> () = unsafe { ::std::mem::transmute(addr) };
             unsafe { env.detach_hook(addr) };
+            $crate::utils::intercept!("detached native func hook for {}", $name);
         }
     };
     ($name:literal, $offset:path) => {
@@ -196,6 +221,14 @@ macro_rules! attach_native_event {
             let addr = unsafe { ::std::mem::transmute(addr) };
             unsafe { env.attach_hook(HOOK, addr, $to) };
             $crate::utils::intercept!("attached native event hook for {}", <$class as ::red4ext_rs::ScriptClass>::NAME);
+        }
+        $($v)? fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+            let addr = ::red4ext_rs::addr_hashes::resolve($offset);
+            let addr: unsafe extern "C" fn(
+                *mut ::red4ext_rs::types::IScriptable,
+                *mut $class) -> () = unsafe { ::std::mem::transmute(addr) };
+            unsafe { env.detach_hook(addr) };
+            $crate::utils::intercept!("detached native event hook for {}", <$class as ::red4ext_rs::ScriptClass>::NAME);
         }
     };
     ($offset:path, $class:path) => {
