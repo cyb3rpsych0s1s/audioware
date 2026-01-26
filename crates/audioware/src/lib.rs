@@ -43,8 +43,8 @@ impl Plugin for Audioware {
 
     /// Terminate plugin.
     fn on_exit(env: &SdkEnv) {
-        queue::notify(Lifecycle::Terminate);
         detach(env);
+        queue::notify(Lifecycle::Terminate);
         if let Some(thread) = THREAD.get() {
             loop {
                 if let Ok(mut guard) = thread.try_lock() {
