@@ -36,7 +36,7 @@ impl Plugin for Audioware {
     /// Initialize plugin.
     fn on_init(env: &SdkEnv) {
         abi::register_listeners(env);
-        if let Err(e) = queue::spawn(env) {
+        if let Err(e) = queue::spawn() {
             error!(env, "Error: {e}");
         }
     }
