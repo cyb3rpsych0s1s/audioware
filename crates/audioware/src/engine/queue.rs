@@ -166,6 +166,7 @@ pub fn run(
             lifecycle!("> {l}");
             match l {
                 Lifecycle::Terminate => {
+                    drop(engine);
                     break 'game;
                 }
                 Lifecycle::ReportInitialization => engine.report_initialization(false),
