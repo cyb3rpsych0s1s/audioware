@@ -23,7 +23,7 @@ glam = "0.30.0"
 humantime = "2.3"
 kira = { git = "https://github.com/Roms1383/kira", branch = "fix/join-on-drop", features = ["serde"] }
 rayon = "1.11"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "629353ee8ee5b9c961deef82e03d3f5e04640023" }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "ac90fb25768dbebe56317c316e7d7e9660f32d0e" }
 serde = "1.0"
 snafu = "0.8"
 
