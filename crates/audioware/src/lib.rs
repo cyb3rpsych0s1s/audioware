@@ -34,7 +34,7 @@ impl Plugin for Audioware {
     const VERSION: SemVer = AUDIOWARE_VERSION;
 
     /// Initialize plugin.
-    fn on_init(env: &SdkEnv) {
+    fn on_load(env: &SdkEnv) {
         abi::register_listeners(env);
         if let Err(e) = queue::spawn() {
             error!(env, "Error: {e}");
@@ -42,7 +42,7 @@ impl Plugin for Audioware {
     }
 
     /// Terminate plugin.
-    fn on_exit(env: &SdkEnv) {
+    fn on_unload(env: &SdkEnv) {
         detach(env);
         queue::notify(Lifecycle::Terminate);
         if let Some(thread) = THREAD.get() {
