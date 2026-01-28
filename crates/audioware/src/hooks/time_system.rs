@@ -11,6 +11,10 @@ pub fn attach_hooks(env: &SdkEnv) {
     attach_hook_set(env);
     attach_hook_unset(env);
 }
+pub fn detach_hooks(env: &SdkEnv) {
+    detach_hook_set(env);
+    detach_hook_unset(env);
+}
 
 // Set time dilation on player.
 attach_native_func!(
@@ -18,6 +22,7 @@ attach_native_func!(
     super::offsets::TIMESYSTEM_SETTIMEDILATION,
     HOOK_SET,
     attach_hook_set,
+    detach_hook_set,
     detour_set
 );
 
@@ -27,6 +32,7 @@ attach_native_func!(
     super::offsets::TIMESYSTEM_UNSETTIMEDILATION,
     HOOK_UNSET,
     attach_hook_unset,
+    detach_hook_unset,
     detour_unset
 );
 

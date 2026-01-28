@@ -23,6 +23,8 @@ mod utils;
 
 use engine::queue;
 
+use crate::{abi::lifecycle::Lifecycle, engine::queue::THREAD, hooks::detach, utils::fails};
+
 /// Audio [Plugin] for Cyberpunk 2077.
 pub struct Audioware;
 
@@ -32,10 +34,31 @@ impl Plugin for Audioware {
     const VERSION: SemVer = AUDIOWARE_VERSION;
 
     /// Initialize plugin.
-    fn on_init(env: &SdkEnv) {
+    fn on_load(env: &SdkEnv) {
         abi::register_listeners(env);
-        if let Err(e) = queue::spawn(env) {
+        if let Err(e) = queue::spawn() {
             error!(env, "Error: {e}");
+        }
+    }
+
+    /// Terminate plugin.
+    fn on_unload(env: &SdkEnv) {
+        detach(env);
+        queue::notify(Lifecycle::Terminate);
+        if let Some(thread) = THREAD.get() {
+            loop {
+                if let Ok(mut guard) = thread.try_lock() {
+                    if let Some(thread) = guard.take() {
+                        while !thread.is_finished() {
+                            continue;
+                        }
+                        if let Err(e) = thread.join() {
+                            fails!("unable to join thread: {e:?}");
+                        }
+                    }
+                    break;
+                }
+            }
         }
     }
 

@@ -8,6 +8,14 @@ pub fn attach_hooks(env: &SdkEnv) {
     set::switch::attach_hook(env);
     set::parameter::attach_hook(env);
 }
+pub fn detach_hooks(env: &SdkEnv) {
+    play::single::detach_hook(env);
+    play::three::detach_hook(env);
+    play::unique_with_seek::detach_hook(env);
+    stop::detach_hook(env);
+    set::switch::detach_hook(env);
+    set::parameter::detach_hook(env);
+}
 
 mod play {
     pub mod single {
@@ -28,6 +36,17 @@ mod play {
             unsafe { env.attach_hook(HOOK, addr, detour) };
             crate::utils::intercept!(
                 "attached native internal hook for ScriptAudioPlayer::Play( CName )"
+            );
+        }
+        pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+            let addr = ::red4ext_rs::addr_hashes::resolve(
+                super::super::super::offsets::SCRIPTAUDIOPLAYER_PLAY_SINGLE,
+            );
+            let addr: unsafe extern "C" fn(a1: VoidPtr, a2: CName) -> () =
+                unsafe { ::std::mem::transmute(addr) };
+            unsafe { env.detach_hook(addr) };
+            crate::utils::intercept!(
+                "detached native internal hook for ScriptAudioPlayer::Play( CName )"
             );
         }
 
@@ -64,6 +83,21 @@ mod play {
             unsafe { env.attach_hook(HOOK, addr, detour) };
             crate::utils::intercept!(
                 "attached native internal hook for ScriptAudioPlayer::Play( CName, RedTagList, Bool )"
+            );
+        }
+        pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+            let addr = ::red4ext_rs::addr_hashes::resolve(
+                super::super::super::offsets::SCRIPTAUDIOPLAYER_PLAY_THREE,
+            );
+            let addr: unsafe extern "C" fn(
+                a1: VoidPtr,
+                a2: CName,
+                a3: *const RedTagList,
+                a4: bool,
+            ) -> () = unsafe { ::std::mem::transmute(addr) };
+            unsafe { env.detach_hook(addr) };
+            crate::utils::intercept!(
+                "detached native internal hook for ScriptAudioPlayer::Play( CName, RedTagList, Bool )"
             );
         }
 
@@ -105,6 +139,17 @@ mod play {
                 "attached native internal hook for ScriptAudioPlayer::PlayUniqueWithSeek( CName, Float )"
             );
         }
+        pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+            let addr = ::red4ext_rs::addr_hashes::resolve(
+                super::super::super::offsets::SCRIPTAUDIOPLAYER_PLAY_UNIQUE_WITH_SEEK,
+            );
+            let addr: unsafe extern "C" fn(a1: VoidPtr, a2: CName, a3: f32) -> () =
+                unsafe { ::std::mem::transmute(addr) };
+            unsafe { env.detach_hook(addr) };
+            crate::utils::intercept!(
+                "detached native internal hook for ScriptAudioPlayer::PlayUniqueWithSeek( CName, Float )"
+            );
+        }
 
         unsafe extern "C" fn detour(
             a1: VoidPtr,
@@ -142,6 +187,16 @@ mod stop {
             "attached native internal hook for ScriptAudioPlayer::Stop( CName )"
         );
     }
+    pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+        let addr =
+            ::red4ext_rs::addr_hashes::resolve(super::super::offsets::SCRIPTAUDIOPLAYER_STOP);
+        let addr: unsafe extern "C" fn(a1: VoidPtr, a2: CName) -> () =
+            unsafe { ::std::mem::transmute(addr) };
+        unsafe { env.detach_hook(addr) };
+        crate::utils::intercept!(
+            "detached native internal hook for ScriptAudioPlayer::Stop( CName )"
+        );
+    }
 
     unsafe extern "C" fn detour(
         a1: VoidPtr,
@@ -174,6 +229,17 @@ mod set {
             unsafe { env.attach_hook(HOOK, addr, detour) };
             crate::utils::intercept!(
                 "attached native internal hook for ScriptAudioPlayer::SetSwitch( CName, CName )"
+            );
+        }
+        pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+            let addr = ::red4ext_rs::addr_hashes::resolve(
+                super::super::super::offsets::SCRIPTAUDIOPLAYER_SET_SWITCH,
+            );
+            let addr: unsafe extern "C" fn(a1: VoidPtr, a2: CName, a3: CName) -> () =
+                unsafe { ::std::mem::transmute(addr) };
+            unsafe { env.detach_hook(addr) };
+            crate::utils::intercept!(
+                "detached native internal hook for ScriptAudioPlayer::SetSwitch( CName, CName )"
             );
         }
 
@@ -212,6 +278,17 @@ mod set {
             unsafe { env.attach_hook(HOOK, addr, detour) };
             crate::utils::intercept!(
                 "attached native internal hook for ScriptAudioPlayer::SetParameter( CName, Float )"
+            );
+        }
+        pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+            let addr = ::red4ext_rs::addr_hashes::resolve(
+                super::super::super::offsets::SCRIPTAUDIOPLAYER_SET_PARAMETER,
+            );
+            let addr: unsafe extern "C" fn(a1: VoidPtr, a2: CName, a3: f32) -> () =
+                unsafe { ::std::mem::transmute(addr) };
+            unsafe { env.detach_hook(addr) };
+            crate::utils::intercept!(
+                "detached native internal hook for ScriptAudioPlayer::SetParameter( CName, Float )"
             );
         }
 

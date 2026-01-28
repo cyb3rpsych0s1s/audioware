@@ -11,12 +11,18 @@ pub fn attach_hooks(env: &SdkEnv) {
     attach_stop(env);
     attach_switch(env);
 }
+pub fn detach_hooks(env: &SdkEnv) {
+    detach_play(env);
+    detach_stop(env);
+    detach_switch(env);
+}
 
 attach_native_func!(
     "AudioSystem::Play",
     super::offsets::AUDIOSYSTEM_PLAY,
     HOOK_PLAY,
     attach_play,
+    detach_play,
     detour_play
 );
 
@@ -25,6 +31,7 @@ attach_native_func!(
     super::offsets::AUDIOSYSTEM_STOP,
     HOOK_STOP,
     attach_stop,
+    detach_stop,
     detour_stop
 );
 
@@ -33,6 +40,7 @@ attach_native_func!(
     super::offsets::AUDIOSYSTEM_SWITCH,
     HOOK_SWITCH,
     attach_switch,
+    detach_switch,
     detour_switch
 );
 
