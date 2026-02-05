@@ -28,7 +28,7 @@ env:
   BIN-NAME: Audioware-windows-latest-${{ inputs.tag }}${{ !inputs.release && '-DEV_ONLY' || '' }}
   BUILD-PROFILE: ${{ !inputs.release && 'debug' || 'release' }}
   BUILD-FEATURES: ${{ !inputs.release && 'hot-reload' || '' }}
-  ARTIFACT-NAME: windows-latest-${{ inputs.tag }}${{ !inputs.release && '-dev-only' || '' }}-artifact
+  ARTIFACT-NAME: windows-latest-${{ inputs.tag }}${{ !inputs.release && '-dev-only' || '' }}
 
 jobs:
   bundle:
@@ -50,29 +50,15 @@ jobs:
           tool: just
       - name: Bundle mod files
         run: just ci ${{ env.BIN-FOLDER }} ${{ env.BUILD-PROFILE }} ${{ env.BUILD-FEATURES }}
-      - name: Zip files
-        uses: thedoctor0/zip-release@0.7.6
-        with:
-          type: zip
-          filename: ${{ env.BIN-NAME }}.zip
-          directory: ${{ env.BIN-FOLDER }}/bin
-          path: .
-      - name: Zip .pdb
-        uses: thedoctor0/zip-release@0.7.6
-        with:
-          type: zip
-          filename: ${{ env.BIN-NAME }}-PDB.zip
-          directory: ${{ env.BIN-FOLDER }}/pdb
-          path: .
       - name: Upload files
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT-NAME }}
-          path: ${{ env.BIN-FOLDER }}/bin/${{ env.BIN-NAME }}.zip
+          path: ${{ env.BIN-FOLDER }}/bin
           if-no-files-found: error
       - name: Upload .pdb
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT-NAME }}-pdb
-          path: ${{ env.BIN-FOLDER }}/pdb/${{ env.BIN-NAME }}-PDB.zip
+          path: ${{ env.BIN-FOLDER }}/pdb
           if-no-files-found: error
