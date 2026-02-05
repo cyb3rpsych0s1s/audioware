@@ -27,7 +27,7 @@ env:
   BIN-FOLDER: bundle${{ !inputs.release && '-dev-only' || '' }}
   BUILD-PROFILE: ${{ !inputs.release && 'debug' || 'release' }}
   BUILD-FEATURES: ${{ !inputs.release && 'hot-reload' || '' }}
-  ARTIFACT-NAME: windows-latest-${{ inputs.tag }}${{ !inputs.release && '-DEV_ONLY' || '' }}
+  ARTIFACT-NAME: Audioware-windows-${{ inputs.tag }}${{ !inputs.release && '-DEV_ONLY' || '' }}
 
 jobs:
   bundle:
@@ -52,12 +52,12 @@ jobs:
       - name: Upload files
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ARTIFACT-NAME }}
+          name: ${{ env.ARTIFACT-NAME }}.zip
           path: ${{ env.BIN-FOLDER }}/bin
           if-no-files-found: error
       - name: Upload .pdb
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ARTIFACT-NAME }}-PDB
+          name: ${{ env.ARTIFACT-NAME }}-PDB.zip
           path: ${{ env.BIN-FOLDER }}/pdb
           if-no-files-found: error
