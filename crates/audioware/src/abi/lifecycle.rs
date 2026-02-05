@@ -72,10 +72,12 @@ pub enum Lifecycle {
         value: f32,
     },
     ActivateCamera {
+        #[allow(dead_code, reason = "partial feature")]
         blend_time: f32,
         triggered_by: DebugIgnore<WeakRef<CameraComponent>>,
     },
     DeactivateCamera {
+        #[allow(dead_code, reason = "partial feature")]
         blend_time: f32,
     },
     Session(Session),
@@ -165,11 +167,11 @@ impl std::fmt::Display for Lifecycle {
                 entity_id,
                 value: occlusion,
             } => write!(f, "set emitter occlusion {occlusion} [{entity_id}]"),
-            Lifecycle::ActivateCamera { blend_time, .. } => {
-                write!(f, "activate camera {blend_time}")
+            Lifecycle::ActivateCamera { .. } => {
+                write!(f, "activate camera")
             }
-            Lifecycle::DeactivateCamera { blend_time, .. } => {
-                write!(f, "deactivate camera {blend_time}")
+            Lifecycle::DeactivateCamera { .. } => {
+                write!(f, "deactivate camera")
             }
             Lifecycle::ReportInitialization => write!(f, "report initialization"),
             #[cfg(feature = "hot-reload")]
