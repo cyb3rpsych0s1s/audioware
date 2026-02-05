@@ -17,7 +17,7 @@ audioware-core.workspace = true
 audioware-bank = { workspace = true }
 audioware-manifest.workspace = true
 bitflags = "2.9.1"
-cpal = { git = "https://github.com/Roms1383/cpal", branch = "fix/join-on-drop" }
+cpal = { git = "https://github.com/RustAudio/cpal", rev = "e7ac140945f07fc237decd2c32b4e5f57960dd39" }
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 dashmap = { version = "6.1.0", features = ["inline", "rayon"] }
 either.workspace = true
