@@ -49,15 +49,29 @@ jobs:
           tool: just
       - name: Bundle mod files
         run: just ci ${{ env.BIN-FOLDER }} ${{ env.BUILD-PROFILE }} ${{ env.BUILD-FEATURES }}
+      - name: Zip files
+        uses: thedoctor0/zip-release@0.7.6
+        with:
+          type: zip
+          filename: ${{ env.ARTIFACT-NAME }}.zip
+          directory: ${{ env.BIN-FOLDER }}/bin
+          path: .
+      - name: Zip .pdb
+        uses: thedoctor0/zip-release@0.7.6
+        with:
+          type: zip
+          filename: ${{ env.ARTIFACT-NAME }}-PDB.zip
+          directory: ${{ env.BIN-FOLDER }}/pdb
+          path: .
       - name: Upload files
         uses: actions/upload-artifact@v6
         with:
           name: ${{ env.ARTIFACT-NAME }}
-          path: ${{ env.BIN-FOLDER }}/bin
+          path: ${{ env.BIN-FOLDER }}/bin/${{ env.ARTIFACT-NAME }}.zip
           if-no-files-found: error
       - name: Upload .pdb
         uses: actions/upload-artifact@v6
         with:
           name: ${{ env.ARTIFACT-NAME }}-PDB
-          path: ${{ env.BIN-FOLDER }}/pdb
+          path: ${{ env.BIN-FOLDER }}/pdb/${{ env.ARTIFACT-NAME }}-PDB.zip
           if-no-files-found: error

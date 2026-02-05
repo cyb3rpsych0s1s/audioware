@@ -32,7 +32,7 @@ jobs:
     runs-on: windows-2025
     needs: [gaming, modding]
     steps:
-      - name: Download artifacts
+      - name: Download artifact
         uses: actions/download-artifact@v7
         with:
           path: release
@@ -40,7 +40,7 @@ jobs:
       - name: Create release ${{ github.ref_name }}
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "release/${{ env.BIN-NAME }}.zip,release/${{ env.BIN-NAME }}-DEV_ONLY.zip,release/${{ env.BIN-NAME }}-PDB.zip,release/${{ env.BIN-NAME }}-DEV_ONLY-PDB.zip"
+          artifacts: "release/*"
           draft: ${{ env.IS_DRAFT }}
           prerelease: ${{ env.IS_PRERELEASE }}
           token: ${{ secrets.GITHUB_TOKEN }}
