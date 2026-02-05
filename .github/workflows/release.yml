@@ -33,7 +33,7 @@ jobs:
     needs: [gaming, modding]
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: release
           merge-multiple: true

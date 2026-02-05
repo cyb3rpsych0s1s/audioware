@@ -50,13 +50,13 @@ jobs:
       - name: Bundle mod files
         run: just ci ${{ env.BIN-FOLDER }} ${{ env.BUILD-PROFILE }} ${{ env.BUILD-FEATURES }}
       - name: Upload files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.ARTIFACT-NAME }}.zip
           path: ${{ env.BIN-FOLDER }}/bin
           if-no-files-found: error
       - name: Upload .pdb
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.ARTIFACT-NAME }}-PDB.zip
           path: ${{ env.BIN-FOLDER }}/pdb
