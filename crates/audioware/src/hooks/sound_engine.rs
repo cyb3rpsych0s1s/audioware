@@ -11,6 +11,16 @@ pub fn attach_hooks(env: &SdkEnv) {
     set_switch::attach_hook(env);
 }
 
+pub fn detach_hooks(env: &SdkEnv) {
+    event::detach_hook(env);
+    post_event::detach_hook(env);
+    post_event::oneshot::detach_hook(env);
+    external_event::detach_hook(env);
+    parameter::global::detach_hook(env);
+    parameter::detach_hook(env);
+    set_switch::detach_hook(env);
+}
+
 pub mod post_event {
     use kira::DefaultBackend;
 
@@ -37,6 +47,13 @@ pub mod post_event {
         crate::utils::intercept!(
             "attached native internal hook for SoundEngine::PostEvent( CName, VoidPtr )"
         );
+    }
+    pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+        let addr =
+            ::red4ext_rs::addr_hashes::resolve(super::super::offsets::SOUNDENGINE_POST_EVENT);
+        let addr: unsafe extern "C" fn(VoidPtr, CName, *mut Sound) -> PlayingSoundId =
+            unsafe { ::std::mem::transmute(addr) };
+        unsafe { env.detach_hook(addr) };
     }
 
     unsafe extern "C" fn detour(
@@ -152,6 +169,17 @@ pub mod post_event {
                 "attached native internal hook for SoundEngine::PostEvent_OneShot( VoidPtr, VoidPtr )"
             );
         }
+        pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+            let addr = ::red4ext_rs::addr_hashes::resolve(
+                super::super::super::offsets::SOUNDENGINE_POST_EVENT_ONESHOT,
+            );
+            let addr: unsafe extern "C" fn(
+                a1: VoidPtr,
+                a2: *mut OneShotSound,
+                a3: *mut SoundObject,
+            ) -> PlayingSoundId = unsafe { ::std::mem::transmute(addr) };
+            unsafe { env.detach_hook(addr) };
+        }
 
         unsafe extern "C" fn detour(
             a1: VoidPtr,
@@ -259,6 +287,18 @@ pub mod external_event {
         crate::utils::intercept!(
             "attached native internal hook for SoundEngine::ExternalEvent( CName, VoidPtr )"
         );
+    }
+    pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+        let addr = ::red4ext_rs::addr_hashes::resolve(
+            super::super::offsets::SOUNDENGINE_EXTERNAL_EVENT_RES,
+        );
+        let addr: unsafe extern "C" fn(
+            a1: VoidPtr,
+            a2: CName,
+            a3: *const ResRef,
+            a4: *mut Sound,
+        ) -> PlayingSoundId = unsafe { ::std::mem::transmute(addr) };
+        unsafe { env.detach_hook(addr) };
     }
 
     unsafe extern "C" fn detour(
@@ -370,6 +410,18 @@ pub mod parameter {
                 "attached native internal hook for SoundEngine::SetGlobalParameter( CName, CName, Float, CurveType )"
             );
         }
+        pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+            let addr = ::red4ext_rs::addr_hashes::resolve(
+                super::super::super::offsets::SOUNDENGINE_SET_GLOBAL_PARAMETER,
+            );
+            let addr: unsafe extern "C" fn(
+                a1: CName,
+                a2: f32,
+                a3: f32,
+                a4: ESoundCurveType,
+            ) -> i64 = unsafe { ::std::mem::transmute(addr) };
+            unsafe { env.detach_hook(addr) };
+        }
 
         unsafe extern "C" fn detour(
             a1: CName,
@@ -424,6 +476,13 @@ pub mod parameter {
         crate::utils::intercept!(
             "attached native internal hook for SoundEngine::SetParameter( CName, Float, SoundObjectId )"
         );
+    }
+    pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+        let addr =
+            ::red4ext_rs::addr_hashes::resolve(super::super::offsets::SOUNDENGINE_SET_PARAMETER);
+        let addr: unsafe extern "C" fn(a1: VoidPtr, a2: CName, a3: f32, a4: SoundObjectId) -> i64 =
+            unsafe { ::std::mem::transmute(addr) };
+        unsafe { env.detach_hook(addr) };
     }
 
     unsafe extern "C" fn detour(
@@ -519,6 +578,17 @@ pub mod set_switch {
         crate::utils::intercept!(
             "attached native internal hook for SoundEngine::SetSwitch( CName, CName, SoundObjectId )"
         );
+    }
+    pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+        let addr =
+            ::red4ext_rs::addr_hashes::resolve(super::super::offsets::SOUNDENGINE_SET_SWITCH);
+        let addr: unsafe extern "C" fn(
+            a1: VoidPtr,
+            a2: CName,
+            a3: CName,
+            a4: SoundObjectId,
+        ) -> i64 = unsafe { ::std::mem::transmute(addr) };
+        unsafe { env.detach_hook(addr) };
     }
 
     unsafe extern "C" fn detour(
@@ -616,6 +686,17 @@ pub mod event {
         crate::utils::intercept!(
             "attached native internal hook for AudioInternalEvent::ApplyAction( VoidPtr, VoidPtr, VoidPtr )"
         );
+    }
+    pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+        let addr = ::red4ext_rs::addr_hashes::resolve(
+            super::super::offsets::AUDIOINTERNALEVENT_APPLY_ACTION,
+        );
+        let addr: unsafe extern "C" fn(
+            a1: *const AudioInternalEvent,
+            a2: VoidPtr,
+            a3: VoidPtr,
+        ) -> () = unsafe { ::std::mem::transmute(addr) };
+        unsafe { env.detach_hook(addr) };
     }
 
     unsafe extern "C" fn detour(

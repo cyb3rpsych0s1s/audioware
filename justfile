@@ -50,31 +50,57 @@ copy-recurse from to:
 now:
   @Write-Host "$(Get-Date) $_"
 
+setup-red4ext TO=game_dir:
+    @just setup '{{ join(TO, red4ext_deploy_dir) }}'
+
+setup-redscript TO=game_dir:
+    @just setup '{{ join(TO, redscript_deploy_dir) }}'
+
+copy-dll TO PROFILE='release':
+    @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
+
+copy-pdb TO PROFILE='release':
+    @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}';
+
+copy-redscript TO:
+    @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{ join(TO, redscript_deploy_dir) }}'
+  
 # 📦 build Rust RED4Ext plugin
-build PROFILE='debug' FEATURES='' TO=game_dir: (setup join(TO, red4ext_deploy_dir))
-  @if    ('{{PROFILE}}' -eq "debug")   { cargo build --features='{{FEATURES}}' } \
-  elseif ('{{PROFILE}}' -eq "staging") { cargo build --profile staging --features='{{FEATURES}}' } \
-  elseif ('{{PROFILE}}' -eq "release") { cargo build --release --features='{{FEATURES}}' } \
-  else                                 { Write-Host "unknown profile: '{{PROFILE}}'"; exit 1 }
-  @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".dll") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
-  @just now
+build PROFILE='debug' FEATURES='':
+    @if  ('{{PROFILE}}' -eq "debug")     { cargo build --features='{{FEATURES}}' } \
+    elseif ('{{PROFILE}}' -eq "staging") { cargo build --profile staging --features='{{FEATURES}}' } \
+    elseif ('{{PROFILE}}' -eq "release") { cargo build --release --features='{{FEATURES}}' } \
+    else                                 { Write-Host "unknown profile: '{{PROFILE}}'"; exit 1 }
 
 alias b := build
 
-dev FEATURES='hot-reload,research,redengine': (build 'debug' FEATURES) reload
+dev FEATURES='hot-reload,research,redengine' TO=game_dir:
+    @just setup-red4ext '{{TO}}'
+    @just build 'debug' '{{FEATURES}}'
+    @just copy-dll '{{TO}}' 'debug'
+    @just copy-pdb '{{TO}}' 'debug'
+    @just reload '{{TO}}'
+    @just now
 
-lldb PROFILE='debug' FEATURES='hot-reload' TO=game_dir: (build PROFILE FEATURES) reload
-  @just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'
-  @just now
+staging TO=game_dir:
+    @just setup-red4ext '{{TO}}'
+    @just build 'staging' 'hot-reload'
+    @just copy-dll '{{TO}}' 'staging'
+    @just copy-pdb '{{TO}}' 'staging'
+    @just reload '{{TO}}'
+    @just no-debug '{{TO}}'; Write-Host "Removed debug files";
+    @just now
 
-staging TO=game_dir: (lldb 'staging' '')
-  @just no-debug '{{TO}}'; Write-Host "Removed debug files";
-  @just now
-
-ci TO PROFILE='release' FEATURES='': (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build PROFILE FEATURES TO) (reload TO)
-  @if('{{PROFILE}}' -ieq 'release') { just no-debug '{{TO}}'; Write-Host "Removed debug files"; } else { Write-Host "Kept debug files untouched"; }
-  @if('{{PROFILE}}' -ieq 'debug')   { just copy '{{ join(red4ext_bin_dir, "debug", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'; }
-  @just now
+ci TO PROFILE='release' FEATURES='':
+    @just setup-red4ext '{{ join(TO, "bin") }}'
+    @just setup-red4ext '{{ join(TO, "pdb") }}'
+    @just setup-redscript '{{ join(TO, "bin") }}'
+    @just build '{{PROFILE}}' '{{FEATURES}}'
+    @just copy-dll '{{ join(TO, "bin") }}' '{{PROFILE}}'
+    @just copy-pdb '{{ join(TO, "pdb") }}' '{{PROFILE}}'
+    @just copy-redscript '{{ join(TO, "bin") }}'
+    @if('{{PROFILE}}' -ieq 'release') { just no-debug '{{ join(TO, "bin") }}'; Write-Host "Removed debug files"; } else { Write-Host "Kept debug files untouched"; }
+    @just now
 
 optimize TO:
     upx --best --lzma '{{ join(TO, red4ext_deploy_dir, plugin_name + ".dll") }}'
@@ -89,15 +115,15 @@ optimize TO:
 #         Write-Host "missing {{ join(TO, red_cache_dir, 'final.redscripts') }}"; \
 #     }
 
-reload TO=game_dir: (setup join(TO, redscript_deploy_dir))
-  @just copy-recurse '{{ join(redscript_repo_dir, "*") }}' '{{ join(TO, redscript_deploy_dir) }}'
-  @just now
+reload TO=game_dir:
+    @just setup-redscript '{{TO}}'
+    @just copy-redscript '{{TO}}'
 
 alias r := reload
 
 uninstall FROM=game_dir:
-  just delete '{{ join(FROM, red4ext_deploy_dir) }}'
-  just delete '{{ join(FROM, redscript_deploy_dir) }}'
+    @just delete '{{ join(FROM, red4ext_deploy_dir) }}'
+    @just delete '{{ join(FROM, redscript_deploy_dir) }}'
 
 # 🎨 lint code
 format:
@@ -121,7 +147,7 @@ test:
 
 alias t := test
 
-check PROFILE='':
+check:
   @cargo check --release
   @cargo check --features='hot-reload'
 

@@ -6,6 +6,12 @@ pub fn attach_hooks(env: &SdkEnv) {
     #[cfg(debug_assertions)]
     dispose::attach_hook(env);
 }
+pub fn detach_hooks(env: &SdkEnv) {
+    queue_event::detach_hook(env);
+
+    #[cfg(debug_assertions)]
+    dispose::detach_hook(env);
+}
 
 #[cfg(debug_assertions)]
 mod dispose {

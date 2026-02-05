@@ -13,7 +13,7 @@ env:
   CARGO_TERM_COLOR: always
   IS_DRAFT: ${{ startsWith(github.ref_name, 'beta') || startsWith(github.ref_name, 'alpha') }}
   IS_PRERELEASE: true
-  BIN-NAME: Audioware-windows-latest-${{ github.ref_name }}
+  BIN-NAME: Audioware-windows-${{ github.ref_name }}
   CARGO_NET_GIT_FETCH_WITH_CLI: true
 
 jobs:
@@ -33,14 +33,14 @@ jobs:
     needs: [gaming, modding]
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: release
           merge-multiple: true
       - name: Create release ${{ github.ref_name }}
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "release/${{ env.BIN-NAME }}.zip,release/${{ env.BIN-NAME }}-DEV_ONLY.zip"
+          artifacts: "release/*"
           draft: ${{ env.IS_DRAFT }}
           prerelease: ${{ env.IS_PRERELEASE }}
           token: ${{ secrets.GITHUB_TOKEN }}

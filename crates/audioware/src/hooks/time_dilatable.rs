@@ -10,6 +10,10 @@ pub fn attach_hooks(env: &SdkEnv) {
     attach_hook_set(env);
     attach_hook_unset(env);
 }
+pub fn detach_hooks(env: &SdkEnv) {
+    detach_hook_set(env);
+    detach_hook_unset(env);
+}
 
 // Set time dilation on NPCs.
 attach_native_func!(
@@ -17,6 +21,7 @@ attach_native_func!(
     super::offsets::TIMEDILATABLE_SETINDIVIDUALTIMEDILATION,
     HOOK_SET,
     attach_hook_set,
+    detach_hook_set,
     detour_set
 );
 
@@ -26,6 +31,7 @@ attach_native_func!(
     super::offsets::TIMEDILATABLE_UNSETINDIVIDUALTIMEDILATION,
     HOOK_UNSET,
     attach_hook_unset,
+    detach_hook_unset,
     detour_unset
 );
 
