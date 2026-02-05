@@ -6,6 +6,12 @@ pub(super) fn attach_hooks(env: &SdkEnv) {
     deactivate::attach_hook(env);
 }
 
+pub(super) fn detach_hooks(env: &SdkEnv) {
+    override_audio_listeners::detach_hook(env);
+    activate::detach_hook(env);
+    deactivate::detach_hook(env);
+}
+
 mod override_audio_listeners {
     use red4ext_rs::VoidPtr;
     ::red4ext_rs::hooks! {
@@ -22,6 +28,19 @@ mod override_audio_listeners {
         unsafe { env.attach_hook(HOOK, addr, detour) };
         crate::utils::intercept!(
             "attached native internal hook for gameCameraComponent::OverrideAudioListeners( Bool )"
+        );
+    }
+
+    #[allow(clippy::missing_transmute_annotations)]
+    pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+        let addr = ::red4ext_rs::addr_hashes::resolve(
+            super::super::offsets::CAMERACOMPONENT_OVERRIDE_AUDIO_LISTENERS,
+        );
+        let addr: unsafe extern "C" fn(a1: VoidPtr, a2: bool) -> () =
+            unsafe { ::std::mem::transmute(addr) };
+        unsafe { env.detach_hook(addr) };
+        crate::utils::intercept!(
+            "detached native internal hook for gameCameraComponent::OverrideAudioListeners( Bool )"
         );
     }
 
@@ -53,6 +72,7 @@ mod activate {
         super::super::offsets::CAMERACOMPONENT_ACTIVATE,
         HOOK,
         attach_hook,
+        detach_hook,
         detour,
         pub(super)
     }
@@ -108,6 +128,7 @@ mod deactivate {
         super::super::offsets::CAMERACOMPONENT_DEACTIVATE,
         HOOK,
         attach_hook,
+        detach_hook,
         detour,
         pub(super)
     }

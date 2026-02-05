@@ -72,6 +72,7 @@ pub fn detach(env: &SdkEnv) {
     audio_interface::detach_hook(env);
     sound_engine::detach_hooks(env);
     sound_component::detach_hook(env);
+    camera_component::detach_hooks(env);
     audio::detach_hook(env);
     audio_system::detach_hooks(env);
     time_dilatable::detach_hooks(env);
