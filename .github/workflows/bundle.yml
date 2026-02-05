@@ -52,12 +52,12 @@ jobs:
       - name: Upload files
         uses: actions/upload-artifact@v6
         with:
-          name: ${{ env.ARTIFACT-NAME }}.zip
+          name: ${{ env.ARTIFACT-NAME }}
           path: ${{ env.BIN-FOLDER }}/bin
           if-no-files-found: error
       - name: Upload .pdb
         uses: actions/upload-artifact@v6
         with:
-          name: ${{ env.ARTIFACT-NAME }}-PDB.zip
+          name: ${{ env.ARTIFACT-NAME }}-PDB
           path: ${{ env.BIN-FOLDER }}/pdb
           if-no-files-found: error
