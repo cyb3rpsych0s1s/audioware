@@ -343,17 +343,6 @@ impl Reclaim for Emitters {
     }
 }
 
-impl Drop for Emitters {
-    fn drop(&mut self) {
-        let mut next = vec![];
-        with_entries(|x| {
-            next = x.to_vec();
-        });
-        next.clear();
-        publish_entries(next);
-    }
-}
-
 impl SetControlledVolume for Emitters {
     fn set_controlled_volume(
         &mut self,

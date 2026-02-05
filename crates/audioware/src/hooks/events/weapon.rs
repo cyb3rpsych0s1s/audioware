@@ -2,6 +2,10 @@ pub fn attach_hook(env: &red4ext_rs::SdkEnv) {
     pre_fire::attach_hook(env);
     stop_firing::attach_hook(env);
 }
+pub fn detach_hook(env: &red4ext_rs::SdkEnv) {
+    pre_fire::detach_hook(env);
+    stop_firing::detach_hook(env);
+}
 
 mod pre_fire {
     use crate::{PreFireEvent, attach_native_event};

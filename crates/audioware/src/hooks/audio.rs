@@ -31,6 +31,21 @@ pub fn attach_hook(env: &::red4ext_rs::SdkEnv) {
         "attached native internal hook for audio::PlayDialogLine( DialogLineEventData, VoidPtr, EntityId, CName, bool, u32, CName, f32, CName ) -> Bool"
     );
 }
+pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+    let addr = ::red4ext_rs::addr_hashes::resolve(super::offsets::AUDIO_PLAY_DIALOG_LINE);
+    let addr: unsafe extern "C" fn(
+        a1: *const DialogLineEventData,
+        a2: VoidPtr,
+        a3: EntityId,
+        a4: CName,
+        a5: bool,
+        a6: *mut u32,
+        a7: *mut CName,
+        a8: f32,
+        a9: CName,
+    ) -> bool = unsafe { ::std::mem::transmute(addr) };
+    unsafe { env.detach_hook(addr) };
+}
 
 unsafe extern "C" fn detour(
     a1: *const DialogLineEventData,

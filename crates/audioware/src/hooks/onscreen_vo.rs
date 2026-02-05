@@ -19,6 +19,20 @@ pub fn attach_hook(env: &::red4ext_rs::SdkEnv) {
         "attached native internal hook for OnscreenVOPlayerController::ShowSubtitle( Cruid, VoidPtr, RedString )"
     );
 }
+pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+    let addr =
+        ::red4ext_rs::addr_hashes::resolve(super::offsets::ONSCREENVOPLAYERCONTROLLER_SHOWSUBTITLE);
+    let addr: unsafe extern "C" fn(
+        a1: VoidPtr,
+        a2: *const Cruid,
+        a3: VoidPtr,
+        a4: *const RedString,
+    ) -> () = unsafe { ::std::mem::transmute(addr) };
+    unsafe { env.detach_hook(addr) };
+    crate::utils::intercept!(
+        "detached native internal hook for OnscreenVOPlayerController::ShowSubtitle( Cruid, VoidPtr, RedString )"
+    );
+}
 
 unsafe extern "C" fn detour(
     a1: VoidPtr,

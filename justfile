@@ -73,7 +73,7 @@ staging TO=game_dir: (lldb 'staging' '')
 
 ci TO PROFILE='release' FEATURES='': (setup join(TO, red4ext_deploy_dir)) (setup join(TO, redscript_deploy_dir)) (build PROFILE FEATURES TO) (reload TO)
   @if('{{PROFILE}}' -ieq 'release') { just no-debug '{{TO}}'; Write-Host "Removed debug files"; } else { Write-Host "Kept debug files untouched"; }
-  @if('{{PROFILE}}' -ieq 'debug')   { just copy '{{ join(red4ext_bin_dir, "debug", plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}'; }
+  just copy '{{ join(red4ext_bin_dir, PROFILE, plugin_name + ".pdb") }}' '{{ join(TO, red4ext_deploy_dir, plugin_name + ".pdb") }}';
   @just now
 
 optimize TO:

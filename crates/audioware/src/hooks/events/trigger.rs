@@ -4,6 +4,10 @@ pub fn attach_hooks(env: &SdkEnv) {
     area_entered::attach_hook(env);
     area_exited::attach_hook(env);
 }
+pub fn detach_hooks(env: &SdkEnv) {
+    area_entered::detach_hook(env);
+    area_exited::detach_hook(env);
+}
 
 mod area_entered {
     use crate::{AreaEnteredEvent, TriggerEvent, attach_native_event};

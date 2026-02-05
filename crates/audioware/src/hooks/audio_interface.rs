@@ -19,6 +19,18 @@ pub fn attach_hook(env: &::red4ext_rs::SdkEnv) {
         "attached native internal hook for AudioInterface::PostEvent( AudioInternalEvent, AudioEventId )"
     );
 }
+pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+    let addr = ::red4ext_rs::addr_hashes::resolve(super::offsets::AUDIOINTERFACE_POST_EVENT);
+    let addr: unsafe extern "C" fn(
+        a1: VoidPtr,
+        a2: *mut AudioInternalEvent,
+        a3: *mut AudioEventId,
+    ) -> () = unsafe { ::std::mem::transmute(addr) };
+    unsafe { env.detach_hook(addr) };
+    crate::utils::intercept!(
+        "detached native internal hook for AudioInterface::PostEvent( AudioInternalEvent, AudioEventId )"
+    );
+}
 
 unsafe extern "C" fn detour(
     a1: VoidPtr,

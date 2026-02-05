@@ -6,11 +6,7 @@ use kira::{
     AudioManagerSettings,
     backend::cpal::{CpalBackend, CpalBackendSettings},
 };
-use red4ext_rs::{
-    SdkEnv,
-    log::{self},
-    types::CName,
-};
+use red4ext_rs::types::CName;
 use std::sync::{Mutex, RwLock};
 
 use crate::{
@@ -90,14 +86,14 @@ impl std::fmt::Display for Flags {
     }
 }
 
-static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
+pub(crate) static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
 static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
 static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
 static DYNAMIC_SOUNDS: OnceLock<RwLock<Option<Sender<DynamicSound>>>> = OnceLock::new();
 static DYNAMIC_EMITTERS: OnceLock<RwLock<Option<Sender<DynamicEmitter>>>> = OnceLock::new();
 
-fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
+fn load() -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
     let mut backend_settings = CpalBackendSettings::default();
     if buffer_size != BufferSize::Auto {
@@ -105,7 +101,6 @@ fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
             buffer_size: cpal::BufferSize::Fixed(buffer_size as u32),
             ..default_device_and_config()?
         });
-        log::info!(env, "buffer size read from .ini: {}", buffer_size as u32);
     }
     let manager_settings = AudioManagerSettings::<CpalBackend> {
         backend_settings,
@@ -115,9 +110,9 @@ fn load(env: &SdkEnv) -> Result<(Engine<CpalBackend>, usize), Error> {
     Ok((Engine::try_new(manager_settings)?, capacity))
 }
 
-pub fn spawn(env: &SdkEnv) -> Result<(), Error> {
+pub fn spawn() -> Result<(), Error> {
     lifecycle!("spawn plugin thread");
-    let (engine, capacity) = load(env)?;
+    let (engine, capacity) = load()?;
     let _ = THREAD.set(Mutex::new(Some(
         std::thread::Builder::new()
             .name("audioware".into())
@@ -171,7 +166,7 @@ pub fn run(
             lifecycle!("> {l}");
             match l {
                 Lifecycle::Terminate => {
-                    engine.tracks.clear();
+                    drop(engine);
                     break 'game;
                 }
                 Lifecycle::ReportInitialization => engine.report_initialization(false),
@@ -554,6 +549,12 @@ pub fn run(
         .get()
         .and_then(|x| x.write().ok().map(|mut x| x.take()));
     let _ = COMMAND
+        .get()
+        .and_then(|x| x.write().ok().map(|mut x| x.take()));
+    let _ = DYNAMIC_SOUNDS
+        .get()
+        .and_then(|x| x.write().ok().map(|mut x| x.take()));
+    let _ = DYNAMIC_EMITTERS
         .get()
         .and_then(|x| x.write().ok().map(|mut x| x.take()));
     lifecycle!("closed engine");

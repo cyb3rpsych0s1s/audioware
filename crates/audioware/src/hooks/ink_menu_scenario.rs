@@ -4,6 +4,10 @@ pub fn attach_hooks(env: &SdkEnv) {
     switch_to_scenario::attach_hook(env);
     queue_event::attach_hook(env);
 }
+pub fn detach_hooks(env: &SdkEnv) {
+    switch_to_scenario::detach_hook(env);
+    queue_event::detach_hook(env);
+}
 
 mod switch_to_scenario {
     use red4ext_rs::{

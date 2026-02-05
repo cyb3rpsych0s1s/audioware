@@ -16,6 +16,16 @@ pub fn attach_hook(env: &::red4ext_rs::SdkEnv) {
         "attached native internal hook for Localization::ResolveVoFileName( Cruid, GenderVariant, ResRef ) -> ResolveVoFileResult"
     );
 }
+pub fn detach_hook(env: &::red4ext_rs::SdkEnv) {
+    let addr =
+        ::red4ext_rs::addr_hashes::resolve(super::offsets::LOCALIZATIONMANAGER_RESOLVEFILENAME);
+    let addr: unsafe extern "C" fn(a1: VoidPtr, a2: Cruid, a3: i32, out: VoidPtr) -> u8 =
+        unsafe { ::std::mem::transmute(addr) };
+    unsafe { env.detach_hook(addr) };
+    crate::utils::intercept!(
+        "detached native internal hook for Localization::ResolveVoFileName( Cruid, GenderVariant, ResRef ) -> ResolveVoFileResult"
+    );
+}
 
 unsafe extern "C" fn detour(
     a1: VoidPtr,
