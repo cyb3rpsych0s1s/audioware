@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["AmplitudeError","PanningError"],"macro":["amplitude"],"mod":["data","settings","types"],"struct":["Amplitude","Panning","SceneDialogSettings","SpatialTrackSettings"],"trait":["AudioDuration","AudioSettings","SampleRate","With"]};

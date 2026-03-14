@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Key"],"struct":["BothKey","GenderKey","LocaleKey","UniqueKey"]};
