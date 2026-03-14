@@ -1,6 +1,7 @@
 use audioware_core::Amplitude;
 use crossbeam::channel::Sender;
-use red4ext_rs::types::{CName, EntityId};
+use debug_ignore::DebugIgnore;
+use red4ext_rs::types::{CName, EntityId, WeakRef};
 
 mod board;
 mod replacement;
@@ -10,6 +11,8 @@ pub use board::Board;
 pub use replacement::ReplacementNotification;
 pub use session::Session;
 pub use system::System;
+
+use crate::CameraComponent;
 
 use super::{TagName, TargetFootprint, TargetId};
 
@@ -67,6 +70,15 @@ pub enum Lifecycle {
     SetEmitterOcclusion {
         entity_id: EntityId,
         value: f32,
+    },
+    ActivateCamera {
+        #[allow(dead_code, reason = "partial feature")]
+        blend_time: f32,
+        triggered_by: DebugIgnore<WeakRef<CameraComponent>>,
+    },
+    DeactivateCamera {
+        #[allow(dead_code, reason = "partial feature")]
+        blend_time: f32,
     },
     Session(Session),
     EngagementScreen,
@@ -155,6 +167,12 @@ impl std::fmt::Display for Lifecycle {
                 entity_id,
                 value: occlusion,
             } => write!(f, "set emitter occlusion {occlusion} [{entity_id}]"),
+            Lifecycle::ActivateCamera { .. } => {
+                write!(f, "activate camera")
+            }
+            Lifecycle::DeactivateCamera { .. } => {
+                write!(f, "deactivate camera")
+            }
             Lifecycle::ReportInitialization => write!(f, "report initialization"),
             #[cfg(feature = "hot-reload")]
             Lifecycle::HotReload => write!(f, "hot-reload"),

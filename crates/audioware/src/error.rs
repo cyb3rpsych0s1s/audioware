@@ -56,6 +56,8 @@ pub enum EngineError {
 pub enum SceneError {
     #[snafu(display("V cannot be registered as an emitter."))]
     InvalidEmitter,
+    #[snafu(display("unable to retrieve listener position from camera."))]
+    UnableToRetrieveListenerPositionFromCamera,
     #[snafu(display("emitter previously registered for tag {} [{}]", tag_name.as_str(), entity_id))]
     DuplicateEmitter {
         entity_id: EntityId,

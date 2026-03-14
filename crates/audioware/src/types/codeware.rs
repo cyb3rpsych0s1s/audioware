@@ -258,6 +258,11 @@ unsafe impl ScriptClass for IGameSystem {
     type Kind = Native;
     const NAME: &'static str = "gameIGameSystem";
 }
+impl AsRef<IScriptable> for IGameSystem {
+    fn as_ref(&self) -> &IScriptable {
+        &self.base.base
+    }
+}
 
 #[derive(Debug)]
 #[repr(C)]

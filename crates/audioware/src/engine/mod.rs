@@ -11,6 +11,7 @@ use audioware_bank::{
 };
 use audioware_core::{Amplitude, SceneDialogSettings, SpatialTrackSettings, With};
 use audioware_manifest::{Locale, ScnDialogLineType, Source, ValidateFor};
+use debug_ignore::DebugIgnore;
 use either::Either;
 use eq::{EqPass, Preset};
 use kira::{
@@ -21,14 +22,14 @@ use kira::{
 };
 use modulators::{Modulators, Parameter};
 pub use mutes::{AudioEventManager, Mute};
-use red4ext_rs::types::{CName, Cruid, EntityId, GameInstance, Opt};
+use red4ext_rs::types::{CName, Cruid, EntityId, GameInstance, Opt, WeakRef};
 pub use scene::{AffectedByTimeDilation, DilationUpdate, Scene};
 use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
 use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
 use crate::{
-    AsAudioSystem, AsGameInstance, AsGameObjectExt, ControlId, GameObject,
+    AsAudioSystem, AsGameInstance, AsGameObjectExt, CameraComponent, ControlId, GameObject,
     abi::{callback::Callback, lifecycle::ReplacementNotification},
     engine::{
         tracks::TrackEntryOptions,
@@ -750,6 +751,15 @@ where
     pub fn on_emitter_incapacitated(&mut self, entity_id: EntityId) {
         if let Some(x) = self.scene.as_mut() {
             x.on_emitter_incapacitated(entity_id, LAST_BREATH)
+        }
+    }
+
+    pub fn override_listener(&mut self, camera: Option<DebugIgnore<WeakRef<CameraComponent>>>) {
+        match self.scene {
+            Some(ref mut scene) => {
+                scene.override_listener(camera);
+            }
+            None => lifecycle!("scene is not initialized"),
         }
     }
 
