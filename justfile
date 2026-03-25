@@ -211,3 +211,8 @@ smash FROM=game_dir:
 
 @wwiser BNK OPTIONS='-v':
   python {{wwiser_exe}} "{{BNK}}" {{OPTIONS}}
+
+@link THERE HERE='':
+    $there = '{{ THERE }}'; \
+    $here  = "{{ if HERE == "" { `Split-Path $there -Leaf` } else { HERE } }}"; \
+    New-Item -Path $here -ItemType SymbolicLink -Target '{{ THERE }}'
