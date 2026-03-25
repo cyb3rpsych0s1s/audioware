@@ -19,3 +19,5 @@
 checksum.txt
 rustc-ice-*.txt
 *.code-workspace
+/TweakXL-*
+/Codeware-*
