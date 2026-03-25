@@ -3,7 +3,7 @@ members = ["crates/core", "crates/manifest", "crates/bank", "crates/audioware"]
 resolver = "2"
 
 [workspace.package]
-version = "1.8.2"
+version = "1.9.0"
 edition = "2024"
 rust-version = "1.92.0"
 
@@ -19,13 +19,13 @@ audioware-core = { path = "crates/core" }
 audioware-manifest = { path = "crates/manifest" }
 audioware-bank = { path = "crates/bank" }
 either = "1.15.0"
-glam = "0.30.0"
+glam = "0.32.0"
 humantime = "2.3"
-kira = { git = "https://github.com/Roms1383/kira", rev = "ff113538a996c2d248416b6a6b0461aa80ab2a25", features = ["serde"] }
+kira = { git = "https://github.com/Roms1383/kira", rev = "ff832050234b14edaaac92afc2441457f951569f", features = ["serde"] }
 rayon = "1.11"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "ac90fb25768dbebe56317c316e7d7e9660f32d0e" }
+red4ext-rs = { git = "https://github.com/Roms1383/red4ext-rs", rev = "10d71652557095e058b8bd63a8e8a578cb8fe2d3" }
 serde = "1.0"
-snafu = "0.8"
+snafu = "0.9"
 
 [profile.dev.package.kira]
 opt-level = 3
