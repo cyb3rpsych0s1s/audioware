@@ -1,0 +1,9 @@
+(function() {
+    const implementors = Object.fromEntries([["windows_future",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.94.0/core/future/into_future/trait.IntoFuture.html\" title=\"trait core::future::into_future::IntoFuture\">IntoFuture</a> for <a class=\"struct\" href=\"windows_future/struct.IAsyncAction.html\" title=\"struct windows_future::IAsyncAction\">IAsyncAction</a>",0],["impl&lt;P: RuntimeType&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.94.0/core/future/into_future/trait.IntoFuture.html\" title=\"trait core::future::into_future::IntoFuture\">IntoFuture</a> for <a class=\"struct\" href=\"windows_future/struct.IAsyncActionWithProgress.html\" title=\"struct windows_future::IAsyncActionWithProgress\">IAsyncActionWithProgress</a>&lt;P&gt;",0],["impl&lt;T: RuntimeType&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.94.0/core/future/into_future/trait.IntoFuture.html\" title=\"trait core::future::into_future::IntoFuture\">IntoFuture</a> for <a class=\"struct\" href=\"windows_future/struct.IAsyncOperation.html\" title=\"struct windows_future::IAsyncOperation\">IAsyncOperation</a>&lt;T&gt;",0],["impl&lt;T: RuntimeType, P: RuntimeType&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.94.0/core/future/into_future/trait.IntoFuture.html\" title=\"trait core::future::into_future::IntoFuture\">IntoFuture</a> for <a class=\"struct\" href=\"windows_future/struct.IAsyncOperationWithProgress.html\" title=\"struct windows_future::IAsyncOperationWithProgress\">IAsyncOperationWithProgress</a>&lt;T, P&gt;",0]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":59,"fragment_lengths":[1514]}
