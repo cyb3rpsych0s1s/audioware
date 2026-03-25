@@ -2,15 +2,17 @@ use std::num::NonZero;
 
 use audioware_core::SpatialTrackSettings;
 use audioware_manifest::PlayerGender;
+use debug_ignore::DebugIgnore;
 use dilation::Dilation;
 use emitters::{Emitter, Emitters};
 use kira::{AudioManager, Easing, Tween, backend::Backend, track::SpatialTrackDistances};
 use listener::Listener;
-use red4ext_rs::types::{CName, EntityId, GameInstance, Ref};
+use red4ext_rs::types::{CName, EntityId, GameInstance, Ref, WeakRef};
 
 use crate::{
-    AsEntity, AsScriptedPuppet, AsTimeDilatable, AvObject, BikeObject, CarObject, ControlId,
-    Device, Entity, GamedataNpcType, ScriptedPuppet, TankObject, TimeDilatable, VehicleObject,
+    AsEntity, AsIComponent, AsScriptedPuppet, AsTimeDilatable, AvObject, BikeObject,
+    CameraComponent, CarObject, ControlId, Device, Entity, GamedataNpcType, IComponent,
+    ScriptedPuppet, TankObject, TimeDilatable, VehicleObject,
     engine::{
         scene::actors::{Actors, slot::ActorSlot},
         tracks::Spatial,
@@ -68,6 +70,7 @@ impl Scene {
                 id,
                 handle,
                 dilation: Dilation::new(dilation),
+                overriden: None,
             },
             emitters: Emitters::with_capacity(capacity - RESERVED_FOR_ACTORS),
             actors: Actors::with_capacity(RESERVED_FOR_ACTORS),
@@ -183,17 +186,35 @@ impl Scene {
     }
 
     fn sync_listener(&mut self) -> Result<(), Error> {
-        let player = get_player(GameInstance::new());
-        if player.is_null() {
-            return Ok(());
-        }
-        let (position, orientation) = {
-            let entity = player.cast::<Entity>().unwrap();
-            (entity.get_world_position(), entity.get_world_orientation())
+        let (position, orientation) = match self.v.overriden.as_ref() {
+            None => {
+                let player = get_player(GameInstance::new());
+                if player.is_null() {
+                    return Ok(());
+                }
+                let entity = player.cast::<Entity>().unwrap();
+                (entity.get_world_position(), entity.get_world_orientation())
+            }
+            Some(camera) => {
+                let Some(entity) = camera
+                    .0
+                    .clone()
+                    .upgrade()
+                    .and_then(|x| x.cast::<IComponent>())
+                    .and_then(|x| x.get_entity().upgrade())
+                else {
+                    return Ok(());
+                };
+                (entity.get_world_position(), entity.get_world_orientation())
+            }
         };
         self.v.handle.set_position(position, IMMEDIATELY);
         self.v.handle.set_orientation(orientation, IMMEDIATELY);
         Ok(())
+    }
+
+    pub fn override_listener(&mut self, camera: Option<DebugIgnore<WeakRef<CameraComponent>>>) {
+        self.v.overriden = camera;
     }
 
     fn sync_emitters(&mut self) -> Result<(), Error> {
