@@ -28,3 +28,4 @@ It's built with emphasis on getting you going fast, providing sensible defaults 
       - [Native Audio Integration](./NATIVE_INTEGRATION.md)
     - [Internal docs](./DOCS.md)
   - [Integration](./INTEGRATION.md)
+- [Plugin settings](./MOD_SETTINGS.md)
