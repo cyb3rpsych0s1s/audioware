@@ -115,6 +115,8 @@ public exec func TestVersion(game: GameInstance) {
 }
 
 public class AutoEmittersSystem extends ScriptableSystem {
+    private let effect: ref<DynamicEffect>;
+    private let id: DelayID;
     private func OnAttach() {
         GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnPressF1")
         .AddTarget(InputTarget.Key(EInputKey.IK_F1));
@@ -168,6 +170,13 @@ public class AutoEmittersSystem extends ScriptableSystem {
         
         let settings = new EmitterSettings();
         settings.enableOcclusion = true;
+        if evt.IsControlDown() {
+            this.effect = DynamicDelay.Create(2.0, 0.2) as DynamicEffect;
+            settings.effects = [ this.effect ];
+            let callback = new ModulateCallback();
+            callback.system = this;
+            this.id = GameInstance.GetDelaySystem(this.GetGameInstance()).DelayCallback(callback, 2.0, true);
+        }
 
         this.PlayOnEmitter(eventName, emitterID, emitterCName, ext, settings);
     }
@@ -194,6 +203,13 @@ public class AutoEmittersSystem extends ScriptableSystem {
         emitterID = target.GetEntityID();
 
         GameInstance.GetAudioSystemExt(this.GetGameInstance()).UnregisterEmitter(emitterID, n"Audioware");
+        if IsDefined(this.effect) {
+            this.effect = null;
+        }
+        if NotEquals(this.id, GetInvalidDelayID()) {
+            GameInstance.GetDelaySystem(this.GetGameInstance()).CancelCallback(this.id);
+            this.id = GetInvalidDelayID();
+        }
     }
     private cb func OnPressF4(evt: ref<KeyInputEvent>) {
         if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }
@@ -207,6 +223,16 @@ public class AutoEmittersSystem extends ScriptableSystem {
         let diff = new Vector3(AbsF(there.X - here.X), AbsF(there.Y - here.Y), AbsF(there.Z - here.Z));
         FTLog(s"difference:      [x: \(diff.X), y: \(diff.Y)], z: \(diff.Z)");
     }
+    public func Modulate(feedback: Float, duration: Float, opt up: Bool) {
+        if IsDefined(this.effect) {
+            (this.effect as DynamicDelay).SetFeedback(feedback, ElasticTween.ImmediateIn(duration, 3.0));
+            let callback = new ModulateCallback();
+            callback.system = this;
+            callback.up = !up;
+            this.id = GameInstance.GetDelaySystem(this.GetGameInstance()).DelayCallback(callback, duration + 2.0, true);
+        } else { FTLog("Effect not found"); }
+    }
+    public static final func GetInstance(game: GameInstance) -> ref<AutoEmittersSystem> = GameInstance.GetScriptableSystemsContainer(game).Get(n"Audioware.AutoEmittersSystem") as AutoEmittersSystem;
 }
 
 /// Game.TestPreset("None");
@@ -243,4 +269,15 @@ public exec func TestSpecificVolume(game: GameInstance, amplitude: Float) {
 
 public exec func StopTestVolume(game: GameInstance) {
     GameInstance.GetAudioSystemExt(game).Stop(n"straight_outta_compton");
+}
+
+public class ModulateCallback extends DelayCallback {
+    private let system: wref<AutoEmittersSystem>;
+    private let duration: Float;
+    private let up: Bool = false;
+    public func Call() -> Void {
+        if IsDefined(this.system) {
+            this.system.Modulate(this.up ? 2.0 : -2.0, 2.0, this.up);
+        } else { FTLog("no auto emitters system"); }
+    }
 }

@@ -22,7 +22,7 @@ use kira::{
 };
 use modulators::{Modulators, Parameter};
 pub use mutes::{AudioEventManager, Mute};
-use red4ext_rs::types::{CName, Cruid, EntityId, GameInstance, Opt, WeakRef};
+use red4ext_rs::types::{CName, Cruid, EntityId, GameInstance, Opt, Ref, WeakRef};
 pub use scene::{AffectedByTimeDilation, DilationUpdate, Scene};
 use state::{SpokenLocale, ToGender};
 use tracks::Tracks;
@@ -30,7 +30,7 @@ use tweens::{DEFAULT, IMMEDIATELY, LAST_BREATH};
 
 use crate::{
     AsAudioSystem, AsGameInstance, AsGameObjectExt, CameraComponent, ControlId, GameObject,
-    abi::{callback::Callback, lifecycle::ReplacementNotification},
+    abi::{DynamicEffect, callback::Callback, lifecycle::ReplacementNotification},
     engine::{
         tracks::TrackEntryOptions,
         traits::{Handle, stop::StopBy, store::Store},
@@ -50,6 +50,7 @@ pub mod traits;
 
 mod callbacks;
 mod controls;
+mod effects;
 mod modulators;
 mod mutes;
 mod scene;
@@ -668,6 +669,7 @@ where
         tag_name: CName,
         emitter_name: Option<CName>,
         emitter_settings: Option<&(SpatialTrackSettings, NonZero<u64>)>,
+        emitter_effects: &mut [DebugIgnore<Ref<DynamicEffect>>],
     ) -> bool {
         match self.scene {
             Some(ref mut scene) => scene
@@ -677,6 +679,7 @@ where
                     tag_name,
                     emitter_name,
                     emitter_settings,
+                    emitter_effects,
                     &self.tracks.ambience,
                 )
                 .inspect_err(|e| warns!("failed to register emitter: {e}"))

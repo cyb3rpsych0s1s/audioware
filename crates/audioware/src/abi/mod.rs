@@ -2,6 +2,7 @@ use audioware_core::Amplitude;
 use audioware_manifest::{Locale, PlayerGender, ScnDialogLineType, Validate};
 use command::Command;
 use crossbeam::channel::bounded;
+use debug_ignore::DebugIgnore;
 use kira::backend::cpal::CpalBackend;
 use lifecycle::{Board, Lifecycle, Session, System};
 use red4ext_rs::{
@@ -22,7 +23,7 @@ use crate::{
     PlayOneShotEvent, RemoveContainerStreamingPrefetchEvent, SetAppearanceNameEvent,
     SetEntityNameEvent, SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent,
     StopTaggedEvent, TagEvent, ToTween, Tween, UntagEvent,
-    engine::{AudioEventManager, Engine, Mute, eq::Preset, state},
+    engine::{AudioEventManager, Engine, Mute, eq::Preset, next_control_id, state},
     queue,
     utils::{fails, lifecycle, warns},
 };
@@ -30,6 +31,7 @@ use crate::{
 pub mod callback;
 pub mod command;
 pub mod control;
+pub mod effect;
 pub mod lifecycle;
 
 mod types;
@@ -323,6 +325,83 @@ pub fn exports() -> impl Exportable {
                     final c"SeekBy" => DynamicEmitterEvent::seek_by,
                 ])
                 .build(),
+        ClassExport::<DynamicEffect>::builder()
+                .base(IScriptable::NAME)
+                .methods(methods![
+                    final c"Active" => DynamicEffect::active,
+                ])
+                .build(),
+        ClassExport::<DynamicEQ>::builder()
+                .base(DynamicEffect::NAME)
+                .static_methods(static_methods![
+                    c"Create" => DynamicEQ::create,
+                ])
+                .methods(methods![
+                    final c"SetKind" => DynamicEQ::set_kind,
+                    final c"SetFrequency" => DynamicEQ::set_frequency,
+                    final c"SetGain" => DynamicEQ::set_gain,
+                    final c"SetQ" => DynamicEQ::set_q,
+                ])
+                .build(),
+        ClassExport::<DynamicDistortion>::builder()
+                .base(DynamicEffect::NAME)
+                .static_methods(static_methods![
+                    c"Create" => DynamicDistortion::create,
+                ])
+                .methods(methods![
+                    final c"SetKind" => DynamicDistortion::set_kind,
+                    final c"SetDrive" => DynamicDistortion::set_drive,
+                    final c"SetMix" => DynamicDistortion::set_mix,
+                ])
+                .build(),
+        ClassExport::<DynamicDelay>::builder()
+                .base(DynamicEffect::NAME)
+                .static_methods(static_methods![
+                    c"Create" => DynamicDelay::create,
+                ])
+                .methods(methods![
+                    final c"SetFeedback" => DynamicDelay::set_feedback,
+                    final c"SetMix" => DynamicDelay::set_mix,
+                ])
+                .build(),
+        ClassExport::<DynamicCompressor>::builder()
+                .base(DynamicEffect::NAME)
+                .static_methods(static_methods![
+                    c"Create" => DynamicCompressor::create,
+                ])
+                .methods(methods![
+                    final c"SetThreshold" => DynamicCompressor::set_threshold,
+                    final c"SetRatio" => DynamicCompressor::set_ratio,
+                    final c"SetAttackDuration" => DynamicCompressor::set_attack_duration,
+                    final c"SetReleaseDuration" => DynamicCompressor::set_release_duration,
+                    final c"SetMakeupGain" => DynamicCompressor::set_makeup_gain,
+                    final c"SetMix" => DynamicCompressor::set_mix,
+                ])
+                .build(),
+        ClassExport::<DynamicFilter>::builder()
+                .base(DynamicEffect::NAME)
+                .static_methods(static_methods![
+                    c"Create" => DynamicFilter::create,
+                ])
+                .methods(methods![
+                    final c"SetMode" => DynamicFilter::set_mode,
+                    final c"SetCutoff" => DynamicFilter::set_cutoff,
+                    final c"SetResonance" => DynamicFilter::set_resonance,
+                    final c"SetMix" => DynamicFilter::set_mix,
+                ])
+                .build(),
+        ClassExport::<DynamicReverb>::builder()
+                .base(DynamicEffect::NAME)
+                .static_methods(static_methods![
+                    c"Create" => DynamicReverb::create,
+                ])
+                .methods(methods![
+                    final c"SetFeedback" => DynamicReverb::set_feedback,
+                    final c"SetDamping" => DynamicReverb::set_damping,
+                    final c"SetStereoWidth" => DynamicReverb::set_stereo_width,
+                    final c"SetMix" => DynamicReverb::set_mix,
+                ])
+                .build(),
         g!(c"Audioware.OnGameSessionBeforeStart",   Audioware::on_game_session_before_start),
         g!(c"Audioware.OnGameSessionStart",         Audioware::on_game_session_start),
         g!(c"Audioware.OnGameSessionReady",         Audioware::on_game_session_ready),
@@ -546,7 +625,7 @@ impl SceneLifecycle for AudioSystemExt {
         entity_id: EntityId,
         tag_name: CName,
         emitter_name: Opt<CName>,
-        emitter_settings: Ref<EmitterSettings>,
+        mut emitter_settings: Ref<EmitterSettings>,
     ) -> bool {
         let tag_name = match TagName::try_new(tag_name) {
             Ok(tag_name) => tag_name,
@@ -562,6 +641,31 @@ impl SceneLifecycle for AudioSystemExt {
                 return false;
             }
         };
+        let mut emitter_effects: Vec<DebugIgnore<Ref<DynamicEffect>>> = Vec::new();
+        if !emitter_settings.is_null()
+            && let Some(settings) = unsafe { emitter_settings.fields_mut() }
+        {
+            for effect in settings.effects.iter_mut() {
+                if effect.is_null() {
+                    continue;
+                }
+                if unsafe { effect.fields() }
+                    .map(|x| x.id.get().is_some())
+                    .unwrap_or(true)
+                {
+                    continue;
+                }
+                if let Err(e) = unsafe { effect.fields_mut() }
+                    .unwrap()
+                    .id
+                    .set(next_control_id())
+                {
+                    warns!("effect already assigned control id ({e})");
+                    continue;
+                }
+                emitter_effects.push(DebugIgnore(effect.clone()));
+            }
+        }
         let emitter_settings = match TargetFootprint::try_new(emitter_settings, *entity_id) {
             Ok(emitter_settings) => emitter_settings,
             Err(e) => {
@@ -581,6 +685,7 @@ impl SceneLifecycle for AudioSystemExt {
             entity_id,
             emitter_name: emitter_name.into_option(),
             emitter_settings,
+            emitter_effects,
             sender,
         });
         if let Ok(registered) = receiver.recv() {
