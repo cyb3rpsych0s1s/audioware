@@ -29,7 +29,7 @@ impl std::fmt::Display for Decibels {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}{}",
+            "{}{}dB",
             if self.0.0.is_sign_negative() { "" } else { "+" },
             self.0.0
         )
