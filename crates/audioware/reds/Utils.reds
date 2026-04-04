@@ -78,6 +78,9 @@ public func IntoLocaleExt(locale: CName) -> LocaleExt {
         case n"th-th":
         case n"Thai":
 			return LocaleExt.Thai;
+        case n"ua-ua":
+        case n"Ukrainian":
+			return LocaleExt.Ukrainian;
         default:
             break;
     }
