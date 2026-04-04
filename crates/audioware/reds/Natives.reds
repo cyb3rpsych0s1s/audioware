@@ -53,4 +53,5 @@ public enum LocaleExt {
     Hungarian = 17,
     Turkish = 18,
     Thai = 19,
+    Ukrainian = 20,
 }

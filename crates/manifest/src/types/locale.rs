@@ -144,6 +144,8 @@ pub enum LocaleExt {
     Turkish = 18,
     #[serde(rename = "th-th")]
     Thai = 19,
+    #[serde(rename = "ua-ua")]
+    Ukrainian = 20,
 }
 
 #[cfg(not(test))]
@@ -172,6 +174,7 @@ impl From<Locale> for LocaleExt {
             Locale::Hungarian => Self::Hungarian,
             Locale::Turkish => Self::Turkish,
             Locale::Thai => Self::Thai,
+            Locale::Ukrainian => Self::Ukrainian,
         }
     }
 }
@@ -189,6 +192,8 @@ impl From<ScnDialogLineLanguage> for LocaleExt {
             ScnDialogLineLanguage::Swahili => Self::Swahili,
             ScnDialogLineLanguage::French => Self::French,
             ScnDialogLineLanguage::Polish => Self::Polish,
+            ScnDialogLineLanguage::English => Self::English,
+            ScnDialogLineLanguage::Korean => Self::Korean,
         }
     }
 }
@@ -224,6 +229,7 @@ impl TryFrom<LocaleExt> for Locale {
             LocaleExt::Hungarian => Ok(Self::Hungarian),
             LocaleExt::Turkish => Ok(Self::Turkish),
             LocaleExt::Thai => Ok(Self::Thai),
+            LocaleExt::Ukrainian => Ok(Self::Ukrainian),
             _ => Err(crate::error::ConversionError::UnsupportedLocale {
                 r#type: "Codeware locale".to_string(),
                 value: value.to_string(),
@@ -302,6 +308,7 @@ impl TryFrom<red4ext_rs::types::CName> for LocaleExt {
             "hu-hu" | "Hungarian" => Ok(Self::Hungarian),
             "tr-tr" | "Turkish" => Ok(Self::Turkish),
             "th-th" | "Thai" => Ok(Self::Thai),
+            "ua-ua" | "Ukrainian" => Ok(Self::Ukrainian),
             v => Err(Self::Error::InvalidLocale {
                 value: v.to_string(),
             }),
@@ -364,6 +371,8 @@ pub enum Locale {
     Turkish,
     #[serde(rename = "th-th")]
     Thai,
+    #[serde(rename = "ua-ua")]
+    Ukrainian,
 }
 
 #[cfg(not(test))]
@@ -388,6 +397,7 @@ impl From<Locale> for red4ext_rs::types::CName {
             Locale::Hungarian => "hu-hu",
             Locale::Turkish => "tr-tr",
             Locale::Thai => "th-th",
+            Locale::Ukrainian => "ua-ua",
         })
     }
 }
@@ -415,6 +425,7 @@ impl TryFrom<u32> for Locale {
             x if x == Self::Hungarian as u32 => Ok(Self::Hungarian),
             x if x == Self::Turkish as u32 => Ok(Self::Turkish),
             x if x == Self::Thai as u32 => Ok(Self::Thai),
+            x if x == Self::Ukrainian as u32 => Ok(Self::Ukrainian),
             _ => Err(Self::Error::InvalidLocale {
                 value: value.to_string(),
             }),
@@ -483,6 +494,7 @@ impl TryFrom<red4ext_rs::types::CName> for Locale {
             "hu-hu" => Ok(Self::Hungarian),
             "tr-tr" => Ok(Self::Turkish),
             "th-th" => Ok(Self::Thai),
+            "ua-ua" => Ok(Self::Ukrainian),
             v => Err(Self::Error::InvalidLocale {
                 value: v.to_string(),
             }),
@@ -509,26 +521,30 @@ impl TryFrom<red4ext_rs::types::CName> for Locale {
 )]
 pub enum ScnDialogLineLanguage {
     #[default]
-    #[serde(rename = "en-us")]
+    #[serde(rename = "origin")]
     Origin = 0,
     #[serde(rename = "ht-ht")]
     Creole = 1,
     #[serde(rename = "jp-jp")]
     Japanese = 2,
     #[serde(rename = "ar-ar")]
-    Arabic = 3,
+    Arabic = 4,
     #[serde(rename = "ru-ru")]
-    Russian = 4,
+    Russian = 5,
     #[serde(rename = "zh-cn")]
-    Chinese = 5,
+    Chinese = 6,
     #[serde(rename = "pt-br")]
-    Brasilian = 6,
+    Brasilian = 7,
+    #[serde(rename = "en-us")]
+    English = 8,
+    #[serde(rename = "kr-kr")]
+    Korean = 9,
     #[serde(rename = "sw-ke")]
-    Swahili = 7,
+    Swahili = 10,
     #[serde(rename = "fr-fr")]
-    French = 8,
+    French = 11,
     #[serde(rename = "pl-pl")]
-    Polish = 9,
+    Polish = 12,
 }
 
 #[cfg(not(test))]
