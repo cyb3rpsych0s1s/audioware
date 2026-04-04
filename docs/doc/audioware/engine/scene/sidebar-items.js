@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["actors","dilation","emitters","listener"],"struct":["Scene"],"trait":["AsEntityExt","ToDistances"]};
