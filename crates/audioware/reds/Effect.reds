@@ -1,7 +1,6 @@
 module Audioware
 
 public abstract native class DynamicEffect {
-  public native func Active() -> Bool;
 }
 
 enum EqFilterKind {
@@ -54,7 +53,8 @@ public native class DynamicDelay extends DynamicEffect {
   // Valid mix values range from 0.0 to 1.0, where 0.0 is the dry signal only, 1.0 is the wet signal only, and 0.5 is an equal mix of both.
   public native func SetMix(mix: Float, opt tween: ref<Tween>);
 
-  public native static func Create(feedback: Float, mix: Float) -> ref<DynamicDelay>;
+  // delay time in seconds.
+  public native static func Create(feedback: Float, delayTime: Float, mix: Float) -> ref<DynamicDelay>;
 }
 
 public native class DynamicCompressor extends DynamicEffect {

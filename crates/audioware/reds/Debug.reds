@@ -171,7 +171,7 @@ public class AutoEmittersSystem extends ScriptableSystem {
         let settings = new EmitterSettings();
         settings.enableOcclusion = true;
         if evt.IsControlDown() {
-            this.effect = DynamicDelay.Create(2.0, 0.2) as DynamicEffect;
+            this.effect = DynamicDelay.Create(2.0, 0.8, 0.2) as DynamicEffect;
             settings.effects = [ this.effect ];
             let callback = new ModulateCallback();
             callback.system = this;

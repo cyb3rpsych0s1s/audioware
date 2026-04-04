@@ -121,6 +121,7 @@ impl Effects {
             builder.add_effect(
                 DelayBuilder::new()
                     .feedback(effect.feedback.get())
+                    .delay_time(effect.delay_time.get())
                     .mix(effect.mix.get()),
             ),
         );

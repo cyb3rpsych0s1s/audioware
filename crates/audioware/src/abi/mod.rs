@@ -327,9 +327,6 @@ pub fn exports() -> impl Exportable {
                 .build(),
         ClassExport::<DynamicEffect>::builder()
                 .base(IScriptable::NAME)
-                .methods(methods![
-                    final c"Active" => DynamicEffect::active,
-                ])
                 .build(),
         ClassExport::<DynamicEQ>::builder()
                 .base(DynamicEffect::NAME)

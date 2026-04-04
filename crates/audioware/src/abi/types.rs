@@ -507,12 +507,6 @@ unsafe impl ScriptClass for DynamicEffect {
     const NAME: &'static str = "Audioware.DynamicEffect";
 }
 
-impl DynamicEffect {
-    pub fn active(&self) -> bool {
-        self.id.get().is_some()
-    }
-}
-
 impl AsRef<IScriptable> for DynamicEffect {
     fn as_ref(&self) -> &IScriptable {
         &self.base
@@ -628,6 +622,7 @@ unsafe impl NativeRepr for DistortionKind {
 pub struct DynamicDelay {
     pub(crate) base: DynamicEffect,
     pub(crate) feedback: Cell<f32>,
+    pub(crate) delay_time: Cell<Duration>,
     pub(crate) mix: Cell<f32>,
 }
 
@@ -637,13 +632,19 @@ unsafe impl ScriptClass for DynamicDelay {
 }
 
 impl DynamicDelay {
-    pub(crate) fn create(feedback: f32, mix: f32) -> Ref<Self> {
+    pub(crate) fn create(feedback: f32, delay_time: f32, mix: f32) -> Ref<Self> {
         if !(0.0..=1.0).contains(&mix) {
             warns!("invalid mix ({mix}): must be between 0.0 and 1.0.");
             return Default::default();
         }
+        let Ok(delay_time) = Duration::try_from_secs_f32(delay_time).inspect_err(|e| {
+            warns!("invalid delay time ({delay_time}): {e}");
+        }) else {
+            return Default::default();
+        };
         Ref::<Self>::new_with(|x| {
             x.feedback = Cell::new(feedback);
+            x.delay_time = Cell::new(delay_time);
             x.mix = Cell::new(mix);
         })
         .unwrap_or_default()
