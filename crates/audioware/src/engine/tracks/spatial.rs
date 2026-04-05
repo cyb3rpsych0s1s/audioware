@@ -28,9 +28,9 @@ use super::ambience::Ambience;
 pub const DEFAULT_CUTOFF: f64 = 18_000.0;
 
 pub struct Spatial {
-    track: SpatialTrackHandle,
     occlusion: Option<FilterHandle>,
     effects: Effects,
+    track: SpatialTrackHandle,
 }
 
 impl Spatial {
