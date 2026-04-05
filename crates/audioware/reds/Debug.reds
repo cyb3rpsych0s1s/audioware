@@ -225,11 +225,13 @@ public class AutoEmittersSystem extends ScriptableSystem {
     }
     public func Modulate(feedback: Float, duration: Float, opt up: Bool) {
         if IsDefined(this.effect) {
-            (this.effect as DynamicDelay).SetFeedback(feedback, ElasticTween.ImmediateIn(duration, 3.0));
-            let callback = new ModulateCallback();
-            callback.system = this;
-            callback.up = !up;
-            this.id = GameInstance.GetDelaySystem(this.GetGameInstance()).DelayCallback(callback, duration + 2.0, true);
+            if this.effect.IsActive() {
+                (this.effect as DynamicDelay).SetFeedback(feedback, ElasticTween.ImmediateIn(duration, 3.0));
+                let callback = new ModulateCallback();
+                callback.system = this;
+                callback.up = !up;
+                this.id = GameInstance.GetDelaySystem(this.GetGameInstance()).DelayCallback(callback, duration + 2.0, true);
+            } else { this.effect = null; }
         } else { FTLog("Effect not found"); }
     }
     public static final func GetInstance(game: GameInstance) -> ref<AutoEmittersSystem> = GameInstance.GetScriptableSystemsContainer(game).Get(n"Audioware.AutoEmittersSystem") as AutoEmittersSystem;
