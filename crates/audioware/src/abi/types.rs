@@ -500,6 +500,7 @@ impl DynamicEmitterEvent {
 pub struct DynamicEffect {
     base: IScriptable,
     pub(crate) id: OnceLock<ControlId>,
+    pub(crate) orphan: OnceLock<()>,
 }
 
 unsafe impl ScriptClass for DynamicEffect {

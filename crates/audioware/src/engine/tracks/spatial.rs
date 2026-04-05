@@ -59,9 +59,7 @@ impl Spatial {
             .attenuation_function(attenuation_function.unwrap_or(kira::Easing::Linear));
         let mut stored = Effects::default();
         for effect in effects.iter_mut().filter(|x| !x.is_null()) {
-            if let Some(effect) = unsafe { effect.fields_mut() } {
-                stored.insert(*effect.id.get().unwrap(), &mut builder, effect);
-            }
+            stored.insert(&mut builder, effect);
         }
         // sum used to have to be 1.0 otherwise sounds crackled, what now?
         if affected_by_reverb_mix {

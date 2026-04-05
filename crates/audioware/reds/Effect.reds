@@ -1,6 +1,8 @@
 module Audioware
 
 public abstract native class DynamicEffect {
+  // Whether both initialized and emitter still not unregistered.
+  public native func IsActive() -> Bool;
 }
 
 enum EqFilterKind {

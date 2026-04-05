@@ -8,7 +8,7 @@ use crate::{
     ControlId, ToTween,
     abi::{
         DistortionKind, DynamicCompressor, DynamicDelay, DynamicDistortion, DynamicEQ,
-        DynamicFilter, DynamicReverb, EqFilterKind, FilterMode,
+        DynamicEffect, DynamicFilter, DynamicReverb, EqFilterKind, FilterMode,
     },
     engine::queue,
     utils::warns,
@@ -192,6 +192,12 @@ impl From<DynamicFilterMsg> for DynamicEffectMsg {
 impl From<DynamicReverbMsg> for DynamicEffectMsg {
     fn from(value: DynamicReverbMsg) -> Self {
         Self::Reverb(value)
+    }
+}
+
+impl DynamicEffect {
+    pub fn is_active(&self) -> bool {
+        self.id.get().is_some() && self.orphan.get().is_none()
     }
 }
 
