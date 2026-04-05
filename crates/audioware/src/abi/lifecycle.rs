@@ -1,7 +1,7 @@
 use audioware_core::Amplitude;
 use crossbeam::channel::Sender;
 use debug_ignore::DebugIgnore;
-use red4ext_rs::types::{CName, EntityId, WeakRef};
+use red4ext_rs::types::{CName, EntityId, Ref, WeakRef};
 
 mod board;
 mod replacement;
@@ -12,7 +12,7 @@ pub use replacement::ReplacementNotification;
 pub use session::Session;
 pub use system::System;
 
-use crate::CameraComponent;
+use crate::{CameraComponent, abi::DynamicEffect};
 
 use super::{TagName, TargetFootprint, TargetId};
 
@@ -24,6 +24,7 @@ pub enum Lifecycle {
         tag_name: TagName,
         emitter_name: Option<CName>,
         emitter_settings: Option<TargetFootprint>,
+        emitter_effects: Vec<DebugIgnore<Ref<DynamicEffect>>>,
         sender: Sender<bool>,
     },
     UnregisterEmitter {
