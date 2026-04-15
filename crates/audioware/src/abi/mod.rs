@@ -429,12 +429,12 @@ pub fn exports() -> impl Exportable {
 }
 
 /// On RTTI registration.
-unsafe extern "C" fn register() {
+extern "C" fn register() {
     lifecycle!("on RTTI register");
 }
 
 /// Once RTTI registered.
-unsafe extern "C" fn post_register() {
+extern "C" fn post_register() {
     lifecycle!("on RTTI post register");
     Audioware::once_rtti_registered();
 }

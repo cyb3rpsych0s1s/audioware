@@ -220,7 +220,7 @@ public class AutoEmittersSystem extends ScriptableSystem {
         let v = GetPlayer(game);
         let here = v.GetWorldPosition();
         FTLog(s"V position:      [x: \(here.X), y: \(here.Y)], z: \(here.Z)");
-        let diff = new Vector3(AbsF(there.X - here.X), AbsF(there.Y - here.Y), AbsF(there.Z - here.Z));
+        let diff = Vector3(AbsF(there.X - here.X), AbsF(there.Y - here.Y), AbsF(there.Z - here.Z));
         FTLog(s"difference:      [x: \(diff.X), y: \(diff.Y)], z: \(diff.Z)");
     }
     public func Modulate(feedback: Float, duration: Float, opt up: Bool) {

@@ -73,7 +73,7 @@ public class ChangeCombatMusic extends ScriptableSystem {
         if IsDefined(this.dynamic) {
             FTLog(s"ChangeCombatMusic.OnLocomotionChanged( state: \(state) )");
             let tween = new LinearTween();
-            tween.startTime = .5;
+            tween.startTime = 0.5;
             tween.duration = 1.;
             if crouching {
                 this.dynamic.SetVolume(this.volume - 0.1, tween);
