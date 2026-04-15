@@ -8,7 +8,7 @@ jobs:
   quality:
     runs-on: windows-2025
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Prepare Rust toolchain
