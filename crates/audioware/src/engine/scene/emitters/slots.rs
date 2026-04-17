@@ -6,11 +6,17 @@ use crate::{
     engine::{
         scene::dilation::Dilation,
         traits::{
+            compressor::SetControlledCompressor,
+            delay::SetControlledDelay,
+            distortion::SetControlledDistortion,
+            eq::SetControlledEq,
+            filter::SetControlledFilter,
             pause::PauseControlled,
             playback::SetControlledPlaybackRate,
             position::PositionControlled,
             reclaim::Reclaim,
             resume::{ResumeControlled, ResumeControlledAt},
+            reverb::SetControlledReverb,
             seek::{SeekControlledBy, SeekControlledTo},
             stop::{StopBy, StopControlled},
             volume::SetControlledVolume,
@@ -195,5 +201,189 @@ impl SeekControlledBy for EmitterSlots {
         self.slots.iter_mut().for_each(|x| {
             x.handles.seek_controlled_by(id, amount);
         })
+    }
+}
+
+impl SetControlledEq for EmitterSlots {
+    fn set_controlled_kind(&mut self, id: ControlId, kind: kira::effect::eq_filter::EqFilterKind) {
+        self.slots.iter_mut().for_each(|x| {
+            SetControlledEq::set_controlled_kind(x, id, kind);
+        });
+    }
+
+    fn set_controlled_frequency(&mut self, id: ControlId, frequency: f64, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_frequency(id, frequency, tween);
+        });
+    }
+
+    fn set_controlled_gain(&mut self, id: ControlId, gain: audioware_core::Decibels, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_gain(id, gain, tween);
+        });
+    }
+
+    fn set_controlled_q(&mut self, id: ControlId, q: f64, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_q(id, q, tween);
+        });
+    }
+}
+
+impl SetControlledDistortion for EmitterSlots {
+    fn set_controlled_kind(
+        &mut self,
+        id: ControlId,
+        kind: kira::effect::distortion::DistortionKind,
+    ) {
+        self.slots.iter_mut().for_each(|x| {
+            SetControlledDistortion::set_controlled_kind(x, id, kind);
+        });
+    }
+
+    fn set_controlled_drive(
+        &mut self,
+        id: ControlId,
+        drive: audioware_core::Decibels,
+        tween: Tween,
+    ) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_drive(id, drive, tween);
+        });
+    }
+
+    fn set_controlled_mix(&mut self, id: ControlId, mix: f32, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            SetControlledDistortion::set_controlled_mix(x, id, mix, tween);
+        });
+    }
+}
+
+impl SetControlledDelay for EmitterSlots {
+    fn set_controlled_feedback(
+        &mut self,
+        id: ControlId,
+        feedback: audioware_core::Decibels,
+        tween: Tween,
+    ) {
+        self.slots.iter_mut().for_each(|x| {
+            SetControlledDelay::set_controlled_feedback(x, id, feedback, tween);
+        });
+    }
+
+    fn set_controlled_mix(&mut self, id: ControlId, mix: f32, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            SetControlledDelay::set_controlled_mix(x, id, mix, tween);
+        });
+    }
+}
+
+impl SetControlledCompressor for EmitterSlots {
+    fn set_controlled_threshold(
+        &mut self,
+        id: ControlId,
+        threshold: audioware_core::Decibels,
+        tween: Tween,
+    ) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_threshold(id, threshold, tween);
+        });
+    }
+
+    fn set_controlled_ratio(&mut self, id: ControlId, ratio: f32, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_ratio(id, ratio, tween);
+        });
+    }
+
+    fn set_controlled_attack_duration(
+        &mut self,
+        id: ControlId,
+        attack_duration: std::time::Duration,
+        tween: Tween,
+    ) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_attack_duration(id, attack_duration, tween);
+        });
+    }
+
+    fn set_controlled_release_duration(
+        &mut self,
+        id: ControlId,
+        release_duration: std::time::Duration,
+        tween: Tween,
+    ) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_release_duration(id, release_duration, tween);
+        });
+    }
+
+    fn set_controlled_makeup_gain(
+        &mut self,
+        id: ControlId,
+        makeup_gain: audioware_core::Decibels,
+        tween: Tween,
+    ) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_makeup_gain(id, makeup_gain, tween);
+        });
+    }
+
+    fn set_controlled_mix(&mut self, id: ControlId, mix: f32, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            SetControlledCompressor::set_controlled_mix(x, id, mix, tween);
+        });
+    }
+}
+
+impl SetControlledFilter for EmitterSlots {
+    fn set_controlled_mode(&mut self, id: ControlId, mode: kira::effect::filter::FilterMode) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_mode(id, mode);
+        });
+    }
+
+    fn set_controlled_cutoff(&mut self, id: ControlId, cutoff: f32, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_cutoff(id, cutoff, tween);
+        });
+    }
+
+    fn set_controlled_resonance(&mut self, id: ControlId, resonance: f32, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_resonance(id, resonance, tween);
+        });
+    }
+
+    fn set_controlled_mix(&mut self, id: ControlId, mix: f32, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            SetControlledFilter::set_controlled_mix(x, id, mix, tween);
+        });
+    }
+}
+
+impl SetControlledReverb for EmitterSlots {
+    fn set_controlled_feedback(&mut self, id: ControlId, feedback: f32, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            SetControlledReverb::set_controlled_feedback(x, id, feedback, tween);
+        });
+    }
+
+    fn set_controlled_damping(&mut self, id: ControlId, damping: f32, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_damping(id, damping, tween);
+        });
+    }
+
+    fn set_controlled_stereo_width(&mut self, id: ControlId, stereo_width: f32, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            x.set_controlled_stereo_width(id, stereo_width, tween);
+        });
+    }
+
+    fn set_controlled_mix(&mut self, id: ControlId, mix: f32, tween: Tween) {
+        self.slots.iter_mut().for_each(|x| {
+            SetControlledReverb::set_controlled_mix(x, id, mix, tween);
+        });
     }
 }

@@ -11,7 +11,7 @@ use audioware_core::{Amplitude, SpatialTrackSettings};
 use audioware_manifest::{Interpolation, Locale, LocaleExt, PlayerGender, Region, Settings};
 use kira::{Easing, backend::cpal::CpalBackend, track::SpatialTrackDistances};
 use red4ext_rs::{
-    ScriptClass,
+    NativeRepr, ScriptClass,
     class_kind::{Native, Scripted},
     types::{CName, EntityId, GameInstance, IScriptable, Opt, Ref, StaticArray},
 };
@@ -19,7 +19,7 @@ use red4ext_rs::{
 use crate::{
     AUDIOWARE_VERSION, AsEntity, ControlId, ElasticTween, EmitterDistances, EmitterSettings,
     Entity, Event, EventName, LinearTween, ToEasing, Tween, abi::fails, engine::Engine,
-    error::ValidationError, get_player,
+    error::ValidationError, get_player, utils::warns,
 };
 
 /// Represents a region in time.
@@ -490,6 +490,314 @@ impl DynamicEmitterEvent {
             x.name = Cell::new(name);
             x.tag_name = Cell::new(tag_name);
             x.ext.replace(Ref::clone(&ext).into_settings());
+        })
+        .unwrap_or_default()
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct DynamicEffect {
+    base: IScriptable,
+    pub(crate) id: OnceLock<ControlId>,
+    pub(crate) orphan: OnceLock<()>,
+}
+
+unsafe impl ScriptClass for DynamicEffect {
+    type Kind = Native;
+    const NAME: &'static str = "Audioware.DynamicEffect";
+}
+
+impl AsRef<IScriptable> for DynamicEffect {
+    fn as_ref(&self) -> &IScriptable {
+        &self.base
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct DynamicEQ {
+    pub(crate) base: DynamicEffect,
+    pub(crate) kind: Cell<EqFilterKind>,
+    pub(crate) frequency: Cell<f32>,
+    pub(crate) gain: Cell<f32>,
+    pub(crate) q: Cell<f32>,
+}
+
+unsafe impl ScriptClass for DynamicEQ {
+    type Kind = Native;
+    const NAME: &'static str = "Audioware.DynamicEQ";
+}
+
+impl DynamicEQ {
+    pub(crate) fn create(kind: EqFilterKind, frequency: f32, gain: f32, q: f32) -> Ref<Self> {
+        if q <= 0.0 {
+            warns!("frequency range width (a.k.a 'Q'): cannot be lower or equals to 0.");
+            return Default::default();
+        }
+        Ref::<Self>::new_with(|x| {
+            x.kind = Cell::new(kind);
+            x.frequency = Cell::new(frequency);
+            x.gain = Cell::new(gain);
+            x.q = Cell::new(q);
+        })
+        .unwrap_or_default()
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+#[repr(u8)]
+pub enum EqFilterKind {
+    #[default]
+    Bell = 0,
+    LowShelf = 1,
+    HighShelf = 2,
+}
+
+unsafe impl NativeRepr for EqFilterKind {
+    const NAME: &'static str = "Audioware.EqFilterKind";
+}
+
+impl From<self::EqFilterKind> for kira::effect::eq_filter::EqFilterKind {
+    fn from(value: self::EqFilterKind) -> Self {
+        match value {
+            self::EqFilterKind::Bell => kira::effect::eq_filter::EqFilterKind::Bell,
+            self::EqFilterKind::LowShelf => kira::effect::eq_filter::EqFilterKind::LowShelf,
+            self::EqFilterKind::HighShelf => kira::effect::eq_filter::EqFilterKind::HighShelf,
+        }
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct DynamicDistortion {
+    pub(crate) base: DynamicEffect,
+    pub(crate) kind: Cell<DistortionKind>,
+    pub(crate) drive: Cell<f32>,
+    pub(crate) mix: Cell<f32>,
+}
+
+unsafe impl ScriptClass for DynamicDistortion {
+    type Kind = Native;
+    const NAME: &'static str = "Audioware.DynamicDistortion";
+}
+
+impl DynamicDistortion {
+    pub(crate) fn create(kind: DistortionKind, drive: f32, mix: f32) -> Ref<Self> {
+        if !(0.0..=1.0).contains(&mix) {
+            warns!("invalid mix ({mix}): must be between 0.0 and 1.0.");
+            return Default::default();
+        }
+        Ref::<Self>::new_with(|x| {
+            x.kind = Cell::new(kind);
+            x.drive = Cell::new(drive);
+            x.mix = Cell::new(mix);
+        })
+        .unwrap_or_default()
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+#[repr(u8)]
+pub enum DistortionKind {
+    #[default]
+    HardClip = 0,
+    SoftClip = 1,
+}
+
+impl From<self::DistortionKind> for kira::effect::distortion::DistortionKind {
+    fn from(value: self::DistortionKind) -> Self {
+        match value {
+            self::DistortionKind::HardClip => kira::effect::distortion::DistortionKind::HardClip,
+            self::DistortionKind::SoftClip => kira::effect::distortion::DistortionKind::SoftClip,
+        }
+    }
+}
+
+unsafe impl NativeRepr for DistortionKind {
+    const NAME: &'static str = "Audioware.DistortionKind";
+}
+
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct DynamicDelay {
+    pub(crate) base: DynamicEffect,
+    pub(crate) feedback: Cell<f32>,
+    pub(crate) delay_time: Cell<Duration>,
+    pub(crate) mix: Cell<f32>,
+}
+
+unsafe impl ScriptClass for DynamicDelay {
+    type Kind = Native;
+    const NAME: &'static str = "Audioware.DynamicDelay";
+}
+
+impl DynamicDelay {
+    pub(crate) fn create(feedback: f32, delay_time: f32, mix: f32) -> Ref<Self> {
+        if !(0.0..=1.0).contains(&mix) {
+            warns!("invalid mix ({mix}): must be between 0.0 and 1.0.");
+            return Default::default();
+        }
+        let Ok(delay_time) = Duration::try_from_secs_f32(delay_time).inspect_err(|e| {
+            warns!("invalid delay time ({delay_time}): {e}");
+        }) else {
+            return Default::default();
+        };
+        Ref::<Self>::new_with(|x| {
+            x.feedback = Cell::new(feedback);
+            x.delay_time = Cell::new(delay_time);
+            x.mix = Cell::new(mix);
+        })
+        .unwrap_or_default()
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct DynamicCompressor {
+    pub(crate) base: DynamicEffect,
+    pub(crate) threshold: Cell<f32>,
+    pub(crate) ratio: Cell<f32>,
+    pub(crate) attack_duration: Cell<Duration>,
+    pub(crate) release_duration: Cell<Duration>,
+    pub(crate) makeup_gain: Cell<f32>,
+    pub(crate) mix: Cell<f32>,
+}
+
+unsafe impl ScriptClass for DynamicCompressor {
+    type Kind = Native;
+    const NAME: &'static str = "Audioware.DynamicCompressor";
+}
+
+impl DynamicCompressor {
+    pub(crate) fn create(
+        threshold: f32,
+        ratio: f32,
+        attack_duration: f32,
+        release_duration: f32,
+        makeup_gain: f32,
+        mix: f32,
+    ) -> Ref<Self> {
+        if ratio < 0. {
+            warns!("invalid ratio ({ratio}): cannot be lower than 0.");
+            return Default::default();
+        }
+        let Ok(attack_duration) = Duration::try_from_secs_f32(attack_duration).inspect_err(|e| {
+            warns!("invalid attack duration ({attack_duration}): {e}");
+        }) else {
+            return Default::default();
+        };
+        let Ok(release_duration) = Duration::try_from_secs_f32(release_duration).inspect_err(|e| {
+            warns!("invalid release duration ({release_duration}): {e}");
+        }) else {
+            return Default::default();
+        };
+        if !(0.0..=1.0).contains(&mix) {
+            warns!("invalid mix ({mix}): must be between 0.0 and 1.0.");
+            return Default::default();
+        }
+        Ref::<Self>::new_with(|x| {
+            x.threshold = Cell::new(threshold);
+            x.ratio = Cell::new(ratio);
+            x.attack_duration = Cell::new(attack_duration);
+            x.release_duration = Cell::new(release_duration);
+            x.makeup_gain = Cell::new(makeup_gain);
+            x.mix = Cell::new(mix);
+        })
+        .unwrap_or_default()
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+#[repr(u8)]
+pub enum FilterMode {
+    #[default]
+    LowPass = 0,
+    BandPass = 1,
+    HighPass = 2,
+    Notch = 3,
+}
+
+unsafe impl NativeRepr for FilterMode {
+    const NAME: &'static str = "Audioware.FilterMode";
+}
+
+impl From<self::FilterMode> for kira::effect::filter::FilterMode {
+    fn from(value: self::FilterMode) -> Self {
+        match value {
+            self::FilterMode::LowPass => kira::effect::filter::FilterMode::LowPass,
+            self::FilterMode::BandPass => kira::effect::filter::FilterMode::BandPass,
+            self::FilterMode::HighPass => kira::effect::filter::FilterMode::HighPass,
+            self::FilterMode::Notch => kira::effect::filter::FilterMode::Notch,
+        }
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct DynamicFilter {
+    pub(crate) base: DynamicEffect,
+    pub(crate) mode: Cell<FilterMode>,
+    pub(crate) cutoff: Cell<f32>,
+    pub(crate) resonance: Cell<f32>,
+    pub(crate) mix: Cell<f32>,
+}
+
+unsafe impl ScriptClass for DynamicFilter {
+    type Kind = Native;
+    const NAME: &'static str = "Audioware.DynamicFilter";
+}
+
+impl DynamicFilter {
+    pub(crate) fn create(mode: FilterMode, cutoff: f32, resonance: f32, mix: f32) -> Ref<Self> {
+        if !(0.0..=1.0).contains(&mix) {
+            warns!("invalid mix ({mix}): must be between 0.0 and 1.0.");
+            return Default::default();
+        }
+        Ref::<Self>::new_with(|x| {
+            x.mode = Cell::new(mode);
+            x.cutoff = Cell::new(cutoff);
+            x.resonance = Cell::new(resonance);
+            x.mix = Cell::new(mix);
+        })
+        .unwrap_or_default()
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+#[repr(C)]
+pub struct DynamicReverb {
+    pub(crate) base: DynamicEffect,
+    pub(crate) feedback: Cell<f32>,
+    pub(crate) damping: Cell<f32>,
+    pub(crate) stereo_width: Cell<f32>,
+    pub(crate) mix: Cell<f32>,
+}
+
+unsafe impl ScriptClass for DynamicReverb {
+    type Kind = Native;
+    const NAME: &'static str = "Audioware.DynamicReverb";
+}
+
+impl DynamicReverb {
+    pub(crate) fn create(feedback: f32, damping: f32, stereo_width: f32, mix: f32) -> Ref<Self> {
+        if !(0.0..=1.0).contains(&feedback) {
+            warns!("invalid feedback ({feedback}): must be between 0.0 and 1.0.");
+            return Default::default();
+        }
+        if !(0.0..=1.0).contains(&stereo_width) {
+            warns!("invalid stereo width ({stereo_width}): must be between 0.0 and 1.0.");
+            return Default::default();
+        }
+        if !(0.0..=1.0).contains(&mix) {
+            warns!("invalid mix ({mix}): must be between 0.0 and 1.0.");
+            return Default::default();
+        }
+        Ref::<Self>::new_with(|x| {
+            x.feedback = Cell::new(feedback);
+            x.damping = Cell::new(damping);
+            x.stereo_width = Cell::new(stereo_width);
+            x.mix = Cell::new(mix);
         })
         .unwrap_or_default()
     }

@@ -3,7 +3,13 @@
 use core::fmt;
 use std::{hash::Hash, ops::Not};
 
-use red4ext_rs::{ScriptClass, class_kind::Scripted, types::Ref};
+use red4ext_rs::{
+    ScriptClass,
+    class_kind::Scripted,
+    types::{RedArray, Ref},
+};
+
+use crate::abi::DynamicEffect;
 
 use super::{ElasticTween, LinearTween, ToEasing, Tween};
 
@@ -17,6 +23,7 @@ pub struct EmitterSettings {
     pub affected_by_reverb_mix: bool,
     pub affected_by_environmental_preset: bool,
     pub enable_occlusion: bool,
+    pub effects: RedArray<Ref<DynamicEffect>>,
 }
 
 impl Default for EmitterSettings {
@@ -29,6 +36,7 @@ impl Default for EmitterSettings {
             affected_by_reverb_mix: true,
             affected_by_environmental_preset: false,
             enable_occlusion: false,
+            effects: Default::default(),
         }
     }
 }
@@ -116,6 +124,7 @@ impl Clone for EmitterSettings {
             affected_by_reverb_mix: self.affected_by_reverb_mix,
             affected_by_environmental_preset: self.affected_by_environmental_preset,
             enable_occlusion: self.enable_occlusion,
+            effects: self.effects.iter().map(Clone::clone).collect(),
         }
     }
 }
