@@ -9,7 +9,7 @@ use super::{Entity, GamePlayerSocket, RedTagList};
 #[repr(C)]
 pub struct GameObject {
     pub base: Entity,
-    pub _padding2: [u8; 0xC],
+    pub _padding2: [u8; 0x8],
     pub persistent_state: Ref<IScriptable>,      // 0x168
     pub display_name: LocalizationString,        // 0x178
     pub display_description: LocalizationString, // 0x1A0
