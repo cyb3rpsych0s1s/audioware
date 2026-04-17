@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["TLS_GEN","TLS_LEN","TLS_PTR"],"fn":["publish_entries","reclaim_entries","retired","with_entries"],"static":["CURRENT","GENERATION","RETIRED"],"struct":["Header","Retired"]};
