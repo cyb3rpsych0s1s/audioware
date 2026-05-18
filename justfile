@@ -91,6 +91,15 @@ staging TO=game_dir:
     @just no-debug '{{TO}}'; Write-Host "Removed debug files";
     @just now
 
+prod TO=game_dir:
+    @just setup-red4ext '{{TO}}'
+    @just build 'release' ''
+    @just copy-dll '{{TO}}' 'release'
+    @just copy-pdb '{{TO}}' 'release'
+    @just reload '{{TO}}'
+    @just no-debug '{{TO}}'; Write-Host "Removed debug files";
+    @just now
+
 ci TO PROFILE='release' FEATURES='':
     @just setup-red4ext '{{ join(TO, "bin") }}'
     @just setup-red4ext '{{ join(TO, "pdb") }}'
