@@ -11,6 +11,7 @@ class LifecycleSubSystem extends ScriptableSystem {
         .RegisterListenerBool(GetAllBlackboardDefs().UI_System.IsInMenu, this, n"OnMenu");
     }
     private func OnDetach() -> Void {
+        SetMuteInBackground(true);
         OnGameSystemDetach();
         if IsDefined(this.onMenu) {
             GameInstance.GetBlackboardSystem(this.GetGameInstance())
