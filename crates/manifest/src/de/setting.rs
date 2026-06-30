@@ -282,11 +282,11 @@ impl Validate for Settings {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<_> = vec![];
         if let Some(panning) = self.panning
-            && !(0.0..=1.0).contains(&panning)
+            && !(-1.0..=1.0).contains(&panning)
         {
             errors.push(ValidationError {
                 which: "panning",
-                why: "must be a value between 0.0 and 1.0 (inclusive)",
+                why: "must be a value between -1.0 and 1.0 (inclusive)",
             });
         }
         if let Some(volume) = self.volume

@@ -58,7 +58,7 @@ impl Default for AudioSettingsExt {
             r#loop: false,
             volume: 1.,
             fade_in: Ref::default(),
-            panning: 0.5,
+            panning: 0.0,
             playback_rate: 1.,
             affected_by_time_dilation: true,
         }
