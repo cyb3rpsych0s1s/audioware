@@ -13,6 +13,7 @@ mod data;
 mod settings;
 mod types;
 
+pub mod error;
 pub use settings::SceneDialogSettings;
 pub use settings::SpatialTrackSettings;
 pub use types::{Amplitude, AmplitudeError, Panning, PanningError};

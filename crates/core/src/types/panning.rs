@@ -3,10 +3,23 @@ use std::ops::Deref;
 use serde::Deserialize;
 use snafu::Snafu;
 
+use crate::error::ValidationError;
+
 #[derive(Debug, Snafu)]
 pub enum PanningError {
     #[snafu(display("panning must be between -1.0 and 1.0 (inclusive)"))]
     OutOfRange,
+}
+
+impl From<PanningError> for ValidationError {
+    fn from(value: PanningError) -> Self {
+        ValidationError {
+            which: "panning",
+            why: match value {
+                PanningError::OutOfRange => "must be a value between -1.0 and 1.0 (inclusive)",
+            },
+        }
+    }
 }
 
 pub struct Panning(kira::Panning);

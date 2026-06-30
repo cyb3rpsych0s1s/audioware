@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use audioware_core::{Amplitude, With};
+use audioware_core::{Amplitude, Panning, With, error::ValidationError};
 use either::Either;
 use kira::{
     Decibels, PlaybackRate, Semitones, StartTime, Tween,
@@ -10,8 +10,6 @@ use kira::{
     },
 };
 use serde::Deserialize;
-
-use crate::error::ValidationError;
 
 pub trait Validate {
     fn validate(&self) -> Result<(), Vec<ValidationError>>;
@@ -282,12 +280,9 @@ impl Validate for Settings {
     fn validate(&self) -> Result<(), Vec<ValidationError>> {
         let mut errors: Vec<_> = vec![];
         if let Some(panning) = self.panning
-            && !(-1.0..=1.0).contains(&panning)
+            && let Err(e) = Panning::try_from(panning)
         {
-            errors.push(ValidationError {
-                which: "panning",
-                why: "must be a value between -1.0 and 1.0 (inclusive)",
-            });
+            errors.push(e.into());
         }
         if let Some(volume) = self.volume
             && volume.as_decibels() > Decibels(85.0)

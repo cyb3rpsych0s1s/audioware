@@ -22,7 +22,7 @@ pub enum Error {
     Scene { source: SceneError },
     #[snafu(display("Validation error:\n{}", errors.iter().map(|e| format!("- {e}")).collect::<Vec<_>>().join("\n")))]
     Validation {
-        errors: Vec<audioware_manifest::error::ValidationError>,
+        errors: Vec<audioware_core::error::ValidationError>,
     },
 }
 
@@ -134,8 +134,8 @@ impl From<std::io::Error> for Error {
     }
 }
 
-impl From<Vec<audioware_manifest::error::ValidationError>> for Error {
-    fn from(errors: Vec<audioware_manifest::error::ValidationError>) -> Self {
+impl From<Vec<audioware_core::error::ValidationError>> for Error {
+    fn from(errors: Vec<audioware_core::error::ValidationError>) -> Self {
         Self::Validation { errors }
     }
 }

@@ -107,7 +107,7 @@ pub mod validation {
         #[snafu(display("invalid audio setting(s) {which}: {}", why.iter().map(|x| format!("{}: {}", x.which, x.why)).collect::<Vec<_>>().join("\n")), visibility(pub(crate)))]
         InvalidAudioSettings {
             which: String,
-            why: Vec<audioware_manifest::error::ValidationError>,
+            why: Vec<audioware_core::error::ValidationError>,
         },
         #[snafu(
             display("invalid audio caption: {which} ({why})"),
