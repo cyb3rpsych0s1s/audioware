@@ -5,7 +5,7 @@ resolver = "2"
 [workspace.package]
 version = "1.9.3"
 edition = "2024"
-rust-version = "1.92.0"
+rust-version = "1.96.0"
 
 [profile.release]
 codegen-units = 1
