@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["attach_hook","detach_hook","detour"],"mod":["global"],"static":["HOOK"]};

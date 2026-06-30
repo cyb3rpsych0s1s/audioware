@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["cache","emitter","slot","slots"],"struct":["Emitters"]};

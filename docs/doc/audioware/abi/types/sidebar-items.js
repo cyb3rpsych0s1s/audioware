@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["AudioRegion","AudioSettingsExt","AudioSystemExt","DynamicEmitterEvent","DynamicSoundEvent","TagName","TargetFootprint","TargetId"],"trait":["ToInterpolation","ToRegion","ToSettings","ToSettingsExt"]};

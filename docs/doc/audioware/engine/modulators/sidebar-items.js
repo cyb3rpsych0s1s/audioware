@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["reverb","volume"],"struct":["Modulators"],"trait":["Parameter"]};

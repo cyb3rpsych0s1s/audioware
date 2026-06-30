@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":["getter","setter"],"struct":["AddContainerStreamingPrefetchEvent","EngineSoundEvent","PlayEvent","PlayExternalEvent","PlayOneShotEvent","RemoveContainerStreamingPrefetchEvent","SetAppearanceNameEvent","SetEntityNameEvent","SetGlobalParameterEvent","SetParameterEvent","SetSwitchEvent","StopSoundEvent","StopTaggedEvent","TagEvent","UntagEvent"]};

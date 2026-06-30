@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["PADDING_15","PADDING_38","PADDING_54","PADDING_PAST_IDS","PADDING_PAST_PLAY_CONTEXT","PADDING_PE_30","PADDING_SO_30"],"enum":["PlayContextType","State"],"struct":["OneShotSound","PEFlag","Pair","PlayingSoundId","PositionEntry","Sound","SoundId","SoundObject","SoundPlayContext","TFlag"]};
