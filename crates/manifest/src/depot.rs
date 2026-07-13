@@ -145,8 +145,19 @@ impl AsRef<Path> for Mod {
 
 impl Mod {
     /// Get mod folder name (file stem).
+    ///
+    /// Returns an empty `ModName` if the folder name cannot be determined
+    /// (e.g. for the filesystem root or paths whose final component is not
+    /// valid Unicode). The previous code called `.unwrap().to_str().unwrap()`
+    /// which would panic on edge-case paths.
     pub fn name(&self) -> ModName {
-        ModName(self.0.file_stem().unwrap().to_str().unwrap().to_string())
+        ModName(
+            self.0
+                .file_stem()
+                .and_then(|x| x.to_str())
+                .map(|x| x.to_string())
+                .unwrap_or_default(),
+        )
     }
 }
 

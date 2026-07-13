@@ -182,10 +182,17 @@ impl Emitters {
             }
         });
         let mut next = vec![];
-        let before = next.len();
         with_entries(|x| {
             next = x.to_vec();
         });
+        // Snapshot the length *after* populating `next` from the published
+        // cache. The previous code snapshotted `before` before calling
+        // `with_entries`, so `before` was always 0 and the change-detection
+        // check was broken — it skipped publishing exactly when there was
+        // nothing left to remove, but published (correctly) every other time.
+        // The correct intent is: publish only if we actually removed the
+        // dead entity from the published cache.
+        let before = next.len();
         next.retain(|(id, _)| id != entity_id);
         let after = next.len();
         if before != after {

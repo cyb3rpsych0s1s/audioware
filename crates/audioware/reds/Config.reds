@@ -12,10 +12,17 @@ public class AudiowareConfig {
     @runtimeProperty("ModSettings.displayValues.Option256", "256 Samples")
     @runtimeProperty("ModSettings.displayValues.Option512", "512 Samples")
     @runtimeProperty("ModSettings.displayValues.Option1024", "1024 Samples")
+    @runtimeProperty("ModSettings.displayValues.Option2048", "2048 Samples")
     public let bufferSize: BufferSize = BufferSize.Auto;
 }
 
 /// NOTE: ModSettings enum variants do not play well with arbitrary values
+///
+/// The Rust side of this plugin reads the *string* variant name from the
+/// ModSettings .ini file (not the integer discriminant), so the discriminant
+/// values here only need to be unique within the enum. `Option2048` is
+/// included so the Rust `BufferSize::Option2048` variant (which maps to a
+/// 2048-sample cpal buffer) is selectable from the in-game settings menu.
 enum BufferSize {
     Auto = 0,
     Option64 = 1,
@@ -23,4 +30,5 @@ enum BufferSize {
     Option256 = 3,
     Option512 = 4,
     Option1024 = 5,
+    Option2048 = 6,
 }

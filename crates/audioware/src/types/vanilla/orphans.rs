@@ -6,16 +6,25 @@ use red4ext_rs::{
 use super::PlayerPuppet;
 
 /// `public static func GetPlayer(gameInstance: GameInstance) -> ref<PlayerPuppet>`
+///
+/// Returns a null `Ref<PlayerPuppet>` if the global `GetPlayer;GameInstance`
+/// function cannot be resolved or invoked, or if the player entity is not yet
+/// attached to the game instance. Callers should null-check the result before
+/// dereferencing — for example, `Scene::sync_listener` and `Scene::try_new`
+/// both rely on this to avoid crashing the engine thread (and the host game
+/// process) when the player is briefly unavailable during load transitions.
 pub fn get_player(game: GameInstance) -> Ref<PlayerPuppet> {
-    let rtti = RttiSystem::get();
-    let methods = rtti.get_global_functions();
-    let method = methods
-        .iter()
-        .find(|x| x.name() == CName::new("GetPlayer;GameInstance"))
-        .unwrap();
-    method
-        .execute::<_, Ref<PlayerPuppet>>(None, (game,))
-        .unwrap()
+    let Some(method) = (|| {
+        let rtti = RttiSystem::get();
+        let methods = rtti.get_global_functions();
+        methods.iter().find(|x| x.name() == CName::new("GetPlayer;GameInstance"))
+    })() else {
+        return Ref::default();
+    };
+    match method.execute::<_, Ref<PlayerPuppet>>(None, (game,)) {
+        Ok(player) => player,
+        Err(_) => Ref::default(),
+    }
 }
 
 #[repr(C, align(8))]

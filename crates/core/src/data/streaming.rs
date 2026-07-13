@@ -57,8 +57,21 @@ impl<E: Send> With<SceneDialogSettings> for StreamingSoundData<E> {
             PlaybackPosition::Seconds(x) => {
                 PlaybackPosition::Seconds(x + settings.seek_time as f64)
             }
-            PlaybackPosition::Samples(_) => {
-                unreachable!("samples unit is not supported with streaming sound yet")
+            PlaybackPosition::Samples(samples) => {
+                // The previous code called `unreachable!("samples unit is not
+                // supported with streaming sound yet")`, which would crash the
+                // engine thread (and under default `panic=unwind`, terminate
+                // the audio engine silently) if a mod ever specified a
+                // sample-based `start_position` on a streaming sound.
+                //
+                // We can't convert samples to seconds without the sample rate
+                // (kira's StreamingSoundSettings does not expose it here), so
+                // we fall back to ignoring the sample offset and apply only
+                // the seek_time in seconds. This preserves the seek_time
+                // behavior (used by `is_rewind` scene dialogs) while degrading
+                // gracefully for the unsupported samples case.
+                let _ = samples;
+                PlaybackPosition::Seconds(settings.seek_time as f64)
             }
         })
     }

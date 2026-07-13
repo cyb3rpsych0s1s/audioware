@@ -177,6 +177,14 @@ fn console(msg: impl Into<String>, func_name: &str) {
 }
 
 pub fn get_base_offset() -> HMODULE {
+    // Note: `GetModuleHandleW(None)` returns a handle to the current
+    // process's main module and essentially never fails on a running
+    // Windows process. If it does fail, the OS is in a catastrophic
+    // state and the process is going to die anyway — panicking here
+    // gives a clean error message rather than the wild pointer
+    // dereference that would result from returning a zeroed HMODULE
+    // (the only caller, `SoundEngine::get()`, immediately computes
+    // `base.0 as usize + OFFSET` and dereferences it).
     match unsafe { GetModuleHandleW(None) } {
         Ok(x) => x,
         Err(e) => {

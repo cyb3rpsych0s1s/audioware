@@ -46,17 +46,24 @@ impl Plugin for Audioware {
         detach(env);
         queue::notify(Lifecycle::Terminate);
         if let Some(thread) = THREAD.get() {
+            // Take the JoinHandle out of the mutex (the engine thread never
+            // holds this mutex, so try_lock should succeed almost immediately;
+            // yield_now keeps the spin polite in the rare contention case).
             loop {
                 if let Ok(mut guard) = thread.try_lock() {
                     if let Some(thread) = guard.take() {
-                        while !thread.is_finished() {
-                            continue;
-                        }
+                        // Blockingly join the engine thread instead of
+                        // busy-spinning on `is_finished()`. The engine thread
+                        // breaks its main loop on `Lifecycle::Terminate`, so
+                        // this join will return promptly.
                         if let Err(e) = thread.join() {
                             fails!("unable to join thread: {e:?}");
                         }
                     }
                     break;
+                } else {
+                    // Contended (rare) — yield the time slice instead of spinning.
+                    std::thread::yield_now();
                 }
             }
         }

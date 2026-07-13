@@ -53,15 +53,37 @@ impl Scene {
         const RESERVED_FOR_ACTORS: usize = 8;
         let capacity = manager.sub_track_capacity();
         let (id, position, orientation, dilation) = {
-            let v = get_player(GameInstance::new()).cast::<Entity>().unwrap();
-            let d = get_player(GameInstance::new())
-                .cast::<TimeDilatable>()
-                .unwrap();
+            let v = get_player(GameInstance::new());
+            if v.is_null() {
+                // Player not attached yet — this can happen briefly during
+                // load transitions. The previous code called `.cast::<Entity>().unwrap()`
+                // here, which panicked the engine thread and took the game
+                // process down. Bail out gracefully; the caller will retry
+                // on the next `Session::Ready` lifecycle tick.
+                return Err(Error::Scene {
+                    source: SceneError::MissingActor {
+                        entity_id: EntityId::default(),
+                    },
+                });
+            }
+            let entity = v.cast::<Entity>();
+            if entity.is_null() {
+                return Err(Error::Scene {
+                    source: SceneError::MissingActor {
+                        entity_id: EntityId::default(),
+                    },
+                });
+            }
+            let d = entity.clone().cast::<TimeDilatable>();
+            let dilation = d
+                .as_ref()
+                .map(AsTimeDilatable::get_time_dilation_value)
+                .unwrap_or(1.);
             (
-                v.get_entity_id(),
-                v.get_world_position(),
-                v.get_world_orientation(),
-                d.get_time_dilation_value(),
+                entity.get_entity_id(),
+                entity.get_world_position(),
+                entity.get_world_orientation(),
+                dilation,
             )
         };
         let handle = manager.add_listener(position, orientation)?;
@@ -190,9 +212,17 @@ impl Scene {
             None => {
                 let player = get_player(GameInstance::new());
                 if player.is_null() {
+                    // Player not attached yet — skip this sync cycle. The
+                    // previous code called `.cast::<Entity>().unwrap()` here,
+                    // which panicked the engine thread and crashed the game
+                    // whenever the player briefly became unavailable during
+                    // a load transition.
                     return Ok(());
                 }
-                let entity = player.cast::<Entity>().unwrap();
+                let entity = player.cast::<Entity>();
+                if entity.is_null() {
+                    return Ok(());
+                }
                 (entity.get_world_position(), entity.get_world_orientation())
             }
             Some(camera) => {

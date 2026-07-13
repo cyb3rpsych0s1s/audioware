@@ -1,7 +1,7 @@
 use std::{sync::OnceLock, thread::JoinHandle, time::Duration};
 
 use bitflags::bitflags;
-use crossbeam::channel::{Receiver, Sender, bounded, tick, unbounded};
+use crossbeam::channel::{Receiver, Sender, Select, bounded, tick, unbounded};
 use kira::{
     AudioManagerSettings,
     backend::cpal::{CpalBackend, CpalBackendSettings},
@@ -151,6 +151,30 @@ pub fn run(
     let synchronization = tick(ms(15));
     let mut state = Flags::LOADING | Flags::MUTE_IN_BACKGROUND;
     'game: loop {
+        // Block until any channel has data or any tick fires.
+        // This replaces the previous 100%-CPU busy-spin that heated one core
+        // for the entire game session. The select wakes us up on:
+        // - incoming lifecycle/command/callback/dynamic messages
+        // - the 15ms sync tick (also drives foreground-window checks)
+        // - the 3s/60s reclamation tick
+        // If nothing is happening (e.g. paused, in-menu, idle), the thread
+        // sleeps and yields the CPU core.
+        //
+        // We drop the returned `SelectedOperation` immediately, which
+        // cancels the operation — the message that woke us up stays in its
+        // channel and is picked up by the `try_iter()` drains below. This
+        // is safe because we create a fresh `Select` each iteration.
+        {
+            let sel = Select::new();
+            sel.recv(&rl);
+            sel.recv(&rc);
+            sel.recv(&re);
+            sel.recv(&rds);
+            sel.recv(&rde);
+            sel.recv(&synchronization);
+            sel.recv(&reclamation);
+            let _ = sel.select();
+        }
         if state.contains(Flags::MUTE_IN_BACKGROUND) {
             if !is_in_foreground() {
                 if state.contains(Flags::FOCUSED) {

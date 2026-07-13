@@ -797,5 +797,14 @@ pub fn ensure_scene_dialogs<'a>(
             }
         }
     };
-    Ok(())
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        // Surface the collected scene-dialog load errors to the caller so
+        // they show up in the Banks initialization report. The previous
+        // implementation built a `errors` Vec but never inspected it and
+        // always returned `Ok(())`, silently dropping every scene-dialog
+        // load failure.
+        Err(errors.into_iter().next().unwrap())
+    }
 }

@@ -93,10 +93,18 @@ where
         {
             *BANKS.write() = Some(banks.clone());
         }
-        let mut manager = AudioManager::new(settings).map_err(|_| Error::Engine {
-            source: EngineError::Manager {
-                origin: "audio manager",
-            },
+        let mut manager = AudioManager::new(settings).map_err(|e| {
+            // Preserve the underlying kira error in the log so users can
+            // diagnose cpal/driver issues. The previous code did
+            // `map_err(|_| ...)` and discarded the cause entirely.
+            crate::utils::fails!(
+                "AudioManager creation failed: {e:?}"
+            );
+            Error::Engine {
+                source: EngineError::Manager {
+                    origin: "audio manager",
+                },
+            }
         })?;
         let modulators = Modulators::try_new(&mut manager)?;
         let tracks = Tracks::try_new(&mut manager, &modulators)?;
@@ -505,11 +513,16 @@ where
                 warns!("invalid setting(s) for actor audio: {e:#?}");
                 return;
             }
-            let mut slot = scene
-                .actors
-                .emitters
-                .get_mut(&entity_id)
-                .expect("actor should automatically have been added if missing");
+            let Some(mut slot) = scene.actors.emitters.get_mut(&entity_id) else {
+                // The previous code called `.expect("actor should automatically
+                // have been added if missing")` here. That assumption breaks
+                // if `add_actor` returned `Ok(())` but the entry isn't in the
+                // DashMap (e.g. concurrent removal by `sync_emitters` between
+                // the add and the lookup). Skip this play attempt instead of
+                // crashing the engine thread.
+                warns!("actor {entity_id} missing after add; skipping play");
+                return;
+            };
             match data.with(scene_settings) {
                 Either::Left(data) => {
                     if let Ok(handle) = slot.value_mut().track_mut().play(data) {
