@@ -1,7 +1,7 @@
 use std::{sync::OnceLock, thread::JoinHandle, time::Duration};
 
 use bitflags::bitflags;
-use crossbeam::channel::{Receiver, Sender, Select, bounded, tick, unbounded};
+use crossbeam::channel::{Receiver, Sender, bounded, tick, unbounded};
 use kira::{
     AudioManagerSettings,
     backend::cpal::{CpalBackend, CpalBackendSettings},
@@ -150,30 +150,192 @@ pub fn run(
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
     let synchronization = tick(ms(15));
     let mut state = Flags::LOADING | Flags::MUTE_IN_BACKGROUND;
+
+    // Helper: process a single lifecycle message.
+    // Returns false if we should break the main loop (on Terminate).
+    let process_lifecycle = |state: &mut Flags, engine: &mut Engine<CpalBackend>, l: Lifecycle| -> bool {
+        lifecycle!("> {l}");
+        match l {
+            Lifecycle::Terminate => {
+                return false;
+            }
+            Lifecycle::ReportInitialization => engine.report_initialization(false),
+            #[cfg(feature = "hot-reload")]
+            Lifecycle::HotReload => {
+                engine.hot_reload();
+                return true;
+            }
+            Lifecycle::SetListenerDilation {
+                value,
+                reason,
+                ease_in_curve,
+            } => engine.set_listener_dilation(DilationUpdate::Set {
+                value,
+                reason,
+                ease_in_curve,
+            }),
+            Lifecycle::UnsetListenerDilation {
+                reason,
+                ease_out_curve,
+            } => engine.unset_listener_dilation(DilationUpdate::Unset {
+                reason,
+                ease_out_curve,
+            }),
+            Lifecycle::SetEmitterDilation {
+                entity_id,
+                value,
+                ease_in_curve,
+                reason,
+            } => engine.set_emitter_dilation(
+                entity_id,
+                DilationUpdate::Set {
+                    reason,
+                    value,
+                    ease_in_curve,
+                },
+            ),
+            Lifecycle::UnsetEmitterDilation {
+                entity_id,
+                ease_out_curve,
+            } => engine.unset_emitter_dilation(
+                entity_id,
+                DilationUpdate::Unset {
+                    reason: CName::undefined(),
+                    ease_out_curve,
+                },
+            ),
+            Lifecycle::SetEmitterOcclusion { entity_id, value } => {
+                engine.set_emitter_occlusion(entity_id, value)
+            }
+            Lifecycle::RegisterEmitter {
+                entity_id,
+                tag_name,
+                emitter_name,
+                emitter_settings,
+                sender,
+            } => {
+                let registered = engine.register_emitter(
+                    *entity_id,
+                    *tag_name,
+                    emitter_name,
+                    emitter_settings.as_deref(),
+                );
+                let _ = sender.try_send(registered);
+            }
+            Lifecycle::UnregisterEmitter {
+                entity_id,
+                tag_name,
+                sender,
+            } => {
+                let unregistered = engine.unregister_emitter(*entity_id, *tag_name);
+                let _ = sender.try_send(unregistered);
+            }
+            Lifecycle::OnEmitterDies { entity_id } => engine.on_emitter_dies(entity_id),
+            Lifecycle::OnEmitterIncapacitated { entity_id } => {
+                engine.on_emitter_incapacitated(entity_id)
+            }
+            Lifecycle::OnEmitterDefeated { .. } => {}
+            Lifecycle::ActivateCamera { triggered_by, .. } => {
+                engine.override_listener(Some(triggered_by))
+            }
+            Lifecycle::DeactivateCamera { .. } => engine.override_listener(None),
+            Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
+            Lifecycle::SetMuteInBackground { value } => {
+                if value != state.contains(Flags::MUTE_IN_BACKGROUND) {
+                    state.set(Flags::MUTE_IN_BACKGROUND, value);
+                }
+            }
+            Lifecycle::Session(Session::BeforeStart) => engine.reset(),
+            Lifecycle::Session(Session::Start) => {
+                state.set(Flags::LOADING, true);
+            }
+            Lifecycle::Session(Session::End) => {}
+            Lifecycle::Session(Session::BeforeEnd) => {
+                if state.contains(Flags::IN_GAME) {
+                    state.set(Flags::IN_GAME, false);
+                    engine.scene = None;
+                    engine.tracks.clear();
+                    engine.reset_callbacks();
+                }
+            }
+            Lifecycle::UIInGameNotificationRemove => {
+                if state.contains(Flags::LOADING) {
+                    engine.tracks.stop(DILATION_EASE_OUT);
+                }
+            }
+            Lifecycle::Session(Session::Ready) => {
+                if let Err(e) = engine.try_new_scene() {
+                    lifecycle!("failed to create new scene: {e}");
+                }
+                state.set(Flags::LOADING, false);
+                state.set(Flags::IN_MENU, false);
+                state.set(Flags::IN_GAME, true);
+            }
+            Lifecycle::Session(Session::Pause) => {
+                state.set(Flags::PAUSED, true);
+            }
+            Lifecycle::Session(Session::Resume) => {
+                state.set(Flags::PAUSED, false);
+            }
+            Lifecycle::SwitchToScenario(name) => {
+                if name == CName::new("MenuScenario_PauseMenu") {
+                    engine.pause();
+                }
+                state.set(Flags::IN_MENU, true);
+            }
+            Lifecycle::EngagementScreen => {
+                state.set(Flags::IN_GAME, false);
+            }
+            Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
+            Lifecycle::System(System::PlayerAttach) => {}
+            Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters_and_actors(),
+            Lifecycle::Board(Board::UIMenu(opened)) => {
+                state.set(Flags::IN_MENU, opened);
+                if state.contains(Flags::IN_GAME) {
+                    if opened {
+                        engine.pause();
+                    } else {
+                        engine.resume();
+                    }
+                }
+            }
+            Lifecycle::Replacement(x) => engine.pending_mutes.push(x),
+            Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
+            Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
+        }
+        true
+    };
+
     'game: loop {
-        // Block until any channel has data or any tick fires.
-        // This replaces the previous 100%-CPU busy-spin that heated one core
-        // for the entire game session. The select wakes us up on:
-        // - incoming lifecycle/command/callback/dynamic messages
-        // - the 15ms sync tick (also drives foreground-window checks)
-        // - the 3s/60s reclamation tick
-        // If nothing is happening (e.g. paused, in-menu, idle), the thread
-        // sleeps and yields the CPU core.
+        // Block briefly on the lifecycle channel to avoid a 100%-CPU
+        // busy-spin. This replaces the previous `loop { try_iter() }` that
+        // heated one CPU core for the entire game session.
         //
-        // We drop the returned `SelectedOperation` immediately, which
-        // cancels the operation — the message that woke us up stays in its
-        // channel and is picked up by the `try_iter()` drains below. This
-        // is safe because we create a fresh `Select` each iteration.
-        {
-            let mut sel = Select::new();
-            sel.recv(&rl);
-            sel.recv(&rc);
-            sel.recv(&re);
-            sel.recv(&rds);
-            sel.recv(&rde);
-            sel.recv(&synchronization);
-            sel.recv(&reclamation);
-            let _ = sel.select();
+        // We use `recv_timeout` on the lifecycle channel with a 15ms timeout:
+        // - If a lifecycle message arrives, we process it directly (the
+        //   message has been consumed by recv_timeout, so we must handle it
+        //   here, not in the try_iter drain below).
+        // - If the timeout fires, we fall through and drain whatever is
+        //   available on all channels. The 15ms matches the sync tick so we
+        //   wake up at roughly the same cadence as before.
+        // - If the channel is disconnected (engine thread shutting down), we
+        //   break the loop.
+        //
+        // Note: we DO NOT use crossbeam's `Select` here. Dropping the
+        // `SelectedOperation` without completing it caused the engine thread
+        // to die early in testing (likely due to internal state interactions
+        // with subsequent try_iter calls).
+        match rl.recv_timeout(ms(15)) {
+            Ok(l) => {
+                if !process_lifecycle(&mut state, &mut engine, l) {
+                    drop(engine);
+                    break 'game;
+                }
+            }
+            Err(crossbeam::channel::RecvTimeoutError::Timeout) => {}
+            Err(crossbeam::channel::RecvTimeoutError::Disconnected) => {
+                break 'game;
+            }
         }
         if state.contains(Flags::MUTE_IN_BACKGROUND) {
             if !is_in_foreground() {
@@ -186,156 +348,12 @@ pub fn run(
                 engine.mute(false);
             }
         }
+        // Drain any remaining lifecycle messages that queued up behind the
+        // one we already consumed via recv_timeout above.
         for l in rl.try_iter() {
-            lifecycle!("> {l}");
-            match l {
-                Lifecycle::Terminate => {
-                    drop(engine);
-                    break 'game;
-                }
-                Lifecycle::ReportInitialization => engine.report_initialization(false),
-                #[cfg(feature = "hot-reload")]
-                Lifecycle::HotReload => {
-                    engine.hot_reload();
-                    continue 'game;
-                }
-                Lifecycle::SetListenerDilation {
-                    value,
-                    reason,
-                    ease_in_curve,
-                } => engine.set_listener_dilation(DilationUpdate::Set {
-                    value,
-                    reason,
-                    ease_in_curve,
-                }),
-                Lifecycle::UnsetListenerDilation {
-                    reason,
-                    ease_out_curve,
-                } => engine.unset_listener_dilation(DilationUpdate::Unset {
-                    reason,
-                    ease_out_curve,
-                }),
-                Lifecycle::SetEmitterDilation {
-                    entity_id,
-                    value,
-                    ease_in_curve,
-                    reason,
-                } => engine.set_emitter_dilation(
-                    entity_id,
-                    DilationUpdate::Set {
-                        reason,
-                        value,
-                        ease_in_curve,
-                    },
-                ),
-                Lifecycle::UnsetEmitterDilation {
-                    entity_id,
-                    ease_out_curve,
-                } => engine.unset_emitter_dilation(
-                    entity_id,
-                    DilationUpdate::Unset {
-                        reason: CName::undefined(),
-                        ease_out_curve,
-                    },
-                ),
-                Lifecycle::SetEmitterOcclusion { entity_id, value } => {
-                    engine.set_emitter_occlusion(entity_id, value)
-                }
-                Lifecycle::RegisterEmitter {
-                    entity_id,
-                    tag_name,
-                    emitter_name,
-                    emitter_settings,
-                    sender,
-                } => {
-                    let registered = engine.register_emitter(
-                        *entity_id,
-                        *tag_name,
-                        emitter_name,
-                        emitter_settings.as_deref(),
-                    );
-                    let _ = sender.try_send(registered);
-                }
-                Lifecycle::UnregisterEmitter {
-                    entity_id,
-                    tag_name,
-                    sender,
-                } => {
-                    let unregistered = engine.unregister_emitter(*entity_id, *tag_name);
-                    let _ = sender.try_send(unregistered);
-                }
-                Lifecycle::OnEmitterDies { entity_id } => engine.on_emitter_dies(entity_id),
-                Lifecycle::OnEmitterIncapacitated { entity_id } => {
-                    engine.on_emitter_incapacitated(entity_id)
-                }
-                Lifecycle::OnEmitterDefeated { .. } => {}
-                Lifecycle::ActivateCamera { triggered_by, .. } => {
-                    engine.override_listener(Some(triggered_by))
-                }
-                Lifecycle::DeactivateCamera { .. } => engine.override_listener(None),
-                Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
-                Lifecycle::SetMuteInBackground { value } => {
-                    if value != state.contains(Flags::MUTE_IN_BACKGROUND) {
-                        state.set(Flags::MUTE_IN_BACKGROUND, value);
-                    }
-                }
-                Lifecycle::Session(Session::BeforeStart) => engine.reset(),
-                Lifecycle::Session(Session::Start) => {
-                    state.set(Flags::LOADING, true);
-                }
-                Lifecycle::Session(Session::End) => {}
-                Lifecycle::Session(Session::BeforeEnd) => {
-                    if state.contains(Flags::IN_GAME) {
-                        state.set(Flags::IN_GAME, false);
-                        engine.scene = None;
-                        engine.tracks.clear();
-                        engine.reset_callbacks();
-                    }
-                }
-                Lifecycle::UIInGameNotificationRemove => {
-                    if state.contains(Flags::LOADING) {
-                        engine.tracks.stop(DILATION_EASE_OUT);
-                    }
-                }
-                Lifecycle::Session(Session::Ready) => {
-                    if let Err(e) = engine.try_new_scene() {
-                        lifecycle!("failed to create new scene: {e}");
-                    }
-                    state.set(Flags::LOADING, false);
-                    state.set(Flags::IN_MENU, false);
-                    state.set(Flags::IN_GAME, true);
-                }
-                Lifecycle::Session(Session::Pause) => {
-                    state.set(Flags::PAUSED, true);
-                }
-                Lifecycle::Session(Session::Resume) => {
-                    state.set(Flags::PAUSED, false);
-                }
-                Lifecycle::SwitchToScenario(name) => {
-                    if name == CName::new("MenuScenario_PauseMenu") {
-                        engine.pause();
-                    }
-                    state.set(Flags::IN_MENU, true);
-                }
-                Lifecycle::EngagementScreen => {
-                    state.set(Flags::IN_GAME, false);
-                }
-                Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
-                Lifecycle::System(System::PlayerAttach) => {}
-                Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters_and_actors(),
-                Lifecycle::Board(Board::UIMenu(opened)) => {
-                    state.set(Flags::IN_MENU, opened);
-                    if state.contains(Flags::IN_GAME) {
-                        if opened {
-                            engine.pause();
-                        } else {
-                            engine.resume();
-                        }
-                    }
-                }
-                Lifecycle::Replacement(x) => engine.pending_mutes.push(x),
-                Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
-                Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
+            if !process_lifecycle(&mut state, &mut engine, l) {
+                drop(engine);
+                break 'game;
             }
         }
         engine.update_mutes();
