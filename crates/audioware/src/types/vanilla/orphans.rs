@@ -14,11 +14,12 @@ use super::PlayerPuppet;
 /// both rely on this to avoid crashing the engine thread (and the host game
 /// process) when the player is briefly unavailable during load transitions.
 pub fn get_player(game: GameInstance) -> Ref<PlayerPuppet> {
-    let Some(method) = (|| {
-        let rtti = RttiSystem::get();
-        let methods = rtti.get_global_functions();
-        methods.iter().find(|x| x.name() == CName::new("GetPlayer;GameInstance"))
-    })() else {
+    let rtti = RttiSystem::get();
+    let methods = rtti.get_global_functions();
+    let Some(method) = methods
+        .iter()
+        .find(|x| x.name() == CName::new("GetPlayer;GameInstance"))
+    else {
         return Ref::default();
     };
     match method.execute::<_, Ref<PlayerPuppet>>(None, (game,)) {

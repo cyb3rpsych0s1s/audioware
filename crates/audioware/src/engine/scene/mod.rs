@@ -66,18 +66,18 @@ impl Scene {
                     },
                 });
             }
-            let entity = v.cast::<Entity>();
-            if entity.is_null() {
+            // `Ref::cast` returns `Option<Ref<U>>` (None = type mismatch).
+            let Some(entity) = v.cast::<Entity>() else {
                 return Err(Error::Scene {
                     source: SceneError::MissingActor {
                         entity_id: EntityId::default(),
                     },
                 });
-            }
-            let d = entity.clone().cast::<TimeDilatable>();
-            let dilation = d
-                .as_ref()
-                .map(AsTimeDilatable::get_time_dilation_value)
+            };
+            let dilation = entity
+                .clone()
+                .cast::<TimeDilatable>()
+                .map(|d| d.get_time_dilation_value())
                 .unwrap_or(1.);
             (
                 entity.get_entity_id(),
@@ -219,10 +219,10 @@ impl Scene {
                     // a load transition.
                     return Ok(());
                 }
-                let entity = player.cast::<Entity>();
-                if entity.is_null() {
+                // `Ref::cast` returns `Option<Ref<U>>` (None = type mismatch).
+                let Some(entity) = player.cast::<Entity>() else {
                     return Ok(());
-                }
+                };
                 (entity.get_world_position(), entity.get_world_orientation())
             }
             Some(camera) => {

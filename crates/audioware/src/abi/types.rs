@@ -385,15 +385,15 @@ impl TargetId {
         // Player may be briefly unavailable during load transitions.
         // The previous code called `.expect("PlayerPuppet inherits from Entity")`
         // on the cast, which would crash the game process from a script thread.
-        // If we cannot resolve the player, treat the target id as invalid.
+        // If we cannot resolve the player or cast it, treat the target id as invalid.
         let player = get_player(GameInstance::new());
         if player.is_null() {
             return Err(ValidationError::InvalidTargetId);
         }
-        let entity = player.cast::<Entity>();
-        if entity.is_null() {
+        // `Ref::cast` returns `Option<Ref<U>>` (None = type mismatch).
+        let Some(entity) = player.cast::<Entity>() else {
             return Err(ValidationError::InvalidTargetId);
-        }
+        };
         if !value.is_defined() || entity.get_entity_id() == value {
             return Err(ValidationError::InvalidTargetId);
         }

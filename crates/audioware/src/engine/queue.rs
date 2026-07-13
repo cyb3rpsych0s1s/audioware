@@ -165,7 +165,7 @@ pub fn run(
         // channel and is picked up by the `try_iter()` drains below. This
         // is safe because we create a fresh `Select` each iteration.
         {
-            let sel = Select::new();
+            let mut sel = Select::new();
             sel.recv(&rl);
             sel.recv(&rc);
             sel.recv(&re);
