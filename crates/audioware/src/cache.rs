@@ -95,7 +95,7 @@ macro_rules! cache {
                     while let Some(&hdr) = list.front() {
                         if (&(*hdr)).generation + 2 < min_gen {
                             let h = Box::from_raw(hdr);
-                            let _ = Vec::from_raw_parts(h.ptr as *mut u64, h.len, h.capacity);
+                            let _ = Vec::from_raw_parts(h.ptr as *mut ($key, $value), h.len, h.capacity);
                             list.pop_front();
                         } else {
                             break;
