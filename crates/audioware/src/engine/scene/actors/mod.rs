@@ -53,7 +53,6 @@ impl Actors {
             let Ok(position) = Emitter::position(*k) else {
                 return false;
             };
-            v.last_known_position = position;
             v.set_emitter_position(position);
             true
         });

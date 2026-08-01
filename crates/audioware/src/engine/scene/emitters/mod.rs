@@ -182,10 +182,10 @@ impl Emitters {
             }
         });
         let mut next = vec![];
-        let before = next.len();
         with_entries(|x| {
             next = x.to_vec();
         });
+        let before = next.len();
         next.retain(|(id, _)| id != entity_id);
         let after = next.len();
         if before != after {

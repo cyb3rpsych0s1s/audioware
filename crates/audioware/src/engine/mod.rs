@@ -93,11 +93,13 @@ where
         {
             *BANKS.write() = Some(banks.clone());
         }
-        let mut manager = AudioManager::new(settings).map_err(|_| Error::Engine {
-            source: EngineError::Manager {
-                origin: "audio manager",
-            },
-        })?;
+        let mut manager = AudioManager::new(settings)
+            .inspect_err(|e| fails!("AudioManager creation failed: {e:?}"))
+            .map_err(|_| Error::Engine {
+                source: EngineError::Manager {
+                    origin: "audio manager",
+                },
+            })?;
         let modulators = Modulators::try_new(&mut manager)?;
         let tracks = Tracks::try_new(&mut manager, &modulators)?;
         Ok(Engine {
