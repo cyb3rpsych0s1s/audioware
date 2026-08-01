@@ -185,7 +185,7 @@ impl ToInterpolation for Ref<Tween> {
                     },
                 })
             }
-            _ => unreachable!(),
+            _ => None,
         }
     }
 }
