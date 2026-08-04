@@ -31,6 +31,7 @@ rust-ini = "0.21.1"
 snafu.workspace = true
 windows = {version = "0.62.2", features = ["Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader"]}
 debug-ignore = "1.0.5"
+hotpath = { workspace = true }
 
 [build-dependencies]
 semver = "1.0"
@@ -41,5 +42,7 @@ ignored = ["rust-ini"]
 [features]
 default = []
 research = []
+hotpath = ["hotpath/hotpath"]
+hotpath-alloc = ["hotpath/hotpath-alloc"]
 hot-reload = ["audioware-bank/hot-reload"]
 redengine = []

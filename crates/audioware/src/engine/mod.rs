@@ -80,6 +80,7 @@ impl<B: Backend> Drop for Engine<B> {
     }
 }
 
+#[hotpath::measure_all]
 impl<B> Engine<B>
 where
     B: Backend,
