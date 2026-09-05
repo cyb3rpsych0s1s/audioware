@@ -1,15 +1,18 @@
 macro_rules! cache {
     ($key:ty, $value:ty) => {
         mod cache {
-            #[repr(C, align(64))]
+            #[repr(C)]
             struct Header {
                 ptr: *const ($key, $value),
                 len: usize,
-                _pad: [u64; 6],
+                capacity: usize,
+                generation: u64,
             }
 
+            type PaddedHeader = ::crossbeam::utils::CachePadded<Header>;
+
             struct Retired {
-                pub(super) list: ::std::cell::UnsafeCell<::std::collections::VecDeque<(*mut Header, u64)>>,
+                pub(super) list: ::std::cell::UnsafeCell<::std::collections::VecDeque<*mut PaddedHeader>>,
             }
 
             /// Safety: single-writer invariant
@@ -21,7 +24,7 @@ macro_rules! cache {
             /// Safety: single-writer invariant
             unsafe impl Send for Retired {}
 
-            static CURRENT: ::std::sync::atomic::AtomicPtr<Header> = ::std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
+            static CURRENT: ::std::sync::atomic::AtomicPtr<PaddedHeader> = ::std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
             static GENERATION: ::std::sync::atomic::AtomicU64 = ::std::sync::atomic::AtomicU64::new(0);
 
             static RETIRED: ::std::sync::OnceLock<Retired> = ::std::sync::OnceLock::new();
@@ -46,8 +49,9 @@ macro_rules! cache {
                         let h = CURRENT.load(::std::sync::atomic::Ordering::Acquire);
                         if !h.is_null() {
                             unsafe {
-                                TLS_PTR.set((*h).ptr);
-                                TLS_LEN.set((*h).len);
+                                let header: &Header = &*h;
+                                TLS_PTR.set(header.ptr);
+                                TLS_LEN.set(header.len);
                                 g.set(generation);
                             }
                         }
@@ -67,18 +71,20 @@ macro_rules! cache {
 
                 let ptr = data.as_ptr();
                 let len = data.len();
+                let capacity = data.capacity();
                 std::mem::forget(data);
-                let header = Box::into_raw(Box::new(Header {
+                let generation = GENERATION.fetch_add(1, ::std::sync::atomic::Ordering::Release) + 1;
+                let header = Box::into_raw(Box::new(PaddedHeader::new(Header {
                     ptr,
                     len,
-                    _pad: [0; 6],
-                }));
+                    capacity,
+                    generation,
+                })));
                 let prev = CURRENT.swap(header, ::std::sync::atomic::Ordering::Release);
-                let generation = GENERATION.fetch_add(1, ::std::sync::atomic::Ordering::Release) + 1;
                 if !prev.is_null() {
                     unsafe {
                         let list = &mut *retired().list.get();
-                        list.push_back((prev, generation));
+                        list.push_back(prev);
                     }
                 }
             }
@@ -86,10 +92,10 @@ macro_rules! cache {
                 let min_gen = GENERATION.load(::std::sync::atomic::Ordering::Acquire);
                 unsafe {
                     let list = &mut *retired().list.get();
-                    while let Some(&(hdr, generation)) = list.front() {
-                        if generation + 2 < min_gen {
+                    while let Some(&hdr) = list.front() {
+                        if (&(*hdr)).generation + 2 < min_gen {
                             let h = Box::from_raw(hdr);
-                            let _ = Vec::from_raw_parts(h.ptr as *mut u64, h.len, h.len);
+                            let _ = Vec::from_raw_parts(h.ptr as *mut ($key, $value), h.len, h.capacity);
                             list.pop_front();
                         } else {
                             break;

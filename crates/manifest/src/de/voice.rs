@@ -56,7 +56,7 @@ impl From<&Dialog> for Audio {
 
 impl From<(&Dialog, Option<&Settings>)> for Audio {
     fn from(value: (&Dialog, Option<&Settings>)) -> Self {
-        let mut audio: Audio = value.into();
+        let mut audio: Audio = value.0.into();
         if let Some(settings) = value.1 {
             audio.merge_settings(settings.clone());
         }
@@ -227,9 +227,31 @@ impl From<Voice> for AnyVoice {
 #[cfg(test)]
 mod tests {
     mod unique_dialog {
+        use crate::{Audio, Dialog, Settings};
+
         use super::super::Voice;
-        use std::collections::HashMap;
+        use std::{collections::HashMap, path::PathBuf};
         use test_case::test_case;
+
+        #[test]
+        fn wrong_from() {
+            let dialog = Dialog {
+                basic: Audio {
+                    file: PathBuf::from("./somewhere/sfx.wav"),
+                    settings: None,
+                },
+                subtitle: "hello world".to_string(),
+            };
+            let settings = Some(Settings {
+                affected_by_time_dilation: Some(true),
+                ..Default::default()
+            });
+            let audio: Audio = (&dialog, settings.as_ref()).into();
+            assert_eq!(
+                audio.settings.and_then(|x| x.affected_by_time_dilation),
+                Some(true)
+            );
+        }
 
         #[test_case(r##"id:
     en-us: ./somewhere/sfx.wav"## ; "implicit on-demand unique dialog no subtitle")]

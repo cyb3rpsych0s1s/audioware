@@ -2,7 +2,7 @@ use std::{hash::Hash, time::Duration};
 
 use red4ext_rs::{PluginOps, ScriptClass, class_kind::Scripted, log, types::Ref};
 
-use crate::Audioware;
+use crate::{Audioware, utils::fails};
 
 use super::Easing;
 
@@ -118,6 +118,10 @@ impl ToTween for Ref<Tween> {
         if self.is_a::<ElasticTween>() {
             return self.clone().cast::<ElasticTween>().unwrap().into_tween();
         }
+        fails!(
+            "unsupported conversion to tween: {}",
+            <Self as red4ext_rs::NativeRepr>::NAME
+        );
         None
     }
 }

@@ -8,10 +8,10 @@ public native class AudioEventManager {
   public final func MuteSpecific(eventName: CName, eventType: [audioEventActionType])   { this.MuteSpecific(eventName, ToBits(eventType)); }
   public final func MuteSpecific(eventName: CName, eventType: EventHookType)            { this.MuteSpecific(eventName, ToBits(eventType)); }
   public final func MuteSpecific(eventName: CName, eventType: [EventHookType])          { this.MuteSpecific(eventName, ToBits(eventType)); }
-  public final func UnmuteSpecific(eventName: CName, eventType: audioEventActionType)   { this.MuteSpecific(eventName, ToBits(eventType)); }
-  public final func UnmuteSpecific(eventName: CName, eventType: [audioEventActionType]) { this.MuteSpecific(eventName, ToBits(eventType)); }
-  public final func UnmuteSpecific(eventName: CName, eventType: EventHookType)          { this.MuteSpecific(eventName, ToBits(eventType)); }
-  public final func UnmuteSpecific(eventName: CName, eventType: [EventHookType])        { this.MuteSpecific(eventName, ToBits(eventType)); }
+  public final func UnmuteSpecific(eventName: CName, eventType: audioEventActionType)   { this.UnmuteSpecific(eventName, ToBits(eventType)); }
+  public final func UnmuteSpecific(eventName: CName, eventType: [audioEventActionType]) { this.UnmuteSpecific(eventName, ToBits(eventType)); }
+  public final func UnmuteSpecific(eventName: CName, eventType: EventHookType)          { this.UnmuteSpecific(eventName, ToBits(eventType)); }
+  public final func UnmuteSpecific(eventName: CName, eventType: [EventHookType])        { this.UnmuteSpecific(eventName, ToBits(eventType)); }
   public final func IsSpecificMuted(eventName: CName, eventType: audioEventActionType) -> Bool = this.IsSpecificMuted(eventName, ToBits(eventType));
   public final func IsSpecificMuted(eventName: CName, eventType: EventHookType) -> Bool = this.IsSpecificMuted(eventName, ToBits(eventType));
   public final native func IsSpecificMuted(eventName: CName, eventTypeBits: Uint32) -> Bool;

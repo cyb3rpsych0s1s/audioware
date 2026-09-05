@@ -17,9 +17,9 @@ audioware-core.workspace = true
 audioware-bank = { workspace = true }
 audioware-manifest.workspace = true
 bitflags = "2.9.1"
-cpal = "0.17.3"
+cpal = "0.18.1"
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
-dashmap = { version = "6.1.0", features = ["inline", "rayon"] }
+dashmap = { version = "6.2.1", features = ["inline", "rayon"] }
 either.workspace = true
 glam = { workspace = true, features = ["mint"] }
 humantime.workspace = true
@@ -29,7 +29,7 @@ parking_lot = "0.12.4"
 red4ext-rs.workspace = true
 rust-ini = "0.21.1"
 snafu.workspace = true
-windows = {version = "0.61.3", features = ["Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader"]}
+windows = {version = "0.62.2", features = ["Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader"]}
 debug-ignore = "1.0.5"
 
 [build-dependencies]

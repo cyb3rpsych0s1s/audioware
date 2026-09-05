@@ -797,5 +797,8 @@ pub fn ensure_scene_dialogs<'a>(
             }
         }
     };
-    Ok(())
+    errors
+        .is_empty()
+        .then_some(())
+        .ok_or(Error::Multiple { errors })
 }

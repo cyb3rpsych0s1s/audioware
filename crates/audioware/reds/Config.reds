@@ -12,6 +12,7 @@ public class AudiowareConfig {
     @runtimeProperty("ModSettings.displayValues.Option256", "256 Samples")
     @runtimeProperty("ModSettings.displayValues.Option512", "512 Samples")
     @runtimeProperty("ModSettings.displayValues.Option1024", "1024 Samples")
+    @runtimeProperty("ModSettings.displayValues.Option2048", "2048 Samples")
     public let bufferSize: BufferSize = BufferSize.Auto;
 }
 
@@ -23,4 +24,5 @@ enum BufferSize {
     Option256 = 3,
     Option512 = 4,
     Option1024 = 5,
+    Option2048 = 6,
 }

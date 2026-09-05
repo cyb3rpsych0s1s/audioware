@@ -48,15 +48,15 @@ impl Plugin for Audioware {
         if let Some(thread) = THREAD.get() {
             loop {
                 if let Ok(mut guard) = thread.try_lock() {
-                    if let Some(thread) = guard.take() {
-                        while !thread.is_finished() {
-                            continue;
-                        }
-                        if let Err(e) = thread.join() {
-                            fails!("unable to join thread: {e:?}");
-                        }
+                    if let Some(thread) = guard.take()
+                        && let Err(e) = thread.join()
+                    {
+                        fails!("unable to join thread: {e:?}");
                     }
                     break;
+                } else {
+                    // Contended (rare) — yield the time slice instead of spinning.
+                    std::thread::yield_now();
                 }
             }
         }

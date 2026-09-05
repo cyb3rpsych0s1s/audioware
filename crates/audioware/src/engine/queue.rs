@@ -1,7 +1,7 @@
 use std::{sync::OnceLock, thread::JoinHandle, time::Duration};
 
 use bitflags::bitflags;
-use crossbeam::channel::{Receiver, Sender, bounded, tick, unbounded};
+use crossbeam::channel::{Receiver, Select, Sender, bounded, tick, unbounded};
 use kira::{
     AudioManagerSettings,
     backend::cpal::{CpalBackend, CpalBackendSettings},
@@ -165,6 +165,46 @@ pub fn run(
     let synchronization = tick(ms(15));
     let mut state = Flags::LOADING | Flags::MUTE_IN_BACKGROUND;
     'game: loop {
+        let mut sel = Select::new();
+        let oi_lifecycle = sel.recv(&rl);
+        let oi_command = sel.recv(&rc);
+        let oi_callback = sel.recv(&re);
+        let oi_dsound = sel.recv(&rds);
+        let oi_demitter = sel.recv(&rde);
+        let oi_deffect = sel.recv(&rdf);
+        let oi_sync = sel.recv(&synchronization);
+        let oi_reclaim = sel.recv(&reclamation);
+        let oper = sel.select_timeout(ms(15));
+
+        let mut pre_lifecycle: Option<Lifecycle> = None;
+        let mut pre_command: Option<Command> = None;
+        let mut pre_callback: Option<Callback> = None;
+        let mut pre_dsound: Option<DynamicSound> = None;
+        let mut pre_demitter: Option<DynamicEmitter> = None;
+        let mut pre_deffect: Option<DynamicEffectMsg> = None;
+        let mut sync_fired = false;
+        let mut reclaim_fired = false;
+
+        if let Ok(oper) = oper {
+            match oper.index() {
+                i if i == oi_lifecycle => pre_lifecycle = oper.recv(&rl).ok(),
+                i if i == oi_command => pre_command = oper.recv(&rc).ok(),
+                i if i == oi_callback => pre_callback = oper.recv(&re).ok(),
+                i if i == oi_dsound => pre_dsound = oper.recv(&rds).ok(),
+                i if i == oi_demitter => pre_demitter = oper.recv(&rde).ok(),
+                i if i == oi_deffect => pre_deffect = oper.recv(&rdf).ok(),
+                i if i == oi_sync => {
+                    let _ = oper.recv(&synchronization);
+                    sync_fired = true;
+                }
+                i if i == oi_reclaim => {
+                    let _ = oper.recv(&reclamation);
+                    reclaim_fired = true;
+                }
+                _ => unreachable!(),
+            }
+        }
+
         if state.contains(Flags::MUTE_IN_BACKGROUND) {
             if !is_in_foreground() {
                 if state.contains(Flags::FOCUSED) {
@@ -176,10 +216,8 @@ pub fn run(
                 engine.mute(false);
             }
         }
-        for l in rl.try_iter() {
-            if !(matches!(l, Lifecycle::SetEmitterOcclusion { .. })) {
-                lifecycle!("> {l}");
-            }
+        for l in pre_lifecycle.into_iter().chain(rl.try_iter()) {
+            lifecycle!("> {l}");
             match l {
                 Lifecycle::Terminate => {
                     drop(engine);
@@ -335,16 +373,16 @@ pub fn run(
         engine.update_mutes();
         if state.should_sync()
             && (engine.any_emitter() || engine.any_actor())
-            && synchronization.try_recv().is_ok()
+            && (sync_fired || synchronization.try_recv().is_ok())
         {
             engine.sync_scene();
         }
-        if engine.any_handle() && reclamation.try_recv().is_ok() {
+        if engine.any_handle() && (reclaim_fired || reclamation.try_recv().is_ok()) {
             engine.reclaim();
             engine.reclaim_mutes();
             engine.reclaim_callbacks();
         }
-        for c in rc.try_iter().take(8) {
+        for c in pre_command.into_iter().chain(rc.try_iter()).take(8) {
             lifecycle!("> {c}");
             match c {
                 Command::PlayVanilla {
@@ -470,7 +508,7 @@ pub fn run(
                 ),
             }
         }
-        for d in rds.try_iter().take(8) {
+        for d in pre_dsound.into_iter().chain(rds.try_iter()).take(8) {
             lifecycle!("> {d}");
             match d {
                 DynamicSound::SetVolume { id, value, tween } => {
@@ -521,7 +559,7 @@ pub fn run(
                 }
             }
         }
-        for de in rde.try_iter().take(8) {
+        for de in pre_demitter.into_iter().chain(rde.try_iter()).take(8) {
             lifecycle!("> {de}");
             if let Some(scene) = engine.scene.as_mut() {
                 match de {
@@ -555,7 +593,7 @@ pub fn run(
                 }
             }
         }
-        for df in rdf.try_iter() {
+        for df in pre_deffect.into_iter().chain(rdf.try_iter()) {
             lifecycle!("~ {df}");
             if let Some(scene) = engine.scene.as_mut() {
                 match df {
@@ -697,7 +735,7 @@ pub fn run(
                 }
             }
         }
-        for e in re.try_iter() {
+        for e in pre_callback.into_iter().chain(re.try_iter()) {
             lifecycle!("~ {e}");
             match e {
                 Callback::FireCallbacks(x) => engine.dispatch(x),

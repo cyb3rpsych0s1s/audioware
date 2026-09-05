@@ -166,23 +166,23 @@ impl<B: Backend> Engine<B> {
                     let before = next.len();
                     next.retain(|x| x.0 != event_name);
                     let after = next.len();
-                    should_publish = before != after;
+                    should_publish |= before != after;
                 }
                 ReplacementNotification::UnmuteSpecific(event_name, event_hook_types) => {
                     let before = next.len();
                     next.retain_mut(|x| {
                         if x.0 != event_name {
                             true
-                        } else if x.1.intersection(event_hook_types).is_empty() {
-                            false
                         } else {
-                            x.1.set(event_hook_types, false);
-                            should_publish = true;
-                            true
+                            if x.1.intersects(event_hook_types) {
+                                x.1.set(event_hook_types, false);
+                                should_publish = true;
+                            }
+                            !x.1.is_empty()
                         }
                     });
                     let after = next.len();
-                    should_publish = before != after;
+                    should_publish |= before != after;
                 }
             }
         }
