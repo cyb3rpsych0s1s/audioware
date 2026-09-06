@@ -13,16 +13,23 @@ use crate::{
     AsEntity, AsIComponent, AsScriptedPuppet, AsTimeDilatable, AvObject, BikeObject,
     CameraComponent, CarObject, ControlId, Device, Entity, GamedataNpcType, IComponent,
     ScriptedPuppet, TankObject, TimeDilatable, VehicleObject,
+    abi::DynamicEffect,
     engine::{
         scene::actors::{Actors, slot::ActorSlot},
         tracks::Spatial,
         traits::{
             clear::Clear,
+            compressor::SetControlledCompressor,
+            delay::SetControlledDelay,
+            distortion::SetControlledDistortion,
+            eq::SetControlledEq,
+            filter::SetControlledFilter,
             pause::{Pause, PauseControlled},
             playback::SetControlledPlaybackRate,
             position::PositionControlled,
             reclaim::Reclaim,
             resume::{Resume, ResumeControlled, ResumeControlledAt},
+            reverb::SetControlledReverb,
             seek::{SeekControlledBy, SeekControlledTo},
             stop::{Stop, StopControlled},
             volume::SetControlledVolume,
@@ -85,6 +92,7 @@ impl Scene {
         tag_name: CName,
         emitter_name: Option<CName>,
         settings: Option<&(SpatialTrackSettings, NonZero<u64>)>,
+        effects: &mut [DebugIgnore<Ref<DynamicEffect>>],
         ambience: &Ambience,
     ) -> Result<(), Error> {
         if entity_id == self.v.id {
@@ -111,7 +119,14 @@ impl Scene {
             },
         };
         lifecycle!("emitter settings after {:?} [{entity_id}]", mapped);
-        let handle = Spatial::try_new(manager, self.v.handle.id(), position, mapped, ambience)?;
+        let handle = Spatial::try_new(
+            manager,
+            self.v.handle.id(),
+            position,
+            mapped,
+            effects,
+            ambience,
+        )?;
         self.emitters.add_emitter(
             handle,
             entity_id,
@@ -158,6 +173,7 @@ impl Scene {
             self.v.handle.id(),
             position,
             settings.clone(),
+            Vec::new().as_mut_slice(),
             ambience,
         )?;
         let slot = ActorSlot::new(handle, position);
@@ -506,5 +522,147 @@ impl SeekControlledTo for Scene {
 impl SeekControlledBy for Scene {
     fn seek_controlled_by(&mut self, id: ControlId, amount: f64) {
         self.emitters.seek_controlled_by(id, amount);
+    }
+}
+
+impl SetControlledEq for Scene {
+    fn set_controlled_kind(&mut self, id: ControlId, kind: kira::effect::eq_filter::EqFilterKind) {
+        SetControlledEq::set_controlled_kind(&mut self.emitters, id, kind);
+    }
+
+    fn set_controlled_frequency(&mut self, id: ControlId, frequency: f64, tween: Tween) {
+        self.emitters.set_controlled_frequency(id, frequency, tween);
+    }
+
+    fn set_controlled_gain(&mut self, id: ControlId, gain: audioware_core::Decibels, tween: Tween) {
+        self.emitters.set_controlled_gain(id, gain, tween);
+    }
+
+    fn set_controlled_q(&mut self, id: ControlId, q: f64, tween: Tween) {
+        self.emitters.set_controlled_q(id, q, tween);
+    }
+}
+
+impl SetControlledDistortion for Scene {
+    fn set_controlled_kind(
+        &mut self,
+        id: ControlId,
+        kind: kira::effect::distortion::DistortionKind,
+    ) {
+        SetControlledDistortion::set_controlled_kind(&mut self.emitters, id, kind);
+    }
+
+    fn set_controlled_drive(
+        &mut self,
+        id: ControlId,
+        drive: audioware_core::Decibels,
+        tween: Tween,
+    ) {
+        self.emitters.set_controlled_drive(id, drive, tween);
+    }
+
+    fn set_controlled_mix(&mut self, id: ControlId, mix: f32, tween: Tween) {
+        SetControlledDistortion::set_controlled_mix(&mut self.emitters, id, mix, tween);
+    }
+}
+
+impl SetControlledDelay for Scene {
+    fn set_controlled_feedback(
+        &mut self,
+        id: ControlId,
+        feedback: audioware_core::Decibels,
+        tween: Tween,
+    ) {
+        SetControlledDelay::set_controlled_feedback(&mut self.emitters, id, feedback, tween);
+    }
+
+    fn set_controlled_mix(&mut self, id: ControlId, mix: f32, tween: Tween) {
+        SetControlledDelay::set_controlled_mix(&mut self.emitters, id, mix, tween);
+    }
+}
+
+impl SetControlledCompressor for Scene {
+    fn set_controlled_threshold(
+        &mut self,
+        id: ControlId,
+        threshold: audioware_core::Decibels,
+        tween: Tween,
+    ) {
+        self.emitters.set_controlled_threshold(id, threshold, tween);
+    }
+
+    fn set_controlled_ratio(&mut self, id: ControlId, ratio: f32, tween: Tween) {
+        self.emitters.set_controlled_ratio(id, ratio, tween);
+    }
+
+    fn set_controlled_attack_duration(
+        &mut self,
+        id: ControlId,
+        attack_duration: std::time::Duration,
+        tween: Tween,
+    ) {
+        self.emitters
+            .set_controlled_attack_duration(id, attack_duration, tween);
+    }
+
+    fn set_controlled_release_duration(
+        &mut self,
+        id: ControlId,
+        release_duration: std::time::Duration,
+        tween: Tween,
+    ) {
+        self.emitters
+            .set_controlled_release_duration(id, release_duration, tween);
+    }
+
+    fn set_controlled_makeup_gain(
+        &mut self,
+        id: ControlId,
+        makeup_gain: audioware_core::Decibels,
+        tween: Tween,
+    ) {
+        self.emitters
+            .set_controlled_makeup_gain(id, makeup_gain, tween);
+    }
+
+    fn set_controlled_mix(&mut self, id: ControlId, mix: f32, tween: Tween) {
+        SetControlledCompressor::set_controlled_mix(&mut self.emitters, id, mix, tween);
+    }
+}
+
+impl SetControlledFilter for Scene {
+    fn set_controlled_mode(&mut self, id: ControlId, mode: kira::effect::filter::FilterMode) {
+        self.emitters.set_controlled_mode(id, mode);
+    }
+
+    fn set_controlled_cutoff(&mut self, id: ControlId, cutoff: f32, tween: Tween) {
+        self.emitters.set_controlled_cutoff(id, cutoff, tween);
+    }
+
+    fn set_controlled_resonance(&mut self, id: ControlId, resonance: f32, tween: Tween) {
+        self.emitters.set_controlled_resonance(id, resonance, tween);
+    }
+
+    fn set_controlled_mix(&mut self, id: ControlId, mix: f32, tween: Tween) {
+        SetControlledFilter::set_controlled_mix(&mut self.emitters, id, mix, tween);
+    }
+}
+
+impl SetControlledReverb for Scene {
+    fn set_controlled_feedback(&mut self, id: ControlId, feedback: f32, tween: Tween) {
+        SetControlledReverb::set_controlled_feedback(&mut self.emitters, id, feedback, tween);
+    }
+
+    fn set_controlled_damping(&mut self, id: ControlId, damping: f32, tween: Tween) {
+        self.emitters.set_controlled_damping(id, damping, tween);
+    }
+
+    fn set_controlled_stereo_width(&mut self, id: ControlId, stereo_width: f32, tween: Tween) {
+        self.emitters
+            .set_controlled_stereo_width(id, stereo_width, tween);
+    }
+
+    fn set_controlled_mix(&mut self, id: ControlId, mix: f32, tween: Tween) {
+        SetControlledReverb::set_controlled_mix(&mut self.emitters, id, mix, tween);
     }
 }

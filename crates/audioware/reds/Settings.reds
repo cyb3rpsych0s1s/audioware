@@ -29,4 +29,5 @@ public class EmitterSettings {
     public let affectedByReverbMix: Bool = true;
     public let affectedByEnvironmentalPreset: Bool = false;
     public let enableOcclusion: Bool = false;
+    public let effects: array<ref<DynamicEffect>>;
 }

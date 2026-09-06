@@ -10,13 +10,19 @@ use crate::{
 };
 
 pub mod clear;
+pub mod compressor;
+pub mod delay;
 pub mod dilation;
+pub mod distortion;
+pub mod eq;
+pub mod filter;
 pub mod panning;
 pub mod pause;
 pub mod playback;
 pub mod position;
 pub mod reclaim;
 pub mod resume;
+pub mod reverb;
 pub mod seek;
 pub mod stop;
 pub mod store;

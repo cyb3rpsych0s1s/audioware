@@ -14,6 +14,10 @@ use crate::{
         callback::Callback,
         command::Command,
         control::{DynamicEmitter, DynamicSound},
+        effect::{
+            DynamicCompressorMsg, DynamicDelayMsg, DynamicDistortionMsg, DynamicEQMsg,
+            DynamicEffectMsg, DynamicFilterMsg, DynamicReverbMsg,
+        },
         is_in_foreground,
         lifecycle::{Board, Lifecycle, Session, System},
     },
@@ -22,11 +26,17 @@ use crate::{
         DilationUpdate,
         callbacks::Dispatch,
         traits::{
+            compressor::SetControlledCompressor,
+            delay::SetControlledDelay,
+            distortion::SetControlledDistortion,
+            eq::SetControlledEq,
+            filter::SetControlledFilter,
             panning::SetControlledPanning,
             pause::PauseControlled,
             playback::SetControlledPlaybackRate,
             position::PositionControlled,
             resume::{ResumeControlled, ResumeControlledAt},
+            reverb::SetControlledReverb,
             seek::{SeekControlledBy, SeekControlledTo},
             stop::StopControlled,
             volume::SetControlledVolume,
@@ -92,6 +102,7 @@ static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
 static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
 static DYNAMIC_SOUNDS: OnceLock<RwLock<Option<Sender<DynamicSound>>>> = OnceLock::new();
 static DYNAMIC_EMITTERS: OnceLock<RwLock<Option<Sender<DynamicEmitter>>>> = OnceLock::new();
+static DYNAMIC_EFFECTS: OnceLock<RwLock<Option<Sender<DynamicEffectMsg>>>> = OnceLock::new();
 
 fn load() -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
@@ -123,13 +134,15 @@ pub fn spawn() -> Result<(), Error> {
                 let (se, re) = unbounded::<Callback>();
                 let (sds, rds) = bounded::<DynamicSound>(capacity);
                 let (sde, rde) = bounded::<DynamicEmitter>(capacity);
+                let (sdf, rdf) = bounded::<DynamicEffectMsg>(capacity);
                 let _ = LIFECYCLE.set(RwLock::new(Some(sl)));
                 let _ = COMMAND.set(RwLock::new(Some(sc)));
                 let _ = CALLBACKS.set(RwLock::new(Some(se)));
                 let _ = DYNAMIC_SOUNDS.set(RwLock::new(Some(sds)));
                 let _ = DYNAMIC_EMITTERS.set(RwLock::new(Some(sde)));
+                let _ = DYNAMIC_EFFECTS.set(RwLock::new(Some(sdf)));
                 lifecycle!("initialized channels");
-                self::run(rl, rc, re, rds, rde, engine);
+                self::run(rl, rc, re, rds, rde, rdf, engine);
             })?,
     )));
     lifecycle!("spawned plugin thread");
@@ -142,6 +155,7 @@ pub fn run(
     re: Receiver<Callback>,
     rds: Receiver<DynamicSound>,
     rde: Receiver<DynamicEmitter>,
+    rdf: Receiver<DynamicEffectMsg>,
     mut engine: Engine<CpalBackend>,
 ) {
     crate::utils::lifecycle!("run engine thread");
@@ -157,6 +171,7 @@ pub fn run(
         let oi_callback = sel.recv(&re);
         let oi_dsound = sel.recv(&rds);
         let oi_demitter = sel.recv(&rde);
+        let oi_deffect = sel.recv(&rdf);
         let oi_sync = sel.recv(&synchronization);
         let oi_reclaim = sel.recv(&reclamation);
         let oper = sel.select_timeout(ms(15));
@@ -166,6 +181,7 @@ pub fn run(
         let mut pre_callback: Option<Callback> = None;
         let mut pre_dsound: Option<DynamicSound> = None;
         let mut pre_demitter: Option<DynamicEmitter> = None;
+        let mut pre_deffect: Option<DynamicEffectMsg> = None;
         let mut sync_fired = false;
         let mut reclaim_fired = false;
 
@@ -176,6 +192,7 @@ pub fn run(
                 i if i == oi_callback => pre_callback = oper.recv(&re).ok(),
                 i if i == oi_dsound => pre_dsound = oper.recv(&rds).ok(),
                 i if i == oi_demitter => pre_demitter = oper.recv(&rde).ok(),
+                i if i == oi_deffect => pre_deffect = oper.recv(&rdf).ok(),
                 i if i == oi_sync => {
                     let _ = oper.recv(&synchronization);
                     sync_fired = true;
@@ -259,6 +276,7 @@ pub fn run(
                     tag_name,
                     emitter_name,
                     emitter_settings,
+                    mut emitter_effects,
                     sender,
                 } => {
                     let registered = engine.register_emitter(
@@ -266,6 +284,7 @@ pub fn run(
                         *tag_name,
                         emitter_name,
                         emitter_settings.as_deref(),
+                        emitter_effects.as_mut_slice(),
                     );
                     let _ = sender.try_send(registered);
                 }
@@ -574,6 +593,148 @@ pub fn run(
                 }
             }
         }
+        for df in pre_deffect.into_iter().chain(rdf.try_iter()) {
+            lifecycle!("~ {df}");
+            if let Some(scene) = engine.scene.as_mut() {
+                match df {
+                    DynamicEffectMsg::EQ(DynamicEQMsg::SetKind { id, kind }) => {
+                        SetControlledEq::set_controlled_kind(scene, id, kind);
+                    }
+                    DynamicEffectMsg::EQ(DynamicEQMsg::SetFrequency { id, value, tween }) => scene
+                        .set_controlled_frequency(id, value as f64, tween.unwrap_or(IMMEDIATELY)),
+                    DynamicEffectMsg::EQ(DynamicEQMsg::SetGain { id, value, tween }) => {
+                        scene.set_controlled_gain(id, value, tween.unwrap_or(IMMEDIATELY))
+                    }
+                    DynamicEffectMsg::EQ(DynamicEQMsg::SetQ { id, value, tween }) => {
+                        scene.set_controlled_q(id, value as f64, tween.unwrap_or(IMMEDIATELY))
+                    }
+                    DynamicEffectMsg::Distortion(DynamicDistortionMsg::SetKind { id, kind }) => {
+                        SetControlledDistortion::set_controlled_kind(scene, id, kind);
+                    }
+                    DynamicEffectMsg::Distortion(DynamicDistortionMsg::SetDrive {
+                        id,
+                        value,
+                        tween,
+                    }) => scene.set_controlled_drive(id, value, tween.unwrap_or(IMMEDIATELY)),
+                    DynamicEffectMsg::Distortion(DynamicDistortionMsg::SetMix {
+                        id,
+                        value,
+                        tween,
+                    }) => SetControlledDistortion::set_controlled_mix(
+                        scene,
+                        id,
+                        value,
+                        tween.unwrap_or(IMMEDIATELY),
+                    ),
+                    DynamicEffectMsg::Delay(DynamicDelayMsg::SetFeedback { id, value, tween }) => {
+                        SetControlledDelay::set_controlled_feedback(
+                            scene,
+                            id,
+                            value,
+                            tween.unwrap_or(IMMEDIATELY),
+                        );
+                    }
+                    DynamicEffectMsg::Delay(DynamicDelayMsg::SetMix { id, value, tween }) => {
+                        SetControlledDelay::set_controlled_mix(
+                            scene,
+                            id,
+                            value,
+                            tween.unwrap_or(IMMEDIATELY),
+                        )
+                    }
+                    DynamicEffectMsg::Compressor(DynamicCompressorMsg::SetThreshold {
+                        id,
+                        value,
+                        tween,
+                    }) => scene.set_controlled_threshold(id, value, tween.unwrap_or(IMMEDIATELY)),
+                    DynamicEffectMsg::Compressor(DynamicCompressorMsg::SetRatio {
+                        id,
+                        value,
+                        tween,
+                    }) => scene.set_controlled_ratio(id, value, tween.unwrap_or(IMMEDIATELY)),
+                    DynamicEffectMsg::Compressor(DynamicCompressorMsg::SetAttackDuration {
+                        id,
+                        value,
+                        tween,
+                    }) => scene.set_controlled_attack_duration(
+                        id,
+                        value,
+                        tween.unwrap_or(IMMEDIATELY),
+                    ),
+                    DynamicEffectMsg::Compressor(DynamicCompressorMsg::SetReleaseDuration {
+                        id,
+                        value,
+                        tween,
+                    }) => scene.set_controlled_release_duration(
+                        id,
+                        value,
+                        tween.unwrap_or(IMMEDIATELY),
+                    ),
+                    DynamicEffectMsg::Compressor(DynamicCompressorMsg::SetMakeupGain {
+                        id,
+                        value,
+                        tween,
+                    }) => scene.set_controlled_makeup_gain(id, value, tween.unwrap_or(IMMEDIATELY)),
+                    DynamicEffectMsg::Compressor(DynamicCompressorMsg::SetMix {
+                        id,
+                        value,
+                        tween,
+                    }) => SetControlledCompressor::set_controlled_mix(
+                        scene,
+                        id,
+                        value,
+                        tween.unwrap_or(IMMEDIATELY),
+                    ),
+                    DynamicEffectMsg::Filter(DynamicFilterMsg::SetMode { id, value }) => {
+                        scene.set_controlled_mode(id, value)
+                    }
+                    DynamicEffectMsg::Filter(DynamicFilterMsg::SetCutoff { id, value, tween }) => {
+                        scene.set_controlled_cutoff(id, value, tween.unwrap_or(IMMEDIATELY))
+                    }
+                    DynamicEffectMsg::Filter(DynamicFilterMsg::SetResonance {
+                        id,
+                        value,
+                        tween,
+                    }) => scene.set_controlled_resonance(id, value, tween.unwrap_or(IMMEDIATELY)),
+                    DynamicEffectMsg::Filter(DynamicFilterMsg::SetMix { id, value, tween }) => {
+                        SetControlledFilter::set_controlled_mix(
+                            scene,
+                            id,
+                            value,
+                            tween.unwrap_or(IMMEDIATELY),
+                        )
+                    }
+                    DynamicEffectMsg::Reverb(DynamicReverbMsg::SetFeedback {
+                        id,
+                        value,
+                        tween,
+                    }) => SetControlledReverb::set_controlled_feedback(
+                        scene,
+                        id,
+                        value,
+                        tween.unwrap_or(IMMEDIATELY),
+                    ),
+                    DynamicEffectMsg::Reverb(DynamicReverbMsg::SetDamping { id, value, tween }) => {
+                        scene.set_controlled_damping(id, value, tween.unwrap_or(IMMEDIATELY))
+                    }
+                    DynamicEffectMsg::Reverb(DynamicReverbMsg::SetStereoWidth {
+                        id,
+                        value,
+                        tween,
+                    }) => {
+                        scene.set_controlled_stereo_width(id, value, tween.unwrap_or(IMMEDIATELY))
+                    }
+                    DynamicEffectMsg::Reverb(DynamicReverbMsg::SetMix { id, value, tween }) => {
+                        SetControlledReverb::set_controlled_mix(
+                            scene,
+                            id,
+                            value,
+                            tween.unwrap_or(IMMEDIATELY),
+                        )
+                    }
+                }
+            }
+        }
         for e in pre_callback.into_iter().chain(re.try_iter()) {
             lifecycle!("~ {e}");
             match e {
@@ -592,6 +753,9 @@ pub fn run(
     let _ = COMMAND
         .get()
         .and_then(|x| x.write().ok().map(|mut x| x.take()));
+    let _ = DYNAMIC_EFFECTS
+        .get()
+        .and_then(|x| x.write().ok().map(|mut x| x.take()));
     let _ = DYNAMIC_SOUNDS
         .get()
         .and_then(|x| x.write().ok().map(|mut x| x.take()));
@@ -603,7 +767,9 @@ pub fn run(
 
 pub fn notify<T: Into<Lifecycle>>(lifecycle: T) {
     let lifecycle = lifecycle.into();
-    lifecycle!("{lifecycle}");
+    if !(matches!(lifecycle, Lifecycle::SetEmitterOcclusion { .. })) {
+        lifecycle!("{lifecycle}");
+    }
     if let Some(x) = LIFECYCLE.get() {
         if let Ok(x) = x.try_read() {
             if let Some(x) = x.as_ref()
@@ -682,6 +848,24 @@ pub fn control_emitter(control: DynamicEmitter) {
             }
         } else {
             fails!("plugin control channel is not initialized");
+        }
+    } else {
+        fails!("plugin game loop is not initialized");
+    }
+}
+
+pub fn control_filter(control: impl Into<DynamicEffectMsg>) {
+    let control = control.into();
+    lifecycle!("{control}");
+    if let Some(x) = DYNAMIC_EFFECTS.get() {
+        if let Ok(x) = x.try_read() {
+            if let Some(x) = x.as_ref()
+                && let Err(e) = x.try_send(control)
+            {
+                fails!("failed to send filter control: {e}");
+            }
+        } else {
+            fails!("filter control channel is not initialized");
         }
     } else {
         fails!("plugin game loop is not initialized");
