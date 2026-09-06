@@ -131,6 +131,6 @@ public native class DynamicReverb extends DynamicEffect {
   // Valid mix values range from 0.0 to 1.0, where 0.0 is the dry signal only, 1.0 is the wet signal only, and 0.5 is an equal mix of both.
   public native func SetMix(mix: Float, opt tween: ref<Tween>);
 
-  public native static func Create(feedback: Float, damping: Float, stereoWidth: Float, mix: Float) -> ref<DynamicFilter>;
+  public native static func Create(feedback: Float, damping: Float, stereoWidth: Float, mix: Float) -> ref<DynamicReverb>;
 }
 
