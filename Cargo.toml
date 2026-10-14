@@ -21,9 +21,17 @@ audioware-bank = { path = "crates/bank" }
 either = "1.15.0"
 glam = "0.33.0"
 humantime = "2.3"
-kira = { git = "https://github.com/Roms1383/kira", rev = "10e78eea757d564530c6d04d8d98849650b94862", features = ["serde"] }
+# macOS port (branch macos-dev): no git downloads on the build machine, so kira and red4ext-rs come from local checkouts next to this one.
+# - kira: ports/kira-roms1383 is Roms1383's fork at the very commit the upstream line below pins (10e78eea); nothing is patched.
+#   A public build keeps the upstream line:
+#   kira = { git = "https://github.com/Roms1383/kira", rev = "10e78eea757d564530c6d04d8d98849650b94862", features = ["serde"] }
+# - red4ext-rs: ports/red4ext-rs-mac is branch macos-dev of our fork (jac3km4/red4ext-rs d419d98 plus the macOS port). A public build
+#   pins the fork instead (rev = a pushed commit of branch macos-dev; the Windows lines of the fork are unchanged):
+#   red4ext-rs = { git = "https://github.com/codeman101/red4ext-rs", rev = "<macos-dev commit>" }
+#   red4ext-rs builds RED4ext.SDK with CMake; on macOS it needs RED4EXT_SDK_DIR=<checkout of RED4ext.SDK-macos branch mac-rs>.
+kira = { path = "../kira-roms1383/crates/kira", features = ["serde"] }
 rayon = "1.11"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "d419d98d8b81a19a62585d11759fabdeabeb0957" }
+red4ext-rs = { path = "../red4ext-rs-mac" }
 serde = "1.0"
 snafu = "0.9"
 

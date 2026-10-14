@@ -29,8 +29,12 @@ parking_lot = "0.12.4"
 red4ext-rs.workspace = true
 rust-ini = "0.21.1"
 snafu.workspace = true
-windows = {version = "0.62.2", features = ["Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader"]}
 debug-ignore = "1.0.5"
+
+# macOS port: the windows crate does not build on macOS (windows-future needs windows_core::imp::IMarshal, 16 errors, B1 report E3),
+# and the foreground check and the module base have macOS twins in the sources. Windows keeps the same dependency and features.
+[target.'cfg(windows)'.dependencies]
+windows = {version = "0.62.2", features = ["Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader"]}
 
 [build-dependencies]
 semver = "1.0"
