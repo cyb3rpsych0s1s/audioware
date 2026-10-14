@@ -75,7 +75,13 @@ where
 /// Try to retrieve a specific folder from filesystem.
 pub fn try_get_folder(folder: impl AsRef<Path>) -> Result<PathBuf, Error> {
     let current_folder = std::env::current_exe().context(BinaryLocationSnafu)?;
-    Ok(current_folder
+    Ok(game_folder(&current_folder)?.join(folder))
+}
+
+/// The folder of the game, from the path of the game executable.
+#[cfg(not(target_os = "macos"))]
+fn game_folder(current_folder: &Path) -> Result<&Path, Error> {
+    current_folder
         .parent()
         .context(NoFolderSnafu { folder: "x64" })?
         .parent()
@@ -83,8 +89,41 @@ pub fn try_get_folder(folder: impl AsRef<Path>) -> Result<PathBuf, Error> {
         .parent()
         .context(NoFolderSnafu {
             folder: "Cyberpunk 2077",
+        })
+}
+
+/// The folder of the game, from the path of the game executable.
+///
+/// macOS: the executable is `<game folder>/Cyberpunk2077.app/Contents/MacOS/Cyberpunk2077`, four levels below the folder that holds
+/// `r6`, `red4ext` and `archive` (the three `parent()` calls of the Windows layout land on the `.app` bundle). Evidence: the listing of the
+/// installed Mac game (`Cyberpunk2077.app`, `r6`, `red4ext`, `archive`, ... side by side) and B1 report 2.2 and 2.4. The bundle is found by
+/// its `.app` extension rather than by counting levels.
+#[cfg(target_os = "macos")]
+fn game_folder(current_folder: &Path) -> Result<&Path, Error> {
+    current_folder
+        .ancestors()
+        .find(|x| x.extension().and_then(std::ffi::OsStr::to_str) == Some("app"))
+        .context(NoFolderSnafu {
+            folder: "Cyberpunk2077.app",
         })?
-        .join(folder))
+        .parent()
+        .context(NoFolderSnafu {
+            folder: "Cyberpunk 2077",
+        })
+}
+
+/// A file path as written in a manifest, in a form the host file system understands.
+///
+/// Manifests are written on Windows, where `\` separates folders. On macOS a `\` is an ordinary character in a file name, so it is
+/// replaced by `/` (a Windows-authored `sfx\door.wav` names `sfx/door.wav`). Other platforms return the path unchanged.
+pub fn manifest_path(path: &Path) -> std::borrow::Cow<'_, Path> {
+    #[cfg(target_os = "macos")]
+    if let Some(text) = path.to_str()
+        && text.contains('\\')
+    {
+        return std::borrow::Cow::Owned(PathBuf::from(text.replace('\\', "/")));
+    }
+    std::borrow::Cow::Borrowed(path)
 }
 
 fn is_yaml(file: &Path) -> bool {
@@ -144,6 +183,13 @@ impl AsRef<Path> for Mod {
 }
 
 impl Mod {
+    /// Join a file path written in a manifest to the mod folder (see [manifest_path]).
+    pub fn join_file(&self, file: impl AsRef<Path>) -> PathBuf {
+        self.0.join(manifest_path(file.as_ref()))
+    }
+}
+
+impl Mod {
     /// Get mod folder name (file stem).
     pub fn name(&self) -> ModName {
         ModName(self.0.file_stem().unwrap().to_str().unwrap().to_string())
@@ -163,5 +209,32 @@ impl AsRef<Path> for ModName {
 impl std::fmt::Display for ModName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+#[cfg(all(test, target_os = "macos"))]
+mod macos_tests {
+    use super::*;
+
+    #[test]
+    fn game_folder_is_above_the_app_bundle() {
+        let exe = Path::new("/Volumes/G/steamapps/common/Cyberpunk 2077/Cyberpunk2077.app/Contents/MacOS/Cyberpunk2077");
+        assert_eq!(
+            game_folder(exe).unwrap(),
+            Path::new("/Volumes/G/steamapps/common/Cyberpunk 2077")
+        );
+        assert!(game_folder(Path::new("/usr/bin/true")).is_err());
+    }
+
+    #[test]
+    fn manifest_paths_use_slashes() {
+        assert_eq!(
+            manifest_path(Path::new(r"sfx\door.wav")).as_ref(),
+            Path::new("sfx/door.wav")
+        );
+        assert_eq!(
+            manifest_path(Path::new("sfx/door.wav")).as_ref(),
+            Path::new("sfx/door.wav")
+        );
     }
 }
