@@ -1,3 +1,6 @@
+// macOS: the PlayerPuppet mirror lives in puppet_macos.rs, so some of these imports are only used by the Windows struct.
+#![cfg_attr(target_os = "macos", allow(unused_imports))]
+
 use red4ext_rs::{
     NativeRepr, RttiSystem, ScriptClass,
     class_kind::{Native, Scripted},
@@ -10,6 +13,13 @@ use super::{AsGameObjectExt, Entity, GameObject};
 
 const PADDING: usize = std::mem::size_of::<Entity>() - 0xF0;
 
+// macOS: the mirror below has the Windows offsets, which are wrong on the Mac (first field 0x438 against 0x420, the script lock is 0xD0 bytes
+// against 0x10). `puppet_macos.rs` is the same field list at the Mac offsets, generated from the Mac RTTI dump by macos/gen-puppet-macos.py
+// and asserted field by field. Evidence and method: ports/audioware-B3-REPORT.md, layout fixes.
+#[cfg(target_os = "macos")]
+pub use super::puppet_macos::PlayerPuppet;
+
+#[cfg(not(target_os = "macos"))]
 #[repr(C)]
 pub struct PlayerPuppet {
     pub base: ScriptedPuppet,
@@ -151,17 +161,20 @@ pub struct PlayerPuppet {
     pub choice_token_text_drawn: bool,          // 0x90C
 }
 
+#[cfg(not(target_os = "macos"))]
 unsafe impl ScriptClass for PlayerPuppet {
     const NAME: &'static str = "PlayerPuppet";
     type Kind = Scripted;
 }
 
+#[cfg(not(target_os = "macos"))]
 impl AsRef<IScriptable> for PlayerPuppet {
     fn as_ref(&self) -> &IScriptable {
         self.base.as_ref()
     }
 }
 
+#[cfg(not(target_os = "macos"))]
 impl AsRef<Entity> for PlayerPuppet {
     fn as_ref(&self) -> &Entity {
         self.base.as_ref()

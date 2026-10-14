@@ -5,7 +5,15 @@ use red4ext_rs::{
     types::{CName, EntityId, RedHashMap},
 };
 
-use crate::{SoundObject, SoundObjectId, WwiseId, utils::get_base_offset};
+#[cfg(windows)]
+use crate::utils::get_base_offset;
+use crate::{SoundObject, SoundObjectId, WwiseId};
+
+/// macOS only: the id of the SoundEngine global in the Audioware block of the SDK address table (`Relocation-inl.hpp`, branch mac-rs).
+/// It is a Mac-only id (the 0xC0DExxxx range the other plugins use for rows that have no Windows hash): Windows reads the cell at a fixed
+/// address.
+#[cfg(target_os = "macos")]
+const SOUNDENGINE_GLOBAL: u32 = 0xC0DEA002;
 
 #[repr(C)]
 pub struct SoundEngine(VoidPtr);
@@ -25,6 +33,7 @@ impl SoundEngine {
     }
     /// # Safety
     /// can only be obtained after SoundEngine initialization.
+    #[cfg(windows)]
     pub unsafe fn get() -> Self {
         const OFFSET: usize = 0x1434389F0 - 0x140000000;
         let base = get_base_offset();
@@ -33,6 +42,23 @@ impl SoundEngine {
         // lifecycle!("qword: {:#X}", qword as usize);
         let addr = unsafe { *(qword as *const u64) };
         // lifecycle!("*qword: {:#X}", addr);
+        Self(addr as VoidPtr)
+    }
+
+    /// # Safety
+    /// can only be obtained after SoundEngine initialization.
+    ///
+    /// macOS: the global that holds the `SoundEngine*` is a row of the Audioware block of the SDK address table (Mac-only id
+    /// [SOUNDENGINE_GLOBAL], RVA 0x8DCC9E0; the Windows cell is .data 0x34389F0, which the code above reads through the module base).
+    /// Evidence (B1 report 2.1): two independent Windows/Mac function pairs load the same global, the `DefaultListener` init function
+    /// (Windows 0xA2D45C = Mac 0xDD4010) and the `player_fired` function (Windows 0x9D524C = Mac 0x3E3E1D4); 118 Mac functions reference it.
+    #[cfg(target_os = "macos")]
+    pub unsafe fn get() -> Self {
+        let cell = ::red4ext_rs::addr_hashes::resolve(SOUNDENGINE_GLOBAL);
+        if cell == 0 {
+            return Self(std::ptr::null_mut());
+        }
+        let addr = unsafe { *(cell as *const u64) };
         Self(addr as VoidPtr)
     }
 
@@ -126,6 +152,13 @@ impl EventApplicationInterface {
     }
 
     pub fn entity_id(&self) -> EntityId {
+        // macOS: slot 0x80. Windows `ApplyAction` calls `[vtable + 0x78]` five times and the Mac `ApplyAction` (0x3E34FD0) calls
+        // `[vtable + 0x80]` five times; its other interface calls sit at the Windows slot plus 8 as well (Windows +0x70 x2 = Mac +0x78 x2,
+        // Windows 0x88/0x90/0x98/0xA0 = Mac 0x90/0x98/0xA0/0xA8), which is the Itanium destructor shift (B1 report 2.3). Inferred by call
+        // counts, not decoded from a live vtable (B3 report, UNSURE).
+        #[cfg(target_os = "macos")]
+        const OFFSET: usize = 0x80;
+        #[cfg(not(target_os = "macos"))]
         const OFFSET: usize = 0x78;
         let me = unsafe { *(self.0 as *const usize) };
         let getter = me + OFFSET;
