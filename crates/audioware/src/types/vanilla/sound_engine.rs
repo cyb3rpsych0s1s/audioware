@@ -63,6 +63,12 @@ impl SoundEngine {
     }
 
     pub fn metadata_manager(&self) -> MetadataManager {
+        // macOS: the global can still be null when a hook runs before Wwise created its engine; answer with a null manager, whose lookups
+        // answer "invalid id", instead of reading near address 0.
+        #[cfg(target_os = "macos")]
+        if self.0.is_null() {
+            return MetadataManager(std::ptr::null_mut());
+        }
         const OFFSET: usize = 0x58;
         let field = self.0 as usize + OFFSET;
         // lifecycle!("field: {:#X}", field);
@@ -72,6 +78,10 @@ impl SoundEngine {
     }
 
     pub fn sound_object_manager(&self) -> SoundObjectManager {
+        #[cfg(target_os = "macos")]
+        if self.0.is_null() {
+            return SoundObjectManager(std::ptr::null_mut());
+        }
         const OFFSET: usize = 0x60;
         let field = self.0 as usize + OFFSET;
         // lifecycle!("field: {:#X}", field);
@@ -83,6 +93,10 @@ impl SoundEngine {
 
 impl MetadataManager {
     pub fn event_wwise_id(&self, event_name: CName) -> WwiseId {
+        #[cfg(target_os = "macos")]
+        if self.0.is_null() {
+            return WwiseId::default();
+        }
         const HASH: u32 = 0x3B1D13A1;
         let get_event_wwise_id = ::red4ext_rs::addr_hashes::resolve(HASH);
         let get_event_wwise_id = unsafe {
@@ -93,18 +107,30 @@ impl MetadataManager {
         unsafe { get_event_wwise_id(self.0, event_name) }
     }
     pub fn switch_group_id(&self, switch_name: CName) -> WwiseId {
+        #[cfg(target_os = "macos")]
+        if self.0.is_null() {
+            return WwiseId::default();
+        }
         const OFFSET: usize = 0x30;
         let field = self.0 as usize + OFFSET;
         // lifecycle!("field: {:#X}", field);
         unsafe { self.wwise_lookup()(self.0, field as VoidPtr, switch_name) }
     }
     pub fn switch_id(&self, switch_value: CName) -> WwiseId {
+        #[cfg(target_os = "macos")]
+        if self.0.is_null() {
+            return WwiseId::default();
+        }
         const OFFSET: usize = 0x58;
         let field = self.0 as usize + OFFSET;
         // lifecycle!("field: {:#X}", field);
         unsafe { self.wwise_lookup()(self.0, field as VoidPtr, switch_value) }
     }
     pub fn game_parameter_id(&self, parameter_name: CName) -> WwiseId {
+        #[cfg(target_os = "macos")]
+        if self.0.is_null() {
+            return WwiseId::default();
+        }
         const OFFSET: usize = 0xD0;
         let field = self.0 as usize + OFFSET;
         // lifecycle!("field: {:#X}", field);
@@ -123,6 +149,10 @@ impl MetadataManager {
 
 impl SoundObjectManager {
     pub fn sound_object(&self, id: SoundObjectId) -> Option<&SoundObject> {
+        #[cfg(target_os = "macos")]
+        if self.0.is_null() {
+            return None;
+        }
         const OFFSET: usize = 0x7010;
         let map = unsafe {
             std::mem::transmute::<VoidPtr, *const RedHashMap<SoundObjectId, *const SoundObject>>(
