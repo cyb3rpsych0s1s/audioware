@@ -1,17 +1,29 @@
 use red4ext_rs::SdkEnv;
 
 pub(super) fn attach_hooks(env: &SdkEnv) {
+    #[cfg(not(target_os = "macos"))]
     override_audio_listeners::attach_hook(env);
+    // macOS: `gameCameraComponent::OverrideAudioListeners` has no function of its own on the Mac, the compiler inlined it into `Activate` and
+    // `Deactivate` (B1 report 2.1, hook 22: Windows 0x248078C; the Mac bodies 0x1F040F0 and 0x1F042B0 contain the same instruction sequence,
+    // the `[this+0x50]->+0xC0` load, the listener vcall and the `SoundEngine::SetState` call with `ST_Camera_View` / `Active`). The Windows
+    // detour only calls `inspect!` (gated behind `research` and `redengine`) and the original, so skipping it loses nothing.
+    #[cfg(target_os = "macos")]
+    super::macos::skipped(
+        "gameCameraComponent::OverrideAudioListeners",
+        "inlined into Activate (0x1F040F0) and Deactivate (0x1F042B0); its detour only logs",
+    );
     activate::attach_hook(env);
     deactivate::attach_hook(env);
 }
 
 pub(super) fn detach_hooks(env: &SdkEnv) {
+    #[cfg(not(target_os = "macos"))]
     override_audio_listeners::detach_hook(env);
     activate::detach_hook(env);
     deactivate::detach_hook(env);
 }
 
+#[cfg(not(target_os = "macos"))]
 mod override_audio_listeners {
     use red4ext_rs::VoidPtr;
     ::red4ext_rs::hooks! {

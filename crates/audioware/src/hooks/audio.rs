@@ -26,7 +26,22 @@ a9: CName) -> bool;
 pub fn attach_hook(env: &::red4ext_rs::SdkEnv) {
     let addr = ::red4ext_rs::addr_hashes::resolve(super::offsets::AUDIO_PLAY_DIALOG_LINE);
     let addr = unsafe { ::std::mem::transmute(addr) };
-    unsafe { env.attach_hook(HOOK, addr, detour) };
+    crate::attach_hook_with_mode!(
+        env,
+        HOOK,
+        addr,
+        "audio::PlayDialogLine",
+        detour,
+        fn(a1: *const DialogLineEventData,
+           a2: VoidPtr,
+           a3: EntityId,
+           a4: CName,
+           a5: bool,
+           a6: *mut u32,
+           a7: *mut CName,
+           a8: f32,
+           a9: CName) -> bool
+    );
     crate::utils::intercept!(
         "attached native internal hook for audio::PlayDialogLine( DialogLineEventData, VoidPtr, EntityId, CName, bool, u32, CName, f32, CName ) -> Bool"
     );

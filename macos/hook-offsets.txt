@@ -1,0 +1,30 @@
+# Image-relative offsets of the Audioware hooks on macOS (branch macos-dev). One per line; # starts a comment.
+# RED4ext-macos installs a detour only for an offset on this list. Any other Attach reports success and does nothing.
+# tools/build-all.sh --with-audioware merges this file into GUM_OFFSETS.txt. Every offset is a function start (LC_FUNCTION_STARTS) whose body was
+# compared with its Windows twin; see ports/audioware-B3-REPORT.md of the workspace for the verdicts. gameCameraComponent::OverrideAudioListeners is
+# inlined on the Mac and has no entry.
+0xa86010  # AudioSystem::Play
+0xa861d8  # AudioSystem::Stop
+0xa8976c  # AudioSystem::Switch
+0xc9ae7c  # Entity::QueueEvent
+0xde1d64  # SoundEngine::PostEvent
+0xde1ed4  # SoundEngine::PostEvent_OneShot
+0xde2088  # SoundEngine::ExternalEvent
+0xde21a8  # SoundEngine::SetParameter
+0xde2218  # SoundEngine::SetGlobalParameter
+0xde22a8  # SoundEngine::SetSwitch
+0x1f040f0  # gameCameraComponent::Activate
+0x1f042b0  # gameCameraComponent::Deactivate
+0x1f9157c  # TimeDilatable::SetIndividualTimeDilation
+0x1f91868  # TimeDilatable::UnsetIndividualTimeDilation
+0x25d0cf8  # gameuiGameSystemUI::QueueEvent
+0x35494e8  # SoundComponent::OnStopDialogLine
+0x3c00790  # TimeSystem::SetTimeDilation
+0x3c00a54  # TimeSystem::UnsetTimeDilation
+0x3e34fd0  # AudioInternalEvent::ApplyAction
+0x3e9cd24  # audio::PlayDialogLine
+0x47cac28  # inkIGameController::QueueEvent
+0x47d35e0  # inkLogicController::QueueEvent
+0x49300d4  # inkMenuScenario::SwitchToScenario
+0x4930374  # inkMenuScenario::QueueEvent
+0x4930428  # inkMenuScenario::QueueBroadcastEvent
