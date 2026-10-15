@@ -174,7 +174,7 @@ mod offsets {
 
     // macOS: two Windows functions that Audioware hooks through one hash are two functions on the Mac (the Windows address is
     // shared, the Mac compiler emitted separate bodies). The hash above keeps the first Mac function, these name the second. Rows: Audioware
-    // block of the SDK address table (`Relocation-inl.hpp`, branch mac-rs).
+    // block of the macOS SDK address table (`Relocation-inl.hpp` in codeman101/RED4ext.SDK-macos, branch mac-rs).
     /// `inkLogicController::QueueEvent`, Mac 0x47D35E0. The hash is the research-only constant below: on 2.31 it resolves to the same Windows
     /// address as `INKIWIDGETCONTROLLER_QUEUE_EVENT` (0x8A7E88 for both in the Windows address list), and the latter is
     /// `inkIGameController::QueueEvent` on the Mac (0x47CAC28).
