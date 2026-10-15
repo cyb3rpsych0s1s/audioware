@@ -13,8 +13,8 @@ attach_native_func!(
 );
 
 // macOS: Windows has one function for `inkIGameController::QueueEvent` and `inkLogicController::QueueEvent` (the hash above); the Mac has
-// two (B1 report 2.1, hook 11: `inkIGameController` 0x47CAC28 behind the hash above, `inkLogicController` 0x47D35E0 behind the second
-// hash). Both get the same detour, each through its own hook.
+// two (`inkIGameController` 0x47CAC28 behind the hash above, `inkLogicController` 0x47D35E0 behind the second hash). Both get the same
+// detour, each through its own hook.
 #[cfg(target_os = "macos")]
 mod logic_controller {
     crate::attach_native_func!(

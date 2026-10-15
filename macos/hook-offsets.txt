@@ -1,8 +1,7 @@
-# Image-relative offsets of the Audioware hooks on macOS (branch macos-dev). One per line; # starts a comment.
-# RED4ext-macos installs a detour only for an offset on this list. Any other Attach reports success and does nothing.
-# tools/build-all.sh --with-audioware merges this file into GUM_OFFSETS.txt. Every offset is a function start (LC_FUNCTION_STARTS) whose body was
-# compared with its Windows twin; see ports/audioware-B3-REPORT.md of the workspace for the verdicts. gameCameraComponent::OverrideAudioListeners is
-# inlined on the Mac and has no entry.
+# Image-relative offsets of the Audioware hook targets in the macOS game binary (game 2.3.1), one per line. `#` starts a comment.
+# Each offset is a function start whose body was compared with its Windows counterpart. The macOS loader only installs detours on the offsets
+# listed here; any other Attach reports success and does nothing. gameCameraComponent::OverrideAudioListeners is inlined on the Mac and has
+# no entry.
 0xa86010  # AudioSystem::Play
 0xa861d8  # AudioSystem::Stop
 0xa8976c  # AudioSystem::Switch

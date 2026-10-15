@@ -15,7 +15,7 @@ const PADDING: usize = std::mem::size_of::<Entity>() - 0xF0;
 
 // macOS: the mirror below has the Windows offsets, which are wrong on the Mac (first field 0x438 against 0x420, the script lock is 0xD0 bytes
 // against 0x10). `puppet_macos.rs` is the same field list at the Mac offsets, generated from the Mac RTTI dump by macos/gen-puppet-macos.py
-// and asserted field by field. Evidence and method: ports/audioware-B3-REPORT.md, layout fixes.
+// and asserted field by field.
 #[cfg(target_os = "macos")]
 pub use super::puppet_macos::PlayerPuppet;
 

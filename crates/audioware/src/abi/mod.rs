@@ -52,7 +52,7 @@ macro_rules! g {
 }
 
 /// macOS: always `true`, so "mute in background" never mutes. The frontmost-application check (NSWorkspace) is left out of this port: it
-/// only matters when the player enables that setting, and it needs an Objective-C dependency for a cosmetic feature (B1 report 2.2).
+/// only matters when the player enables that setting, and it needs an Objective-C dependency for a cosmetic feature.
 #[cfg(not(windows))]
 pub fn is_in_foreground() -> bool {
     true

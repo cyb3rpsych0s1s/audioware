@@ -94,8 +94,9 @@ impl Audioware {
     }
 }
 
-// macOS: `audioware_registerNatives` is the entry point of the private loader's launcher (`frida-modded.js`, NATREG list): it registers the
-// natives, once, at InitScripts. A build against the upstream red4ext-rs, whose macro takes one argument, uses the one argument form elsewhere.
+// macOS: `audioware_registerNatives` is the entry point the macOS launcher (the tool that loads RED4ext plugins into the native Mac game)
+// calls to register the natives, once, at InitScripts. A build against the upstream red4ext-rs, whose macro takes one argument, uses the
+// one argument form elsewhere.
 #[cfg(target_os = "macos")]
 export_plugin_symbols!(Audioware, audioware_registerNatives);
 #[cfg(not(target_os = "macos"))]
@@ -103,7 +104,7 @@ export_plugin_symbols!(Audioware);
 
 /// macOS, private loader: starts the audio engine and attaches the hooks, once.
 ///
-/// `frida-modded.js` calls it right after `audioware_registerNatives`, both at InitScripts entry: the RTTI system and the name pool exist
+/// The macOS launcher calls it right after `audioware_registerNatives`, both at InitScripts entry: the RTTI system and the name pool exist
 /// then (the launcher checks the ready flag first), and the natives the scripts call are registered. On Windows the same work happens in
 /// `Plugin::on_load` (the engine) and in the RTTI post-register callback (the hooks), which the Mac game never runs.
 /// Does nothing under another loader: there `on_load` and the post-register callback do it.

@@ -96,8 +96,8 @@ fn game_folder(current_folder: &Path) -> Result<&Path, Error> {
 ///
 /// macOS: the executable is `<game folder>/Cyberpunk2077.app/Contents/MacOS/Cyberpunk2077`, four levels below the folder that holds
 /// `r6`, `red4ext` and `archive` (the three `parent()` calls of the Windows layout land on the `.app` bundle). Evidence: the listing of the
-/// installed Mac game (`Cyberpunk2077.app`, `r6`, `red4ext`, `archive`, ... side by side) and B1 report 2.2 and 2.4. The bundle is found by
-/// its `.app` extension rather than by counting levels.
+/// installed Mac game (`Cyberpunk2077.app`, `r6`, `red4ext`, `archive`, ... side by side). The bundle is found by its `.app` extension
+/// rather than by counting levels.
 #[cfg(target_os = "macos")]
 fn game_folder(current_folder: &Path) -> Result<&Path, Error> {
     current_folder

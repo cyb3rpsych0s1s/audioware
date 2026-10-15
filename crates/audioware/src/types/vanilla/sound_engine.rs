@@ -50,7 +50,7 @@ impl SoundEngine {
     ///
     /// macOS: the global that holds the `SoundEngine*` is a row of the Audioware block of the SDK address table (Mac-only id
     /// [SOUNDENGINE_GLOBAL], RVA 0x8DCC9E0; the Windows cell is .data 0x34389F0, which the code above reads through the module base).
-    /// Evidence (B1 report 2.1): two independent Windows/Mac function pairs load the same global, the `DefaultListener` init function
+    /// Evidence: two independent Windows/Mac function pairs load the same global, the `DefaultListener` init function
     /// (Windows 0xA2D45C = Mac 0xDD4010) and the `player_fired` function (Windows 0x9D524C = Mac 0x3E3E1D4); 118 Mac functions reference it.
     #[cfg(target_os = "macos")]
     pub unsafe fn get() -> Self {
@@ -184,8 +184,8 @@ impl EventApplicationInterface {
     pub fn entity_id(&self) -> EntityId {
         // macOS: slot 0x80. Windows `ApplyAction` calls `[vtable + 0x78]` five times and the Mac `ApplyAction` (0x3E34FD0) calls
         // `[vtable + 0x80]` five times; its other interface calls sit at the Windows slot plus 8 as well (Windows +0x70 x2 = Mac +0x78 x2,
-        // Windows 0x88/0x90/0x98/0xA0 = Mac 0x90/0x98/0xA0/0xA8), which is the Itanium destructor shift (B1 report 2.3). Inferred by call
-        // counts, not decoded from a live vtable (B3 report, UNSURE).
+        // Windows 0x88/0x90/0x98/0xA0 = Mac 0x90/0x98/0xA0/0xA8), which is the Itanium destructor shift. Inferred by call counts,
+        // not yet confirmed from a live vtable.
         #[cfg(target_os = "macos")]
         const OFFSET: usize = 0x80;
         #[cfg(not(target_os = "macos"))]

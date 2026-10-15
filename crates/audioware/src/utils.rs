@@ -157,8 +157,8 @@ pub fn error(msg: impl Into<String>) {
 }
 
 /// macOS: no script call from native code. `console` runs on the audioware thread and from hooks, and executing a script function
-/// (`FTLog`) through `CBaseFunction::Execute` has not been exercised on the Mac yet (the B2 gate registers natives but calls no script
-/// from native code, B2 report open points 5 and 6). `reports!` has already written the message to the RED4ext log before it gets here.
+/// (`FTLog`) through `CBaseFunction::Execute` has not been exercised on the Mac yet (the macOS port registers natives but calls no
+/// script from native code so far). `reports!` has already written the message to the RED4ext log before it gets here.
 #[cfg(target_os = "macos")]
 #[inline]
 fn console(_msg: impl Into<String>, _func_name: &str) {}

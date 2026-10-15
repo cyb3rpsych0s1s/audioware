@@ -20,7 +20,7 @@ mod ui_system;
 #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
 mod audio_interface;
 
-// macOS: the debug-only hooks have no Mac function entry (B1 report 2.1: "not mapped"), so a debug build on the Mac leaves them out.
+// macOS: the debug-only hooks have no matching function on the Mac, so a debug build on the Mac leaves them out.
 #[cfg(all(debug_assertions, not(target_os = "macos")))]
 mod save_handling_controller;
 
@@ -172,9 +172,9 @@ mod offsets {
     pub const CAMERACOMPONENT_ACTIVATE: u32                     = 0x55F51EAC;   // 0x1424808D8 (2.31)
     pub const CAMERACOMPONENT_DEACTIVATE: u32                   = 0x9A531F75;   // 0x142480994 (2.31)
 
-    // macOS: two Windows functions that Audioware hooks through one hash are two functions on the Mac (B1 report 2.1, hooks 11 and 13; the
-    // Windows address is shared, the Mac compiler emitted separate bodies). The hash above keeps the first Mac function, these name the
-    // second. Rows: Audioware block of the SDK address table (`Relocation-inl.hpp`, branch mac-rs).
+    // macOS: two Windows functions that Audioware hooks through one hash are two functions on the Mac (the Windows address is
+    // shared, the Mac compiler emitted separate bodies). The hash above keeps the first Mac function, these name the second. Rows: Audioware
+    // block of the SDK address table (`Relocation-inl.hpp`, branch mac-rs).
     /// `inkLogicController::QueueEvent`, Mac 0x47D35E0. The hash is the research-only constant below: on 2.31 it resolves to the same Windows
     /// address as `INKIWIDGETCONTROLLER_QUEUE_EVENT` (0x8A7E88 for both in the Windows address list), and the latter is
     /// `inkIGameController::QueueEvent` on the Mac (0x47CAC28).

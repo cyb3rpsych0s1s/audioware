@@ -65,8 +65,8 @@ mod queue_event {
         super::super::offsets::INKMENUSCENARIO_QUEUE_EVENT
     );
 
-    // macOS: one Windows body serves `QueueEvent` and `QueueBroadcastEvent`; the Mac has a body for each (B1 report 2.1, hook 13: `QueueEvent`
-    // 0x4930374, `QueueBroadcastEvent` 0x4930428). Both get the same detour, each through its own hook, to keep the Windows behaviour.
+    // macOS: one Windows body serves `QueueEvent` and `QueueBroadcastEvent`; the Mac has a body for each (`QueueEvent` 0x4930374,
+    // `QueueBroadcastEvent` 0x4930428). Both get the same detour, each through its own hook, to keep the Windows behaviour.
     #[cfg(target_os = "macos")]
     pub mod broadcast {
         crate::attach_native_func!(
