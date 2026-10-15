@@ -9,6 +9,7 @@ use red4ext_rs::{
     StateListener, StateType, exports, methods, static_methods,
     types::{CName, EntityId, IScriptable, Opt, Ref},
 };
+#[cfg(windows)]
 use windows::Win32::{
     Foundation::HWND,
     UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId},
@@ -50,6 +51,14 @@ macro_rules! g {
     };
 }
 
+/// macOS: always `true`, so "mute in background" never mutes. The frontmost-application check (NSWorkspace) is left out of this port: it
+/// only matters when the player enables that setting, and it needs an Objective-C dependency for a cosmetic feature.
+#[cfg(not(windows))]
+pub fn is_in_foreground() -> bool {
+    true
+}
+
+#[cfg(windows)]
 pub fn is_in_foreground() -> bool {
     unsafe {
         let hwnd: HWND = GetForegroundWindow();

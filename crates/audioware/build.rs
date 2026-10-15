@@ -1,5 +1,10 @@
 fn main() {
     println!("cargo:rerun-if-changed=Cargo.toml");
+    // macOS: give the dylib a relocatable install name instead of the cargo build path (the loader opens it by path, the name is only
+    // informational). The file is renamed to audioware.dylib when it is staged.
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos") {
+        println!("cargo:rustc-cdylib-link-arg=-Wl,-install_name,@rpath/audioware.dylib");
+    }
     println!("cargo::rerun-if-env-changed=OUT_DIR");
     let version = semver::Version::parse(env!("CARGO_PKG_VERSION")).expect("cargo package version");
     let mut pre: u32 = 3;

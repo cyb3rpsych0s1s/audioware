@@ -3,10 +3,14 @@ use red4ext_rs::SdkEnv;
 pub fn attach_hooks(env: &SdkEnv) {
     switch_to_scenario::attach_hook(env);
     queue_event::attach_hook(env);
+    #[cfg(target_os = "macos")]
+    queue_event::broadcast::attach_hook(env);
 }
 pub fn detach_hooks(env: &SdkEnv) {
     switch_to_scenario::detach_hook(env);
     queue_event::detach_hook(env);
+    #[cfg(target_os = "macos")]
+    queue_event::broadcast::detach_hook(env);
 }
 
 mod switch_to_scenario {
@@ -60,6 +64,21 @@ mod queue_event {
         "inkMenuScenario::QueueEvent",
         super::super::offsets::INKMENUSCENARIO_QUEUE_EVENT
     );
+
+    // macOS: one Windows body serves `QueueEvent` and `QueueBroadcastEvent`; the Mac has a body for each (`QueueEvent` 0x4930374,
+    // `QueueBroadcastEvent` 0x4930428). Both get the same detour, each through its own hook, to keep the Windows behaviour.
+    #[cfg(target_os = "macos")]
+    pub mod broadcast {
+        crate::attach_native_func!(
+            "inkMenuScenario::QueueBroadcastEvent",
+            super::super::super::offsets::INKMENUSCENARIO_QUEUE_BROADCAST_EVENT_MAC,
+            HOOK,
+            attach_hook,
+            detach_hook,
+            super::detour,
+            pub
+        );
+    }
 
     unsafe extern "C" fn detour(
         i: *mut IScriptable,

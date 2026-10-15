@@ -12,7 +12,14 @@ use crate::{StopDialogLine, abi::command::Command, engine::Engine};
 pub fn attach_hook(env: &::red4ext_rs::SdkEnv) {
     let addr = ::red4ext_rs::addr_hashes::resolve(super::offsets::SOUNDCOMPONENT_ONSTOPDIALOGLINE);
     let addr = unsafe { ::std::mem::transmute(addr) };
-    unsafe { env.attach_hook(HOOK, addr, detour) };
+    crate::attach_hook_with_mode!(
+        env,
+        HOOK,
+        addr,
+        "SoundComponent::OnStopDialogLine",
+        detour,
+        fn(a1: VoidPtr, a2: *const StopDialogLine) -> ()
+    );
     crate::utils::intercept!(
         "attached native internal hook for SoundComponent::OnStopDialogLine( StopDialogLine )"
     );
