@@ -3,11 +3,11 @@
 
 include!(concat!(env!("OUT_DIR"), "/version.rs"));
 
+#[cfg(target_os = "macos")]
+use red4ext_rs::log::info;
 use red4ext_rs::{
     Exportable, Plugin, SdkEnv, SemVer, U16CStr, export_plugin_symbols, log::error, wcstr,
 };
-#[cfg(target_os = "macos")]
-use red4ext_rs::log::info;
 pub use types::*;
 
 #[cfg(feature = "hot-reload")]

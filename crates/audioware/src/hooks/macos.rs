@@ -79,14 +79,22 @@ pub fn mode() -> Mode {
 fn read_mode() -> Mode {
     let env = Audioware::env();
     let Some(dir) = plugin_dir() else {
-        log::warn!(env, "Audioware hook mode: off (cannot find the folder of the plugin)");
+        log::warn!(
+            env,
+            "Audioware hook mode: off (cannot find the folder of the plugin)"
+        );
         return Mode::Off;
     };
     let file = dir.join(MODE_FILE);
     match std::fs::read_to_string(&file) {
         Ok(text) => match Mode::parse(&text) {
             Some(mode) => {
-                log::info!(env, "Audioware hook mode: {} (from {})", mode.as_str(), file.display());
+                log::info!(
+                    env,
+                    "Audioware hook mode: {} (from {})",
+                    mode.as_str(),
+                    file.display()
+                );
                 mode
             }
             None => {
@@ -147,7 +155,9 @@ pub fn raw<T>(value: &T) -> u64 {
     let mut out = [0u8; 8];
     let len = std::mem::size_of::<T>().min(8);
     // SAFETY: `value` is a valid reference, `len` is at most its size and at most the size of `out`.
-    unsafe { std::ptr::copy_nonoverlapping((value as *const T).cast::<u8>(), out.as_mut_ptr(), len) };
+    unsafe {
+        std::ptr::copy_nonoverlapping((value as *const T).cast::<u8>(), out.as_mut_ptr(), len)
+    };
     u64::from_le_bytes(out)
 }
 
@@ -204,14 +214,20 @@ pub fn attached(name: &str, ok: bool) {
         ATTACHED.fetch_add(1, Ordering::Relaxed);
     } else {
         FAILED.fetch_add(1, Ordering::Relaxed);
-        log::warn!(Audioware::env(), "Audioware hook {name}: Attach returned false");
+        log::warn!(
+            Audioware::env(),
+            "Audioware hook {name}: Attach returned false"
+        );
     }
 }
 
 /// Counts a hook that is not attached on the Mac, with the reason (one log line).
 pub fn skipped(name: &str, why: &str) {
     SKIPPED.fetch_add(1, Ordering::Relaxed);
-    log::info!(Audioware::env(), "Audioware hook {name}: skipped on macOS ({why})");
+    log::info!(
+        Audioware::env(),
+        "Audioware hook {name}: skipped on macOS ({why})"
+    );
 }
 
 /// One line at the end of `hooks::attach`.

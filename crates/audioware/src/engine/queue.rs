@@ -90,7 +90,8 @@ pub(crate) static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::ne
 /// macOS, private loader: the `Initialization` exit listener that reports the bank loading never fires there, so the engine thread logs the
 /// report itself when it starts (set by `audioware_start`).
 #[cfg(target_os = "macos")]
-pub(crate) static REPORT_ON_START: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+pub(crate) static REPORT_ON_START: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
 static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
 static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();

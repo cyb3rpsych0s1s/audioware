@@ -43,7 +43,14 @@ pub mod post_event {
         let addr =
             ::red4ext_rs::addr_hashes::resolve(super::super::offsets::SOUNDENGINE_POST_EVENT);
         let addr = unsafe { ::std::mem::transmute(addr) };
-        crate::attach_hook_with_mode!(env, HOOK, addr, "SoundEngine::PostEvent", detour, fn(a1: VoidPtr, a2: CName, a3: *mut Sound) -> PlayingSoundId);
+        crate::attach_hook_with_mode!(
+            env,
+            HOOK,
+            addr,
+            "SoundEngine::PostEvent",
+            detour,
+            fn(a1: VoidPtr, a2: CName, a3: *mut Sound) -> PlayingSoundId
+        );
         crate::utils::intercept!(
             "attached native internal hook for SoundEngine::PostEvent( CName, VoidPtr )"
         );
@@ -164,7 +171,14 @@ pub mod post_event {
                 super::super::super::offsets::SOUNDENGINE_POST_EVENT_ONESHOT,
             );
             let addr = unsafe { ::std::mem::transmute(addr) };
-            crate::attach_hook_with_mode!(env, HOOK, addr, "SoundEngine::PostEvent_OneShot", detour, fn(a1: VoidPtr, a2: *mut OneShotSound, a3: *mut SoundObject) -> PlayingSoundId);
+            crate::attach_hook_with_mode!(
+                env,
+                HOOK,
+                addr,
+                "SoundEngine::PostEvent_OneShot",
+                detour,
+                fn(a1: VoidPtr, a2: *mut OneShotSound, a3: *mut SoundObject) -> PlayingSoundId
+            );
             crate::utils::intercept!(
                 "attached native internal hook for SoundEngine::PostEvent_OneShot( VoidPtr, VoidPtr )"
             );
@@ -283,7 +297,14 @@ pub mod external_event {
             super::super::offsets::SOUNDENGINE_EXTERNAL_EVENT_RES,
         );
         let addr = unsafe { ::std::mem::transmute(addr) };
-        crate::attach_hook_with_mode!(env, HOOK, addr, "SoundEngine::ExternalEvent", detour, fn(a1: VoidPtr, a2: CName, a3: *const ResRef, a4: *mut Sound) -> PlayingSoundId);
+        crate::attach_hook_with_mode!(
+            env,
+            HOOK,
+            addr,
+            "SoundEngine::ExternalEvent",
+            detour,
+            fn(a1: VoidPtr, a2: CName, a3: *const ResRef, a4: *mut Sound) -> PlayingSoundId
+        );
         crate::utils::intercept!(
             "attached native internal hook for SoundEngine::ExternalEvent( CName, VoidPtr )"
         );
@@ -405,7 +426,14 @@ pub mod parameter {
                 super::super::super::offsets::SOUNDENGINE_SET_GLOBAL_PARAMETER,
             );
             let addr = unsafe { ::std::mem::transmute(addr) };
-            crate::attach_hook_with_mode!(env, HOOK, addr, "SoundEngine::SetGlobalParameter", detour, fn(a1: CName, a2: f32, a3: f32, a4: ESoundCurveType) -> i64);
+            crate::attach_hook_with_mode!(
+                env,
+                HOOK,
+                addr,
+                "SoundEngine::SetGlobalParameter",
+                detour,
+                fn(a1: CName, a2: f32, a3: f32, a4: ESoundCurveType) -> i64
+            );
             crate::utils::intercept!(
                 "attached native internal hook for SoundEngine::SetGlobalParameter( CName, CName, Float, CurveType )"
             );
@@ -472,7 +500,14 @@ pub mod parameter {
         let addr =
             ::red4ext_rs::addr_hashes::resolve(super::super::offsets::SOUNDENGINE_SET_PARAMETER);
         let addr = unsafe { ::std::mem::transmute(addr) };
-        crate::attach_hook_with_mode!(env, HOOK, addr, "SoundEngine::SetParameter", detour, fn(a1: VoidPtr, a2: CName, a3: f32, a4: SoundObjectId) -> i64);
+        crate::attach_hook_with_mode!(
+            env,
+            HOOK,
+            addr,
+            "SoundEngine::SetParameter",
+            detour,
+            fn(a1: VoidPtr, a2: CName, a3: f32, a4: SoundObjectId) -> i64
+        );
         crate::utils::intercept!(
             "attached native internal hook for SoundEngine::SetParameter( CName, Float, SoundObjectId )"
         );
@@ -574,7 +609,14 @@ pub mod set_switch {
         let addr =
             ::red4ext_rs::addr_hashes::resolve(super::super::offsets::SOUNDENGINE_SET_SWITCH);
         let addr = unsafe { ::std::mem::transmute(addr) };
-        crate::attach_hook_with_mode!(env, HOOK, addr, "SoundEngine::SetSwitch", detour, fn(a1: VoidPtr, a2: CName, a3: CName, a4: SoundObjectId) -> i64);
+        crate::attach_hook_with_mode!(
+            env,
+            HOOK,
+            addr,
+            "SoundEngine::SetSwitch",
+            detour,
+            fn(a1: VoidPtr, a2: CName, a3: CName, a4: SoundObjectId) -> i64
+        );
         crate::utils::intercept!(
             "attached native internal hook for SoundEngine::SetSwitch( CName, CName, SoundObjectId )"
         );
@@ -682,7 +724,14 @@ pub mod event {
             super::super::offsets::AUDIOINTERNALEVENT_APPLY_ACTION,
         );
         let addr = unsafe { ::std::mem::transmute(addr) };
-        crate::attach_hook_with_mode!(env, HOOK, addr, "AudioInternalEvent::ApplyAction", detour, fn(a1: *const AudioInternalEvent, a2: VoidPtr, a3: VoidPtr) -> ());
+        crate::attach_hook_with_mode!(
+            env,
+            HOOK,
+            addr,
+            "AudioInternalEvent::ApplyAction",
+            detour,
+            fn(a1: *const AudioInternalEvent, a2: VoidPtr, a3: VoidPtr) -> ()
+        );
         crate::utils::intercept!(
             "attached native internal hook for AudioInternalEvent::ApplyAction( VoidPtr, VoidPtr, VoidPtr )"
         );

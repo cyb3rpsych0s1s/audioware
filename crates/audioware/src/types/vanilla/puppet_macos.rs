@@ -7,10 +7,12 @@
 
 use red4ext_rs::ScriptClass;
 use red4ext_rs::class_kind::Scripted;
-use red4ext_rs::types::{CName, EngineTime, EntityId, IScriptable, RedArray, Ref, TweakDbId, WeakRef};
+use red4ext_rs::types::{
+    CName, EngineTime, EntityId, IScriptable, RedArray, Ref, TweakDbId, WeakRef,
+};
 
-use super::{Entity, GameObject};
 use super::puppet::*;
+use super::{Entity, GameObject};
 
 #[repr(C)]
 pub struct PlayerPuppet {
@@ -21,28 +23,28 @@ pub struct PlayerPuppet {
     pub inspection_component: Ref<IScriptable>, // 0x448 (Windows 0x430)
     pub enviro_damage_rcv_component: Ref<IScriptable>, // 0x458 (Windows 0x440)
     pub mounted_vehicle: WeakRef<IScriptable>, // 0x468 (Windows 0x450)
-    pub vehicle_knockdown_timestamp: f32, // 0x478 (Windows 0x460)
+    pub vehicle_knockdown_timestamp: f32,      // 0x478 (Windows 0x460)
     _pad_005: [u8; 0x4],
-    pub phone: Ref<PlayerPhone>, // 0x480 (Windows 0x468)
+    pub phone: Ref<PlayerPhone>,                // 0x480 (Windows 0x468)
     pub fpp_camera_component: Ref<IScriptable>, // 0x490 (Windows 0x478)
     pub primary_targeting_component: Ref<IScriptable>, // 0x4A0 (Windows 0x488)
     pub breach_finder_component: Ref<IScriptable>, // 0x4B0 (Windows 0x498)
     pub chase_spawn_component: Ref<IScriptable>, // 0x4C0 (Windows 0x4A8)
-    pub is_in_finisher: bool, // 0x4D0 (Windows 0x4B8)
+    pub is_in_finisher: bool,                   // 0x4D0 (Windows 0x4B8)
     _pad_011: [u8; 0x7],
     pub debug_visualizer: Ref<IScriptable>, // 0x4D8 (Windows 0x4C0)
     pub debug_damage_input_rec: Ref<IScriptable>, // 0x4E8 (Windows 0x4D0)
-    pub high_damage_threshold: f32, // 0x4F8 (Windows 0x4E0)
-    pub med_damage_threshold: f32, // 0x4FC (Windows 0x4E4)
-    pub low_damage_threshold: f32, // 0x500 (Windows 0x4E8)
-    pub melee_high_damage_threshold: f32, // 0x504 (Windows 0x4EC)
-    pub melee_med_damage_threshold: f32, // 0x508 (Windows 0x4F0)
-    pub melee_low_damage_threshold: f32, // 0x50C (Windows 0x4F4)
+    pub high_damage_threshold: f32,         // 0x4F8 (Windows 0x4E0)
+    pub med_damage_threshold: f32,          // 0x4FC (Windows 0x4E4)
+    pub low_damage_threshold: f32,          // 0x500 (Windows 0x4E8)
+    pub melee_high_damage_threshold: f32,   // 0x504 (Windows 0x4EC)
+    pub melee_med_damage_threshold: f32,    // 0x508 (Windows 0x4F0)
+    pub melee_low_damage_threshold: f32,    // 0x50C (Windows 0x4F4)
     pub explosion_high_damage_threshold: f32, // 0x510 (Windows 0x4F8)
     pub explosion_med_damage_threshold: f32, // 0x514 (Windows 0x4FC)
     pub explosion_low_damage_threshold: f32, // 0x518 (Windows 0x500)
-    pub effect_time_stamp: f32, // 0x51C (Windows 0x504)
-    pub cur_inventory_weight: f32, // 0x520 (Windows 0x508)
+    pub effect_time_stamp: f32,             // 0x51C (Windows 0x504)
+    pub cur_inventory_weight: f32,          // 0x520 (Windows 0x508)
     _pad_024: [u8; 0x4],
     pub health_vfx_blackboard: Ref<IScriptable>, // 0x528 (Windows 0x510)
     pub laser_targetting_vfx_blackboard: Ref<IScriptable>, // 0x538 (Windows 0x520)
@@ -54,22 +56,22 @@ pub struct PlayerPuppet {
     pub contacts_active_listener: Ref<CallbackHandle>, // 0x598 (Windows 0x580)
     pub sms_messenger_active_listener: Ref<CallbackHandle>, // 0x5A8 (Windows 0x590)
     pub current_visible_target_listener: Ref<CallbackHandle>, // 0x5B8 (Windows 0x5A0)
-    pub last_scan_target: WeakRef<GameObject>, // 0x5C8 (Windows 0x5B0)
-    pub melee_select_input_processed: bool, // 0x5D8 (Windows 0x5C0)
-    pub waiting_for_delay_event: bool, // 0x5D9 (Windows 0x5C1)
+    pub last_scan_target: WeakRef<GameObject>,   // 0x5C8 (Windows 0x5B0)
+    pub melee_select_input_processed: bool,      // 0x5D8 (Windows 0x5C0)
+    pub waiting_for_delay_event: bool,           // 0x5D9 (Windows 0x5C1)
     _pad_037: [u8; 0x2],
     pub randomized_time: f32, // 0x5DC (Windows 0x5C4)
-    pub is_resetting: bool, // 0x5E0 (Windows 0x5C8)
+    pub is_resetting: bool,   // 0x5E0 (Windows 0x5C8)
     _pad_039: [u8; 0x3],
-    pub delay_event_id: DelayId, // 0x5E4 (Windows 0x5CC)
-    pub reset_tick_id: DelayId, // 0x5EC (Windows 0x5D4)
-    pub katana_anim_progression: f32, // 0x5F4 (Windows 0x5DC)
-    pub cover_modifier_active: bool, // 0x5F8 (Windows 0x5E0)
+    pub delay_event_id: DelayId,                // 0x5E4 (Windows 0x5CC)
+    pub reset_tick_id: DelayId,                 // 0x5EC (Windows 0x5D4)
+    pub katana_anim_progression: f32,           // 0x5F4 (Windows 0x5DC)
+    pub cover_modifier_active: bool,            // 0x5F8 (Windows 0x5E0)
     pub workspot_damage_reduction_active: bool, // 0x5F9 (Windows 0x5E1)
     pub workspot_visibility_reduction_active: bool, // 0x5FA (Windows 0x5E2)
     _pad_045: [u8; 0x5],
     pub current_player_workspot_tags: RedArray<CName>, // 0x600 (Windows 0x5E8)
-    pub incapacitated: bool, // 0x610 (Windows 0x5F8)
+    pub incapacitated: bool,                           // 0x610 (Windows 0x5F8)
     _pad_047: [u8; 0x7],
     pub remote_mappin_id: NewMappinId, // 0x618 (Windows 0x600)
     pub cpo_mission_data_state: Ref<IScriptable>, // 0x620 (Windows 0x608)
@@ -89,94 +91,94 @@ pub struct PlayerPuppet {
     pub optical_camo_charge_stat_listener: Ref<IScriptable>, // 0x700 (Windows 0x6E8)
     pub overclock_charge_listener: Ref<IScriptable>, // 0x710 (Windows 0x6F8)
     pub accessibility_controls_listener: Ref<IScriptable>, // 0x720 (Windows 0x708)
-    pub is_talking_on_phone: bool, // 0x730 (Windows 0x718)
+    pub is_talking_on_phone: bool,     // 0x730 (Windows 0x718)
     _pad_066: [u8; 0x3],
-    pub data_damage_update_id: DelayId, // 0x734 (Windows 0x71C)
+    pub data_damage_update_id: DelayId,   // 0x734 (Windows 0x71C)
     pub player_attached_callback_id: u32, // 0x73C (Windows 0x724)
     pub player_detached_callback_id: u32, // 0x740 (Windows 0x728)
     _pad_069: [u8; 0x4],
     pub callback_handles: RedArray<Ref<CallbackHandle>>, // 0x748 (Windows 0x730)
-    pub number_of_combatants: i32, // 0x758 (Windows 0x740)
+    pub number_of_combatants: i32,                       // 0x758 (Windows 0x740)
     _pad_071: [u8; 0x4],
     pub equipment_mesh_overlay_effect_name: CName, // 0x760 (Windows 0x748)
-    pub equipment_mesh_overlay_effect_tag: CName, // 0x768 (Windows 0x750)
+    pub equipment_mesh_overlay_effect_tag: CName,  // 0x768 (Windows 0x750)
     pub equipment_mesh_overlay_slots: RedArray<TweakDbId>, // 0x770 (Windows 0x758)
-    pub cover_visibility_perk_blocked: bool, // 0x780 (Windows 0x768)
-    pub behind_cover: bool, // 0x781 (Windows 0x769)
-    pub in_combat: bool, // 0x782 (Windows 0x76A)
-    pub is_being_revealed: bool, // 0x783 (Windows 0x76B)
-    pub has_been_detected: bool, // 0x784 (Windows 0x76C)
-    pub in_crouch: bool, // 0x785 (Windows 0x76D)
-    pub has_kiroshi_optics_fragment: bool, // 0x786 (Windows 0x76E)
-    pub doing_quick_melee: bool, // 0x787 (Windows 0x76F)
-    pub vehicle_state: GamePsmVehicle, // 0x788 (Windows 0x770)
+    pub cover_visibility_perk_blocked: bool,       // 0x780 (Windows 0x768)
+    pub behind_cover: bool,                        // 0x781 (Windows 0x769)
+    pub in_combat: bool,                           // 0x782 (Windows 0x76A)
+    pub is_being_revealed: bool,                   // 0x783 (Windows 0x76B)
+    pub has_been_detected: bool,                   // 0x784 (Windows 0x76C)
+    pub in_crouch: bool,                           // 0x785 (Windows 0x76D)
+    pub has_kiroshi_optics_fragment: bool,         // 0x786 (Windows 0x76E)
+    pub doing_quick_melee: bool,                   // 0x787 (Windows 0x76F)
+    pub vehicle_state: GamePsmVehicle,             // 0x788 (Windows 0x770)
     _pad_083: [u8; 0x78C - (0x788 + std::mem::size_of::<GamePsmVehicle>())],
     pub in_mounted_weapon_vehicle: bool, // 0x78C (Windows 0x774)
-    pub in_driver_combat_tpp: bool, // 0x78D (Windows 0x775)
+    pub in_driver_combat_tpp: bool,      // 0x78D (Windows 0x775)
     pub driver_combat_weapon_type: [u8; 0x4], // 0x78E (Windows 0x776)
-    pub is_aiming: bool, // 0x792 (Windows 0x77A)
-    pub focus_mode_active: bool, // 0x793 (Windows 0x77B)
+    pub is_aiming: bool,                 // 0x792 (Windows 0x77A)
+    pub focus_mode_active: bool,         // 0x793 (Windows 0x77B)
     pub custom_fast_forward_possible: bool, // 0x794 (Windows 0x77C)
     _pad_089: [u8; 0x3],
     pub equipped_right_hand_weapon: WeakRef<IScriptable>, // 0x798 (Windows 0x780)
-    pub aim_assist_update_queued: bool, // 0x7A8 (Windows 0x790)
+    pub aim_assist_update_queued: bool,                   // 0x7A8 (Windows 0x790)
     _pad_091: [u8; 0x3],
-    pub locomotion_state: i32, // 0x7AC (Windows 0x794)
+    pub locomotion_state: i32,          // 0x7AC (Windows 0x794)
     pub left_hand_cyberware_state: i32, // 0x7B0 (Windows 0x798)
-    pub melee_weapon_state: i32, // 0x7B4 (Windows 0x79C)
-    pub weapon_zoom_level: f32, // 0x7B8 (Windows 0x7A0)
+    pub melee_weapon_state: i32,        // 0x7B4 (Windows 0x79C)
+    pub weapon_zoom_level: f32,         // 0x7B8 (Windows 0x7A0)
     _pad_095: [u8; 0x4],
     pub controlling_device_id: EntityId, // 0x7C0 (Windows 0x7A8)
-    pub gunshot_range: f32, // 0x7C8 (Windows 0x7B0)
-    pub explosion_range: f32, // 0x7CC (Windows 0x7B4)
-    pub is_in_body_slam: bool, // 0x7D0 (Windows 0x7B8)
+    pub gunshot_range: f32,              // 0x7C8 (Windows 0x7B0)
+    pub explosion_range: f32,            // 0x7CC (Windows 0x7B4)
+    pub is_in_body_slam: bool,           // 0x7D0 (Windows 0x7B8)
     _pad_099: [u8; 0x3],
     pub combat_gadget_state: i32, // 0x7D4 (Windows 0x7BC)
     pub scene_tier: GameplayTier, // 0x7D8 (Windows 0x7C0)
     _pad_101: [u8; 0x7DC - (0x7D8 + std::mem::size_of::<GameplayTier>())],
-    pub next_buffer_modifier: i32, // 0x7DC (Windows 0x7C4)
+    pub next_buffer_modifier: i32,        // 0x7DC (Windows 0x7C4)
     pub attacking_netrunner_id: EntityId, // 0x7E0 (Windows 0x7C8)
     pub npc_death_instigator: WeakRef<IScriptable>, // 0x7E8 (Windows 0x7D0)
     pub best_targetting_weapon: WeakRef<IScriptable>, // 0x7F8 (Windows 0x7E0)
-    pub best_targetting_dot: f32, // 0x808 (Windows 0x7F0)
-    pub targetting_enemies: i32, // 0x80C (Windows 0x7F4)
-    pub is_aiming_at_friendly: bool, // 0x810 (Windows 0x7F8)
-    pub is_aiming_at_child: bool, // 0x811 (Windows 0x7F9)
+    pub best_targetting_dot: f32,         // 0x808 (Windows 0x7F0)
+    pub targetting_enemies: i32,          // 0x80C (Windows 0x7F4)
+    pub is_aiming_at_friendly: bool,      // 0x810 (Windows 0x7F8)
+    pub is_aiming_at_child: bool,         // 0x811 (Windows 0x7F9)
     _pad_109: [u8; 0x2],
     pub distance_from_target_squared: f32, // 0x814 (Windows 0x7FC)
-    pub cover_record_id: TweakDbId, // 0x818 (Windows 0x800)
+    pub cover_record_id: TweakDbId,        // 0x818 (Windows 0x800)
     pub damage_reduction_record_id: TweakDbId, // 0x820 (Windows 0x808)
     pub vis_reduction_record_id: TweakDbId, // 0x828 (Windows 0x810)
-    pub last_dmg_inflicted: EngineTime, // 0x830 (Windows 0x818)
-    pub crit_health_rumble_played: bool, // 0x838 (Windows 0x820)
+    pub last_dmg_inflicted: EngineTime,    // 0x830 (Windows 0x818)
+    pub crit_health_rumble_played: bool,   // 0x838 (Windows 0x820)
     _pad_115: [u8; 0x3],
     pub crit_health_rumble_duration_id: DelayId, // 0x83C (Windows 0x824)
-    pub last_health_update: f32, // 0x844 (Windows 0x82C)
-    pub stamina_listener: Ref<IScriptable>, // 0x848 (Windows 0x830)
-    pub memory_listener: Ref<IScriptable>, // 0x858 (Windows 0x840)
+    pub last_health_update: f32,                 // 0x844 (Windows 0x82C)
+    pub stamina_listener: Ref<IScriptable>,      // 0x848 (Windows 0x830)
+    pub memory_listener: Ref<IScriptable>,       // 0x858 (Windows 0x840)
     pub security_area_type_e3hack: ESecurityAreaType, // 0x868 (Windows 0x850)
     _pad_120: [u8; 0x870 - (0x868 + std::mem::size_of::<ESecurityAreaType>())],
     pub overlapped_security_zones: RedArray<PersistentId>, // 0x870 (Windows 0x858)
-    pub interesting_facts: InterestingFacts, // 0x880 (Windows 0x868)
+    pub interesting_facts: InterestingFacts,               // 0x880 (Windows 0x868)
     _pad_122: [u8; 0x888 - (0x880 + std::mem::size_of::<InterestingFacts>())],
     pub interesting_facts_listeners_ids: InterestingFactsListenersIds, // 0x888 (Windows 0x870)
     _pad_123: [u8; 0x890 - (0x888 + std::mem::size_of::<InterestingFactsListenersIds>())],
     pub interesting_facts_listeners_functions: InterestingFactsListenersFunctions, // 0x890 (Windows 0x878)
     _pad_124: [u8; 0x898 - (0x890 + std::mem::size_of::<InterestingFactsListenersFunctions>())],
     pub vision_mode_controller: Ref<IScriptable>, // 0x898 (Windows 0x880)
-    pub combat_controller: Ref<IScriptable>, // 0x8A8 (Windows 0x890)
-    pub handling_modifiers: Ref<IScriptable>, // 0x8B8 (Windows 0x8A0)
+    pub combat_controller: Ref<IScriptable>,      // 0x8A8 (Windows 0x890)
+    pub handling_modifiers: Ref<IScriptable>,     // 0x8B8 (Windows 0x8A0)
     pub cached_gameplay_restrictions: RedArray<TweakDbId>, // 0x8C8 (Windows 0x8B0)
     pub delay_end_grace_period_after_spawn_event_id: DelayId, // 0x8D8 (Windows 0x8C0)
-    pub cw_mask_in_vehicle_input_held: bool, // 0x8E0 (Windows 0x8C8)
+    pub cw_mask_in_vehicle_input_held: bool,      // 0x8E0 (Windows 0x8C8)
     _pad_130: [u8; 0x7],
     pub friendly_devices_hostile_to_enemies_lock: [u8; 0xD0], // 0x8E8 (Windows 0x8D0, a 0x10 byte RwLock)
     pub friendly_devices_hostile_to_enemies: RedArray<EntityId>, // 0x9B8 (Windows 0x8E0)
-    pub pocket_radio: Ref<PocketRadio>, // 0x9C8 (Windows 0x8F0)
+    pub pocket_radio: Ref<PocketRadio>,                       // 0x9C8 (Windows 0x8F0)
     _pad_133: [u8; 0x20],
     pub boss_that_targets_player: EntityId, // 0x9F8 (Windows 0x900)
-    pub choice_token_text_layer_id: u32, // 0xA00 (Windows 0x908)
-    pub choice_token_text_drawn: bool, // 0xA04 (Windows 0x90C)
+    pub choice_token_text_layer_id: u32,    // 0xA00 (Windows 0x908)
+    pub choice_token_text_drawn: bool,      // 0xA04 (Windows 0x90C)
 }
 
 unsafe impl ScriptClass for PlayerPuppet {
@@ -335,4 +337,3 @@ const _: () = {
     assert!(offset_of!(PlayerPuppet, choice_token_text_layer_id) == 0xA00);
     assert!(offset_of!(PlayerPuppet, choice_token_text_drawn) == 0xA04);
 };
-

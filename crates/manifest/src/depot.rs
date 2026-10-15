@@ -218,7 +218,9 @@ mod macos_tests {
 
     #[test]
     fn game_folder_is_above_the_app_bundle() {
-        let exe = Path::new("/Volumes/G/steamapps/common/Cyberpunk 2077/Cyberpunk2077.app/Contents/MacOS/Cyberpunk2077");
+        let exe = Path::new(
+            "/Volumes/G/steamapps/common/Cyberpunk 2077/Cyberpunk2077.app/Contents/MacOS/Cyberpunk2077",
+        );
         assert_eq!(
             game_folder(exe).unwrap(),
             Path::new("/Volumes/G/steamapps/common/Cyberpunk 2077")
