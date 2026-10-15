@@ -1,18 +1,17 @@
-//! macOS hook modes (stage 3 of the Audioware port).
+//! macOS hook modes.
 //!
 //! One binary, three behaviours. The mode is one word in `mac-hooks.txt`, next to the plugin dylib
-//! (`red4ext/plugins/audioware/mac-hooks.txt`):
+//! (`red4ext/plugins/audioware/mac-hooks.txt`). Without that file the mode is `on`.
 //!
-//! - `off`: no hook is attached. This is also the mode when the file is missing, unreadable or says something else.
+//! - `off`: no hook is attached. This is also the mode when the file says something other than the three words.
 //! - `probe`: every hook is attached with a detour that counts its calls, logs the first [LOGGED_CALLS] of them (arguments and result as raw
 //!   hexadecimal values, nothing is dereferenced), calls the original with the very arguments it got and returns the original's result
 //!   unchanged. A running count of every hook is logged every 60 seconds.
-//! - `on`: the real detours.
+//! - `on`: the real detours (the default).
 //!
-//! Why three: the Mac targets of the hooks were matched statically against the Windows functions (B1 report 2.1), no hook of this plugin has
-//! run in the game yet, and the private loader accepts an `Attach` on an offset that is not on its allowlist without doing anything. `off`
+//! Why three: the Mac targets of the hooks were matched statically against their Windows twins, and a game update can move them. `off`
 //! shows that the plugin loads, registers its natives and starts its audio engine with no hook at all. `probe` shows that each target is
-//! reached with plausible arguments and that the pass-through is right. `on` runs the plugin.
+//! reached with plausible arguments and that the pass-through is right. Both are for checking a new game version; players need neither.
 
 use std::{
     ffi::{CStr, OsStr, c_char, c_int, c_void},
@@ -81,9 +80,9 @@ fn read_mode() -> Mode {
     let Some(dir) = plugin_dir() else {
         log::warn!(
             env,
-            "Audioware hook mode: off (cannot find the folder of the plugin)"
+            "Audioware hook mode: on (cannot find the folder of the plugin to read {MODE_FILE})"
         );
-        return Mode::Off;
+        return Mode::On;
     };
     let file = dir.join(MODE_FILE);
     match std::fs::read_to_string(&file) {
@@ -108,8 +107,8 @@ fn read_mode() -> Mode {
             }
         },
         Err(e) => {
-            log::info!(env, "Audioware hook mode: off ({}: {e})", file.display());
-            Mode::Off
+            log::info!(env, "Audioware hook mode: on ({}: {e})", file.display());
+            Mode::On
         }
     }
 }
