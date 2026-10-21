@@ -1,0 +1,29 @@
+name: macOS
+on: push
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - name: Prepare Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: macos
+      - name: RED4ext.SDK for macOS
+        run: |
+          git clone --depth 1 -b mac-rs https://github.com/codeman101/RED4ext.SDK-macos "$RUNNER_TEMP/RED4ext.SDK-macos"
+          echo "RED4EXT_SDK_DIR=$RUNNER_TEMP/RED4ext.SDK-macos" >> "$GITHUB_ENV"
+      - name: Build
+        run: cargo build --release -p audioware
+      - name: Unit-tests
+        run: cargo test --workspace --exclude audioware --exclude audioware-bank
