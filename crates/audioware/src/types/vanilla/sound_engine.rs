@@ -26,7 +26,7 @@ impl SoundEngine {
     /// # Safety
     /// can only be obtained after SoundEngine initialization.
     pub unsafe fn get() -> Self {
-        const OFFSET: usize = 0x1434389F0 - 0x140000000;
+        const OFFSET: usize = 0x143BCDC68 - 0x140000000;
         let base = get_base_offset();
         // lifecycle!("base: {:#X}", base.0 as usize);
         let qword = base.0 as usize + OFFSET;
