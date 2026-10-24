@@ -10,7 +10,7 @@ pub(super) fn attach_hooks(env: &SdkEnv) {
     #[cfg(target_os = "macos")]
     super::macos::skipped(
         "gameCameraComponent::OverrideAudioListeners",
-        "inlined into Activate (0x1F040F0) and Deactivate (0x1F042B0); its detour only logs",
+        "inlined into Activate (0x1665AF4) and Deactivate (0x1665C94); its detour only logs",
     );
     activate::attach_hook(env);
     deactivate::attach_hook(env);
