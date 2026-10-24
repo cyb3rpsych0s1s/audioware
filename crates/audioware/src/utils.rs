@@ -1,10 +1,14 @@
 //! Logging utils.
 #![allow(dead_code)]
 
+use red4ext_rs::log;
+// macOS: `console` is a no-op there, so these are unused.
+#[cfg(not(target_os = "macos"))]
 use red4ext_rs::{
-    IntoRepr, RttiSystem, log,
+    IntoRepr, RttiSystem,
     types::{CName, ScriptRef},
 };
+#[cfg(windows)]
 use windows::Win32::{Foundation::HMODULE, System::LibraryLoader::GetModuleHandleW};
 
 use crate::Audioware;
@@ -152,6 +156,14 @@ pub fn error(msg: impl Into<String>) {
     console(msg, "FTLogError");
 }
 
+/// macOS: no script call from native code. `console` runs on the audioware thread and from hooks, and executing a script function
+/// (`FTLog`) through `CBaseFunction::Execute` has not been exercised on the Mac yet (the macOS port registers natives but calls no
+/// script from native code so far). `reports!` has already written the message to the RED4ext log before it gets here.
+#[cfg(target_os = "macos")]
+#[inline]
+fn console(_msg: impl Into<String>, _func_name: &str) {}
+
+#[cfg(not(target_os = "macos"))]
 #[inline]
 fn console(msg: impl Into<String>, func_name: &str) {
     use ::red4ext_rs::PluginOps;
@@ -176,6 +188,7 @@ fn console(msg: impl Into<String>, func_name: &str) {
     }
 }
 
+#[cfg(windows)]
 pub fn get_base_offset() -> HMODULE {
     match unsafe { GetModuleHandleW(None) } {
         Ok(x) => x,

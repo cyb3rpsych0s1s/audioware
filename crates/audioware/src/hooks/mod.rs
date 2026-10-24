@@ -1,4 +1,9 @@
 use red4ext_rs::SdkEnv;
+#[cfg(target_os = "macos")]
+use red4ext_rs::log;
+
+#[cfg(target_os = "macos")]
+pub mod macos;
 
 mod audio;
 mod audio_system;
@@ -15,7 +20,8 @@ mod ui_system;
 #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
 mod audio_interface;
 
-#[cfg(debug_assertions)]
+// macOS: the debug-only hooks have no matching function on the Mac, so a debug build on the Mac leaves them out.
+#[cfg(all(debug_assertions, not(target_os = "macos")))]
 mod save_handling_controller;
 
 #[cfg(feature = "research")]
@@ -30,6 +36,16 @@ mod script_audio_player;
 mod vo;
 
 pub fn attach(env: &SdkEnv) {
+    // macOS: `off` attaches nothing, `probe` attaches probes and starts the periodic report, `on` attaches the real detours (hooks/macos.rs).
+    #[cfg(target_os = "macos")]
+    match macos::mode() {
+        macos::Mode::Off => {
+            log::info!(env, "Audioware hooks: mode off, no hook attached");
+            return;
+        }
+        macos::Mode::Probe => macos::start_reporter(),
+        macos::Mode::On => {}
+    }
     #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
     audio_interface::attach_hook(env);
     sound_engine::attach_hooks(env);
@@ -42,7 +58,7 @@ pub fn attach(env: &SdkEnv) {
     ink_menu_scenario::attach_hooks(env);
     entity::attach_hooks(env);
     ui_system::attach_hook(env);
-    ink_logic_controller::attach_hook(env);
+    ink_logic_controller::attach_hooks(env);
 
     #[cfg(feature = "research")]
     {
@@ -51,7 +67,7 @@ pub fn attach(env: &SdkEnv) {
         script_audio_player::attach_hooks(env);
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg(all(debug_assertions, not(target_os = "macos")))]
     save_handling_controller::attach_hook(env);
 
     #[cfg(feature = "research")]
@@ -65,9 +81,20 @@ pub fn attach(env: &SdkEnv) {
         events::ink::attach_hook(env);
         events::ent::attach_hook(env);
     }
+
+    #[cfg(target_os = "macos")]
+    macos::summary(env);
 }
 
 pub fn detach(env: &SdkEnv) {
+    #[cfg(target_os = "macos")]
+    {
+        macos::stop_reporter();
+        // `off` attached nothing, so there is nothing to detach (a Detach of a target that was never attached is not a no-op in the loader).
+        if macos::mode() == macos::Mode::Off {
+            return;
+        }
+    }
     #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
     audio_interface::detach_hook(env);
     sound_engine::detach_hooks(env);
@@ -80,7 +107,7 @@ pub fn detach(env: &SdkEnv) {
     ink_menu_scenario::detach_hooks(env);
     entity::detach_hooks(env);
     ui_system::detach_hook(env);
-    ink_logic_controller::detach_hook(env);
+    ink_logic_controller::detach_hooks(env);
 
     #[cfg(feature = "research")]
     {
@@ -89,7 +116,7 @@ pub fn detach(env: &SdkEnv) {
         script_audio_player::detach_hooks(env);
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg(all(debug_assertions, not(target_os = "macos")))]
     save_handling_controller::detach_hook(env);
 
     #[cfg(feature = "research")]
@@ -112,7 +139,7 @@ mod offsets {
     pub const AUDIOSYSTEM_PLAY: u32                             = 0xCDB11D0E;   // 0x140974F58 (2.12a)
     pub const AUDIOSYSTEM_STOP: u32                             = 0xD2781D1E;   // 0x1424503F8 (2.12a)
     pub const AUDIOSYSTEM_SWITCH: u32                           = 0x15081DEA;   // 0x140291688 (2.12a)
-    #[cfg(debug_assertions)]
+    #[cfg(all(debug_assertions, not(target_os = "macos")))]
     pub const ENTITY_DISPOSE: u32                               = 0x3221A80;    // 0x14232C744 (2.13)
     pub const ENTITY_QUEUE_EVENT: u32                           = 0x5E7D1BB0;   // 0x1404EA45C (2.31)
     pub const TIMEDILATABLE_SETINDIVIDUALTIMEDILATION: u32      = 0x80102488;   // 0x1423AF554 (2.13)
@@ -121,7 +148,7 @@ mod offsets {
     pub const TIMESYSTEM_UNSETTIMEDILATION: u32                 = 0xF0652075;   // 0x1409BAD34 (2.13)
     /// gameuiSaveHandlingController
     /// note: LoadSaveInGame and LoadModdedSave share same underlying address
-    #[cfg(debug_assertions)]
+    #[cfg(all(debug_assertions, not(target_os = "macos")))]
     pub const SAVEHANDLINGCONTROLLER_LOAD_SAVE_IN_GAME: u32     = 0x9AB824D9;   // 0x14083FB6C (2.13)
     pub const UISYSTEM_QUEUE_EVENT: u32                         = 0x90231F41;   // 0x14062D454 (2.31)
     /// note: inkIWidgetController.QueueEvent (a.k.a inkIGameController)
@@ -139,9 +166,23 @@ mod offsets {
     pub const SOUNDENGINE_SET_PARAMETER: u32                    = 0xEB171218;   // 0x1409E88E0 (2.31)
     pub const SOUNDENGINE_SET_GLOBAL_PARAMETER: u32             = 0x2D61ABB;    // 0x1409DA450 (2.31)
     pub const AUDIOINTERNALEVENT_APPLY_ACTION: u32              = 0x3ECF1E9E;   // 0x1404418B0 (2.31)
+    // macOS: inlined, no hook (see camera_component.rs).
+    #[cfg(not(target_os = "macos"))]
     pub const CAMERACOMPONENT_OVERRIDE_AUDIO_LISTENERS: u32     = 0x519A1468;   // 0x14248078C (2.31)
     pub const CAMERACOMPONENT_ACTIVATE: u32                     = 0x55F51EAC;   // 0x1424808D8 (2.31)
     pub const CAMERACOMPONENT_DEACTIVATE: u32                   = 0x9A531F75;   // 0x142480994 (2.31)
+
+    // macOS: two Windows functions that Audioware hooks through one hash are two functions on the Mac (the Windows address is
+    // shared, the Mac compiler emitted separate bodies). The hash above keeps the first Mac function, these name the second. Rows: Audioware
+    // block of the macOS SDK address table (`Relocation-inl.hpp` in codeman101/RED4ext.SDK-macos, branch mac-rs).
+    /// `inkLogicController::QueueEvent`, Mac 0x47D35E0. The hash is the research-only constant below: on 2.31 it resolves to the same Windows
+    /// address as `INKIWIDGETCONTROLLER_QUEUE_EVENT` (0x8A7E88 for both in the Windows address list), and the latter is
+    /// `inkIGameController::QueueEvent` on the Mac (0x47CAC28).
+    #[cfg(target_os = "macos")]
+    pub const INKLOGICCONTROLLER_QUEUE_EVENT_MAC: u32           = 0xC87F2007;
+    /// `inkMenuScenario::QueueBroadcastEvent`, Mac 0x4930428 (a Mac-only id; `INKMENUSCENARIO_QUEUE_EVENT` is `QueueEvent`, 0x4930374).
+    #[cfg(target_os = "macos")]
+    pub const INKMENUSCENARIO_QUEUE_BROADCAST_EVENT_MAC: u32    = 0xC0DEA001;
 
     #[cfg(feature = "research")]
     mod natives {
@@ -178,9 +219,51 @@ mod offsets {
     pub use events::*;
 }
 
+/// Attaches `$detour` to `$addr` through `$hook`. On macOS the hook mode decides (hooks/macos.rs): `off` attaches nothing, `probe` attaches a
+/// generated detour that counts and logs its first calls, calls the original with the same arguments and returns its result, `on`
+/// attaches `$detour`. Elsewhere it is exactly `env.attach_hook($hook, $addr, $detour)`.
+///
+/// The `fn(...)` part repeats the signature the `hooks!` block of `$hook` declares, without the callback argument.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! attach_hook_with_mode {
+    ($env:expr, $hook:expr, $addr:expr, $name:literal, $detour:path, fn($($arg:ident: $ty:ty),* $(,)?) -> $ret:ty) => {{
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = $name;
+            unsafe { $env.attach_hook($hook, $addr, $detour) };
+        }
+        #[cfg(target_os = "macos")]
+        {
+            use $crate::hooks::macos::{LOGGED_CALLS, Mode, Probe, attached, mode, raw};
+            static PROBE: Probe = Probe::new($name);
+            unsafe extern "C" fn probe($($arg: $ty,)* cb: unsafe extern "C" fn($($arg: $ty),*) -> $ret) -> $ret {
+                let n = PROBE.enter();
+                if n > LOGGED_CALLS {
+                    return unsafe { cb($($arg),*) };
+                }
+                let args = [$(raw(&$arg)),*];
+                let out = unsafe { cb($($arg),*) };
+                PROBE.log_call(n, &args, raw(&out));
+                out
+            }
+            match mode() {
+                Mode::Off => {}
+                Mode::Probe => {
+                    PROBE.register();
+                    attached($name, unsafe { $env.attach_hook($hook, $addr, probe) });
+                }
+                Mode::On => {
+                    attached($name, unsafe { $env.attach_hook($hook, $addr, $detour) });
+                }
+            }
+        }
+    }};
+}
+
 #[macro_export]
 macro_rules! attach_native_func {
-    ($name:literal, $offset:path, $hook: ident, $me:ident, $em:ident, $to:ident $(, $v:vis)?) => {
+    ($name:literal, $offset:path, $hook: ident, $me:ident, $em:ident, $to:path $(, $v:vis)?) => {
         ::red4ext_rs::hooks! {
             static $hook: fn(
                 i: *mut ::red4ext_rs::types::IScriptable,
@@ -193,7 +276,13 @@ macro_rules! attach_native_func {
         $($v)? fn $me(env: &::red4ext_rs::SdkEnv) {
             let addr = ::red4ext_rs::addr_hashes::resolve($offset);
             let addr = unsafe { ::std::mem::transmute(addr) };
-            unsafe { env.attach_hook($hook, addr, $to) };
+            $crate::attach_hook_with_mode!(
+                env, $hook, addr, $name, $to,
+                fn(i: *mut ::red4ext_rs::types::IScriptable,
+                   f: *mut ::red4ext_rs::types::StackFrame,
+                   a3: ::red4ext_rs::VoidPtr,
+                   a4: ::red4ext_rs::VoidPtr) -> ()
+            );
             $crate::utils::intercept!("attached native func hook for {}", $name);
         }
         $($v)? fn $em(env: &::red4ext_rs::SdkEnv) {

@@ -12,6 +12,34 @@ attach_native_func!(
     super::offsets::INKIWIDGETCONTROLLER_QUEUE_EVENT // not a mistake, see comments
 );
 
+// macOS: Windows has one function for `inkIGameController::QueueEvent` and `inkLogicController::QueueEvent` (the hash above); the Mac has
+// two (`inkIGameController` 0x47CAC28 behind the hash above, `inkLogicController` 0x47D35E0 behind the second hash). Both get the same
+// detour, each through its own hook.
+#[cfg(target_os = "macos")]
+mod logic_controller {
+    crate::attach_native_func!(
+        "inkLogicController::QueueEvent (inkLogicController)",
+        super::super::offsets::INKLOGICCONTROLLER_QUEUE_EVENT_MAC,
+        HOOK,
+        attach_hook,
+        detach_hook,
+        super::detour,
+        pub
+    );
+}
+
+pub fn attach_hooks(env: &red4ext_rs::SdkEnv) {
+    attach_hook(env);
+    #[cfg(target_os = "macos")]
+    logic_controller::attach_hook(env);
+}
+
+pub fn detach_hooks(env: &red4ext_rs::SdkEnv) {
+    detach_hook(env);
+    #[cfg(target_os = "macos")]
+    logic_controller::detach_hook(env);
+}
+
 unsafe extern "C" fn detour(
     i: *mut IScriptable,
     f: *mut StackFrame,

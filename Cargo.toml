@@ -23,7 +23,8 @@ glam = "0.33.0"
 humantime = "2.3"
 kira = { git = "https://github.com/Roms1383/kira", rev = "10e78eea757d564530c6d04d8d98849650b94862", features = ["serde"] }
 rayon = "1.11"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "d419d98d8b81a19a62585d11759fabdeabeb0957" }
+# macOS support needs jac3km4/red4ext-rs#99. Until it is merged, this points at that PR's commit.
+red4ext-rs = { git = "https://github.com/codeman101/red4ext-rs", rev = "4fac9969f014786c8390ac36c165da31c3d0d958" }
 serde = "1.0"
 snafu = "0.9"
 

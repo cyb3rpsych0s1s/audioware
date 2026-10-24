@@ -204,7 +204,7 @@ pub fn ensure_located_in_depot(
     folder: &Mod,
 ) -> Result<(), Error> {
     let arg = std::fs::canonicalize(folder)?;
-    let path = arg.join(file);
+    let path = arg.join(audioware_manifest::manifest_path(file.as_ref()));
     if !path.starts_with(arg) {
         return Err(Error::Validation {
             source: validation::Error::AudioOutsideDepot {
@@ -247,7 +247,7 @@ pub fn ensure_valid_audio_data(
     usage: Usage,
 ) -> Result<Either<StaticSoundData, StreamingSoundData<FromFileError>>, Error> {
     use snafu::ResultExt;
-    let filepath = m.as_ref().join(path.as_ref());
+    let filepath = m.join_file(path.as_ref());
     ensure_located_in_depot(path, m)?;
     let data = match usage {
         Usage::OnDemand | Usage::InMemory => StaticSoundData::from_file(filepath)
@@ -435,11 +435,11 @@ where
     let id: Id = match usage {
         Usage::InMemory => Id::InMemory(key.clone().into(), source),
         Usage::OnDemand => Id::OnDemand(
-            crate::Usage::Static(key.clone().into(), m.as_ref().join(path.clone())),
+            crate::Usage::Static(key.clone().into(), m.join_file(path.clone())),
             source,
         ),
         Usage::Streaming => Id::OnDemand(
-            crate::Usage::Streaming(key.clone().into(), m.as_ref().join(path.clone())),
+            crate::Usage::Streaming(key.clone().into(), m.join_file(path.clone())),
             source,
         ),
     };
@@ -484,11 +484,11 @@ where
         Usage::InMemory => SceneId::InMemory(key.clone().into()),
         Usage::OnDemand => SceneId::OnDemand(crate::Usage::Static(
             key.clone().into(),
-            m.as_ref().join(path.clone()),
+            m.join_file(path.clone()),
         )),
         Usage::Streaming => SceneId::OnDemand(crate::Usage::Streaming(
             key.clone().into(),
-            m.as_ref().join(path.clone()),
+            m.join_file(path.clone()),
         )),
     };
     if usage == Usage::InMemory {
@@ -715,7 +715,7 @@ pub fn ensure_jingles<'a>(
     let key = UniqueKey(cname);
     ensure_key_no_conflict(&key, k, set)?;
     let id: Id = Id::OnDemand(
-        crate::Usage::Streaming(crate::Key::Unique(key.clone()), m.as_ref().join(file)),
+        crate::Usage::Streaming(crate::Key::Unique(key.clone()), m.join_file(file)),
         Source::Jingle,
     );
     if let Some(settings) = settings {

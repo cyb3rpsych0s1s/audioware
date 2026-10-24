@@ -361,7 +361,16 @@ const PADDING_38: usize = 0x50 - 0x38;
 const PADDING_54: usize = 0x59 - 0x54;
 
 const PADDING_PAST_PLAY_CONTEXT: usize = 0x30 - 0x18;
+/// Bytes between `event_id` (ends at 0x4C) and `duration`. On macOS the fields after the ids start 4 bytes earlier: `duration` is at 0x50
+/// (Windows 0x54), `callback_flags` 0x54 (0x58), `state` 0x55 (0x59), `stop_requested` 0x57 (0x5B), `has_ended` 0x59 (0x5D),
+/// `is_using_its_sound_object` 0x5A (0x5E). Evidence on the Mac binary: `SoundEngine::PostEvent` 0xDE1D64 reads the flags
+/// byte `ldrb w8,[x21,#0x54]` where Windows 0xA30218 reads `[rbp+0x58]`; 0xDCD4AC stores the state at `[x19,#0x55]` and
+/// `is_using_its_sound_object` at `[x19,#0x5a]` where Windows 0xA2FDEC stores `[rbx+0x59]` and `[rbx+0x5e]`; 0xDCD5D8 reads the duration
+/// `ldr s1,[x19,#0x50]` where Windows reads `movss xmm1,[rbx+0x54]`. The fields before it (0x00 to 0x4B) are at the same offsets.
+#[cfg(not(target_os = "macos"))]
 const PADDING_PAST_IDS: usize = 0x54 - 0x4C;
+#[cfg(target_os = "macos")]
+const PADDING_PAST_IDS: usize = 0x50 - 0x4C;
 
 #[derive(Debug)]
 #[repr(C)]
@@ -374,15 +383,28 @@ pub struct Sound {
     playing_id: PlayingSoundId,                  // 44
     event_id: AudioEventId,                      // 48
     unkx: [u8; PADDING_PAST_IDS],                // ?
-    duration: f32,                               // 54
-    callback_flags: u8,                          // 58
-    state: State,                                // 59
+    duration: f32,                               // 54 (macOS: 50)
+    callback_flags: u8,                          // 58 (macOS: 54)
+    state: State,                                // 59 (macOS: 55)
     grouping_weight: u8,                         // ?
-    stop_requested: bool,                        // 5B
+    stop_requested: bool,                        // 5B (macOS: 57)
     virtualization_waiting_for_sound_stop: bool, // ?
-    has_ended: bool,                             // 5D
-    is_using_its_sound_object: bool,             // 5E
+    has_ended: bool,                             // 5D (macOS: 59)
+    is_using_its_sound_object: bool,             // 5E (macOS: 5A)
 }
+
+// macOS: the fields after the ids sit at the offsets listed at `PADDING_PAST_IDS` (checked at compile time).
+#[cfg(target_os = "macos")]
+const _: () = {
+    assert!(std::mem::offset_of!(Sound, sound_object) == 0x30);
+    assert!(std::mem::offset_of!(Sound, playing_id) == 0x44);
+    assert!(std::mem::offset_of!(Sound, duration) == 0x50);
+    assert!(std::mem::offset_of!(Sound, callback_flags) == 0x54);
+    assert!(std::mem::offset_of!(Sound, state) == 0x55);
+    assert!(std::mem::offset_of!(Sound, stop_requested) == 0x57);
+    assert!(std::mem::offset_of!(Sound, has_ended) == 0x59);
+    assert!(std::mem::offset_of!(Sound, is_using_its_sound_object) == 0x5A);
+};
 
 impl Sound {
     pub fn sound_object(&self) -> Option<&SoundObject> {
