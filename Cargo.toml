@@ -24,7 +24,7 @@ humantime = "2.3"
 kira = { git = "https://github.com/Roms1383/kira", rev = "10e78eea757d564530c6d04d8d98849650b94862", features = ["serde"] }
 rayon = "1.11"
 # macOS support needs jac3km4/red4ext-rs#99. Until it is merged, this points at that PR's commit.
-red4ext-rs = { git = "https://github.com/codeman101/red4ext-rs", rev = "6d91036fa005734f83af9af04cd7e0046e3fb13d" }
+red4ext-rs = { git = "https://github.com/codeman101/red4ext-rs", rev = "4fac9969f014786c8390ac36c165da31c3d0d958" }
 serde = "1.0"
 snafu = "0.9"
 
