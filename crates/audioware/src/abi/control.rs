@@ -10,6 +10,7 @@ use crate::{
     ControlId, ToTween,
     abi::{DynamicEmitterEvent, TargetId, command::Command, types::DynamicSoundEvent},
     engine::{next_control_id, queue},
+    error::REPORT_MODDER,
     utils::warns,
 };
 
@@ -111,7 +112,7 @@ impl DynamicSoundEvent {
         emitter_name: Option<CName>,
     ) -> bool {
         if let Err(control_id) = self.id.set(next_control_id()) {
-            warns!("dynamic sound already initialized ({control_id})");
+            warns!(hint: REPORT_MODDER, "dynamic sound already initialized ({control_id})");
             return false;
         }
         queue::send(Command::EnqueueAndPlay {
@@ -126,7 +127,7 @@ impl DynamicSoundEvent {
     }
     pub fn set_volume(&self, value: f32, tween: Ref<crate::Tween>) {
         let Ok(value) = Amplitude::try_from(value) else {
-            warns!("invalid amplitude ({value})");
+            warns!(hint: REPORT_MODDER, "invalid amplitude ({value})");
             return;
         };
         if self.id.get().is_none() {
@@ -150,7 +151,7 @@ impl DynamicSoundEvent {
     }
     pub fn set_panning(&self, value: f32, tween: Ref<crate::Tween>) {
         let Ok(value) = Panning::try_from(value) else {
-            warns!("invalid panning ({value})");
+            warns!(hint: REPORT_MODDER, "invalid panning ({value})");
             return;
         };
         if self.id.get().is_none() {
@@ -273,13 +274,13 @@ impl DynamicEmitterEvent {
     pub fn enqueue_and_play(&self, entity_id: EntityId) -> bool {
         if let Err(control_id) = self.id.set(next_control_id()) {
             warns!(
-                "dynamic emitter already initialized for {} ({control_id})",
+                hint: REPORT_MODDER, "dynamic emitter already initialized for {} ({control_id})",
                 self.tag_name.get()
             );
             return false;
         }
         let Ok(entity_id) = TargetId::try_new(entity_id) else {
-            warns!("invalid entity id: {entity_id}");
+            warns!(hint: REPORT_MODDER, "invalid entity id: {entity_id}");
             return false;
         };
         queue::send(Command::EnqueueAndPlayOnEmitter {
@@ -293,7 +294,7 @@ impl DynamicEmitterEvent {
     }
     pub fn set_volume(&self, value: f32, tween: Ref<crate::Tween>) {
         let Ok(value) = Amplitude::try_from(value) else {
-            warns!("invalid amplitude ({value})");
+            warns!(hint: REPORT_MODDER, "invalid amplitude ({value})");
             return;
         };
         if self.id.get().is_none() {

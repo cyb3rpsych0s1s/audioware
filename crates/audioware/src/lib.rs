@@ -23,7 +23,10 @@ mod utils;
 
 use engine::queue;
 
-use crate::{abi::lifecycle::Lifecycle, engine::queue::THREAD, hooks::detach, utils::fails};
+use crate::{
+    abi::lifecycle::Lifecycle, engine::queue::THREAD, error::REPORT_PLUGIN, hooks::detach,
+    utils::fails,
+};
 
 /// Audio [Plugin] for Cyberpunk 2077.
 pub struct Audioware;
@@ -51,7 +54,7 @@ impl Plugin for Audioware {
                     if let Some(thread) = guard.take()
                         && let Err(e) = thread.join()
                     {
-                        fails!("unable to join thread: {e:?}");
+                        fails!(hint: REPORT_PLUGIN, "unable to join thread: {e:?}");
                     }
                     break;
                 } else {

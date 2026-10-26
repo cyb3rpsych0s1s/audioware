@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicU8, AtomicU32};
 use audioware_manifest::{Locale, LocaleExt};
 use red4ext_rs::types::EntityId;
 
-use crate::{PlayerPuppet, resolve_any_entity, utils::warns};
+use crate::{PlayerPuppet, error::REPORT_PLUGIN, resolve_any_entity, utils::warns};
 
 use super::scene::AsEntityExt;
 
@@ -34,7 +34,7 @@ impl SpokenLocale {
         {
             Ok(x) => x,
             Err(e) => {
-                warns!("invalid spoken locale in state: {}", e);
+                warns!(hint: REPORT_PLUGIN, "invalid spoken locale in state: {}", e);
                 Locale::English.into()
             }
         }
@@ -55,7 +55,7 @@ impl WrittenLocale {
         {
             Ok(x) => x,
             Err(e) => {
-                warns!("invalid written locale in state: {}", e);
+                warns!(hint: REPORT_PLUGIN, "invalid written locale in state: {}", e);
                 Locale::English.into()
             }
         }
