@@ -403,11 +403,11 @@ impl Banks {
         PREVIOUS_IDS
             .lock()
             .expect("already loaded before")
-            .clone_from(&self.ids.drain().collect());
+            .clone_from(&std::mem::take(&mut self.ids));
         PREVIOUS_SCENE_IDS
             .lock()
             .expect("already loaded before")
-            .clone_from(&self.scene_ids.drain().collect());
+            .clone_from(&std::mem::take(&mut self.scene_ids));
         let (banks, initialization) = Self::new();
         self.ids = banks.ids;
         self.scene_ids = banks.scene_ids;

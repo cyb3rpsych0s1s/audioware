@@ -52,6 +52,13 @@ macro_rules! inspect {
 pub(crate) use inspect;
 
 macro_rules! reports {
+    ([$fn:ident];[$($red4ext:tt)*];[$($reds:tt)*]; hint: $hint:expr) => {{
+        use ::red4ext_rs::PluginOps;
+        let hint = $hint;
+        let red4ext = format!($($red4ext)*);
+        ::red4ext_rs::log::$fn!($crate::Audioware::env(), "{red4ext} (hint: {hint})");
+        $crate::utils::$fn(format!("{} (hint: {hint})", format!($($reds)*)));
+    }};
     ([$fn:ident];[$($red4ext:tt)*];[$($reds:tt)*]) => {{
         use ::red4ext_rs::PluginOps;
         ::red4ext_rs::log::$fn!($crate::Audioware::env(), $($red4ext)*);
@@ -70,6 +77,12 @@ macro_rules! reports {
 pub(crate) use reports;
 
 macro_rules! fails {
+    (hint: $hint:expr, [$($red4ext:tt)*];[$($reds:tt)*]) => {{
+        $crate::utils::reports!([error];[$($red4ext)*];[$($reds)*]; hint: $hint);
+    }};
+    (hint: $hint:expr, $($arg:tt)*) => {{
+        $crate::utils::reports!([error];[$($arg)*];[$($arg)*]; hint: $hint);
+    }};
     ([$($red4ext:tt)*];[$($reds:tt)*]) => {{
         $crate::utils::reports!([error];[$($red4ext)*];[$($reds)*]);
     }};
@@ -80,6 +93,12 @@ macro_rules! fails {
 pub(crate) use fails;
 
 macro_rules! warns {
+    (hint: $hint:expr, [$($red4ext:tt)*];[$($reds:tt)*]) => {{
+        $crate::utils::reports!([warn];[$($red4ext)*];[$($reds)*]; hint: $hint);
+    }};
+    (hint: $hint:expr, $($arg:tt)*) => {{
+        $crate::utils::reports!([warn];[$($arg)*];[$($arg)*]; hint: $hint);
+    }};
     ([$($red4ext:tt)*];[$($reds:tt)*]) => {{
         $crate::utils::reports!([warn];[$($red4ext)*];[$($reds)*]);
     }};

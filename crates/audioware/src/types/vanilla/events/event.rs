@@ -7,7 +7,7 @@ use red4ext_rs::{
     types::{CName, EntityId, IScriptable, RedArray},
 };
 
-use crate::{EventHookType, Vector3, utils::fails};
+use crate::{EventHookType, Vector3, error::REPORT_PLUGIN, utils::fails};
 
 #[derive(Debug, Default, Clone)]
 #[repr(transparent)]
@@ -510,7 +510,7 @@ impl From<EventActionTypes> for EventHookTypes {
                     Self::REMOVE_CONTAINER_STREAMING_PREFETCH
                 }
                 x => {
-                    fails!("missing EventActionTypes flag: {x}");
+                    fails!(hint: REPORT_PLUGIN, "missing EventActionTypes flag: {x}");
                     Self::empty()
                 }
             };

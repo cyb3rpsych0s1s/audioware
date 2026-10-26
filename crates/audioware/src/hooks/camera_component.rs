@@ -65,6 +65,7 @@ mod activate {
     use crate::abi::lifecycle::Lifecycle;
     use crate::attach_native_func;
     use crate::engine::queue;
+    use crate::error::REPORT_PLUGIN;
     use crate::utils::warns;
 
     attach_native_func! {
@@ -108,7 +109,7 @@ mod activate {
                         triggered_by: me.into(),
                     });
                 } else {
-                    warns!("gameCameraComponent::Activate: unable to get camera");
+                    warns!(hint: REPORT_PLUGIN, "gameCameraComponent::Activate: unable to get camera");
                 }
             }
         }

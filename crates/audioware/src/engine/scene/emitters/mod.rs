@@ -33,7 +33,7 @@ use crate::{
         },
         tweens::IMMEDIATELY,
     },
-    error::{EngineError, Error, SceneError},
+    error::{EngineError, Error, REPORT_MODDER, SceneError},
     utils::{lifecycle, warns},
 };
 
@@ -84,7 +84,7 @@ impl Emitters {
     ) -> Result<(), Error> {
         if self.exists_tag(&entity_id, &tag_name) {
             warns!(
-                "emitter {entity_id} with tag name {} was already registered",
+                hint: REPORT_MODDER, "emitter {entity_id} with tag name {} was already registered",
                 tag_name.as_str()
             );
             return Ok(());
