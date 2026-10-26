@@ -52,15 +52,6 @@ macro_rules! inspect {
 pub(crate) use inspect;
 
 macro_rules! reports {
-    (@split [$fn:ident] [$($msg:tt)*] , hint: $hint:expr $(,)?) => {{
-        $crate::utils::reports!([$fn];[$($msg)*];[$($msg)*]; hint: $hint);
-    }};
-    (@split [$fn:ident] [$($msg:tt)*]) => {{
-        $crate::utils::reports!([$fn];[$($msg)*];[$($msg)*]);
-    }};
-    (@split [$fn:ident] [$($msg:tt)*] $next:tt $($rest:tt)*) => {
-        $crate::utils::reports!(@split [$fn] [$($msg)* $next] $($rest)*)
-    };
     ([$fn:ident];[$($red4ext:tt)*];[$($reds:tt)*]; hint: $hint:expr) => {{
         use ::red4ext_rs::PluginOps;
         let hint = $hint;
@@ -86,27 +77,33 @@ macro_rules! reports {
 pub(crate) use reports;
 
 macro_rules! fails {
-    ([$($red4ext:tt)*];[$($reds:tt)*], hint: $hint:expr $(,)?) => {{
+    (hint: $hint:expr, [$($red4ext:tt)*];[$($reds:tt)*]) => {{
         $crate::utils::reports!([error];[$($red4ext)*];[$($reds)*]; hint: $hint);
+    }};
+    (hint: $hint:expr, $($arg:tt)*) => {{
+        $crate::utils::reports!([error];[$($arg)*];[$($arg)*]; hint: $hint);
     }};
     ([$($red4ext:tt)*];[$($reds:tt)*]) => {{
         $crate::utils::reports!([error];[$($red4ext)*];[$($reds)*]);
     }};
     ($($arg:tt)*) => {{
-        $crate::utils::reports!(@split [error] [] $($arg)*);
+        $crate::utils::reports!([error];[$($arg)*]);
     }};
 }
 pub(crate) use fails;
 
 macro_rules! warns {
-    ([$($red4ext:tt)*];[$($reds:tt)*], hint: $hint:expr $(,)?) => {{
+    (hint: $hint:expr, [$($red4ext:tt)*];[$($reds:tt)*]) => {{
         $crate::utils::reports!([warn];[$($red4ext)*];[$($reds)*]; hint: $hint);
+    }};
+    (hint: $hint:expr, $($arg:tt)*) => {{
+        $crate::utils::reports!([warn];[$($arg)*];[$($arg)*]; hint: $hint);
     }};
     ([$($red4ext:tt)*];[$($reds:tt)*]) => {{
         $crate::utils::reports!([warn];[$($red4ext)*];[$($reds)*]);
     }};
     ($($arg:tt)*) => {{
-        $crate::utils::reports!(@split [warn] [] $($arg)*);
+        $crate::utils::reports!([warn];[$($arg)*]);
     }};
 }
 pub(crate) use warns;
