@@ -3,7 +3,7 @@ members = ["crates/core", "crates/manifest", "crates/bank", "crates/audioware"]
 resolver = "3"
 
 [workspace.package]
-version = "1.9.9"
+version = "1.10.0"
 edition = "2024"
 rust-version = "1.97.1"
 
@@ -23,7 +23,7 @@ glam = "0.33.0"
 humantime = "2.3"
 kira = { git = "https://github.com/Roms1383/kira", rev = "10e78eea757d564530c6d04d8d98849650b94862", features = ["serde"] }
 rayon = "1.11"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "d419d98d8b81a19a62585d11759fabdeabeb0957" }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "e29eac83de1d1f8623bd9ff59bd176f814334a3d" }
 serde = "1.0"
 snafu = "0.9"
 
