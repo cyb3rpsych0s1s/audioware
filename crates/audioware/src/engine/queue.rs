@@ -16,7 +16,9 @@ use crate::{
         control::{DynamicEmitter, DynamicSound},
         is_in_foreground,
         lifecycle::{Board, Lifecycle, Session, System},
-    }, config::BufferSize, engine::{
+    },
+    config::BufferSize,
+    engine::{
         DilationUpdate,
         callbacks::Dispatch,
         traits::{
@@ -30,7 +32,9 @@ use crate::{
             volume::SetControlledVolume,
         },
         tweens::{DILATION_EASE_OUT, IMMEDIATELY},
-    }, error::{Error, InternalError, REPORT_PLUGIN}, utils::{fails, lifecycle},
+    },
+    error::{Error, InternalError, REPORT_PLUGIN},
+    utils::{fails, lifecycle},
 };
 
 use super::Engine;

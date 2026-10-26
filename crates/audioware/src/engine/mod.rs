@@ -428,7 +428,10 @@ where
             + ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>>,
     {
         if !entity_id.is_defined() {
-            warns!(hint: REPORT_MODDER, "cannot play sound on undefined entity: {sound_name}");
+            warns!(
+                hint: REPORT_MODDER, "cannot play sound on undefined entity for {}: {sound_name}",
+                tag_name.as_str()
+            );
             return;
         }
         let gender = entity_id.to_gender();
@@ -450,7 +453,10 @@ where
                         control_id,
                     ) {
                         Err(e) => {
-                            warns!("cannot play sound on emitter: {e}");
+                            warns!(
+                                "cannot play sound on emitter for {}: {e}",
+                                tag_name.as_str()
+                            );
                         }
                         Ok((duration, emitter_name)) => {
                             let emitter_name = match emitter_name {
@@ -473,14 +479,15 @@ where
                                 );
                             } else if *key.source() == Source::Voices {
                                 warns!(
-                                    hint: REPORT_MODDER, "cannot propagate subtitles for voice, couldn't resolve emitter name: {sound_name} [{entity_id}]"
+                                    hint: REPORT_MODDER, "cannot propagate subtitles for voice for {}, couldn't resolve emitter name: {sound_name} [{entity_id}]",
+                                    tag_name.as_str()
                                 );
                             }
                         }
                     };
                 }
                 Err(e) => {
-                    warns!("cannot play sound: {e}");
+                    warns!("cannot play sound for {}: {e}", tag_name.as_str());
                 }
             }
         }
@@ -681,10 +688,15 @@ where
                     emitter_settings,
                     &self.tracks.ambience,
                 )
-                .inspect_err(|e| warns!("failed to register emitter: {e}"))
+                .inspect_err(|e| {
+                    warns!("failed to register emitter for {}: {e}", tag_name.as_str())
+                })
                 .is_ok(),
             None => {
-                warns!(hint: REPORT_MODDER, "scene is not initialized");
+                warns!(
+                    hint: REPORT_MODDER, "scene is not initialized, cannot register emitter for {}",
+                    tag_name.as_str()
+                );
                 false
             }
         }
@@ -694,7 +706,10 @@ where
         match self.scene {
             Some(ref mut scene) => scene.unregister_emitter(&entity_id, &tag_name),
             None => {
-                warns!(hint: REPORT_MODDER, "scene is not initialized");
+                warns!(
+                    hint: REPORT_MODDER, "scene is not initialized, cannot unregister emitter for {}",
+                    tag_name.as_str()
+                );
                 false
             }
         }

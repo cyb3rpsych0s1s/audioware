@@ -280,7 +280,7 @@ impl DynamicEmitterEvent {
             return false;
         }
         let Ok(entity_id) = TargetId::try_new(entity_id) else {
-            warns!(hint: REPORT_MODDER, "invalid entity id: {entity_id}");
+            warns!(hint: REPORT_MODDER, "invalid entity id for {}: {entity_id}", self.tag_name.get());
             return false;
         };
         queue::send(Command::EnqueueAndPlayOnEmitter {
@@ -294,7 +294,7 @@ impl DynamicEmitterEvent {
     }
     pub fn set_volume(&self, value: f32, tween: Ref<crate::Tween>) {
         let Ok(value) = Amplitude::try_from(value) else {
-            warns!(hint: REPORT_MODDER, "invalid amplitude ({value})");
+            warns!(hint: REPORT_MODDER, "invalid amplitude for {} ({value})", self.tag_name.get());
             return;
         };
         if self.id.get().is_none() {

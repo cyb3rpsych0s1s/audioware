@@ -559,7 +559,7 @@ impl SceneLifecycle for AudioSystemExt {
         let entity_id = match TargetId::try_new(entity_id) {
             Ok(entity_id) => entity_id,
             Err(e) => {
-                warns!(hint: REPORT_MODDER, "{e}");
+                warns!(hint: REPORT_MODDER, "invalid entity id for {}: {e}", tag_name);
                 return false;
             }
         };
@@ -567,7 +567,8 @@ impl SceneLifecycle for AudioSystemExt {
             Ok(emitter_settings) => emitter_settings,
             Err(e) => {
                 warns!(
-                    "{}",
+                    "invalid emitter settings for {}: {}",
+                    tag_name,
                     e.iter()
                         .map(|e| format!("{e}"))
                         .collect::<Vec<_>>()
@@ -601,7 +602,7 @@ impl SceneLifecycle for AudioSystemExt {
         let entity_id = match TargetId::try_new(entity_id) {
             Ok(entity_id) => entity_id,
             Err(e) => {
-                warns!(hint: REPORT_MODDER, "{e}");
+                warns!(hint: REPORT_MODDER, "invalid entity id for {}: {e}", tag_name);
                 return false;
             }
         };
@@ -737,12 +738,12 @@ impl ExtCommand for AudioSystemExt {
         let entity_id = match TargetId::try_new(entity_id) {
             Ok(entity_id) => entity_id,
             Err(e) => {
-                warns!(hint: REPORT_MODDER, "{e}");
+                warns!(hint: REPORT_MODDER, "invalid entity id for {}: {e}", tag_name);
                 return;
             }
         };
         if let Some(Err(e)) = ext.as_ref().map(Validate::validate) {
-            warns!(hint: REPORT_MODDER, "invalid audio settings: {:#?}", e);
+            warns!(hint: REPORT_MODDER, "invalid audio settings for {}: {:#?}", tag_name, e);
             return;
         }
         queue::send(Command::PlayOnEmitter {
@@ -770,7 +771,7 @@ impl ExtCommand for AudioSystemExt {
         let entity_id = match TargetId::try_new(entity_id) {
             Ok(entity_id) => entity_id,
             Err(e) => {
-                warns!(hint: REPORT_MODDER, "{e}");
+                warns!(hint: REPORT_MODDER, "invalid entity id for {}: {e}", tag_name);
                 return;
             }
         };
