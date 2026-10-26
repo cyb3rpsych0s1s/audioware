@@ -1,0 +1,156 @@
+name: Publish to Nexus Mods
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing GitHub release tag (e.g. v0.3.0)"
+        required: true
+        type: string
+      allow_prerelease:
+        description: "Allow a release still marked pre-release"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Run all checks but skip upload (dry-run)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+# Nexus "file" IDs (Files tab > Advanced, or Manage Files > edit), not secret.
+# Each file must already exist with one upload: the action only adds versions to it.
+env:
+  NEXUS_MOD_ID: "14315126009569"     # needed by the action to post the changelog
+  NEXUS_FILE_ID: "2756827"           # the "Audioware" file
+  # `uses:` takes no expressions, hence the YAML anchor (must be the full owner/repo@sha)
+  NEXUS_ACTION_VERSION: &nexus-action Nexus-Mods/upload-action@c96019556046053aa26044b44396cd38929daf23   # v1.0.0-beta.10
+
+# single global lane: two publishes must never race on the same Nexus files / mod version
+concurrency:
+  group: nexus-publish
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      digest: ${{ steps.check.outputs.digest }}
+      changelog: ${{ steps.check.outputs.changelog }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ inputs.tag }}
+      ALLOW_PRE: ${{ inputs.allow_prerelease }}
+    steps:
+      # who may publish, and from which ref, is enforced by the `nexusmods` environment
+      # (required reviewers + main-only deployments), not here: this file is editable by any writer
+      - id: check
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] \
+            || { echo "::error::Not a publishable tag: $TAG"; exit 1; }
+
+          label="Github checksum: "
+
+          # drafts are not returned by this endpoint at all
+          info=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG") \
+            || { echo "::error::No published release for $TAG"; exit 1; }
+          [[ $(jq -r .draft <<<"$info") == false ]] \
+            || { echo "::error::$TAG is a draft"; exit 1; }
+          if [[ $(jq -r .prerelease <<<"$info") == true && "$ALLOW_PRE" != true ]]; then
+            echo "::error::$TAG is still a pre-release: promote it first, or tick allow_prerelease"; exit 1
+          fi
+
+          # never go backwards: update_mod_version would downgrade the mod page.
+          # NB: sort -V ranks v0.3.0 before v0.3.0-rc.1 (only matters with allow_prerelease)
+          highest=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/nexus/windows-v" --jq '.[].ref' \
+            | sed -E 's#^refs/tags/nexus/windows-##' | sort -uV | tail -n1)
+          if [[ -n "$highest" && "$highest" != "$TAG" ]]; then
+            top=$(printf '%s\n%s\n' "$highest" "$TAG" | sort -V | tail -n1)
+            [[ "$top" == "$TAG" ]] \
+              || { echo "::error::$TAG is older than $highest, already on Nexus"; exit 1; }
+          fi
+
+          asset="Audioware-windows-${TAG}.zip"
+          digest=$(jq -r --arg n "$asset" '.assets[] | select(.name == $n) | .digest // empty' <<<"$info")
+          [[ -n "$digest" ]] \
+            || { echo "::error::Missing release asset $asset (or its digest)"; exit 1; }
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/nexus/windows-$TAG" >/dev/null 2>&1; then
+            echo "::error::$TAG was already published to Nexus"; exit 1
+          fi
+          changelog="${label}${digest}"
+
+          echo "version=${TAG#v}"      >> "$GITHUB_OUTPUT"
+          echo "digest=$digest"        >> "$GITHUB_OUTPUT"
+          echo "changelog=$changelog"  >> "$GITHUB_OUTPUT"
+          { echo "### Changelog"; echo '```log'; echo "$changelog"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+  upload:
+    needs: validate
+    runs-on: ubuntu-latest
+    # dry runs need neither approval nor the API key
+    environment: ${{ !inputs.dry_run && 'nexusmods' || '' }}   # holds secrets.NEXUS_API_KEY
+    permissions:
+      contents: write                 # only for the nexus/windows-<tag> marker
+    # GH_TOKEN is scoped per step on purpose: the third-party upload step must not see it
+    env:
+      TAG: ${{ inputs.tag }}
+    steps:
+      - name: Download build
+        id: asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED: ${{ needs.validate.outputs.digest }}
+        run: |
+          set -euo pipefail
+          file_id="$NEXUS_FILE_ID"; label="Audioware"; category="main"
+          [[ -n "$file_id" ]] || { echo "::error::No Nexus file ID set"; exit 1; }
+          asset="Audioware-windows-${TAG}.zip"
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" --pattern "$asset" --dir .
+          actual="sha256:$(sha256sum "$asset" | cut -d' ' -f1)"
+          [[ "$actual" == "$EXPECTED" ]] \
+            || { echo "::error::$asset changed since validation ($actual != $EXPECTED)"; exit 1; }
+          echo "\`$asset\` $actual" >> "$GITHUB_STEP_SUMMARY"
+          { echo "file=$asset"; echo "file_id=$file_id"; echo "label=$label"; echo "category=$category"; } >> "$GITHUB_OUTPUT"
+
+      # claimed *before* uploading: creating an existing ref fails (422), so this is an
+      # atomic lock against double publishing. A failed upload leaves the claim in place.
+      - name: Claim marker
+        id: claim
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/$TAG" --jq .sha)
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/tags/nexus/windows-$TAG" -f sha="$sha" >/dev/null
+
+      - name: Upload to Nexus Mods
+        if: ${{ !inputs.dry_run }}
+        uses: *nexus-action   # see NEXUS_ACTION_VERSION
+        with:
+          api_key: ${{ secrets.NEXUS_API_KEY }}
+          file_id: ${{ steps.asset.outputs.file_id }}
+          filename: ${{ steps.asset.outputs.file }}
+          version: ${{ needs.validate.outputs.version }}
+          display_name: ${{ steps.asset.outputs.label }}
+          category: ${{ steps.asset.outputs.category }}
+          # one changelog entry per publish, carrying this build's checksum only
+          mod_id: ${{ env.NEXUS_MOD_ID }}
+          changelog: ${{ needs.validate.outputs.changelog }}
+          archive_existing_version: false
+          update_mod_version: true
+
+      - name: Explain how to release the claim
+        if: ${{ failure() && steps.claim.outcome == 'success' }}
+        run: |
+          {
+            echo "### Upload of $TAG failed after claiming its marker"
+            echo "Check the Nexus file page first. If nothing was uploaded, release the claim and re-run:"
+            echo '```sh'
+            echo "gh api -X DELETE repos/$GITHUB_REPOSITORY/git/refs/tags/nexus/windows-$TAG"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
