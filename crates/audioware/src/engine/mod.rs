@@ -35,7 +35,7 @@ use crate::{
         tracks::TrackEntryOptions,
         traits::{Handle, stop::StopBy, store::Store},
     },
-    error::{EngineError, Error},
+    error::{EngineError, Error, REPORT_MODDER, REPORT_PLUGIN},
     propagate_subtitles, resolve_any_entity,
     utils::{fails, lifecycle, success, warns},
 };
@@ -95,7 +95,7 @@ where
             *BANKS.write() = Some(banks.clone());
         }
         let mut manager = AudioManager::new(settings)
-            .inspect_err(|e| fails!("AudioManager creation failed: {e:?}"))
+            .inspect_err(|e| fails!(hint: REPORT_PLUGIN, "AudioManager creation failed: {e:?}"))
             .map_err(|_| Error::Engine {
                 source: EngineError::Manager {
                     origin: "audio manager",
@@ -220,7 +220,7 @@ where
                     );
                 } else if *key.source() == Source::Voices {
                     warns!(
-                        "cannot propagate subtitles for voice, emitterName must be defined: {event_name}"
+                        hint: REPORT_MODDER, "cannot propagate subtitles for voice, emitterName must be defined: {event_name}"
                     );
                 }
             }
@@ -243,7 +243,7 @@ where
     ) {
         if !string_id.is_defined() {
             warns!(
-                "cannot play sound with undefined RUID: {}",
+                hint: REPORT_MODDER, "cannot play sound with undefined RUID: {}",
                 string_id.error_display()
             );
             return;
@@ -253,7 +253,7 @@ where
             return;
         }
         let Some(ref mut scene) = self.scene else {
-            warns!("scene is not available, and therefore dialogs aren't either");
+            warns!(hint: REPORT_MODDER, "scene is not available, and therefore dialogs aren't either");
             return;
         };
         let gender = entity_id.to_gender();
@@ -343,7 +343,7 @@ where
             Ok(key) => {
                 let data = self.banks.data(key);
                 if let Some(Err(e)) = ext.as_ref().map(|x| x.validate_for(&data)) {
-                    warns!("invalid setting(s) for audio: {e:#?}");
+                    warns!(hint: REPORT_MODDER, "invalid setting(s) for audio: {e:#?}");
                     return;
                 }
                 let duration: f32;
@@ -406,7 +406,7 @@ where
                     )
                 } else if *key.source() == Source::Voices {
                     warns!(
-                        "cannot propagate subtitles for voice, both entityID and emitterName must be defined: {event_name}"
+                        hint: REPORT_MODDER, "cannot propagate subtitles for voice, both entityID and emitterName must be defined: {event_name}"
                     );
                 }
             }
@@ -429,7 +429,10 @@ where
             + ValidateFor<Either<StaticSoundData, StreamingSoundData<FromFileError>>>,
     {
         if !entity_id.is_defined() {
-            warns!("cannot play sound on undefined entity: {sound_name}");
+            warns!(
+                hint: REPORT_MODDER, "cannot play sound on undefined entity for {}: {sound_name}",
+                tag_name.as_str()
+            );
             return;
         }
         let gender = entity_id.to_gender();
@@ -451,7 +454,10 @@ where
                         control_id,
                     ) {
                         Err(e) => {
-                            warns!("cannot play sound on emitter: {e}");
+                            warns!(
+                                "cannot play sound on emitter for {}: {e}",
+                                tag_name.as_str()
+                            );
                         }
                         Ok((duration, emitter_name)) => {
                             let emitter_name = match emitter_name {
@@ -474,14 +480,15 @@ where
                                 );
                             } else if *key.source() == Source::Voices {
                                 warns!(
-                                    "cannot propagate subtitles for voice, couldn't resolve emitter name: {sound_name} [{entity_id}]"
+                                    hint: REPORT_MODDER, "cannot propagate subtitles for voice for {}, couldn't resolve emitter name: {sound_name} [{entity_id}]",
+                                    tag_name.as_str()
                                 );
                             }
                         }
                     };
                 }
                 Err(e) => {
-                    warns!("cannot play sound: {e}");
+                    warns!("cannot play sound for {}: {e}", tag_name.as_str());
                 }
             }
         }
@@ -505,7 +512,7 @@ where
             let data = self.banks.data(key);
             let ext = self.banks.settings(key);
             if let Some(Err(e)) = ext.as_ref().map(|x| x.validate_for(&data)) {
-                warns!("invalid setting(s) for actor audio: {e:#?}");
+                warns!(hint: REPORT_MODDER, "invalid setting(s) for actor audio: {e:#?}");
                 return;
             }
             let mut slot = scene
@@ -535,7 +542,7 @@ where
     pub fn stop_on_actors(&mut self, sound_name: Cruid, fade_out: f32) {
         if !sound_name.is_defined() {
             warns!(
-                "cannot stop sound with undefined RUID: {}",
+                hint: REPORT_MODDER, "cannot stop sound with undefined RUID: {}",
                 sound_name.error_display()
             );
             return;
@@ -682,10 +689,15 @@ where
                     emitter_settings,
                     &self.tracks.ambience,
                 )
-                .inspect_err(|e| warns!("failed to register emitter: {e}"))
+                .inspect_err(|e| {
+                    warns!("failed to register emitter for {}: {e}", tag_name.as_str())
+                })
                 .is_ok(),
             None => {
-                lifecycle!("scene is not initialized");
+                warns!(
+                    hint: REPORT_MODDER, "scene is not initialized, cannot register emitter for {}",
+                    tag_name.as_str()
+                );
                 false
             }
         }
@@ -695,7 +707,10 @@ where
         match self.scene {
             Some(ref mut scene) => scene.unregister_emitter(&entity_id, &tag_name),
             None => {
-                lifecycle!("scene is not initialized");
+                warns!(
+                    hint: REPORT_MODDER, "scene is not initialized, cannot unregister emitter for {}",
+                    tag_name.as_str()
+                );
                 false
             }
         }
@@ -708,7 +723,7 @@ where
                     self.tracks.sync_dilation(scene.listener_id(), value);
                 }
             }
-            None => lifecycle!("scene is not initialized"),
+            None => warns!(hint: REPORT_MODDER, "scene is not initialized"),
         }
     }
 
@@ -719,7 +734,7 @@ where
                     self.tracks.sync_dilation(scene.listener_id(), value);
                 }
             }
-            None => lifecycle!("scene is not initialized"),
+            None => warns!(hint: REPORT_MODDER, "scene is not initialized"),
         }
     }
 
@@ -730,7 +745,7 @@ where
                     self.tracks.sync_dilation(entity_id, value);
                 }
             }
-            None => lifecycle!("scene is not initialized"),
+            None => warns!(hint: REPORT_MODDER, "scene is not initialized"),
         }
     }
 
@@ -741,7 +756,7 @@ where
                     self.tracks.sync_dilation(entity_id, value);
                 }
             }
-            None => lifecycle!("scene is not initialized"),
+            None => warns!(hint: REPORT_MODDER, "scene is not initialized"),
         }
     }
 
@@ -762,7 +777,7 @@ where
             Some(ref mut scene) => {
                 scene.override_listener(camera);
             }
-            None => lifecycle!("scene is not initialized"),
+            None => warns!(hint: REPORT_MODDER, "scene is not initialized"),
         }
     }
 
@@ -823,7 +838,7 @@ where
             "MusicVolume" => self.tracks.music.set_volume(d, DEFAULT),
             "CarRadioVolume" => self.tracks.car_radio.set_volume(d, DEFAULT),
             "RadioportVolume" => self.tracks.radioport.set_volume(d, DEFAULT),
-            _ => lifecycle!("unknown volume setting: {}", setting.as_str()),
+            _ => warns!(hint: REPORT_MODDER, "unknown volume setting: {}", setting.as_str()),
         }
     }
 

@@ -15,6 +15,7 @@ use crate::{
         mutes::cache::{publish_entries, reclaim_entries, with_entries},
         queue,
     },
+    error::REPORT_MODDER,
     utils::{fails, warns},
 };
 
@@ -69,11 +70,11 @@ impl Mute for AudioEventManager {
     #[inline]
     fn mute_specific(&self, event_name: CName, event_type: EventHookTypes) {
         if event_type.contains_unknown_bits() {
-            fails!("mute specific: invalid event type flag(s)");
+            fails!(hint: REPORT_MODDER, "mute specific: invalid event type flag(s)");
             return;
         }
         let Ok(event_name) = event_name.try_into() else {
-            warns!("mute specific: invalid event name ({event_name})");
+            warns!(hint: REPORT_MODDER, "mute specific: invalid event name ({event_name})");
             return;
         };
         queue::notify(Lifecycle::Replacement(
@@ -84,7 +85,7 @@ impl Mute for AudioEventManager {
     #[inline]
     fn is_specific_muted(&self, event_name: CName, event_type: EventHookTypes) -> bool {
         if event_type.contains_unknown_bits() {
-            fails!("is specific muted: invalid event type flag(s)");
+            fails!(hint: REPORT_MODDER, "is specific muted: invalid event type flag(s)");
             return false;
         }
         let Ok(event_name) = event_name.try_into() else {
@@ -102,7 +103,7 @@ impl Mute for AudioEventManager {
     #[inline]
     fn unmute(&self, event_name: CName) {
         let Ok(event_name) = event_name.try_into() else {
-            warns!("unmute: invalid event name ({event_name})");
+            warns!(hint: REPORT_MODDER, "unmute: invalid event name ({event_name})");
             return;
         };
         queue::notify(Lifecycle::Replacement(ReplacementNotification::Unmute(
@@ -113,11 +114,11 @@ impl Mute for AudioEventManager {
     #[inline]
     fn unmute_specific(&self, event_name: CName, event_type: EventHookTypes) {
         if event_type.contains_unknown_bits() {
-            fails!("unmute specific: invalid event type flag(s)");
+            fails!(hint: REPORT_MODDER, "unmute specific: invalid event type flag(s)");
             return;
         }
         let Ok(event_name) = event_name.try_into() else {
-            warns!("unmute specific: invalid event name ({event_name})");
+            warns!(hint: REPORT_MODDER, "unmute specific: invalid event name ({event_name})");
             return;
         };
         queue::notify(Lifecycle::Replacement(

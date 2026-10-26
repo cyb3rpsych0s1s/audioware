@@ -34,7 +34,7 @@ use crate::{
         },
         tweens::{DILATION_EASE_OUT, IMMEDIATELY},
     },
-    error::{Error, InternalError},
+    error::{Error, InternalError, REPORT_PLUGIN},
     utils::{fails, lifecycle},
 };
 
@@ -635,13 +635,13 @@ pub fn notify<T: Into<Lifecycle>>(lifecycle: T) {
             if let Some(x) = x.as_ref()
                 && let Err(e) = x.try_send(lifecycle)
             {
-                fails!("failed to notify plugin lifecycle: {e}");
+                fails!(hint: REPORT_PLUGIN, "failed to notify plugin lifecycle: {e}");
             }
         } else {
-            fails!("plugin game channel is not initialized");
+            fails!(hint: REPORT_PLUGIN, "plugin game channel is not initialized");
         }
     } else {
-        fails!("plugin game loop is not initialized");
+        fails!(hint: REPORT_PLUGIN, "plugin game loop is not initialized");
     }
 }
 
@@ -653,13 +653,13 @@ pub fn forward<T: Into<Callback>>(callback: T) {
             if let Some(x) = x.as_ref()
                 && let Err(e) = x.try_send(callback)
             {
-                fails!("failed to notify plugin callback: {e}");
+                fails!(hint: REPORT_PLUGIN, "failed to notify plugin callback: {e}");
             }
         } else {
-            fails!("plugin game channel is not initialized");
+            fails!(hint: REPORT_PLUGIN, "plugin game channel is not initialized");
         }
     } else {
-        fails!("plugin game loop is not initialized");
+        fails!(hint: REPORT_PLUGIN, "plugin game loop is not initialized");
     }
 }
 
@@ -670,13 +670,13 @@ pub fn send(command: Command) {
             if let Some(x) = x.as_ref()
                 && let Err(e) = x.try_send(command)
             {
-                fails!("failed to send plugin command: {e}");
+                fails!(hint: REPORT_PLUGIN, "failed to send plugin command: {e}");
             }
         } else {
-            fails!("plugin command channel is not initialized");
+            fails!(hint: REPORT_PLUGIN, "plugin command channel is not initialized");
         }
     } else {
-        fails!("plugin game loop is not initialized");
+        fails!(hint: REPORT_PLUGIN, "plugin game loop is not initialized");
     }
 }
 
@@ -687,13 +687,13 @@ pub fn control_sound(control: DynamicSound) {
             if let Some(x) = x.as_ref()
                 && let Err(e) = x.try_send(control)
             {
-                fails!("failed to send plugin control: {e}");
+                fails!(hint: REPORT_PLUGIN, "failed to send plugin control: {e}");
             }
         } else {
-            fails!("plugin control channel is not initialized");
+            fails!(hint: REPORT_PLUGIN, "plugin control channel is not initialized");
         }
     } else {
-        fails!("plugin game loop is not initialized");
+        fails!(hint: REPORT_PLUGIN, "plugin game loop is not initialized");
     }
 }
 
@@ -704,13 +704,13 @@ pub fn control_emitter(control: DynamicEmitter) {
             if let Some(x) = x.as_ref()
                 && let Err(e) = x.try_send(control)
             {
-                fails!("failed to send plugin control: {e}");
+                fails!(hint: REPORT_PLUGIN, "failed to send plugin control: {e}");
             }
         } else {
-            fails!("plugin control channel is not initialized");
+            fails!(hint: REPORT_PLUGIN, "plugin control channel is not initialized");
         }
     } else {
-        fails!("plugin game loop is not initialized");
+        fails!(hint: REPORT_PLUGIN, "plugin game loop is not initialized");
     }
 }
 

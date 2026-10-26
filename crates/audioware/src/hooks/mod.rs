@@ -21,8 +21,6 @@ mod save_handling_controller;
 #[cfg(feature = "research")]
 mod events;
 #[cfg(feature = "research")]
-mod localization_manager;
-#[cfg(feature = "research")]
 mod onscreen_vo;
 #[cfg(feature = "research")]
 mod script_audio_player;
@@ -47,7 +45,6 @@ pub fn attach(env: &SdkEnv) {
     #[cfg(feature = "research")]
     {
         onscreen_vo::attach_hook(env);
-        localization_manager::attach_hook(env);
         script_audio_player::attach_hooks(env);
     }
 
@@ -85,7 +82,6 @@ pub fn detach(env: &SdkEnv) {
     #[cfg(feature = "research")]
     {
         onscreen_vo::detach_hook(env);
-        localization_manager::detach_hook(env);
         script_audio_player::detach_hooks(env);
     }
 
@@ -148,7 +144,6 @@ mod offsets {
         #[allow(dead_code, reason = "in 2.31, 0xC87F2007 actually points out to 0x1408A7E88 (see above)")]
         pub const INKLOGICCONTROLLER_QUEUE_EVENT: u32               = 0xC87F2007;   // 0x1408663B0 (2.3)
         pub const VO_STORAGE_GET_VO_FILE: u32                       = 0x899C28D0;   // 0x140A93F84 (2.31)
-        pub const LOCALIZATIONMANAGER_RESOLVEFILENAME: u32          = 0x8D2C2B6E;   // 0x142045B38 (2.3)
         pub const ONSCREENVOPLAYERCONTROLLER_SHOWSUBTITLE: u32      = 0xFE3C1D52;   // 0x1404F42A0 (2.3)
         pub const SCRIPTAUDIOPLAYER_PLAY_SINGLE: u32                = 0x90251060;   // 0x1406944E0 (2.3)
         pub const SCRIPTAUDIOPLAYER_PLAY_THREE: u32                 = 0x8B616DE;    // 0x1421A25DC (2.3)

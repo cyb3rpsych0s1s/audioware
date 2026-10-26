@@ -9,7 +9,7 @@ use red4ext_rs::{
     },
 };
 
-use crate::{Audioware, Entity, utils::fails};
+use crate::{Audioware, Entity, error::REPORT_PLUGIN, utils::fails};
 
 /// Interop type for [localization package](https://github.com/psiberx/cp2077-codeware/wiki#localization-packages).
 #[repr(C)]
@@ -214,7 +214,7 @@ impl AsPopulationSpawnerWrapper for Ref<PopulationSpawnerWrapper> {
             return match func.execute::<_, bool>(unsafe { receiver.fields() }, ()) {
                 Ok(x) => x,
                 Err(e) => {
-                    fails!("error calling is_active: {e}");
+                    fails!(hint: REPORT_PLUGIN, "error calling is_active: {e}");
                     Default::default()
                 }
             };
@@ -239,7 +239,7 @@ impl AsPopulationSpawnerWrapper for Ref<PopulationSpawnerWrapper> {
             return match func.execute::<_, bool>(unsafe { receiver.fields() }, ()) {
                 Ok(x) => x,
                 Err(e) => {
-                    fails!("error calling is_initialized: {e}");
+                    fails!(hint: REPORT_PLUGIN, "error calling is_initialized: {e}");
                     Default::default()
                 }
             };
@@ -291,7 +291,7 @@ fn is_ready<T: AsRef<IScriptable> + ScriptClass>(receiver: &Ref<T>) -> bool {
         return match func.execute::<_, bool>(unsafe { receiver.fields() }, ()) {
             Ok(x) => x,
             Err(e) => {
-                fails!("error calling is_ready: {e}");
+                fails!(hint: REPORT_PLUGIN, "error calling is_ready: {e}");
                 Default::default()
             }
         };
@@ -316,7 +316,7 @@ fn get_entity<T: AsRef<IScriptable> + ScriptClass>(receiver: &Ref<T>, id: Entity
         return match func.execute::<_, Ref<Entity>>(unsafe { receiver.fields() }, (id,)) {
             Ok(x) => x,
             Err(e) => {
-                fails!("error calling get_entity: {e}");
+                fails!(hint: REPORT_PLUGIN, "error calling get_entity: {e}");
                 Default::default()
             }
         };

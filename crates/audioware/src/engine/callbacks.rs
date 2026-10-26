@@ -23,6 +23,7 @@ use crate::{
         callbacks::cache::{publish_entries, reclaim_entries, with_entries},
         queue,
     },
+    error::{REPORT_MODDER, REPORT_PLUGIN},
     utils::{fails, lifecycle, warns},
 };
 
@@ -73,15 +74,15 @@ impl AudioEventCallbackSystem {
         function_name: CName,
     ) -> Ref<AudioEventCallbackHandler> {
         let Ok(event_name) = EventName::try_from(event_name) else {
-            warns!("event_name is invalid ({})", event_name.as_str());
+            warns!(hint: REPORT_MODDER, "event_name is invalid ({})", event_name.as_str());
             return Ref::default();
         };
         let Ok(function_name) = FunctionName::try_from(function_name) else {
-            warns!("function_name is invalid ({})", function_name.as_str());
+            warns!(hint: REPORT_MODDER, "function_name is invalid ({})", function_name.as_str());
             return Ref::default();
         };
         if target.is_null() {
-            warns!("target is null");
+            warns!(hint: REPORT_MODDER, "target is null");
             return Ref::default();
         }
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
@@ -103,15 +104,15 @@ impl AudioEventCallbackSystem {
         function_name: CName,
     ) -> Ref<AudioEventCallbackHandler> {
         let Ok(event_name) = EventName::try_from(event_name) else {
-            warns!("event_name is invalid ({})", event_name.as_str());
+            warns!(hint: REPORT_MODDER, "event_name is invalid ({})", event_name.as_str());
             return Ref::default();
         };
         let Ok(class_name) = ClassName::try_from(class_name) else {
-            warns!("class_name is invalid ({})", class_name.as_str());
+            warns!(hint: REPORT_MODDER, "class_name is invalid ({})", class_name.as_str());
             return Ref::default();
         };
         let Ok(function_name) = FunctionName::try_from(function_name) else {
-            warns!("function_name is invalid ({})", function_name.as_str());
+            warns!(hint: REPORT_MODDER, "function_name is invalid ({})", function_name.as_str());
             return Ref::default();
         };
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
@@ -214,7 +215,7 @@ impl Call for MemberFunc {
                     inner_call::<T>(unsafe { target.fields() }, func, ctor);
                 }
             } else {
-                warns!("could not find callback class");
+                warns!(hint: REPORT_PLUGIN, "could not find callback class");
             }
         }
     }
@@ -233,7 +234,7 @@ impl Call for StaticFunc {
         }) {
             inner_call::<T>(None, func, ctor);
         } else {
-            warns!("could not find static callback {full_name}");
+            warns!(hint: REPORT_PLUGIN, "could not find static callback {full_name}");
         }
     }
 }
@@ -249,15 +250,15 @@ fn inner_call<T: ScriptClass>(
         return;
     };
     let Some(param) = func.params().first() else {
-        fails!("callback expects a single event param");
+        fails!(hint: REPORT_MODDER, "callback expects a single event param");
         return;
     };
     let TaggedType::Ref(param_tag) = param.type_().tagged() else {
-        fails!("callback event param should be a ref");
+        fails!(hint: REPORT_MODDER, "callback event param should be a ref");
         return;
     };
     let Some(param_class) = param_tag.pointee().as_class() else {
-        fails!("callback event param ref should point to a class");
+        fails!(hint: REPORT_MODDER, "callback event param ref should point to a class");
         return;
     };
     if let Err(e) = match param_class.name().as_str() {
@@ -276,7 +277,7 @@ fn inner_call<T: ScriptClass>(
             index: 0,
         }),
     } {
-        fails!("couldn't execute callback: {e}");
+        fails!(hint: REPORT_PLUGIN, "couldn't execute callback: {e}");
     }
 }
 
@@ -359,7 +360,7 @@ impl<B: Backend> Engine<B> {
                 } => {
                     if next.iter().any(|x| x.0 == Key(id)) {
                         warns!(
-                            "{id} callback already registered for {event_name} => {function_name}"
+                            hint: REPORT_MODDER, "{id} callback already registered for {event_name} => {function_name}"
                         );
                         continue;
                     }
@@ -386,7 +387,7 @@ impl<B: Backend> Engine<B> {
                 } => {
                     if next.iter().any(|x| x.0 == Key(id)) {
                         warns!(
-                            "{id} static callback already registered for {event_name} => {function_name}"
+                            hint: REPORT_MODDER, "{id} static callback already registered for {event_name} => {function_name}"
                         );
                         continue;
                     }

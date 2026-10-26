@@ -23,6 +23,7 @@ use crate::{
     SetEntityNameEvent, SetGlobalParameterEvent, SetParameterEvent, SetSwitchEvent, StopSoundEvent,
     StopTaggedEvent, TagEvent, ToTween, Tween, UntagEvent,
     engine::{AudioEventManager, Engine, Mute, eq::Preset, state},
+    error::{REPORT_MODDER, REPORT_PLUGIN},
     queue,
     utils::{fails, lifecycle, warns},
 };
@@ -473,7 +474,7 @@ impl BlackboardLifecycle for Audioware {
 impl ListenerLifecycle for Audioware {
     fn set_volume(setting: CName, value: f32) {
         let Ok(value) = Amplitude::try_from(value) else {
-            warns!("volume must be greater or equal to 0.0 ({value})");
+            warns!(hint: REPORT_MODDER, "volume must be greater or equal to 0.0 ({value})");
             return;
         };
         queue::notify(Lifecycle::SetVolume { setting, value });
@@ -496,11 +497,11 @@ impl CodewareLifecycle for Audioware {
     fn set_game_locales(spoken: CName, written: CName) {
         match Locale::try_from(spoken) {
             Ok(spoken) => state::SpokenLocale::set(spoken),
-            Err(e) => fails!("failed to set spoken locale: {e}"),
+            Err(e) => fails!(hint: REPORT_PLUGIN, "failed to set spoken locale: {e}"),
         };
         match Locale::try_from(written) {
             Ok(written) => state::WrittenLocale::set(written),
-            Err(e) => fails!("failed to set written locale: {e}"),
+            Err(e) => fails!(hint: REPORT_PLUGIN, "failed to set written locale: {e}"),
         };
     }
 
@@ -515,7 +516,7 @@ impl CodewareLifecycle for Audioware {
                 package.subtitle(key.as_str(), value_f.as_str(), value_m.as_str());
             }
         } else {
-            warns!("banks aren't initialized yet, skipping subtitles definition");
+            warns!(hint: REPORT_MODDER, "banks aren't initialized yet, skipping subtitles definition");
         }
     }
 
@@ -551,14 +552,14 @@ impl SceneLifecycle for AudioSystemExt {
         let tag_name = match TagName::try_new(tag_name) {
             Ok(tag_name) => tag_name,
             Err(e) => {
-                warns!("{e}");
+                warns!(hint: REPORT_MODDER, "{e}");
                 return false;
             }
         };
         let entity_id = match TargetId::try_new(entity_id) {
             Ok(entity_id) => entity_id,
             Err(e) => {
-                warns!("{e}");
+                warns!(hint: REPORT_MODDER, "invalid entity id for {}: {e}", tag_name);
                 return false;
             }
         };
@@ -566,7 +567,8 @@ impl SceneLifecycle for AudioSystemExt {
             Ok(emitter_settings) => emitter_settings,
             Err(e) => {
                 warns!(
-                    "{}",
+                    "invalid emitter settings for {}: {}",
+                    tag_name,
                     e.iter()
                         .map(|e| format!("{e}"))
                         .collect::<Vec<_>>()
@@ -593,14 +595,14 @@ impl SceneLifecycle for AudioSystemExt {
         let tag_name = match TagName::try_new(tag_name) {
             Ok(tag_name) => tag_name,
             Err(e) => {
-                warns!("{e}");
+                warns!(hint: REPORT_MODDER, "{e}");
                 return false;
             }
         };
         let entity_id = match TargetId::try_new(entity_id) {
             Ok(entity_id) => entity_id,
             Err(e) => {
-                warns!("{e}");
+                warns!(hint: REPORT_MODDER, "invalid entity id for {}: {e}", tag_name);
                 return false;
             }
         };
@@ -691,7 +693,7 @@ impl ExtCommand for AudioSystemExt {
     ) {
         let ext = ext.into_settings();
         if let Some(Err(e)) = ext.as_ref().map(Validate::validate) {
-            warns!("invalid audio settings: {:#?}", e);
+            warns!(hint: REPORT_MODDER, "invalid audio settings: {:#?}", e);
             return;
         }
         queue::send(Command::Play {
@@ -729,19 +731,19 @@ impl ExtCommand for AudioSystemExt {
         let tag_name = match TagName::try_new(tag_name) {
             Ok(tag_name) => tag_name,
             Err(e) => {
-                warns!("{e}");
+                warns!(hint: REPORT_MODDER, "{e}");
                 return;
             }
         };
         let entity_id = match TargetId::try_new(entity_id) {
             Ok(entity_id) => entity_id,
             Err(e) => {
-                warns!("{e}");
+                warns!(hint: REPORT_MODDER, "invalid entity id for {}: {e}", tag_name);
                 return;
             }
         };
         if let Some(Err(e)) = ext.as_ref().map(Validate::validate) {
-            warns!("invalid audio settings: {:#?}", e);
+            warns!(hint: REPORT_MODDER, "invalid audio settings for {}: {:#?}", tag_name, e);
             return;
         }
         queue::send(Command::PlayOnEmitter {
@@ -762,14 +764,14 @@ impl ExtCommand for AudioSystemExt {
         let tag_name = match TagName::try_new(tag_name) {
             Ok(tag_name) => tag_name,
             Err(e) => {
-                warns!("{e}");
+                warns!(hint: REPORT_MODDER, "{e}");
                 return;
             }
         };
         let entity_id = match TargetId::try_new(entity_id) {
             Ok(entity_id) => entity_id,
             Err(e) => {
-                warns!("{e}");
+                warns!(hint: REPORT_MODDER, "invalid entity id for {}: {e}", tag_name);
                 return;
             }
         };
@@ -792,7 +794,7 @@ impl ExtCommand for AudioSystemExt {
     ) {
         let switch_value_ext = switch_value_ext.into_settings();
         if let Some(Err(e)) = switch_value_ext.as_ref().map(Validate::validate) {
-            warns!("invalid audio settings: {:#?}", e);
+            warns!(hint: REPORT_MODDER, "invalid audio settings: {:#?}", e);
             return;
         }
         queue::send(Command::Switch {
@@ -815,7 +817,7 @@ impl ExtCommand for AudioSystemExt {
                 });
             }
             Err(e) => {
-                warns!("invalid gender: {e}");
+                warns!(hint: REPORT_MODDER, "invalid gender: {e}");
             }
         }
     }
