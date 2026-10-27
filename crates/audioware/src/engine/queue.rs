@@ -1,4 +1,11 @@
-use std::{sync::OnceLock, thread::JoinHandle, time::Duration};
+use std::{
+    sync::{
+        OnceLock,
+        atomic::{AtomicU64, Ordering},
+    },
+    thread::JoinHandle,
+    time::{Duration, Instant},
+};
 
 use bitflags::bitflags;
 use crossbeam::channel::{Receiver, Select, Sender, bounded, tick, unbounded};
@@ -83,6 +90,40 @@ impl std::fmt::Display for Flags {
             if self.contains(Self::PAUSED) { yes } else { no },
             if self.should_sync() { yes } else { no },
         )
+    }
+}
+
+/// Best-effort, lock-free log throttle: reports at most once per [`Throttle::WINDOW_MS`],
+/// so that a flood of failures cannot itself slow down the threads it is reported from.
+pub(crate) struct Throttle {
+    last_ms: AtomicU64,
+    count: AtomicU64,
+}
+
+impl Throttle {
+    const WINDOW_MS: u64 = 1_000;
+    const NEVER: u64 = u64::MAX;
+
+    pub(crate) const fn new() -> Self {
+        Self {
+            last_ms: AtomicU64::new(Self::NEVER),
+            count: AtomicU64::new(0),
+        }
+    }
+
+    /// Returns the number of occurrences since last report when caller should report now.
+    pub(crate) fn hit(&self) -> Option<u64> {
+        static EPOCH: OnceLock<Instant> = OnceLock::new();
+        self.count.fetch_add(1, Ordering::Relaxed);
+        let now = EPOCH.get_or_init(Instant::now).elapsed().as_millis() as u64;
+        let last = self.last_ms.load(Ordering::Relaxed);
+        if last != Self::NEVER && now.saturating_sub(last) < Self::WINDOW_MS {
+            return None;
+        }
+        self.last_ms
+            .compare_exchange(last, now, Ordering::Relaxed, Ordering::Relaxed)
+            .ok()
+            .map(|_| self.count.swap(0, Ordering::Relaxed))
     }
 }
 
@@ -609,7 +650,10 @@ pub fn notify<T: Into<Lifecycle>>(lifecycle: T) {
             if let Some(x) = x.as_ref()
                 && let Err(e) = x.try_send(lifecycle)
             {
-                fails!(hint: REPORT_PLUGIN, "failed to notify plugin lifecycle: {e}");
+                static THROTTLE: Throttle = Throttle::new();
+                if let Some(n) = THROTTLE.hit() {
+                    fails!(hint: REPORT_PLUGIN, "failed to notify plugin lifecycle: {e} ({n} dropped)");
+                }
             }
         } else {
             fails!(hint: REPORT_PLUGIN, "plugin game channel is not initialized");
@@ -627,7 +671,10 @@ pub fn forward<T: Into<Callback>>(callback: T) {
             if let Some(x) = x.as_ref()
                 && let Err(e) = x.try_send(callback)
             {
-                fails!(hint: REPORT_PLUGIN, "failed to notify plugin callback: {e}");
+                static THROTTLE: Throttle = Throttle::new();
+                if let Some(n) = THROTTLE.hit() {
+                    fails!(hint: REPORT_PLUGIN, "failed to notify plugin callback: {e} ({n} dropped)");
+                }
             }
         } else {
             fails!(hint: REPORT_PLUGIN, "plugin game channel is not initialized");
@@ -644,7 +691,10 @@ pub fn send(command: Command) {
             if let Some(x) = x.as_ref()
                 && let Err(e) = x.try_send(command)
             {
-                fails!(hint: REPORT_PLUGIN, "failed to send plugin command: {e}");
+                static THROTTLE: Throttle = Throttle::new();
+                if let Some(n) = THROTTLE.hit() {
+                    fails!(hint: REPORT_PLUGIN, "failed to send plugin command: {e} ({n} dropped)");
+                }
             }
         } else {
             fails!(hint: REPORT_PLUGIN, "plugin command channel is not initialized");
@@ -661,7 +711,10 @@ pub fn control_sound(control: DynamicSound) {
             if let Some(x) = x.as_ref()
                 && let Err(e) = x.try_send(control)
             {
-                fails!(hint: REPORT_PLUGIN, "failed to send plugin control: {e}");
+                static THROTTLE: Throttle = Throttle::new();
+                if let Some(n) = THROTTLE.hit() {
+                    fails!(hint: REPORT_PLUGIN, "failed to send plugin control: {e} ({n} dropped)");
+                }
             }
         } else {
             fails!(hint: REPORT_PLUGIN, "plugin control channel is not initialized");
@@ -678,7 +731,10 @@ pub fn control_emitter(control: DynamicEmitter) {
             if let Some(x) = x.as_ref()
                 && let Err(e) = x.try_send(control)
             {
-                fails!(hint: REPORT_PLUGIN, "failed to send plugin control: {e}");
+                static THROTTLE: Throttle = Throttle::new();
+                if let Some(n) = THROTTLE.hit() {
+                    fails!(hint: REPORT_PLUGIN, "failed to send plugin control: {e} ({n} dropped)");
+                }
             }
         } else {
             fails!(hint: REPORT_PLUGIN, "plugin control channel is not initialized");
@@ -707,4 +763,19 @@ fn default_device_and_config() -> Result<cpal::StreamConfig, Error> {
         })?
         .config();
     Ok(config)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Throttle;
+
+    #[test]
+    fn throttle_reports_first_then_coalesces() {
+        let throttle = Throttle::new();
+        assert_eq!(throttle.hit(), Some(1));
+        assert_eq!(throttle.hit(), None);
+        assert_eq!(throttle.hit(), None);
+        std::thread::sleep(std::time::Duration::from_millis(Throttle::WINDOW_MS + 50));
+        assert_eq!(throttle.hit(), Some(3));
+    }
 }
