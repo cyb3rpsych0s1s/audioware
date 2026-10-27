@@ -240,13 +240,15 @@ public class AutoEmittersSystem extends ScriptableSystem {
         let added = 0;
         for part in parts {
             let target = TS_TargetPartInfo.GetComponent(part).GetEntity() as GameObject;
-            if !IsDefined(target) { continue; }
-            let id = target.GetEntityID();
-            if ArrayContains(this.stressEmitters, id) { continue; }
-            if system.RegisterEmitter(id, n"Audioware", n"StressTest", settings) {
-                ArrayPush(this.stressEmitters, id);
-                system.PlayOnEmitter(this.RandomSong(), id, n"Audioware", ext);
-                added += 1;
+            if IsDefined(target) {
+                let id = target.GetEntityID();
+                if !ArrayContains(this.stressEmitters, id) {
+                    if system.RegisterEmitter(id, n"Audioware", n"StressTest", settings) {
+                        ArrayPush(this.stressEmitters, id);
+                        system.PlayOnEmitter(this.RandomSong(), id, n"Audioware", ext);
+                        added += 1;
+                    }
+                }
             }
         }
         FTLog(s"stress: \(ArraySize(parts)) part(s) found, \(added) emitter(s) added, \(ArraySize(this.stressEmitters)) total");
