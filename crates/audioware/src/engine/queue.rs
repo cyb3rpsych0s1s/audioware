@@ -8,12 +8,12 @@ use std::{
 };
 
 use bitflags::bitflags;
-use crossbeam::channel::{Receiver, Select, Sender, bounded, tick, unbounded};
+use crossbeam::channel::{Receiver, Select, Sender, TrySendError, bounded, tick, unbounded};
 use kira::{
     AudioManagerSettings,
     backend::cpal::{CpalBackend, CpalBackendSettings},
 };
-use red4ext_rs::types::CName;
+use red4ext_rs::types::{CName, EntityId};
 use std::sync::{Mutex, RwLock};
 
 use crate::{
@@ -133,6 +133,8 @@ static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
 static CALLBACKS: OnceLock<RwLock<Option<Sender<Callback>>>> = OnceLock::new();
 static DYNAMIC_SOUNDS: OnceLock<RwLock<Option<Sender<DynamicSound>>>> = OnceLock::new();
 static DYNAMIC_EMITTERS: OnceLock<RwLock<Option<Sender<DynamicEmitter>>>> = OnceLock::new();
+type Occlusion = (EntityId, f32);
+static OCCLUSIONS: OnceLock<RwLock<Option<Sender<Occlusion>>>> = OnceLock::new();
 
 fn load() -> Result<(Engine<CpalBackend>, usize), Error> {
     let buffer_size = BufferSize::read_ini();
@@ -164,13 +166,15 @@ pub fn spawn() -> Result<(), Error> {
                 let (se, re) = unbounded::<Callback>();
                 let (sds, rds) = bounded::<DynamicSound>(capacity);
                 let (sde, rde) = bounded::<DynamicEmitter>(capacity);
+                let (so, ro) = bounded::<Occlusion>(capacity);
                 let _ = LIFECYCLE.set(RwLock::new(Some(sl)));
                 let _ = COMMAND.set(RwLock::new(Some(sc)));
                 let _ = CALLBACKS.set(RwLock::new(Some(se)));
                 let _ = DYNAMIC_SOUNDS.set(RwLock::new(Some(sds)));
                 let _ = DYNAMIC_EMITTERS.set(RwLock::new(Some(sde)));
+                let _ = OCCLUSIONS.set(RwLock::new(Some(so)));
                 lifecycle!("initialized channels");
-                self::run(rl, rc, re, rds, rde, engine);
+                self::run(rl, rc, re, rds, rde, ro, engine);
             })?,
     )));
     lifecycle!("spawned plugin thread");
@@ -183,6 +187,7 @@ pub fn run(
     re: Receiver<Callback>,
     rds: Receiver<DynamicSound>,
     rde: Receiver<DynamicEmitter>,
+    ro: Receiver<Occlusion>,
     mut engine: Engine<CpalBackend>,
 ) {
     crate::utils::lifecycle!("run engine thread");
@@ -292,9 +297,6 @@ pub fn run(
                         ease_out_curve,
                     },
                 ),
-                Lifecycle::SetEmitterOcclusion { entity_id, value } => {
-                    engine.set_emitter_occlusion(entity_id, value)
-                }
                 Lifecycle::RegisterEmitter {
                     entity_id,
                     tag_name,
@@ -391,6 +393,11 @@ pub fn run(
                 Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
                 Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
             }
+        }
+        // occlusions are lossy and bounded per iteration, latest value wins
+        let occlusions = ro.len();
+        for (entity_id, value) in ro.try_iter().take(occlusions) {
+            engine.set_emitter_occlusion(entity_id, value);
         }
         engine.update_mutes();
         if state.should_sync()
@@ -639,6 +646,9 @@ pub fn run(
     let _ = DYNAMIC_EMITTERS
         .get()
         .and_then(|x| x.write().ok().map(|mut x| x.take()));
+    let _ = OCCLUSIONS
+        .get()
+        .and_then(|x| x.write().ok().map(|mut x| x.take()));
     lifecycle!("closed engine");
 }
 
@@ -741,6 +751,20 @@ pub fn control_emitter(control: DynamicEmitter) {
         }
     } else {
         fails!(hint: REPORT_PLUGIN, "plugin game loop is not initialized");
+    }
+}
+
+/// Lossy by design: occlusion is resent every frame, so a full channel is not an error.
+pub fn occlude(entity_id: EntityId, value: f32) {
+    if let Some(x) = OCCLUSIONS.get()
+        && let Ok(x) = x.try_read()
+        && let Some(x) = x.as_ref()
+        && let Err(TrySendError::Disconnected(_)) = x.try_send((entity_id, value))
+    {
+        static THROTTLE: Throttle = Throttle::new();
+        if let Some(n) = THROTTLE.hit() {
+            fails!(hint: REPORT_PLUGIN, "failed to send plugin occlusion: sending on a disconnected channel ({n} dropped)");
+        }
     }
 }
 
