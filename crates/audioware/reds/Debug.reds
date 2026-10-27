@@ -124,7 +124,10 @@ public class AutoEmittersSystem extends ScriptableSystem {
         .AddTarget(InputTarget.Key(EInputKey.IK_F3));
         GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnPressF4")
         .AddTarget(InputTarget.Key(EInputKey.IK_F4));
+        GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnPressF7")
+        .AddTarget(InputTarget.Key(EInputKey.IK_F7));
     }
+    private let stressEmitters: array<EntityID>;
     private func RandomSong() -> CName {
         let sounds = [ 
             n"coco_caline",
@@ -206,6 +209,47 @@ public class AutoEmittersSystem extends ScriptableSystem {
         FTLog(s"V position:      [x: \(here.X), y: \(here.Y)], z: \(here.Z)");
         let diff = Vector3(AbsF(there.X - here.X), AbsF(there.Y - here.Y), AbsF(there.Z - here.Z));
         FTLog(s"difference:      [x: \(diff.X), y: \(diff.Y)], z: \(diff.Z)");
+    }
+    /// stress test: F7 registers an occluded emitter playing a song on every alive NPC within 40m,
+    /// Shift+F7 unregisters them all.
+    private cb func OnPressF7(evt: ref<KeyInputEvent>) {
+        if NotEquals(evt.GetAction(), EInputAction.IACT_Release) { return; }
+        let game = this.GetGameInstance();
+        let system = GameInstance.GetAudioSystemExt(game);
+        if evt.IsShiftDown() {
+            for id in this.stressEmitters {
+                system.UnregisterEmitter(id, n"Audioware");
+            }
+            FTLog(s"stress: unregistered \(ArraySize(this.stressEmitters)) emitter(s)");
+            ArrayClear(this.stressEmitters);
+            return;
+        }
+        let query: TargetSearchQuery;
+        query.searchFilter = TSF_And(TSF_All(TSFMV.Obj_Puppet), TSF_All(TSFMV.St_Alive));
+        query.testedSet = TargetingSet.Complete;
+        query.maxDistance = 40.0;
+        query.filterObjectByDistance = true;
+        query.includeSecondaryTargets = false;
+        query.ignoreInstigator = true;
+        let parts: array<TS_TargetPartInfo>;
+        GameInstance.GetTargetingSystem(game).GetTargetParts(GetPlayer(game), query, parts);
+
+        let settings = new EmitterSettings();
+        settings.enableOcclusion = true;
+        let ext: ref<AudioSettingsExt>;
+        let added = 0;
+        for part in parts {
+            let target = TS_TargetPartInfo.GetComponent(part).GetEntity() as GameObject;
+            if !IsDefined(target) { continue; }
+            let id = target.GetEntityID();
+            if ArrayContains(this.stressEmitters, id) { continue; }
+            if system.RegisterEmitter(id, n"Audioware", n"StressTest", settings) {
+                ArrayPush(this.stressEmitters, id);
+                system.PlayOnEmitter(this.RandomSong(), id, n"Audioware", ext);
+                added += 1;
+            }
+        }
+        FTLog(s"stress: \(ArraySize(parts)) part(s) found, \(added) emitter(s) added, \(ArraySize(this.stressEmitters)) total");
     }
 }
 
