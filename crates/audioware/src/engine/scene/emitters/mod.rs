@@ -288,6 +288,7 @@ impl Emitters {
         {
             return;
         }
+        crate::utils::diagnostic_throttled!("occlusion in {entity_id} {factor}");
         for x in self.pending_occlusions.iter_mut() {
             if x.0 == entity_id {
                 x.1 = factor;

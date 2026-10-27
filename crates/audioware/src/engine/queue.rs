@@ -127,6 +127,41 @@ impl Throttle {
     }
 }
 
+/// Engine loop rates, reported every [`Diagnostic::PERIOD`].
+#[cfg(feature = "diagnostic")]
+struct Diagnostic {
+    iterations: u64,
+    lifecycles: u64,
+    since: Instant,
+}
+
+#[cfg(feature = "diagnostic")]
+impl Diagnostic {
+    const PERIOD: Duration = Duration::from_secs(10);
+
+    fn new() -> Self {
+        Self {
+            iterations: 0,
+            lifecycles: 0,
+            since: Instant::now(),
+        }
+    }
+
+    fn report(&mut self, backlog: usize) {
+        let elapsed = self.since.elapsed();
+        if elapsed < Self::PERIOD {
+            return;
+        }
+        let secs = elapsed.as_secs_f64();
+        crate::utils::diagnostic!(
+            "iterations/s {:.1} lifecycle/s {:.1} lifecycle backlog {backlog}",
+            self.iterations as f64 / secs,
+            self.lifecycles as f64 / secs,
+        );
+        *self = Self::new();
+    }
+}
+
 pub(crate) static THREAD: OnceLock<Mutex<Option<JoinHandle<()>>>> = OnceLock::new();
 static LIFECYCLE: OnceLock<RwLock<Option<Sender<Lifecycle>>>> = OnceLock::new();
 static COMMAND: OnceLock<RwLock<Option<Sender<Command>>>> = OnceLock::new();
@@ -196,7 +231,13 @@ pub fn run(
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
     let synchronization = tick(ms(15));
     let mut state = Flags::LOADING | Flags::MUTE_IN_BACKGROUND;
+    #[cfg(feature = "diagnostic")]
+    let mut diagnostic = Diagnostic::new();
     'game: loop {
+        #[cfg(feature = "diagnostic")]
+        {
+            diagnostic.iterations += 1;
+        }
         let mut sel = Select::new();
         let oi_lifecycle = sel.recv(&rl);
         let oi_command = sel.recv(&rc);
@@ -246,6 +287,10 @@ pub fn run(
             }
         }
         for l in pre_lifecycle.into_iter().chain(rl.try_iter()) {
+            #[cfg(feature = "diagnostic")]
+            {
+                diagnostic.lifecycles += 1;
+            }
             lifecycle!("> {l}");
             match l {
                 Lifecycle::Terminate => {
@@ -399,6 +444,8 @@ pub fn run(
         for (entity_id, value) in ro.try_iter().take(occlusions) {
             engine.set_emitter_occlusion(entity_id, value);
         }
+        #[cfg(feature = "diagnostic")]
+        diagnostic.report(rl.len());
         engine.update_mutes();
         if state.should_sync()
             && (engine.any_emitter() || engine.any_actor())
