@@ -538,7 +538,10 @@ pub mod parameter {
                 // crate::utils::inspect!(
                 //     "SoundEngine::SetParameter( {a2}, {a3}, {a4} ) / {wwise_id}"
                 // );
-                if a2 == CName::new("game_occlusion") && entity_id.is_defined() {
+                if a2 == CName::new("game_occlusion")
+                    && entity_id.is_defined()
+                    && Engine::<DefaultBackend>::is_registered_emitter(entity_id, None)
+                {
                     queue::notify(Lifecycle::SetEmitterOcclusion {
                         entity_id,
                         value: a3,

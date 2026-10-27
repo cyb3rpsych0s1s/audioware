@@ -1,8 +1,13 @@
 use std::{mem, ops::Not};
 
+use kira::DefaultBackend;
 use red4ext_rs::types::{CName, IScriptable, StackFrame};
 
-use crate::{Entity, attach_native_func, engine::queue::notify, utils::intercept};
+use crate::{
+    Entity, attach_native_func,
+    engine::{Engine, queue::notify},
+    utils::intercept,
+};
 
 use red4ext_rs::{SdkEnv, VoidPtr};
 
@@ -72,7 +77,9 @@ unsafe extern "C" fn detour_set(
 - ignore_global_dilation: {ignore_global_dilation}
 - use_real_time: {use_real_time}",
         );
-        if let Some(entity_id) = x {
+        if let Some(entity_id) = x
+            && Engine::<DefaultBackend>::is_registered_emitter(entity_id, None)
+        {
             notify(crate::abi::lifecycle::Lifecycle::SetEmitterDilation {
                 reason,
                 entity_id,
@@ -109,7 +116,9 @@ unsafe extern "C" fn detour_unset(
             "TimeDilatable::UnsetIndividualTimeDilation {x:?}:
 - ease_out_curve: {ease_out_curve}",
         );
-        if let Some(entity_id) = x {
+        if let Some(entity_id) = x
+            && Engine::<DefaultBackend>::is_registered_emitter(entity_id, None)
+        {
             notify(crate::abi::lifecycle::Lifecycle::UnsetEmitterDilation {
                 entity_id,
                 ease_out_curve,
