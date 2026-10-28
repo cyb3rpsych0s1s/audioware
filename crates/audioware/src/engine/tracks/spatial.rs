@@ -58,6 +58,9 @@ impl Spatial {
     pub fn set_occlusion(&mut self, factor: f32) {
         let normalized = (DEFAULT_CUTOFF * (1. - factor as f64)).clamp(600.0, DEFAULT_CUTOFF);
         if let Some(x) = self.occlusion.as_mut() {
+            crate::utils::diagnostic_throttled!(
+                "occlusion filter factor {factor} cutoff {normalized}"
+            );
             x.set_cutoff(normalized, OCCLUDED);
         }
     }

@@ -24,7 +24,7 @@ hotpath = "0.23.0"
 humantime = "2.3"
 kira = { git = "https://github.com/Roms1383/kira", rev = "10e78eea757d564530c6d04d8d98849650b94862", features = ["serde"] }
 rayon = "1.11"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "e29eac83de1d1f8623bd9ff59bd176f814334a3d" }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "3361d4067fdde01e4bff93a9eced6fff422a4698" }
 serde = "1.0"
 snafu = "0.9"
 

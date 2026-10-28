@@ -67,10 +67,6 @@ pub enum Lifecycle {
         entity_id: EntityId,
         ease_out_curve: CName,
     },
-    SetEmitterOcclusion {
-        entity_id: EntityId,
-        value: f32,
-    },
     ActivateCamera {
         #[allow(dead_code, reason = "partial feature")]
         blend_time: f32,
@@ -163,10 +159,6 @@ impl std::fmt::Display for Lifecycle {
                     "unset emitter dilation, curve: {ease_out_curve} [{entity_id}]"
                 )
             }
-            Lifecycle::SetEmitterOcclusion {
-                entity_id,
-                value: occlusion,
-            } => write!(f, "set emitter occlusion {occlusion} [{entity_id}]"),
             Lifecycle::ActivateCamera { .. } => {
                 write!(f, "activate camera")
             }

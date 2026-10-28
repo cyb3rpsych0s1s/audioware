@@ -1,7 +1,9 @@
+use std::time::Duration;
+
 use audioware_core::Amplitude;
 use audioware_manifest::{Locale, PlayerGender, ScnDialogLineType, Validate};
 use command::Command;
-use crossbeam::channel::bounded;
+use crossbeam::channel::{RecvTimeoutError, bounded};
 use kira::backend::cpal::CpalBackend;
 use lifecycle::{Board, Lifecycle, Session, System};
 use red4ext_rs::{
@@ -35,6 +37,9 @@ pub mod lifecycle;
 
 mod types;
 pub(crate) use types::*;
+
+/// How long a script waits for the engine to acknowledge an emitter (un)registration.
+const REGISTRATION_TIMEOUT: Duration = Duration::from_millis(100);
 
 /// Register [plugin][super::Plugin] lifecycle listeners.
 pub fn register_listeners(env: &SdkEnv) {
@@ -577,7 +582,7 @@ impl SceneLifecycle for AudioSystemExt {
                 return false;
             }
         };
-        let (sender, receiver) = bounded(0);
+        let (sender, receiver) = bounded(1);
         queue::notify(Lifecycle::RegisterEmitter {
             tag_name,
             entity_id,
@@ -585,10 +590,17 @@ impl SceneLifecycle for AudioSystemExt {
             emitter_settings,
             sender,
         });
-        if let Ok(registered) = receiver.recv() {
-            return registered;
+        match receiver.recv_timeout(REGISTRATION_TIMEOUT) {
+            Ok(registered) => registered,
+            Err(RecvTimeoutError::Timeout) => {
+                static THROTTLE: queue::Throttle = queue::Throttle::new();
+                if let Some(n) = THROTTLE.hit() {
+                    warns!(hint: REPORT_PLUGIN, "register emitter timed out ({n} times)");
+                }
+                false
+            }
+            Err(RecvTimeoutError::Disconnected) => false,
         }
-        false
     }
 
     fn unregister_emitter(&self, entity_id: EntityId, tag_name: CName) -> bool {
@@ -606,16 +618,23 @@ impl SceneLifecycle for AudioSystemExt {
                 return false;
             }
         };
-        let (sender, receiver) = bounded(0);
+        let (sender, receiver) = bounded(1);
         queue::notify(Lifecycle::UnregisterEmitter {
             entity_id,
             tag_name,
             sender,
         });
-        if let Ok(unregistered) = receiver.recv() {
-            return unregistered;
+        match receiver.recv_timeout(REGISTRATION_TIMEOUT) {
+            Ok(unregistered) => unregistered,
+            Err(RecvTimeoutError::Timeout) => {
+                static THROTTLE: queue::Throttle = queue::Throttle::new();
+                if let Some(n) = THROTTLE.hit() {
+                    warns!(hint: REPORT_PLUGIN, "unregister emitter timed out ({n} times)");
+                }
+                false
+            }
+            Err(RecvTimeoutError::Disconnected) => false,
         }
-        false
     }
 
     fn is_registered_emitter(&self, entity_id: EntityId, tag_name: Opt<CName>) -> bool {
