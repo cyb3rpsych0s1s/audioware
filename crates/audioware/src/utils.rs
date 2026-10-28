@@ -20,6 +20,34 @@ macro_rules! silly {
 }
 pub(crate) use silly;
 
+/// Release-safe diagnostics, only compiled with `diagnostic` feature.
+#[allow(unused_macros)]
+macro_rules! diagnostic {
+    ($($arg:tt)*) => {{
+        #[cfg(feature = "diagnostic")]
+        {
+            use ::red4ext_rs::PluginOps;
+            ::red4ext_rs::log::info!($crate::Audioware::env(), "[diag] {}", format!($($arg)*))
+        }
+    }};
+}
+#[allow(unused_imports)]
+pub(crate) use diagnostic;
+
+/// Same as [diagnostic], at most once per second per call site.
+macro_rules! diagnostic_throttled {
+    ($($arg:tt)*) => {{
+        #[cfg(feature = "diagnostic")]
+        {
+            static THROTTLE: $crate::engine::queue::Throttle = $crate::engine::queue::Throttle::new();
+            if THROTTLE.hit().is_some() {
+                $crate::utils::diagnostic!($($arg)*);
+            }
+        }
+    }};
+}
+pub(crate) use diagnostic_throttled;
+
 macro_rules! lifecycle {
     ($($arg:tt)*) => {{
         #[allow(unused_variables, reason = "unused lint")]
