@@ -84,6 +84,6 @@ pub struct DialogLineEventData {
     pub playback_speed_parameter: f32,   // 24
 }
 
-unsafe impl NativeRepr for DialogLine {
+unsafe impl NativeRepr for DialogLineEventData {
     const NAME: &'static str = "audioDialogLineEventData";
 }

@@ -376,10 +376,7 @@ pub mod parameter {
 
     use crate::{
         AudioEventCallbackSystem, EventName, SoundEngine, SoundObjectId,
-        abi::{
-            callback::{FireCallback, FirePlayCallback, FireSetParameterCallback},
-            lifecycle::Lifecycle,
-        },
+        abi::callback::{FireCallback, FirePlayCallback, FireSetParameterCallback},
         engine::{Engine, queue},
     };
 
@@ -538,11 +535,11 @@ pub mod parameter {
                 // crate::utils::inspect!(
                 //     "SoundEngine::SetParameter( {a2}, {a3}, {a4} ) / {wwise_id}"
                 // );
-                if a2 == CName::new("game_occlusion") && entity_id.is_defined() {
-                    queue::notify(Lifecycle::SetEmitterOcclusion {
-                        entity_id,
-                        value: a3,
-                    });
+                if a2 == CName::new("game_occlusion")
+                    && entity_id.is_defined()
+                    && Engine::<DefaultBackend>::is_registered_emitter(entity_id, None)
+                {
+                    queue::occlude(entity_id, a3);
                 }
                 return cb(a1, a2, a3, a4);
             }

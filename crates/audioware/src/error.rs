@@ -7,6 +7,9 @@ use kira::{PlaySoundError, ResourceLimitReached, sound::FromFileError};
 use red4ext_rs::types::{CName, EntityId};
 use snafu::Snafu;
 
+pub const REPORT_PLUGIN: &str = "This is most likely a plugin error, please report to Audioware";
+pub const REPORT_MODDER: &str = "This is most likely a plugin misuse, please report to mod author.";
+
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum Error {

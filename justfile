@@ -91,6 +91,14 @@ staging TO=game_dir:
     @just no-debug '{{TO}}'; Write-Host "Removed debug files";
     @just now
 
+diag TO=game_dir:
+    @just setup-red4ext '{{TO}}'
+    @just build 'release' 'diagnostic'
+    @just copy-dll '{{TO}}' 'release'
+    @just copy-pdb '{{TO}}' 'release'
+    @just reload '{{TO}}'
+    @just now
+
 prod TO=game_dir:
     @just setup-red4ext '{{TO}}'
     @just build 'release' ''

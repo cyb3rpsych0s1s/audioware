@@ -1,11 +1,11 @@
 [workspace]
 members = ["crates/core", "crates/manifest", "crates/bank", "crates/audioware"]
-resolver = "2"
+resolver = "3"
 
 [workspace.package]
-version = "1.9.7"
+version = "1.10.1"
 edition = "2024"
-rust-version = "1.96.0"
+rust-version = "1.97.1"
 
 [profile.release]
 codegen-units = 1
@@ -19,11 +19,11 @@ audioware-core = { path = "crates/core" }
 audioware-manifest = { path = "crates/manifest" }
 audioware-bank = { path = "crates/bank" }
 either = "1.15.0"
-glam = "0.32.0"
+glam = "0.33.0"
 humantime = "2.3"
-kira = { git = "https://github.com/Roms1383/kira", rev = "ff832050234b14edaaac92afc2441457f951569f", features = ["serde"] }
+kira = { git = "https://github.com/Roms1383/kira", rev = "10e78eea757d564530c6d04d8d98849650b94862", features = ["serde"] }
 rayon = "1.11"
-red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "1dab8e8ceea48bb0ba09d26061417dae37e2c590" }
+red4ext-rs = { git = "https://github.com/jac3km4/red4ext-rs", rev = "3361d4067fdde01e4bff93a9eced6fff422a4698" }
 serde = "1.0"
 snafu = "0.9"
 

@@ -8,7 +8,7 @@ use red4ext_rs::{
 
 use super::{AsGameObjectExt, Entity, GameObject};
 
-const PADDING: usize = std::mem::size_of::<Entity>() - 0xF0;
+const PADDING: usize = 0xF0 - std::mem::size_of::<IScriptable>();
 
 #[repr(C)]
 pub struct PlayerPuppet {
@@ -47,108 +47,121 @@ pub struct PlayerPuppet {
     pub contacts_active_listener: Ref<CallbackHandle>, // 0x580
     pub sms_messenger_active_listener: Ref<CallbackHandle>, // 0x590
     pub current_visible_target_listener: Ref<CallbackHandle>, // 0x5A0
-    pub last_scan_target: WeakRef<GameObject>,  // 0x5B0
-    pub melee_select_input_processed: bool,     // 0x5C0
-    pub waiting_for_delay_event: bool,          // 0x5C1
-    pub randomized_time: f32,                   // 0x5C4
-    pub is_resetting: bool,                     // 0x5C8
-    pub delay_event_id: DelayId,                // 0x5CC
-    pub reset_tick_id: DelayId,                 // 0x5D4
-    pub katana_anim_progression: f32,           // 0x5DC
-    pub cover_modifier_active: bool,            // 0x5E0
-    pub workspot_damage_reduction_active: bool, // 0x5E1
-    pub workspot_visibility_reduction_active: bool, // 0x5E2
-    pub current_player_workspot_tags: RedArray<CName>, // 0x5E8
-    pub incapacitated: bool,                    // 0x5F8
-    pub remote_mappin_id: NewMappinId,          // 0x600
-    pub cpo_mission_data_state: Ref<IScriptable>, // 0x608
-    pub cpo_mission_data_bb_id: Ref<CallbackHandle>, // 0x618
-    pub visibility_listener: Ref<IScriptable>,  // 0x628
-    pub second_heart_listener: Ref<IScriptable>, // 0x638
-    pub armor_stat_listener: Ref<IScriptable>,  // 0x648
-    pub health_stat_listener: Ref<IScriptable>, // 0x658
-    pub oxygen_stat_listener: Ref<IScriptable>, // 0x668
-    pub aim_assist_listener: Ref<IScriptable>,  // 0x678
-    pub auto_reveal_listener: Ref<IScriptable>, // 0x688
-    pub all_stats_listener: Ref<IScriptable>,   // 0x698
-    pub right_hand_attachment_slot_listener: Ref<IScriptable>, // 0x6A8
-    pub healing_items_charge_stat_listener: Ref<IScriptable>, // 0x6B8
-    pub grenades_charge_stat_listener: Ref<IScriptable>, // 0x6C8
-    pub projectile_launcher_charge_stat_listener: Ref<IScriptable>, // 0x6D8
-    pub optical_camo_charge_stat_listener: Ref<IScriptable>, // 0x6E8
-    pub overclock_charge_listener: Ref<IScriptable>, // 0x6F8
-    pub accessibility_controls_listener: Ref<IScriptable>, // 0x708
-    pub is_talking_on_phone: bool,              // 0x718
-    pub data_damage_update_id: DelayId,         // 0x71C
-    pub player_attached_callback_id: u32,       // 0x724
-    pub player_detached_callback_id: u32,       // 0x728
-    pub callback_handles: RedArray<Ref<CallbackHandle>>, // 0x730
-    pub number_of_combatants: i32,              // 0x740
-    pub equipment_mesh_overlay_effect_name: CName, // 0x748
-    pub equipment_mesh_overlay_effect_tag: CName, // 0x750
-    pub equipment_mesh_overlay_slots: RedArray<TweakDbId>, // 0x758
-    pub cover_visibility_perk_blocked: bool,    // 0x768
-    pub behind_cover: bool,                     // 0x769
-    pub in_combat: bool,                        // 0x76A
-    pub is_being_revealed: bool,                // 0x76B
-    pub has_been_detected: bool,                // 0x76C
-    pub in_crouch: bool,                        // 0x76D
-    pub has_kiroshi_optics_fragment: bool,      // 0x76E
-    pub doing_quick_melee: bool,                // 0x76F
-    pub vehicle_state: GamePsmVehicle,          // 0x770
-    pub in_mounted_weapon_vehicle: bool,        // 0x774
-    pub in_driver_combat_tpp: bool,             // 0x775
-    pub driver_combat_weapon_type: [u8; 0x4],   // 0x776
-    pub is_aiming: bool,                        // 0x77A
-    pub focus_mode_active: bool,                // 0x77B
-    pub custom_fast_forward_possible: bool,     // 0x77C
-    pub equipped_right_hand_weapon: WeakRef<IScriptable>, // 0x780
-    pub aim_assist_update_queued: bool,         // 0x790
-    pub locomotion_state: i32,                  // 0x794
-    pub left_hand_cyberware_state: i32,         // 0x798
-    pub melee_weapon_state: i32,                // 0x79C
-    pub weapon_zoom_level: f32,                 // 0x7A0
-    pub controlling_device_id: EntityId,        // 0x7A8
-    pub gunshot_range: f32,                     // 0x7B0
-    pub explosion_range: f32,                   // 0x7B4
-    pub is_in_body_slam: bool,                  // 0x7B8
-    pub combat_gadget_state: i32,               // 0x7BC
-    pub scene_tier: GameplayTier,               // 0x7C0
-    pub next_buffer_modifier: i32,              // 0x7C4
-    pub attacking_netrunner_id: EntityId,       // 0x7C8
-    pub npc_death_instigator: WeakRef<IScriptable>, // 0x7D0
-    pub best_targetting_weapon: WeakRef<IScriptable>, // 0x7E0
-    pub best_targetting_dot: f32,               // 0x7F0
-    pub targetting_enemies: i32,                // 0x7F4
-    pub is_aiming_at_friendly: bool,            // 0x7F8
-    pub is_aiming_at_child: bool,               // 0x7F9
-    pub distance_from_target_squared: f32,      // 0x7FC
-    pub cover_record_id: TweakDbId,             // 0x800
-    pub damage_reduction_record_id: TweakDbId,  // 0x808
-    pub vis_reduction_record_id: TweakDbId,     // 0x810
-    pub last_dmg_inflicted: EngineTime,         // 0x818
-    pub crit_health_rumble_played: bool,        // 0x820
-    pub crit_health_rumble_duration_id: DelayId, // 0x824
-    pub last_health_update: f32,                // 0x82C
-    pub stamina_listener: Ref<IScriptable>,     // 0x830
-    pub memory_listener: Ref<IScriptable>,      // 0x840
-    pub security_area_type_e3hack: ESecurityAreaType, // 0x850
-    pub overlapped_security_zones: RedArray<PersistentId>, // 0x858
-    pub interesting_facts: InterestingFacts,    // 0x868
-    pub interesting_facts_listeners_ids: InterestingFactsListenersIds, // 0x870
-    pub interesting_facts_listeners_functions: InterestingFactsListenersFunctions, // 0x878
-    pub vision_mode_controller: Ref<IScriptable>, // 0x880
-    pub combat_controller: Ref<IScriptable>,    // 0x890
-    pub handling_modifiers: Ref<IScriptable>,   // 0x8A0
-    pub cached_gameplay_restrictions: RedArray<TweakDbId>, // 0x8B0
-    pub delay_end_grace_period_after_spawn_event_id: DelayId, // 0x8C0
-    pub cw_mask_in_vehicle_input_held: bool,    // 0x8C8
-    pub friendly_devices_hostile_to_enemies_lock: RwLock, // 0x8D0
-    pub friendly_devices_hostile_to_enemies: RedArray<EntityId>, // 0x8E0
-    pub pocket_radio: Ref<PocketRadio>,         // 0x8F0
-    pub boss_that_targets_player: EntityId,     // 0x900
-    pub choice_token_text_layer_id: u32,        // 0x908
-    pub choice_token_text_drawn: bool,          // 0x90C
+    pub joycon_dual_style_changed_listener: Ref<CallbackHandle>, // 0x5B0
+    pub on_input_style_changed_listener: Ref<CallbackHandle>, // 0x5C0
+    pub charge_attack_pattern_listener: Ref<CallbackHandle>, // 0x5D0
+    pub pattern_matching_melee_enabled_listener: Ref<CallbackHandle>, // 0x5E0
+    pub is_inside_of_charge_pattern: bool,      // 0x5F0
+    pub is_pattern_matching_melee_enabled: bool, // 0x5F1
+    pub last_scan_target: WeakRef<GameObject>,  // 0x5F8
+    pub melee_select_input_processed: bool,     // 0x608
+    pub waiting_for_delay_event: bool,          // 0x609
+    pub randomized_time: f32,                   // 0x60C
+    pub is_resetting: bool,                     // 0x610
+    pub delay_event_id: DelayId,                // 0x614
+    pub reset_tick_id: DelayId,                 // 0x61C
+    pub katana_anim_progression: f32,           // 0x624
+    pub cover_modifier_active: bool,            // 0x628
+    pub workspot_damage_reduction_active: bool, // 0x629
+    pub workspot_visibility_reduction_active: bool, // 0x62A
+    pub current_player_workspot_tags: RedArray<CName>, // 0x630
+    pub incapacitated: bool,                    // 0x640
+    pub remote_mappin_id: NewMappinId,          // 0x648
+    pub cpo_mission_data_state: Ref<IScriptable>, // 0x650
+    pub cpo_mission_data_bb_id: Ref<IScriptable>, // 0x660
+    pub visibility_listener: Ref<IScriptable>,  // 0x670
+    pub second_heart_listener: Ref<IScriptable>, // 0x680
+    pub armor_stat_listener: Ref<IScriptable>,  // 0x690
+    pub health_stat_listener: Ref<IScriptable>, // 0x6A0
+    pub oxygen_stat_listener: Ref<IScriptable>, // 0x6B0
+    pub aim_assist_listener: Ref<IScriptable>,  // 0x6C0
+    pub auto_reveal_listener: Ref<IScriptable>, // 0x6D0
+    pub all_stats_listener: Ref<IScriptable>,   // 0x6E0
+    pub right_hand_attachment_slot_listener: Ref<IScriptable>, // 0x6F0
+    pub left_hand_attachment_slot_listener: Ref<IScriptable>, // 0x700
+    pub healing_items_charge_stat_listener: Ref<IScriptable>, // 0x710
+    pub grenades_charge_stat_listener: Ref<IScriptable>, // 0x720
+    pub projectile_launcher_charge_stat_listener: Ref<IScriptable>, // 0x730
+    pub optical_camo_charge_stat_listener: Ref<IScriptable>, // 0x740
+    pub overclock_charge_listener: Ref<IScriptable>, // 0x750
+    pub accessibility_controls_listener: Ref<IScriptable>, // 0x760
+    pub is_talking_on_phone: bool,              // 0x770
+    pub data_damage_update_id: DelayId,         // 0x774
+    pub player_attached_callback_id: u32,       // 0x77C
+    pub player_detached_callback_id: u32,       // 0x780
+    pub callback_handles: RedArray<Ref<CallbackHandle>>, // 0x788
+    pub number_of_combatants: i32,              // 0x798
+    pub equipment_mesh_overlay_effect_name: CName, // 0x7A0
+    pub equipment_mesh_overlay_effect_tag: CName, // 0x7A8
+    pub equipment_mesh_overlay_slots: RedArray<TweakDbId>, // 0x7B0
+    pub cover_visibility_perk_blocked: bool,    // 0x7C0
+    pub behind_cover: bool,                     // 0x7C1
+    pub in_combat: bool,                        // 0x7C2
+    pub is_being_revealed: bool,                // 0x7C3
+    pub has_been_detected: bool,                // 0x7C4
+    pub in_crouch: bool,                        // 0x7C5
+    pub has_kiroshi_optics_fragment: bool,      // 0x7C6
+    pub doing_quick_melee: bool,                // 0x7C7
+    pub vehicle_state: GamePsmVehicle,          // 0x7C8
+    pub in_mounted_weapon_vehicle: bool,        // 0x7CC
+    pub in_driver_combat_tpp: bool,             // 0x7CD
+    pub driver_combat_weapon_type: [u8; 0x4],   // 0x7CE
+    pub is_aiming: bool,                        // 0x7D2
+    pub focus_mode_active: bool,                // 0x7D3
+    pub custom_fast_forward_possible: bool,     // 0x7D4
+    pub equipped_right_hand_weapon: WeakRef<IScriptable>, // 0x7D8
+    pub equipped_left_hand_weapon: WeakRef<IScriptable>, // 0x7E8
+    pub aim_assist_update_queued: bool,         // 0x7F8
+    pub locomotion_state: i32,                  // 0x7FC
+    pub left_hand_cyberware_state: i32,         // 0x800
+    pub melee_weapon_state: i32,                // 0x804
+    pub weapon_zoom_level: f32,                 // 0x808
+    pub controlling_device_id: EntityId,        // 0x810
+    pub gunshot_range: f32,                     // 0x818
+    pub explosion_range: f32,                   // 0x81C
+    pub is_in_body_slam: bool,                  // 0x820
+    pub combat_gadget_state: i32,               // 0x824
+    pub scene_tier: GameplayTier,               // 0x828
+    pub next_buffer_modifier: i32,              // 0x82C
+    pub attacking_netrunner_id: EntityId,       // 0x830
+    pub npc_death_instigator: WeakRef<IScriptable>, // 0x838
+    pub best_targetting_weapon: WeakRef<IScriptable>, // 0x848
+    pub best_targetting_dot: f32,               // 0x858
+    pub targetting_enemies: i32,                // 0x85C
+    pub is_aiming_at_friendly: bool,            // 0x860
+    pub is_aiming_at_child: bool,               // 0x861
+    pub distance_from_target_squared: f32,      // 0x864
+    pub cover_record_id: TweakDbId,             // 0x868
+    pub damage_reduction_record_id: TweakDbId,  // 0x870
+    pub vis_reduction_record_id: TweakDbId,     // 0x878
+    pub last_dmg_inflicted: EngineTime,         // 0x880
+    pub crit_health_rumble_played: bool,        // 0x888
+    pub crit_health_rumble_duration_id: DelayId, // 0x88C
+    pub last_health_update: f32,                // 0x894
+    pub stamina_listener: Ref<IScriptable>,     // 0x898
+    pub memory_listener: Ref<IScriptable>,      // 0x8A8
+    pub security_area_type_e3hack: ESecurityAreaType, // 0x8B8
+    pub overlapped_security_zones: RedArray<PersistentId>, // 0x8C0
+    pub interesting_facts: InterestingFacts,    // 0x8D0
+    pub interesting_facts_listeners_ids: InterestingFactsListenersIds, // 0x8D8
+    pub interesting_facts_listeners_functions: InterestingFactsListenersFunctions, // 0x8E0
+    pub vision_mode_controller: Ref<IScriptable>, // 0x8E8
+    pub combat_controller: Ref<IScriptable>,    // 0x8F8
+    pub weapon_handling_modifiers: Ref<IScriptable>, // 0x908
+    pub cached_gameplay_restrictions: RedArray<TweakDbId>, // 0x918
+    pub delay_end_grace_period_after_spawn_event_id: DelayId, // 0x928
+    pub cw_mask_in_vehicle_input_held: bool,    // 0x930
+    pub friendly_devices_hostile_to_enemies_lock: RwLock, // 0x938
+    pub friendly_devices_hostile_to_enemies: RedArray<EntityId>, // 0x948
+    pub pocket_radio: Ref<PocketRadio>,         // 0x958
+    pub pattern_manager: Ref<IScriptable>,      // 0x968
+    pub pattern_matching_is_on: bool,           // 0x978
+    pub is_joy_con_style_dual: bool,            // 0x979
+    pub no_movement_modifier_data: RedArray<Ref<IScriptable>>, // 0x980
+    pub registered_fact_listeners: RedArray<IScriptable>, // 0x990
+    pub boss_that_targets_player: EntityId,     // 0x9A0
+    pub choice_token_text_layer_id: u32,        // 0x9A8
+    pub choice_token_text_drawn: bool,          // 0x9AC
 }
 
 unsafe impl ScriptClass for PlayerPuppet {
@@ -162,15 +175,9 @@ impl AsRef<IScriptable> for PlayerPuppet {
     }
 }
 
-impl AsRef<Entity> for PlayerPuppet {
-    fn as_ref(&self) -> &Entity {
-        self.base.as_ref()
-    }
-}
-
 #[repr(C)]
 pub struct ScriptedPuppet {
-    pub base: Entity,
+    base: IScriptable,
     pub _padding0: [u8; PADDING],
     pub ai_controller: Ref<IScriptable>,              // 0xF0
     pub move_policies: Ref<MovePoliciesComponent>,    // 0x100
@@ -247,12 +254,6 @@ unsafe impl ScriptClass for ScriptedPuppet {
 impl AsRef<IScriptable> for ScriptedPuppet {
     fn as_ref(&self) -> &IScriptable {
         self.base.as_ref()
-    }
-}
-
-impl AsRef<Entity> for ScriptedPuppet {
-    fn as_ref(&self) -> &Entity {
-        &self.base
     }
 }
 

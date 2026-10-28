@@ -18,8 +18,11 @@ use red4ext_rs::{
 
 use crate::{
     AUDIOWARE_VERSION, AsEntity, ControlId, ElasticTween, EmitterDistances, EmitterSettings,
-    Entity, Event, EventName, LinearTween, ToEasing, Tween, abi::fails, engine::Engine,
-    error::ValidationError, get_player,
+    Entity, Event, EventName, LinearTween, ToEasing, Tween,
+    abi::fails,
+    engine::Engine,
+    error::{REPORT_MODDER, REPORT_PLUGIN, ValidationError},
+    get_player,
 };
 
 /// Represents a region in time.
@@ -185,7 +188,13 @@ impl ToInterpolation for Ref<Tween> {
                     },
                 })
             }
-            _ => unreachable!(),
+            _ => {
+                fails!(
+                    hint: REPORT_MODDER, "unsupported conversion to interpolation: {}",
+                    <Self as red4ext_rs::NativeRepr>::NAME
+                );
+                None
+            }
         }
     }
 }
@@ -209,11 +218,11 @@ impl ToSettings for AudioSettingsExt {
     type Settings = Settings;
     fn into_settings(self) -> Option<Self::Settings> {
         if let Err(e) = Duration::try_from_secs_f32(self.start_position) {
-            fails!("invalid start position: {e}");
+            fails!(hint: REPORT_MODDER, "invalid start position: {e}");
             return None;
         }
         let Ok(volume) = Amplitude::try_from(self.volume) else {
-            fails!("invalid volume ({})", self.volume);
+            fails!(hint: REPORT_MODDER, "invalid volume ({})", self.volume);
             return None;
         };
         Some(Settings {
@@ -260,7 +269,7 @@ impl ToSettingsExt for EmitterSettings {
                 let ty = unsafe { x.fields() }.unwrap();
                 Some(ty).hash(&mut state);
             } else {
-                fails!("invalid attenuation function");
+                fails!(hint: REPORT_MODDER, "invalid attenuation function");
                 None::<Tween>.hash(&mut state);
             }
         } else {
@@ -272,7 +281,7 @@ impl ToSettingsExt for EmitterSettings {
         self.persist_until_sounds_finish.hash(&mut state);
         let hash = state.finish();
         if hash == 0 {
-            fails!("emitter settings hash should not be 0");
+            fails!(hint: REPORT_PLUGIN, "emitter settings hash should not be 0");
             return None;
         }
         Some((
@@ -327,7 +336,7 @@ impl AudioSystemExt {
             None => None,
             Some(Ok(x)) => Some(x),
             Some(Err(x)) => {
-                fails!("invalid locale ({x})");
+                fails!(hint: REPORT_MODDER, "invalid locale ({x})");
                 return -1.;
             }
         };
