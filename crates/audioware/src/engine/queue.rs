@@ -9,6 +9,7 @@ use std::{
 
 use bitflags::bitflags;
 use crossbeam::channel::{Receiver, Select, Sender, TrySendError, bounded, tick, unbounded};
+use hotpath::{Format, HotpathGuardBuilder, Section};
 use kira::{
     AudioManagerSettings,
     backend::cpal::{CpalBackend, CpalBackendSettings},
@@ -226,6 +227,13 @@ pub fn run(
     mut engine: Engine<CpalBackend>,
 ) {
     crate::utils::lifecycle!("run engine thread");
+    let _guard = HotpathGuardBuilder::new("audioware")
+        .percentiles(&[50.0, 95.0, 99.9])
+        .functions_limit(20)
+        .format(Format::JsonPretty)
+        .output_path("report.json")
+        .sections(vec![Section::FunctionsTiming, Section::Channels])
+        .build();
     let s = |x| Duration::from_secs_f32(x);
     let ms = |x| Duration::from_millis(x);
     let reclamation = tick(s(if cfg!(debug_assertions) { 3. } else { 60. }));
@@ -234,468 +242,486 @@ pub fn run(
     #[cfg(feature = "diagnostic")]
     let mut diagnostic = Diagnostic::new();
     'game: loop {
-        #[cfg(feature = "diagnostic")]
-        {
-            diagnostic.iterations += 1;
-        }
-        let mut sel = Select::new();
-        let oi_lifecycle = sel.recv(&rl);
-        let oi_command = sel.recv(&rc);
-        let oi_callback = sel.recv(&re);
-        let oi_dsound = sel.recv(&rds);
-        let oi_demitter = sel.recv(&rde);
-        let oi_sync = sel.recv(&synchronization);
-        let oi_reclaim = sel.recv(&reclamation);
-        let oper = sel.select_timeout(ms(15));
-
-        let mut pre_lifecycle: Option<Lifecycle> = None;
-        let mut pre_command: Option<Command> = None;
-        let mut pre_callback: Option<Callback> = None;
-        let mut pre_dsound: Option<DynamicSound> = None;
-        let mut pre_demitter: Option<DynamicEmitter> = None;
-        let mut sync_fired = false;
-        let mut reclaim_fired = false;
-
-        if let Ok(oper) = oper {
-            match oper.index() {
-                i if i == oi_lifecycle => pre_lifecycle = oper.recv(&rl).ok(),
-                i if i == oi_command => pre_command = oper.recv(&rc).ok(),
-                i if i == oi_callback => pre_callback = oper.recv(&re).ok(),
-                i if i == oi_dsound => pre_dsound = oper.recv(&rds).ok(),
-                i if i == oi_demitter => pre_demitter = oper.recv(&rde).ok(),
-                i if i == oi_sync => {
-                    let _ = oper.recv(&synchronization);
-                    sync_fired = true;
-                }
-                i if i == oi_reclaim => {
-                    let _ = oper.recv(&reclamation);
-                    reclaim_fired = true;
-                }
-                _ => unreachable!(),
-            }
-        }
-
-        if state.contains(Flags::MUTE_IN_BACKGROUND) {
-            if !is_in_foreground() {
-                if state.contains(Flags::FOCUSED) {
-                    state.set(Flags::FOCUSED, false);
-                    engine.mute(true);
-                }
-            } else if !state.contains(Flags::FOCUSED) {
-                state.set(Flags::FOCUSED, true);
-                engine.mute(false);
-            }
-        }
-        for l in pre_lifecycle.into_iter().chain(rl.try_iter()) {
+        hotpath::measure_block!("loop", {
             #[cfg(feature = "diagnostic")]
             {
-                diagnostic.lifecycles += 1;
+                diagnostic.iterations += 1;
             }
-            lifecycle!("> {l}");
-            match l {
-                Lifecycle::Terminate => {
-                    drop(engine);
-                    break 'game;
+            let mut sel = Select::new();
+            let oi_lifecycle = sel.recv(&rl);
+            let oi_command = sel.recv(&rc);
+            let oi_callback = sel.recv(&re);
+            let oi_dsound = sel.recv(&rds);
+            let oi_demitter = sel.recv(&rde);
+            let oi_sync = sel.recv(&synchronization);
+            let oi_reclaim = sel.recv(&reclamation);
+            let oper = sel.select_timeout(ms(15));
+
+            let mut pre_lifecycle: Option<Lifecycle> = None;
+            let mut pre_command: Option<Command> = None;
+            let mut pre_callback: Option<Callback> = None;
+            let mut pre_dsound: Option<DynamicSound> = None;
+            let mut pre_demitter: Option<DynamicEmitter> = None;
+            let mut sync_fired = false;
+            let mut reclaim_fired = false;
+
+            if let Ok(oper) = oper {
+                match oper.index() {
+                    i if i == oi_lifecycle => pre_lifecycle = oper.recv(&rl).ok(),
+                    i if i == oi_command => pre_command = oper.recv(&rc).ok(),
+                    i if i == oi_callback => pre_callback = oper.recv(&re).ok(),
+                    i if i == oi_dsound => pre_dsound = oper.recv(&rds).ok(),
+                    i if i == oi_demitter => pre_demitter = oper.recv(&rde).ok(),
+                    i if i == oi_sync => {
+                        let _ = oper.recv(&synchronization);
+                        sync_fired = true;
+                    }
+                    i if i == oi_reclaim => {
+                        let _ = oper.recv(&reclamation);
+                        reclaim_fired = true;
+                    }
+                    _ => unreachable!(),
                 }
-                Lifecycle::ReportInitialization => engine.report_initialization(false),
-                #[cfg(feature = "hot-reload")]
-                Lifecycle::HotReload => {
-                    engine.hot_reload();
-                    continue 'game;
+            }
+
+            if state.contains(Flags::MUTE_IN_BACKGROUND) {
+                if !is_in_foreground() {
+                    if state.contains(Flags::FOCUSED) {
+                        state.set(Flags::FOCUSED, false);
+                        engine.mute(true);
+                    }
+                } else if !state.contains(Flags::FOCUSED) {
+                    state.set(Flags::FOCUSED, true);
+                    engine.mute(false);
                 }
-                Lifecycle::SetListenerDilation {
-                    value,
-                    reason,
-                    ease_in_curve,
-                } => engine.set_listener_dilation(DilationUpdate::Set {
-                    value,
-                    reason,
-                    ease_in_curve,
-                }),
-                Lifecycle::UnsetListenerDilation {
-                    reason,
-                    ease_out_curve,
-                } => engine.unset_listener_dilation(DilationUpdate::Unset {
-                    reason,
-                    ease_out_curve,
-                }),
-                Lifecycle::SetEmitterDilation {
-                    entity_id,
-                    value,
-                    ease_in_curve,
-                    reason,
-                } => engine.set_emitter_dilation(
-                    entity_id,
-                    DilationUpdate::Set {
+            }
+            for l in pre_lifecycle.into_iter().chain(rl.try_iter()) {
+                #[cfg(feature = "diagnostic")]
+                {
+                    diagnostic.lifecycles += 1;
+                }
+                lifecycle!("> {l}");
+                match l {
+                    Lifecycle::Terminate => {
+                        drop(engine);
+                        break 'game;
+                    }
+                    Lifecycle::ReportInitialization => engine.report_initialization(false),
+                    #[cfg(feature = "hot-reload")]
+                    Lifecycle::HotReload => {
+                        engine.hot_reload();
+                        continue 'game;
+                    }
+                    Lifecycle::SetListenerDilation {
+                        value,
                         reason,
+                        ease_in_curve,
+                    } => engine.set_listener_dilation(DilationUpdate::Set {
+                        value,
+                        reason,
+                        ease_in_curve,
+                    }),
+                    Lifecycle::UnsetListenerDilation {
+                        reason,
+                        ease_out_curve,
+                    } => engine.unset_listener_dilation(DilationUpdate::Unset {
+                        reason,
+                        ease_out_curve,
+                    }),
+                    Lifecycle::SetEmitterDilation {
+                        entity_id,
                         value,
                         ease_in_curve,
-                    },
-                ),
-                Lifecycle::UnsetEmitterDilation {
-                    entity_id,
-                    ease_out_curve,
-                } => engine.unset_emitter_dilation(
-                    entity_id,
-                    DilationUpdate::Unset {
-                        reason: CName::undefined(),
+                        reason,
+                    } => engine.set_emitter_dilation(
+                        entity_id,
+                        DilationUpdate::Set {
+                            reason,
+                            value,
+                            ease_in_curve,
+                        },
+                    ),
+                    Lifecycle::UnsetEmitterDilation {
+                        entity_id,
                         ease_out_curve,
-                    },
-                ),
-                Lifecycle::RegisterEmitter {
-                    entity_id,
-                    tag_name,
-                    emitter_name,
-                    emitter_settings,
-                    sender,
-                } => {
-                    let registered = engine.register_emitter(
+                    } => engine.unset_emitter_dilation(
+                        entity_id,
+                        DilationUpdate::Unset {
+                            reason: CName::undefined(),
+                            ease_out_curve,
+                        },
+                    ),
+                    Lifecycle::RegisterEmitter {
+                        entity_id,
+                        tag_name,
+                        emitter_name,
+                        emitter_settings,
+                        sender,
+                    } => {
+                        let registered = engine.register_emitter(
+                            *entity_id,
+                            *tag_name,
+                            emitter_name,
+                            emitter_settings.as_deref(),
+                        );
+                        let _ = sender.try_send(registered);
+                    }
+                    Lifecycle::UnregisterEmitter {
+                        entity_id,
+                        tag_name,
+                        sender,
+                    } => {
+                        let unregistered = engine.unregister_emitter(*entity_id, *tag_name);
+                        let _ = sender.try_send(unregistered);
+                    }
+                    Lifecycle::OnEmitterDies { entity_id } => engine.on_emitter_dies(entity_id),
+                    Lifecycle::OnEmitterIncapacitated { entity_id } => {
+                        engine.on_emitter_incapacitated(entity_id)
+                    }
+                    Lifecycle::OnEmitterDefeated { .. } => {}
+                    Lifecycle::ActivateCamera { triggered_by, .. } => {
+                        engine.override_listener(Some(triggered_by))
+                    }
+                    Lifecycle::DeactivateCamera { .. } => engine.override_listener(None),
+                    Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
+                    Lifecycle::SetMuteInBackground { value } => {
+                        if value != state.contains(Flags::MUTE_IN_BACKGROUND) {
+                            state.set(Flags::MUTE_IN_BACKGROUND, value);
+                        }
+                    }
+                    Lifecycle::Session(Session::BeforeStart) => engine.reset(),
+                    Lifecycle::Session(Session::Start) => {
+                        state.set(Flags::LOADING, true);
+                    }
+                    Lifecycle::Session(Session::End) => {}
+                    Lifecycle::Session(Session::BeforeEnd) => {
+                        if state.contains(Flags::IN_GAME) {
+                            state.set(Flags::IN_GAME, false);
+                            engine.scene = None;
+                            engine.tracks.clear();
+                            engine.reset_callbacks();
+                        }
+                    }
+                    Lifecycle::UIInGameNotificationRemove => {
+                        if state.contains(Flags::LOADING) {
+                            engine.tracks.stop(DILATION_EASE_OUT);
+                        }
+                    }
+                    Lifecycle::Session(Session::Ready) => {
+                        if let Err(e) = engine.try_new_scene() {
+                            lifecycle!("failed to create new scene: {e}");
+                        }
+                        state.set(Flags::LOADING, false);
+                        state.set(Flags::IN_MENU, false);
+                        state.set(Flags::IN_GAME, true);
+                    }
+                    Lifecycle::Session(Session::Pause) => {
+                        state.set(Flags::PAUSED, true);
+                    }
+                    Lifecycle::Session(Session::Resume) => {
+                        state.set(Flags::PAUSED, false);
+                    }
+                    Lifecycle::SwitchToScenario(name) => {
+                        if name == CName::new("MenuScenario_PauseMenu") {
+                            engine.pause();
+                        }
+                        state.set(Flags::IN_MENU, true);
+                    }
+                    Lifecycle::EngagementScreen => {
+                        state.set(Flags::IN_GAME, false);
+                    }
+                    Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
+                    Lifecycle::System(System::PlayerAttach) => {}
+                    Lifecycle::System(System::PlayerDetach) => {
+                        engine.stop_scene_emitters_and_actors()
+                    }
+                    Lifecycle::Board(Board::UIMenu(opened)) => {
+                        state.set(Flags::IN_MENU, opened);
+                        if state.contains(Flags::IN_GAME) {
+                            if opened {
+                                engine.pause();
+                            } else {
+                                engine.resume();
+                            }
+                        }
+                    }
+                    Lifecycle::Replacement(x) => engine.pending_mutes.push(x),
+                    Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
+                    Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
+                }
+            }
+            // occlusions are lossy and bounded per iteration, latest value wins
+            let occlusions = ro.len();
+            for (entity_id, value) in ro.try_iter().take(occlusions) {
+                engine.set_emitter_occlusion(entity_id, value);
+            }
+            #[cfg(feature = "diagnostic")]
+            diagnostic.report(rl.len());
+            engine.update_mutes();
+            if state.should_sync()
+                && (engine.any_emitter() || engine.any_actor())
+                && (sync_fired || synchronization.try_recv().is_ok())
+            {
+                engine.sync_scene();
+            }
+            if engine.any_handle() && (reclaim_fired || reclamation.try_recv().is_ok()) {
+                engine.reclaim();
+                engine.reclaim_mutes();
+                engine.reclaim_callbacks();
+            }
+            for c in pre_command.into_iter().chain(rc.try_iter()).take(8) {
+                lifecycle!("> {c}");
+                match c {
+                    Command::PlayVanilla {
+                        event_name,
+                        entity_id,
+                        emitter_name,
+                    } => engine.play::<kira::Tween>(
+                        event_name,
+                        entity_id,
+                        emitter_name,
+                        None,
+                        None,
+                        None,
+                    ),
+                    Command::Play {
+                        event_name: sound_name,
+                        entity_id,
+                        emitter_name,
+                        ext,
+                        line_type,
+                    } => engine.play(sound_name, entity_id, emitter_name, ext, line_type, None),
+                    Command::EnqueueAndPlay {
+                        event_name: sound_name,
+                        entity_id,
+                        emitter_name,
+                        ext,
+                        line_type,
+                        control_id,
+                    } => engine.play(
+                        sound_name,
+                        entity_id,
+                        emitter_name,
+                        ext,
+                        line_type,
+                        Some(control_id),
+                    ),
+                    Command::PlayOnEmitter {
+                        event_name,
+                        entity_id,
+                        tag_name,
+                        ext,
+                    } => engine.play_on_emitter(event_name, *entity_id, *tag_name, ext, None),
+                    Command::EnqueueAndPlayOnEmitter {
+                        event_name,
+                        entity_id,
+                        tag_name,
+                        ext,
+                        control_id,
+                    } => engine.play_on_emitter(
+                        event_name,
                         *entity_id,
                         *tag_name,
+                        ext,
+                        Some(control_id),
+                    ),
+                    Command::PlayOverThePhone {
+                        event_name,
                         emitter_name,
-                        emitter_settings.as_deref(),
-                    );
-                    let _ = sender.try_send(registered);
+                        gender,
+                    } => engine.play_over_the_phone(event_name, emitter_name, gender, None),
+                    Command::PlaySceneDialog {
+                        string_id,
+                        entity_id,
+                        is_player,
+                        is_holocall,
+                        is_rewind,
+                        seek_time,
+                    } => engine.play_scene_dialog(
+                        string_id,
+                        entity_id,
+                        is_player,
+                        is_holocall,
+                        is_rewind,
+                        seek_time,
+                        None,
+                    ),
+                    Command::StopSceneDialog {
+                        string_id,
+                        fade_out,
+                    } => engine.stop_on_actors(string_id, fade_out),
+                    Command::StopOnEmitter {
+                        event_name,
+                        entity_id,
+                        tag_name,
+                        tween,
+                    } => engine.stop_on_emitter(event_name, *entity_id, *tag_name, tween),
+                    Command::StopVanilla {
+                        event_name,
+                        entity_id,
+                        emitter_name,
+                    } => engine.stop(event_name, entity_id, emitter_name, None),
+                    Command::Stop {
+                        event_name,
+                        entity_id,
+                        emitter_name,
+                        tween,
+                    } => engine.stop(event_name, entity_id, emitter_name, tween),
+                    Command::Switch {
+                        switch_name,
+                        switch_value,
+                        entity_id,
+                        emitter_name,
+                        switch_name_tween,
+                        switch_value_settings,
+                    } => engine.switch(
+                        switch_name,
+                        switch_value,
+                        entity_id,
+                        emitter_name,
+                        switch_name_tween,
+                        switch_value_settings,
+                        None,
+                    ),
+                    Command::SwitchVanilla {
+                        switch_name,
+                        switch_value,
+                        entity_id,
+                        emitter_name,
+                    } => engine.switch::<kira::Tween>(
+                        switch_name,
+                        switch_value,
+                        entity_id,
+                        emitter_name,
+                        None,
+                        None,
+                        None,
+                    ),
                 }
-                Lifecycle::UnregisterEmitter {
-                    entity_id,
-                    tag_name,
-                    sender,
-                } => {
-                    let unregistered = engine.unregister_emitter(*entity_id, *tag_name);
-                    let _ = sender.try_send(unregistered);
-                }
-                Lifecycle::OnEmitterDies { entity_id } => engine.on_emitter_dies(entity_id),
-                Lifecycle::OnEmitterIncapacitated { entity_id } => {
-                    engine.on_emitter_incapacitated(entity_id)
-                }
-                Lifecycle::OnEmitterDefeated { .. } => {}
-                Lifecycle::ActivateCamera { triggered_by, .. } => {
-                    engine.override_listener(Some(triggered_by))
-                }
-                Lifecycle::DeactivateCamera { .. } => engine.override_listener(None),
-                Lifecycle::SetVolume { setting, value } => engine.set_volume(setting, value),
-                Lifecycle::SetMuteInBackground { value } => {
-                    if value != state.contains(Flags::MUTE_IN_BACKGROUND) {
-                        state.set(Flags::MUTE_IN_BACKGROUND, value);
+            }
+            for d in pre_dsound.into_iter().chain(rds.try_iter()).take(8) {
+                lifecycle!("> {d}");
+                match d {
+                    DynamicSound::SetVolume { id, value, tween } => {
+                        engine.tracks.set_controlled_volume(
+                            id,
+                            value,
+                            tween.unwrap_or(IMMEDIATELY),
+                        );
+                    }
+                    DynamicSound::SetPlaybackRate { id, value, tween } => {
+                        engine.tracks.set_controlled_playback_rate(
+                            id,
+                            value,
+                            tween.unwrap_or(IMMEDIATELY),
+                        );
+                    }
+                    DynamicSound::SetPanning { id, value, tween } => {
+                        engine.tracks.set_controlled_panning(
+                            id,
+                            value,
+                            tween.unwrap_or(IMMEDIATELY),
+                        );
+                    }
+                    DynamicSound::Pause { id, tween } => {
+                        engine
+                            .tracks
+                            .pause_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                    }
+                    DynamicSound::Resume { id, tween } => {
+                        engine
+                            .tracks
+                            .resume_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                    }
+                    DynamicSound::ResumeAt { id, value, tween } => {
+                        engine
+                            .tracks
+                            .resume_controlled_at(id, value, tween.unwrap_or(IMMEDIATELY));
+                    }
+                    DynamicSound::Stop { id, tween } => {
+                        engine
+                            .tracks
+                            .stop_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                    }
+                    DynamicSound::SeekTo { id, value } => {
+                        engine.tracks.seek_controlled_to(id, value);
+                    }
+                    DynamicSound::SeekBy { id, value } => {
+                        engine.tracks.seek_controlled_by(id, value);
+                    }
+                    DynamicSound::Position { id, output } => {
+                        engine.tracks.position_controlled(id, output)
                     }
                 }
-                Lifecycle::Session(Session::BeforeStart) => engine.reset(),
-                Lifecycle::Session(Session::Start) => {
-                    state.set(Flags::LOADING, true);
-                }
-                Lifecycle::Session(Session::End) => {}
-                Lifecycle::Session(Session::BeforeEnd) => {
-                    if state.contains(Flags::IN_GAME) {
-                        state.set(Flags::IN_GAME, false);
-                        engine.scene = None;
-                        engine.tracks.clear();
-                        engine.reset_callbacks();
-                    }
-                }
-                Lifecycle::UIInGameNotificationRemove => {
-                    if state.contains(Flags::LOADING) {
-                        engine.tracks.stop(DILATION_EASE_OUT);
-                    }
-                }
-                Lifecycle::Session(Session::Ready) => {
-                    if let Err(e) = engine.try_new_scene() {
-                        lifecycle!("failed to create new scene: {e}");
-                    }
-                    state.set(Flags::LOADING, false);
-                    state.set(Flags::IN_MENU, false);
-                    state.set(Flags::IN_GAME, true);
-                }
-                Lifecycle::Session(Session::Pause) => {
-                    state.set(Flags::PAUSED, true);
-                }
-                Lifecycle::Session(Session::Resume) => {
-                    state.set(Flags::PAUSED, false);
-                }
-                Lifecycle::SwitchToScenario(name) => {
-                    if name == CName::new("MenuScenario_PauseMenu") {
-                        engine.pause();
-                    }
-                    state.set(Flags::IN_MENU, true);
-                }
-                Lifecycle::EngagementScreen => {
-                    state.set(Flags::IN_GAME, false);
-                }
-                Lifecycle::System(System::Attach) | Lifecycle::System(System::Detach) => {}
-                Lifecycle::System(System::PlayerAttach) => {}
-                Lifecycle::System(System::PlayerDetach) => engine.stop_scene_emitters_and_actors(),
-                Lifecycle::Board(Board::UIMenu(opened)) => {
-                    state.set(Flags::IN_MENU, opened);
-                    if state.contains(Flags::IN_GAME) {
-                        if opened {
-                            engine.pause();
-                        } else {
-                            engine.resume();
+            }
+            for de in pre_demitter.into_iter().chain(rde.try_iter()).take(8) {
+                lifecycle!("> {de}");
+                if let Some(scene) = engine.scene.as_mut() {
+                    match de {
+                        DynamicEmitter::SetVolume { id, value, tween } => {
+                            scene.set_controlled_volume(id, value, tween.unwrap_or(IMMEDIATELY));
+                        }
+                        DynamicEmitter::SetPlaybackRate { id, value, tween } => {
+                            scene.set_controlled_playback_rate(
+                                id,
+                                value,
+                                tween.unwrap_or(IMMEDIATELY),
+                            );
+                        }
+                        DynamicEmitter::Pause { id, tween } => {
+                            scene.pause_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                        }
+                        DynamicEmitter::Resume { id, tween } => {
+                            scene.resume_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                        }
+                        DynamicEmitter::ResumeAt { id, value, tween } => {
+                            scene.resume_controlled_at(id, value, tween.unwrap_or(IMMEDIATELY));
+                        }
+                        DynamicEmitter::Stop { id, tween } => {
+                            scene.stop_controlled(id, tween.unwrap_or(IMMEDIATELY));
+                        }
+                        DynamicEmitter::Position { id, output } => {
+                            scene.position_controlled(id, output);
+                        }
+                        DynamicEmitter::SeekTo { id, value } => {
+                            scene.seek_controlled_to(id, value);
+                        }
+                        DynamicEmitter::SeekBy { id, value } => {
+                            scene.seek_controlled_by(id, value);
                         }
                     }
                 }
-                Lifecycle::Replacement(x) => engine.pending_mutes.push(x),
-                Lifecycle::Board(Board::ReverbMix(value)) => engine.set_reverb_mix(value),
-                Lifecycle::Board(Board::Preset(value)) => engine.set_preset(value),
             }
-        }
-        // occlusions are lossy and bounded per iteration, latest value wins
-        let occlusions = ro.len();
-        for (entity_id, value) in ro.try_iter().take(occlusions) {
-            engine.set_emitter_occlusion(entity_id, value);
-        }
-        #[cfg(feature = "diagnostic")]
-        diagnostic.report(rl.len());
-        engine.update_mutes();
-        if state.should_sync()
-            && (engine.any_emitter() || engine.any_actor())
-            && (sync_fired || synchronization.try_recv().is_ok())
-        {
-            engine.sync_scene();
-        }
-        if engine.any_handle() && (reclaim_fired || reclamation.try_recv().is_ok()) {
-            engine.reclaim();
-            engine.reclaim_mutes();
-            engine.reclaim_callbacks();
-        }
-        for c in pre_command.into_iter().chain(rc.try_iter()).take(8) {
-            lifecycle!("> {c}");
-            match c {
-                Command::PlayVanilla {
-                    event_name,
-                    entity_id,
-                    emitter_name,
-                } => engine.play::<kira::Tween>(
-                    event_name,
-                    entity_id,
-                    emitter_name,
-                    None,
-                    None,
-                    None,
-                ),
-                Command::Play {
-                    event_name: sound_name,
-                    entity_id,
-                    emitter_name,
-                    ext,
-                    line_type,
-                } => engine.play(sound_name, entity_id, emitter_name, ext, line_type, None),
-                Command::EnqueueAndPlay {
-                    event_name: sound_name,
-                    entity_id,
-                    emitter_name,
-                    ext,
-                    line_type,
-                    control_id,
-                } => engine.play(
-                    sound_name,
-                    entity_id,
-                    emitter_name,
-                    ext,
-                    line_type,
-                    Some(control_id),
-                ),
-                Command::PlayOnEmitter {
-                    event_name,
-                    entity_id,
-                    tag_name,
-                    ext,
-                } => engine.play_on_emitter(event_name, *entity_id, *tag_name, ext, None),
-                Command::EnqueueAndPlayOnEmitter {
-                    event_name,
-                    entity_id,
-                    tag_name,
-                    ext,
-                    control_id,
-                } => {
-                    engine.play_on_emitter(event_name, *entity_id, *tag_name, ext, Some(control_id))
-                }
-                Command::PlayOverThePhone {
-                    event_name,
-                    emitter_name,
-                    gender,
-                } => engine.play_over_the_phone(event_name, emitter_name, gender, None),
-                Command::PlaySceneDialog {
-                    string_id,
-                    entity_id,
-                    is_player,
-                    is_holocall,
-                    is_rewind,
-                    seek_time,
-                } => engine.play_scene_dialog(
-                    string_id,
-                    entity_id,
-                    is_player,
-                    is_holocall,
-                    is_rewind,
-                    seek_time,
-                    None,
-                ),
-                Command::StopSceneDialog {
-                    string_id,
-                    fade_out,
-                } => engine.stop_on_actors(string_id, fade_out),
-                Command::StopOnEmitter {
-                    event_name,
-                    entity_id,
-                    tag_name,
-                    tween,
-                } => engine.stop_on_emitter(event_name, *entity_id, *tag_name, tween),
-                Command::StopVanilla {
-                    event_name,
-                    entity_id,
-                    emitter_name,
-                } => engine.stop(event_name, entity_id, emitter_name, None),
-                Command::Stop {
-                    event_name,
-                    entity_id,
-                    emitter_name,
-                    tween,
-                } => engine.stop(event_name, entity_id, emitter_name, tween),
-                Command::Switch {
-                    switch_name,
-                    switch_value,
-                    entity_id,
-                    emitter_name,
-                    switch_name_tween,
-                    switch_value_settings,
-                } => engine.switch(
-                    switch_name,
-                    switch_value,
-                    entity_id,
-                    emitter_name,
-                    switch_name_tween,
-                    switch_value_settings,
-                    None,
-                ),
-                Command::SwitchVanilla {
-                    switch_name,
-                    switch_value,
-                    entity_id,
-                    emitter_name,
-                } => engine.switch::<kira::Tween>(
-                    switch_name,
-                    switch_value,
-                    entity_id,
-                    emitter_name,
-                    None,
-                    None,
-                    None,
-                ),
-            }
-        }
-        for d in pre_dsound.into_iter().chain(rds.try_iter()).take(8) {
-            lifecycle!("> {d}");
-            match d {
-                DynamicSound::SetVolume { id, value, tween } => {
-                    engine
-                        .tracks
-                        .set_controlled_volume(id, value, tween.unwrap_or(IMMEDIATELY));
-                }
-                DynamicSound::SetPlaybackRate { id, value, tween } => {
-                    engine.tracks.set_controlled_playback_rate(
-                        id,
-                        value,
-                        tween.unwrap_or(IMMEDIATELY),
-                    );
-                }
-                DynamicSound::SetPanning { id, value, tween } => {
-                    engine
-                        .tracks
-                        .set_controlled_panning(id, value, tween.unwrap_or(IMMEDIATELY));
-                }
-                DynamicSound::Pause { id, tween } => {
-                    engine
-                        .tracks
-                        .pause_controlled(id, tween.unwrap_or(IMMEDIATELY));
-                }
-                DynamicSound::Resume { id, tween } => {
-                    engine
-                        .tracks
-                        .resume_controlled(id, tween.unwrap_or(IMMEDIATELY));
-                }
-                DynamicSound::ResumeAt { id, value, tween } => {
-                    engine
-                        .tracks
-                        .resume_controlled_at(id, value, tween.unwrap_or(IMMEDIATELY));
-                }
-                DynamicSound::Stop { id, tween } => {
-                    engine
-                        .tracks
-                        .stop_controlled(id, tween.unwrap_or(IMMEDIATELY));
-                }
-                DynamicSound::SeekTo { id, value } => {
-                    engine.tracks.seek_controlled_to(id, value);
-                }
-                DynamicSound::SeekBy { id, value } => {
-                    engine.tracks.seek_controlled_by(id, value);
-                }
-                DynamicSound::Position { id, output } => {
-                    engine.tracks.position_controlled(id, output)
+            for e in pre_callback.into_iter().chain(re.try_iter()) {
+                lifecycle!("~ {e}");
+                match e {
+                    Callback::FireCallbacks(x) => engine.dispatch(x),
+                    x => engine.pending_callbacks.push(x),
                 }
             }
-        }
-        for de in pre_demitter.into_iter().chain(rde.try_iter()).take(8) {
-            lifecycle!("> {de}");
-            if let Some(scene) = engine.scene.as_mut() {
-                match de {
-                    DynamicEmitter::SetVolume { id, value, tween } => {
-                        scene.set_controlled_volume(id, value, tween.unwrap_or(IMMEDIATELY));
-                    }
-                    DynamicEmitter::SetPlaybackRate { id, value, tween } => {
-                        scene.set_controlled_playback_rate(id, value, tween.unwrap_or(IMMEDIATELY));
-                    }
-                    DynamicEmitter::Pause { id, tween } => {
-                        scene.pause_controlled(id, tween.unwrap_or(IMMEDIATELY));
-                    }
-                    DynamicEmitter::Resume { id, tween } => {
-                        scene.resume_controlled(id, tween.unwrap_or(IMMEDIATELY));
-                    }
-                    DynamicEmitter::ResumeAt { id, value, tween } => {
-                        scene.resume_controlled_at(id, value, tween.unwrap_or(IMMEDIATELY));
-                    }
-                    DynamicEmitter::Stop { id, tween } => {
-                        scene.stop_controlled(id, tween.unwrap_or(IMMEDIATELY));
-                    }
-                    DynamicEmitter::Position { id, output } => {
-                        scene.position_controlled(id, output);
-                    }
-                    DynamicEmitter::SeekTo { id, value } => {
-                        scene.seek_controlled_to(id, value);
-                    }
-                    DynamicEmitter::SeekBy { id, value } => {
-                        scene.seek_controlled_by(id, value);
-                    }
-                }
-            }
-        }
-        for e in pre_callback.into_iter().chain(re.try_iter()) {
-            lifecycle!("~ {e}");
-            match e {
-                Callback::FireCallbacks(x) => engine.dispatch(x),
-                x => engine.pending_callbacks.push(x),
-            }
-        }
-        engine.update_callbacks();
+            engine.update_callbacks();
+        });
     }
-    let _ = LIFECYCLE
-        .get()
-        .and_then(|x| x.write().ok().map(|mut x| x.take()));
-    let _ = CALLBACKS
-        .get()
-        .and_then(|x| x.write().ok().map(|mut x| x.take()));
-    let _ = COMMAND
-        .get()
-        .and_then(|x| x.write().ok().map(|mut x| x.take()));
-    let _ = DYNAMIC_SOUNDS
-        .get()
-        .and_then(|x| x.write().ok().map(|mut x| x.take()));
-    let _ = DYNAMIC_EMITTERS
-        .get()
-        .and_then(|x| x.write().ok().map(|mut x| x.take()));
-    let _ = OCCLUSIONS
-        .get()
-        .and_then(|x| x.write().ok().map(|mut x| x.take()));
+    hotpath::measure_block!("cleanup", {
+        let _ = LIFECYCLE
+            .get()
+            .and_then(|x| x.write().ok().map(|mut x| x.take()));
+        let _ = CALLBACKS
+            .get()
+            .and_then(|x| x.write().ok().map(|mut x| x.take()));
+        let _ = COMMAND
+            .get()
+            .and_then(|x| x.write().ok().map(|mut x| x.take()));
+        let _ = DYNAMIC_SOUNDS
+            .get()
+            .and_then(|x| x.write().ok().map(|mut x| x.take()));
+        let _ = DYNAMIC_EMITTERS
+            .get()
+            .and_then(|x| x.write().ok().map(|mut x| x.take()));
+        let _ = OCCLUSIONS
+            .get()
+            .and_then(|x| x.write().ok().map(|mut x| x.take()));
+    });
     lifecycle!("closed engine");
 }
 
