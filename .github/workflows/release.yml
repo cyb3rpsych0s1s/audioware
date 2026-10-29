@@ -32,6 +32,8 @@ jobs:
     runs-on: windows-2025
     needs: [gaming, modding]
     steps:
+      - name: Validate release version
+        run: if (($env:GITHUB_REF_NAME -replace '^(v|rc|beta|alpha)', '') -ne (Select-String '^version = "([^"]+)"' Cargo.toml).Matches.Groups[1].Value) { throw "Git tag version does not match Cargo.toml" }
       - name: Download artifact
         uses: actions/download-artifact@v8
         with:
