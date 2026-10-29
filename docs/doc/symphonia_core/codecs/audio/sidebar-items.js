@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["CODEC_ID_NULL_AUDIO"],"enum":["VerificationCheck"],"mod":["well_known"],"struct":["AudioCodecId","AudioCodecParameters","AudioDecoderOptions","FinalizeResult"],"trait":["AudioDecoder"]};

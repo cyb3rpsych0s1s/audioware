@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["intersection","storage"],"struct":["Set"],"type":["IntoIter","Iter"]};

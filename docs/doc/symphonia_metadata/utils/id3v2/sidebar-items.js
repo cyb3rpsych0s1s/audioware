@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["get_visual_key_from_picture_type"]};

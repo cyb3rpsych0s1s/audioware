@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["SceneSystem","SceneSystemInterface"],"trait":["AsSceneSystem","AsSceneSystemInterface"]};

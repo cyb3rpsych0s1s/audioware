@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["CodecRegistry","RegisteredAudioDecoder","SupportedAudioCodec"],"trait":["RegisterableAudioDecoder"],"type":["AudioDecoderFactoryFn"]};

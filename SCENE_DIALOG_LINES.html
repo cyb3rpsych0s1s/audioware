@@ -1,0 +1,481 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Scene Dialog Lines - audioware</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="./theme/css/mdbook-admonish.css">
+        <link rel="stylesheet" href="./theme/css/mdbook-admonish-custom.css">
+        <link rel="stylesheet" href="./theme/css/mdbook-admonish-styling.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="GETTING-STARTED.html"><strong aria-hidden="true">1.</strong> Getting started</a></li><li class="chapter-item expanded "><a href="CONCEPT.html"><strong aria-hidden="true">2.</strong> Concept</a></li><li class="chapter-item expanded "><a href="HOWTO.html"><strong aria-hidden="true">3.</strong> How to use?</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="MANIFEST.html"><strong aria-hidden="true">3.1.</strong> Manifest</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="SECTIONS.html"><strong aria-hidden="true">3.1.1.</strong> Sections</a></li><li class="chapter-item expanded "><a href="SETTINGS.html"><strong aria-hidden="true">3.1.2.</strong> Static Settings</a></li><li class="chapter-item expanded "><a href="ROUTING.html"><strong aria-hidden="true">3.1.3.</strong> Routing</a></li></ol></li><li class="chapter-item expanded "><a href="API.html"><strong aria-hidden="true">3.2.</strong> API</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="GUIDE.html"><strong aria-hidden="true">3.2.1.</strong> Developer guide</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="AUDIO_SYSTEM.html"><strong aria-hidden="true">3.2.1.1.</strong> AudioSystem</a></li><li class="chapter-item expanded "><a href="AUDIO_SYSTEM_EXT.html"><strong aria-hidden="true">3.2.1.2.</strong> AudioSystemExt</a></li><li class="chapter-item expanded "><a href="AUDIO_SETTINGS_EXT.html"><strong aria-hidden="true">3.2.1.3.</strong> Dynamic Settings</a></li><li class="chapter-item expanded "><a href="DYNAMIC_SOUNDS.html"><strong aria-hidden="true">3.2.1.4.</strong> Dynamic Sounds</a></li><li class="chapter-item expanded "><a href="PARAMETERS.html"><strong aria-hidden="true">3.2.1.5.</strong> Parameters</a></li><li class="chapter-item expanded "><a href="SPATIALIZATION.html"><strong aria-hidden="true">3.2.1.6.</strong> Spatialization</a></li><li class="chapter-item expanded "><a href="DYNAMIC_EMITTERS.html"><strong aria-hidden="true">3.2.1.7.</strong> Dynamic Emitters</a></li><li class="chapter-item expanded "><a href="SCENE_DIALOG_LINES.html" class="active"><strong aria-hidden="true">3.2.1.8.</strong> Scene Dialog Lines</a></li><li class="chapter-item expanded "><a href="NATIVE_INTEGRATION.html"><strong aria-hidden="true">3.2.1.9.</strong> Native Audio Integration</a></li></ol></li><li class="chapter-item expanded "><a href="DOCS.html"><strong aria-hidden="true">3.2.2.</strong> Internal docs</a></li></ol></li><li class="chapter-item expanded "><a href="INTEGRATION.html"><strong aria-hidden="true">3.3.</strong> Integration</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">audioware</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/cyb3rpsych0s1s/audioware" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="scene-dialog-lines"><a class="header" href="#scene-dialog-lines">Scene dialog lines</a></h1>
+<p>Audioware allows to use custom audio in Quest Scenes dialog lines, which can be freely mixed with vanilla ones.</p>
+<h2 id="preambule"><a class="header" href="#preambule">Preambule</a></h2>
+<p>A scene a.k.a <a href="https://nativedb.red4ext.com/scnSceneResource">scnSceneResource</a> contains multiple nodes a.k.a <a href="https://nativedb.red4ext.com/scnSectionNode">scnSectionNode</a> chained together to create for example a dialogue between V and NPCs, gestures, animation or effect sequences.</p>
+<p>Thanks to WolvenKit Editor you can already visualize Quests, including their Phases and Scenes.</p>
+<p>Scene Section node can contain single dialog line event a.k.a <a href="https://nativedb.red4ext.com/scnDialogLineEvent">scnDialogLineEvent</a>.</p>
+<p><img src="./SCENE_DIALOG_LINES/assets/chaining-scene-dialog-line-events-across-multiple-nodes.png" alt="multiple nodes, single event" /></p>
+<p>But a single Scene Section node can also contain multiple successive dialog line events.</p>
+<p><img src="./SCENE_DIALOG_LINES/assets/chaining-scene-dialog-line-events-in-single-node.png" alt="single node, multiple events" /></p>
+<p>This concept applies for discussions over the holocall, during braindances, yet using different scene nodes that won't be covered here.</p>
+<h2 id="creating-a-dialogue"><a class="header" href="#creating-a-dialogue">Creating a dialogue</a></h2>
+<p>This documentation won't go over the basics of <code>.quest</code>, <code>.questphase</code> and <code>.scene</code> as <a href="https://wiki.redmodding.org/cyberpunk-2077-modding/modding-guides/quest">REDmodding Wiki already does</a>.</p>
+<p>Aside from nodes, a dialog line itself requires roughly 4 components:</p>
+<ol>
+<li>actors</li>
+<li>audio asset(s) for the voice</li>
+<li>subtitle(s) to display on-screen</li>
+<li>lipsync animation(s) to be performed by the actor</li>
+</ol>
+<div id="admonition-info" class="admonition admonish-info" role="note" aria-labelledby="admonition-info-title">
+<div class="admonition-title">
+<div id="admonition-info-title">
+<p>Info</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-info"></a>
+</div>
+<div>
+<p>Implementing the first 3 ones is relatively easy while lipsync requires additional consideration, as developed below.</p>
+</div>
+</div>
+<p>Consider first that, for most of the dialog lines in the game, you probably don't need any lipsync.</p>
+<div id="admonition-tip" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-title">
+<div class="admonition-title">
+<div id="admonition-tip-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip"></a>
+</div>
+<div>
+<p>If you think about it one second, most of V's dialogues are made in first-person perspective (fpp).</p>
+<p>So unless V stands nearby a reflecting surface, a mirror, or sits inside a car (where third-person perspective or tpp, can be activated) you probably don't need to worry about lipsync.</p>
+<p>It's gonna be the same for a large portion of NPCs such as: devices, drones, droids, cyborgs and mechs do not have lips.</p>
+<p>Scavs with digital masks, humanoids with clothing or cyberware covering their lips also fall into this category.</p>
+</div>
+</div>
+<p>Since the topic is hairy, a <a href="https://github.com/cyb3rpsych0s1s/audioware/tree/main/examples/scenes">sample example .scene is provided in the repo</a>,
+on which the following documentation is directly based so that you can follow along,
+a courtesy of <a href="https://github.com/MrBilL61">MrBill</a>.</p>
+<h2 id="actor"><a class="header" href="#actor">Actor</a></h2>
+<p>In order to voice a dialogue you must first define the actors.</p>
+<p>At a minimum, there's a <code>speaker</code> (the one who talks), and an <code>addressee</code> (the one being talked to).</p>
+<p>The <a href="https://nativedb.red4ext.com/scnSceneResource#actors">actors</a> field in the <a href="https://nativedb.red4ext.com/scnSceneResource">scnSceneResource</a> defines all the actor(s), except for the player's actor(s).</p>
+<p><img src="./SCENE_DIALOG_LINES/assets/actors.png" alt="non-player actors" /></p>
+<p>The player's actor(s) can be found under <a href="https://nativedb.red4ext.com/scnSceneResource#playerActors">playerActors</a>.</p>
+<p><img src="./SCENE_DIALOG_LINES/assets/player-actors.png" alt="player actors" /></p>
+<h2 id="voice"><a class="header" href="#voice">Voice</a></h2>
+<p>For example, here's how adding a custom dialog line audio for Panam in Audioware looks like:</p>
+<div class='codeblocks'>
+<a style="font-size:12px;text-decoration:none;--fa-primary-color:tomato;color:tomato;" href="https://github.com/psiberx/cp2077-tweak-xl/wiki/YAML-Tweaks"><i style="font-size:18px;--fa-primary-color:tomato;color:tomato;" class="fa fa-solid fa-file"></i>&nbsp;&nbsp;YAML</a>  
+<pre><code class="language-yml"># resources\r6\audioware\dialogtest\dialogs.yaml
+version: 1.0.0
+dialogs:
+  13159259729229609924:
+    en-us: ./en-us/vo/panam_f_b69f1500c3d57bc4.Mp3
+</code></pre>
+</div>
+<p>In this snippet the RUID <code>13159259729229609924</code> is actually the hash of the hexadecimal <code>b69f1500c3d57bc4</code>. It is used to establish a relationship between resources. This is how the RED engine knows which subtitle to pick for a given voice, which lipsync anim to play, etc.</p>
+<div id="admonition-tip-1" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-1-title">
+<div class="admonition-title">
+<div id="admonition-tip-1-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip-1"></a>
+</div>
+<div>
+<p>In the RED engine, the same naming convention is usually observed for audio assets:</p>
+<p><code>{actor}_{f,m,i}_{hex}.wem</code> e.g. <code>panam_f_b69f1500c3d57bc4.wem</code></p>
+<blockquote>
+<p>where <code>f</code> stands for <code>female</code>, <code>m</code> for <code>male</code> and <code>i</code> when the notion of gender is irrelevant.</p>
+</blockquote>
+</div>
+</div>
+<p>The file path at the bottom indicates to Audioware where to load the audio asset from for a specific language, here <code>en-us</code>:</p>
+<p><img src="./SCENE_DIALOG_LINES/assets/audio-asset-filepath.png" alt="audio asset file path" /></p>
+<h2 id="subtitle"><a class="header" href="#subtitle">Subtitle</a></h2>
+<p>Audioware does not handle the subtitles for this feature, because RED engine already perfectly does.</p>
+<h3 id="subtitles-entries"><a class="header" href="#subtitles-entries">subtitles entries</a></h3>
+<p>First, add subtitle entries:</p>
+<p><img src="./SCENE_DIALOG_LINES/assets/subtitle-entries.png" alt="subtitles entries" /></p>
+<p>Here you can notice the <code>stringId</code> <code>13159259729229609924</code> is the same as the one defined for the <a href="#voice">Voice</a>.</p>
+<p>Each entry is an (optionally genderized) subtitle for a given localization string ID (a.k.a <code>locStringId</code> or simply <code>stringId</code>).</p>
+<h3 id="subtitles-map"><a class="header" href="#subtitles-map">subtitles map</a></h3>
+<p>Then map the subtitles:</p>
+<p><img src="./SCENE_DIALOG_LINES/assets/subtitle-map.png" alt="subtitles map" /></p>
+<p>It links the actual subtitles file to a subtitles group.</p>
+<h3 id="subtitles-localization"><a class="header" href="#subtitles-localization">subtitles localization</a></h3>
+<p>Finally, don't forget to register the subtitles map in the <code>.xl</code> manifest:</p>
+<div class='codeblocks'>
+<a style="font-size:12px;text-decoration:none;--fa-primary-color:tomato;color:tomato;" href="https://github.com/psiberx/cp2077-tweak-xl/wiki/YAML-Tweaks"><i style="font-size:18px;--fa-primary-color:tomato;color:tomato;" class="fa fa-solid fa-file"></i>&nbsp;&nbsp;YAML</a>  
+<pre><code class="language-yml"># resources\audiowaredialogtest.archive.xl
+# ...
+localization:
+  # ...
+  subtitles:
+    en-us: mod\audiowaredialogtest\localization\en-us\subtitles\dialogtest_subtitlemap.json
+</code></pre>
+</div>
+<p>It links to the map for a given language.</p>
+<h2 id="lipsync"><a class="header" href="#lipsync">Lipsync</a></h2>
+<p>At the time of writing, creating custom lipsync animation is not possible yet.</p>
+<p>That being said, you can apply the trick that the movie industry has been using for over 50 years already when dubbing movies in foreign languages: find a lipsync animation that roughly matches both the duration and flow of the speech, and uses it.</p>
+<p>It's not perfect, but when carefully picked it usually does the trick.</p>
+<div id="admonition-tip-2" class="admonition admonish-tip" role="note" aria-labelledby="admonition-tip-2-title">
+<div class="admonition-title">
+<div id="admonition-tip-2-title">
+<p>Tip</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-tip-2"></a>
+</div>
+<div>
+<p>You will usually be tempted to create a custom audio for your sentence first, then search for the <a href="https://sounddb.redmodding.org/subtitles">corresponding lipsync animations in SoundDB</a>.</p>
+<p>Although it might seem counter-intuitive at first, the reverse workflow generally yields a better outcome: find some interesting sentence which roughly match what you want your character to say, and then generate the closest possible sentence to match the lipsync!</p>
+</div>
+</div>
+<h3 id="lipsync-animation"><a class="header" href="#lipsync-animation">lipsync animation</a></h3>
+<p>First define the <code>.anims</code>:</p>
+<p><img src="./SCENE_DIALOG_LINES/assets/anims.png" alt="lipsync anims" /></p>
+<p>It contains raw lipsync animation and the rig for the 3D model.</p>
+<h3 id="lipsync-map"><a class="header" href="#lipsync-map">lipsync map</a></h3>
+<p>Then, define the <code>.lipmap</code>:</p>
+<p><img src="./SCENE_DIALOG_LINES/assets/lipmap.png" alt="lipsync map" /></p>
+<p>It links the actors by their voice tag to the lipsync animation and a scene for a given language.</p>
+<p>Scene path is defined by its FNV1A64 Hash. Hash for the scene can be generated by WolvenKit <code>Hash Tool</code></p>
+<h3 id="lipsync-map-localization"><a class="header" href="#lipsync-map-localization">lipsync map localization</a></h3>
+<p>Don't forget to register the <code>.lipmap</code> in the <code>.xl</code> manifest:</p>
+<div class='codeblocks'>
+<a style="font-size:12px;text-decoration:none;--fa-primary-color:tomato;color:tomato;" href="https://github.com/psiberx/cp2077-tweak-xl/wiki/YAML-Tweaks"><i style="font-size:18px;--fa-primary-color:tomato;color:tomato;" class="fa fa-solid fa-file"></i>&nbsp;&nbsp;YAML</a>  
+<pre><code class="language-yml"># resources\audiowaredialogtest.archive.xl
+# ...
+localization:
+  # ...
+  lipmaps:
+    en-us: mod\audiowaredialogtest\localization\en-us\lipsync\dialogtest.lipmap
+</code></pre>
+</div>
+<h3 id="voiceover-map"><a class="header" href="#voiceover-map">voiceover map</a></h3>
+<p>By default the RED engine won't play lipsync at all if there's no associated <code>.wem</code>(s).</p>
+<p>This is what you can define here:</p>
+<p><img src="./SCENE_DIALOG_LINES/assets/voiceovermap.png" alt="voiceover map" /></p>
+<p>It links the localization string ID to the audio asset for each gender.</p>
+<h3 id="silent-wem"><a class="header" href="#silent-wem">silent .wem</a></h3>
+<p>Another peculiarity of the RED engine is that it will start playing a lipsync anim as long as a <code>.wem</code> exits, but if its duration does not match with lipsync anim it will abruptly stop playing it before reaching its end.</p>
+<p>This is why, at the time of writing, creating silent <code>.wem</code> with matching duration is a necessary evil.</p>
+<p>The most common way to do it is with Wwise.</p>
+<h4 id="install-wwise"><a class="header" href="#install-wwise">install Wwise</a></h4>
+<p>Go to their <a href="https://www.audiokinetic.com/en/download/">download section</a>, you will also need to create an account.</p>
+<h4 id="create-new-project"><a class="header" href="#create-new-project">create new project</a></h4>
+<p>You need to create a project to handle the conversion between <code>.wav</code> to <code>.wem</code>.</p>
+<p>You can use the default suggested settings, but don't forget to specify the <code>Conversion Settings</code> to <code>Vorbis Quality High</code>.</p>
+<p><img src="./SCENE_DIALOG_LINES/assets/wwise-project-settings.png" alt="project conversion settings" /></p>
+<h4 id="convert-silent-audio"><a class="header" href="#convert-silent-audio">convert silent audio</a></h4>
+<p>Let's imagine you need a 8s long silent <code>.wem</code> as a placeholder for your lipsync anim.</p>
+<ol>
+<li>create an empty <code>Sound SFX Container</code> under the <code>Default Work Unit</code> in <code>Actor-Mixer Hierarchy</code>.
+<img src="./SCENE_DIALOG_LINES/assets/wwise-create-sound-sfx-container.png" alt="create sound sfx container" /></li>
+<li>rename the container to e.g. <code>8000ms</code></li>
+<li>import a silent <code>.wav</code>: for convenience you can find a <a href="https://github.com/cyb3rpsych0s1s/audioware/blob/main/silence1h.wav">1h-long .wav in the repo</a>, a courtesy of <a href="https://next.nexusmods.com/profile/DBK01">DBK</a>, that you can simply trim to the appropriate duration.
+<img src="./SCENE_DIALOG_LINES/assets/wwise-import-audio.png" alt="import audio" /></li>
+<li>don't forget to use <code>Sound SFX</code>
+<img src="./SCENE_DIALOG_LINES/assets/wwise-import-settings.png" alt="use sound sfx" /></li>
+<li>if you need to do multiple silent <code>.wem</code> of different durations, it is fine to reuse the same asset.
+<img src="./SCENE_DIALOG_LINES/assets/wwise-import-reuse.png" alt="reuse audio on import" /></li>
+<li>then trim the audio, e.g. to <code>8</code> seconds.
+<img src="./SCENE_DIALOG_LINES/assets/wwise-trim-audio.png" alt="trim audio" /></li>
+<li>before converting, make sure the <code>Conversion Settings</code> for the container is set to <code>Vorbis Quality High</code>
+<img src="./SCENE_DIALOG_LINES/assets/wwise-conversion-settings.png" alt="container conversion settings" /></li>
+<li>convert the trimmed <code>.wav</code> to <code>.wem</code>
+<img src="./SCENE_DIALOG_LINES/assets/wwise-convert-audio.png" alt="convert audio" /></li>
+<li>copy the converted <code>.wem</code> from Wwise cache (<code>.cache</code> folder by default). Each asset is identified by its hexadecimal, so it's important to select the appropriate one, usually the latest.
+<img src="./SCENE_DIALOG_LINES/assets/wwise-grab-cache.png" alt="pick wem file" /></li>
+<li>finally paste it in your WolvenKit <code>archive</code>.</li>
+</ol>
+<h3 id="voiceover-map-localization"><a class="header" href="#voiceover-map-localization">voiceover map localization</a></h3>
+<p>Don't forget to register the <code>.json</code> in the <code>.xl</code> manifest:</p>
+<div class='codeblocks'>
+<a style="font-size:12px;text-decoration:none;--fa-primary-color:tomato;color:tomato;" href="https://github.com/psiberx/cp2077-tweak-xl/wiki/YAML-Tweaks"><i style="font-size:18px;--fa-primary-color:tomato;color:tomato;" class="fa fa-solid fa-file"></i>&nbsp;&nbsp;YAML</a>  
+<pre><code class="language-yml"># resources\audiowaredialogtest.archive.xl
+# ...
+localization:
+  # ...
+  vomaps:
+    en-us: mod\audiowaredialogtest\localization\en-us\vo\voiceovermap.json
+</code></pre>
+</div>
+<h3 id="string-id-variants-map"><a class="header" href="#string-id-variants-map">string id variants map</a></h3>
+<p>Last but not least, there's an additional file which contains the duration (or length) of the string IDs.
+If you browse vanilla files, you can find it under e.g. <code>base\localization\en-us\stringidvariantlengthsreport.json</code>.</p>
+<p>At the time of writing ArchiveXL does not support creating custom ones just yet,
+so here's how you can do with Codeware instead:</p>
+<div class='codeblocks'>
+<a style="font-size:12px;text-decoration:none;--fa-primary-color:tomato;color:tomato;" href="https://wiki.redmodding.org/redscript"><i style="font-size:18px;--fa-primary-color:tomato;color:tomato;" class="fa fa-solid fa-r"></i>&nbsp;&nbsp;Redscript</a>  
+<pre><code class="language-swift">class ATStringidVariantLengthsReportService extends ScriptableService {
+  private cb func OnLoad() {
+    GameInstance
+      .GetCallbackSystem()
+      .RegisterCallback(n"Resource/PostLoad", this, n"OnPostLoad")
+      .AddTarget(
+        ResourceTarget.Path(r"base\\localization\\en-us\\stringidvariantlengthsreport.json")
+      );
+  }
+
+  private cb func OnPostLoad(event: ref&lt;ResourceEvent&gt;) {
+    let resource: ref&lt;JsonResource&gt; = event.GetResource() as JsonResource;
+    let map: ref&lt;locVoiceoverLengthMap&gt; = resource.root as locVoiceoverLengthMap;
+
+    let panamline1: locVoLengthEntry;
+    panamline1.stringId = HashToCRUID(13159259729229609924ul);
+    panamline1.femaleLength = 4.9;
+    panamline1.maleLength = 4.9;
+
+    ArrayPush(map.entries, panamline1);
+  }
+}
+</code></pre>
+</div>
+<h2 id="showcase"><a class="header" href="#showcase">Showcase</a></h2>
+<p>And here's the result, thanks to <a href="https://github.com/MrBilL61">MrBill</a> for the <code>.scene</code> comparing:</p>
+<div class="table-wrapper"><table><thead><tr><th>sentence</th><th>audio</th><th>lipsync</th></tr></thead><tbody>
+<tr><td>vanilla</td><td>vanilla wem</td><td>vanilla</td></tr>
+<tr><td>vanilla</td><td>audioware mp3</td><td>vanilla</td></tr>
+<tr><td>modded</td><td>audioware mp3</td><td>vanilla</td></tr>
+</tbody></table>
+</div><div id="admonition-youtube-demo" class="admonition admonish-youtube" role="note" aria-labelledby="admonition-youtube-demo-title">
+<div class="admonition-title">
+<div id="admonition-youtube-demo-title">
+<p>YouTube demo</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-youtube-demo"></a>
+</div>
+<div>
+<iframe width="100%" height="420" src="https://www.youtube.com/embed/8ZxQGmgXOUQ?si=3jz8anszKNfp3P7z" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
+</div>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>Ok, this was a mouthful!</p>
+<p>Here's a quick schema summarizing the resources and their dependencies.</p>
+<p><img src="./SCENE_DIALOG_LINES/assets/resources.png" alt="scene resources" /></p>
+<p>Big tokens of appreciation to <a href="https://next.nexusmods.com/profile/MisterChedda">MisterChedda</a>, <a href="https://github.com/MrBilL61">MrBill</a>, <a href="https://next.nexusmods.com/profile/DBK01">DBK</a> and <a href="https://next.nexusmods.com/profile/dederara">Dedra</a> without whom this feature would probably have never been finished!</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="DYNAMIC_EMITTERS.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="NATIVE_INTEGRATION.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="DYNAMIC_EMITTERS.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="NATIVE_INTEGRATION.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

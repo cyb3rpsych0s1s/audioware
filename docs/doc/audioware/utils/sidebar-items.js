@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["console","dbg","error","get_base_offset","info","plog","plog_error","plog_info","plog_warn","warn"],"macro":[["diagnostic",1],["diagnostic_throttled",1],["fails",1],["inspect",1],["intercept",1],["lifecycle",1],["reports",1],["silly",1],["success",1],["warns",1]]};

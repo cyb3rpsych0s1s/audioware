@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["atp_demote_current_thread_from_real_time","atp_free_handle","atp_promote_current_thread_to_real_time","demote_current_thread_from_real_time","promote_current_thread_to_real_time"],"struct":["AudioThreadPriorityError","atp_handle"],"type":["RtPriorityHandle"]};

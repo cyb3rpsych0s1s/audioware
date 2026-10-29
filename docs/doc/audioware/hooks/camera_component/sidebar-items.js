@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["attach_hooks","detach_hooks"],"mod":["activate","deactivate","override_audio_listeners"]};

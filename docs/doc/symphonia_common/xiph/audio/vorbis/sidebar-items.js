@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["XIPH_LACED_LEADING_HEADER"],"fn":["unpack_xiph_laced_extradata","vorbis_channels_to_channels"]};

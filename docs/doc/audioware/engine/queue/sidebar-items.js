@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["control_emitter","control_sound","default_device_and_config","forward","load","notify","occlude","run","send","spawn"],"static":["CALLBACKS","COMMAND","DYNAMIC_EMITTERS","DYNAMIC_SOUNDS","LIFECYCLE","OCCLUSIONS","THREAD"],"struct":["Flags","Throttle"],"type":["Occlusion"]};

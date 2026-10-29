@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["factor_or_semitones"],"macro":[["impl_from_settings",1],["impl_with",1]],"struct":["Interpolation","Region","Settings"],"trait":["Validate","ValidateFor"]};

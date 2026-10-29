@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["id3v1","id3v2","images","itunes"]};

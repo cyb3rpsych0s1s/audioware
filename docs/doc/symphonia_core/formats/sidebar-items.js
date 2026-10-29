@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["FORMAT_ID_NULL"],"enum":["Attachment","SeekMode","SeekTo","TrackType"],"mod":["prelude","probe","util","well_known"],"struct":["ExternalFormatData","FileAttachment","FormatId","FormatInfo","FormatOptions","MediaInfo","SeekedTo","Track","TrackFlags","VendorDataAttachment"],"trait":["FormatReader"]};

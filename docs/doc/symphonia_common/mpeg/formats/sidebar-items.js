@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["MIN_OBJECT_DESCRIPTOR_SIZE"],"enum":["ClassTag"],"fn":["codec_id_from_object_type_indication","read_object_descriptor_header"],"struct":["DecoderConfigDescriptor","DecoderSpecificInfo","ESDescriptor","SLConfigDescriptor"],"trait":["ObjectDescriptor"]};

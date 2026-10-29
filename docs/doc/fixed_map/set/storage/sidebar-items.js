@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["BooleanSetStorage","HashbrownSetStorage","OptionSetStorage","SingletonSetStorage"],"trait":["SetStorage"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["SceneKey"],"struct":["SceneBothKey","SceneLocaleKey"]};

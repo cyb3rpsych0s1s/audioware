@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["VORBIS_COMMENT_METADATA_INFO"],"fn":["read_vorbis_comment"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":[["const_combine",1],["const_combine_bounded",1],["const_combine_bounded_with",1]],"mod":["bounded","internal"]};

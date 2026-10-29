@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["TrackPlaybackState"],"struct":["MainTrackBuilder","MainTrackHandle","NonexistentRoute","SendTrackBuilder","SendTrackHandle","SendTrackId","SpatialTrackBuilder","SpatialTrackDistances","SpatialTrackHandle","TrackBuilder","TrackHandle"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Anchors","Score"],"struct":["Hint","Probe","ProbeDataMatchSpec","ProbeFormatData","ProbeMetadataData","ProbeOptions"],"trait":["ProbeableFormat","ProbeableMetadata","Scoreable"],"type":["FormatFactoryFn","MetadataFactoryFn"]};

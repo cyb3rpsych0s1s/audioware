@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["attach_hook_set","attach_hook_unset","attach_hooks","detach_hook_set","detach_hook_unset","detach_hooks","detour_set","detour_unset"],"static":["HOOK_SET","HOOK_UNSET"]};
